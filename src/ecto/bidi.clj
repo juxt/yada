@@ -5,33 +5,35 @@
    [cheshire.core :as json]
    ecto.swagger))
 
+#_(when (contains?
+           (set (for [[k v] op] (keyword (:operationId v))))
+           (:handler m))
+  "")
+
 (extend-protocol bidi/Matched
   ecto.swagger.OperationObject
   (resolve-handler [op m] (assoc m :swagger/op op))
   (unresolve-handler [op m]
-    (when (contains?
-           (set (for [[k v] op] (keyword (:operationId v))))
-           (:handler m))
+    (when (= (:operationId op) (:handler m))
       "")))
 
 (def routes
   ["/a"
-   [["/" [["pets"
-           #swagger/op
-           {:get {:description "Returns all pets from the system that the user has access to"
-                  :operationId :findPets}
-            :post {:description "Creates a new pet in the store.  Duplicates are allowed"
-                   :operationId :addPet}}]
-          [["pets/" :id]
-           #swagger/op
-           {:get {:description "Returns a user based on a single ID, if the user does not have access to the pet"
-                  :operationId :findPetById}}]
-          ]]]])
+   [["/pets"
+     [[""
+       {:get #swagger/op {:description "Returns all pets from the system that the user has access to"
+                          :operationId :findPets}
+        :post #swagger/op {:description "Creates a new pet in the store.  Duplicates are allowed"
+                           :operationId :addPet}}]
+      [["/" :id]
+       {:get #swagger/op {:description "Returns a user based on a single ID, if the user does not have access to the pet"
+                          :operationId :findPetById}}]
+      ]]]])
 
-(bidi/match-route routes "/a/pets")
+(bidi/match-route routes "/a/pets" :request-method :get)
 
-(bidi/path-for routes :findPetById :id 200)
 (bidi/path-for routes :findPets)
+(bidi/path-for routes :findPetById :id 200)
 
 (defn swagger-spec [routes]
   (letfn [(encode-segment [segment]
