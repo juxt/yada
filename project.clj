@@ -8,8 +8,9 @@
   [
    [com.stuartsierra/component "0.2.2"]
    [org.clojure/core.async "0.1.346.0-17112a-alpha"]
-   [bidi "1.12.2"]
-   [juxt.modular/aleph "0.0.1"]
+   [org.clojure/core.match "0.3.0-alpha4"]
+   [bidi "1.13.0-SNAPSHOT"]
+   [juxt.modular/aleph "0.0.1-SNAPSHOT"]
    [juxt.modular/maker "0.5.0"]
    [juxt.modular/wire-up "0.5.0"]
    [org.clojure/clojure "1.7.0-alpha4"]

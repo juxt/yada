@@ -6,9 +6,8 @@
 
 (defn index [req]
   (d/let-flow
-   [status (d/deferred)]
-   (future (d/success! status 200))
-   {:status 200 :body "foo"}))
+   [status (d/future 200)]
+   {:status status :body "foo"}))
 
 (defrecord Website []
   WebRequestHandler

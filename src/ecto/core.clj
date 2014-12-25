@@ -2,7 +2,9 @@
   (:require
    [manifold.deferred :as d]
    [bidi.bidi :as bidi]
-   [ring.mock.request :as mock]))
+   bidi.swagger
+   [clojure.core.match :refer (match)]
+   ))
 
 ;; API specs. are created like this
 
@@ -12,43 +14,48 @@
 
 ;; "It is better to have 100 functions operate on one data structure than 10 functions on 10 data structures." —Alan Perlis
 
-(def api
-  {:swagger "2.0"
-   :info {:version "0.0.0"
-          :title "Foobar"}
-   :paths
-   [["/persons" {:get {:description "Gets 'Person' objects"
-                       :parameters [{:name "size"
-                                     :in :query
-                                     :description "Size of array"
-                                     :required true
-                                     :type :number
-                                     :format :double}]
-                       :produces ["text/html" "application/json" "text/plain"]
-                       :responses {404 {:description "Not found"}
-                                   200 {:description "Successful response"
-                                        :schema {:title "ArrayOfPersons"
-                                                 :type :array
-                                                 :properties
-                                                 {"name" {:type :string}
-                                                  "single" :boolean}
-                                                 }}}}}]]})
+(defrecord Resource [])
 
-;; Aha - bidi is recursive, swagger isn't?
+(extend-protocol bidi/Matched
+  Resource
+  (resolve-handler [op m]
+    (assoc m ::resource op))
+  (unresolve-handler [op m]
+    (when (= (:operationId op) (:handler m)) "")))
 
-;; Keep bidi routes to keys, keys should reference swagger objects
-;; There should be a generic handler to handle a swagger object
-
-;;(bidi/match-route ["" (:paths api)] "/persons")
-
-;; From this a bidi structure could be generated to target the handler.
-
-(defn api-handler []
+(defn op-handler [op]
   (fn [req]
-    #_{:status 200 :body "index"}
-    (d/let-flow
-       [status (future 200)]
-       {:status status :body "foo"})))
+    (cond
+      :otherwise
+      {:status 200 :body "foo"})))
+
+(defn match-route [spec path & args]
+  (apply bidi/match-route spec path args))
+
+(defn make-handler
+  [op]
+  (let [allowed-methods (-> op :ecto.core/resource keys set)]
+    (fn [req]
+      (cond
+        (not (contains? allowed-methods (:request-method req))) {:status 405 :body "Method not allowed."}
+        :otherwise {:status 200 :body "foo"}))))
+
+;; handle-method-not-allowed 405 "Method not allowed."
+
+
+
+#_(let [req (mock/request :put "/persons")]
+  ((op-handler (apply handle-route routes (:uri req) (apply concat req))) req))
+
+;; This is OK
+;; ((api-handler api) (mock/request :get "/persons"))
+
+;; This is should yield 405 "Method not allowed."
+;; ((api-handler api) (mock/request :get "/persons"))
+
+
+;; List of interesting things to do
+
 
 ;; There should be a general handler that does the right thing
 ;; wrt. available methods (Method Not Allowed) and calls out to
