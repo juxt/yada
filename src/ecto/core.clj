@@ -4,6 +4,7 @@
    [bidi.bidi :as bidi]
    bidi.swagger
    [clojure.core.match :refer (match)]
+   [schema.core :as s]
    ))
 
 ;; API specs. are created like this
@@ -32,17 +33,40 @@
 (defn match-route [spec path & args]
   (apply bidi/match-route spec path args))
 
+(defn check-cacheable [resource-metadata]
+  ;; Check the resource metadata and return one of the following responses
+  (cond
+    false {:status 412}
+    false {:status 304}
+    :otherwise
+    ;; We return nil which indicates the resource must be reserved
+    nil))
+
 (defn make-handler
-  [op]
+  [op
+   {:keys [resource-metadata ; a function, can return a deferred. The value must also contain a :data entry, containing the resource's data, though this should usually be a deferred too, because there's no guarantee it wlil be needed.
+           ]
+    :or {resource-metadata (constantly {})}}]
   (let [allowed-methods (-> op :ecto.core/resource keys set)]
     (fn [req]
       (cond
-        (not (contains? allowed-methods (:request-method req))) {:status 405 :body "Method not allowed."}
-        :otherwise {:status 200 :body "foo"}))))
+        (> (.length (:uri req)) 4096) {:status 414} ; uri too long
+        (not (contains? allowed-methods (:request-method req))) {:status 405} ; method not allowed
+        :otherwise
+        (if-let [resource-metadata (resource-metadata {})]
+          ;; Resource exists - follow the exists chain
+          (d/chain
+           resource-metadata
+           (fn [resource-metadata]
+             (or (check-cacheable resource-metadata)
+                 (d/chain
+                  resource-metadata
+                  (constantly {:status 200})))))
+
+          ;; Resource does not exist - follow the not-exists chain
+          {:status 404})))))
 
 ;; handle-method-not-allowed 405 "Method not allowed."
-
-
 
 #_(let [req (mock/request :put "/persons")]
   ((op-handler (apply handle-route routes (:uri req) (apply concat req))) req))
@@ -53,9 +77,7 @@
 ;; This is should yield 405 "Method not allowed."
 ;; ((api-handler api) (mock/request :get "/persons"))
 
-
 ;; List of interesting things to do
-
 
 ;; There should be a general handler that does the right thing
 ;; wrt. available methods (Method Not Allowed) and calls out to

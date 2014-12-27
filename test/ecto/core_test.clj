@@ -3,7 +3,8 @@
    [clojure.test :refer :all]
    [ecto.core :refer :all]
    [ring.mock.request :as mock]
-   [clojure.core.match :refer (match)]))
+   [clojure.core.match :refer (match)]
+   [manifold.deferred :as d]))
 
 (def spec
   ["/a"
@@ -40,10 +41,11 @@
          {:description "Returns a user based on a single ID, if the user does not have access to the pet"
           :operationId :findPetById}})]]]]])
 
-(defn get-op-response [spec req]
+(defn get-op-response [spec req & {:as opts}]
   (let [op (match-route spec (:uri req))
-        handler (make-handler op)]
-    (handler req)))
+        handler (make-handler op opts)]
+    (let [res (handler req)]
+      (if (d/deferrable? res) @res res))))
 
 (deftest handlers
   (testing "Method Not Allowed"
@@ -51,4 +53,7 @@
       (is (= (-> response :status) 405))))
   (testing "OK"
     (let [response (get-op-response spec (mock/request :get "/a/pets"))]
-      (is (= (-> response :status) 200)))))
+      (is (= (-> response :status) 200))))
+  (testing "Not found"
+    (let [response (get-op-response spec (mock/request :get "/a/pets") :resource-metadata (constantly nil))]
+      (is (= (-> response :status) 404)))))
