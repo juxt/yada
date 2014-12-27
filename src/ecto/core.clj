@@ -44,7 +44,14 @@
 
 (defn make-handler
   [op
-   {:keys [resource-metadata ; a function, can return a deferred. The value must also contain a :data entry, containing the resource's data, though this should usually be a deferred too, because there's no guarantee it wlil be needed.
+   {:keys [resource-metadata ; a function, can return a deferred. The
+                             ; return value must also contain a :data
+                             ; entry, containing the resource's data,
+                             ; though this should usually be a deferred
+                             ; too, because there's no guarantee it wlil
+                             ; be needed. The function takes the
+                             ; parameters provided in the request (path,
+                             ; query, etc.)
            ]
     :or {resource-metadata (constantly {})}}]
   (let [allowed-methods (-> op :ecto.core/resource keys set)]
