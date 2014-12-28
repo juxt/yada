@@ -14,6 +14,7 @@
         {:get
          {:description "Returns all pets from the system that the user has access to"
           :operationId :findPets
+          :scopes [""]
           :produces ["application/json" "application/xml" "text/xml" "text/html"]
           :parameters [{:name "tags" :in :query :description "tags to filter by"
                         :required false
@@ -48,12 +49,41 @@
       (if (d/deferrable? res) @res res))))
 
 (deftest handlers
+  (testing "Service Unavailable"
+    (let [response (get-op-response spec (mock/request :get "/a/pets")
+                                    :service-available? false)]
+      (is (= (-> response :status) 503)))
+    (let [response (get-op-response spec (mock/request :get "/a/pets")
+                                    :service-available? true)]
+      (is (not= (-> response :status) 503))))
+
+  (testing "Not Implemented"
+    (let [response (get-op-response spec (mock/request :play "/a/pets"))]
+      (is (= (-> response :status) 501)))
+    (let [response (get-op-response spec (mock/request :play "/a/pets")
+                                    :known-method? (fn [x] (= x :play)))]
+      (is (not= (-> response :status) 501))))
+
+  (testing "Request URI Too Long"
+    (let [response (get-op-response spec (mock/request :get "/a/pets")
+                                    :request-uri-too-long? 4)]
+      (is (= (-> response :status) 414))))
+
   (testing "Method Not Allowed"
     (let [response (get-op-response spec (mock/request :put "/a/pets"))]
       (is (= (-> response :status) 405))))
+
   (testing "OK"
     (let [response (get-op-response spec (mock/request :get "/a/pets"))]
-      (is (= (-> response :status) 200))))
+      (is (= (-> response :status) 200))
+      (is (= (-> response :body) "Hello World!"))))
+
   (testing "Not found"
     (let [response (get-op-response spec (mock/request :get "/a/pets") :resource-metadata (constantly nil))]
       (is (= (-> response :status) 404)))))
+
+;; TODO: Auth
+;; TODO: Conneg
+;; TODO: CORS/OPTIONS
+;; TODO: CSRF
+;; TODO: Cache-headers
