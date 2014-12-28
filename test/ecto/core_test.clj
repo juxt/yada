@@ -82,6 +82,7 @@
     (let [response (get-op-response spec (mock/request :get "/a/pets") :resource-metadata (constantly nil))]
       (is (= (-> response :status) 404)))))
 
+;; TODO: Coercions
 ;; TODO: Auth
 ;; TODO: Conneg
 ;; TODO: CORS/OPTIONS
