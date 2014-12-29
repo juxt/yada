@@ -6,11 +6,10 @@
 
   :dependencies
   [
-;;   [org.clojure/core.async "0.1.346.0-17112a-alpha"]
-;;   [org.clojure/core.match "0.3.0-alpha4"]
    [bidi "2.0.0-SNAPSHOT"]
-   [metosin/ring-swagger "0.15.0"]
    [org.clojure/clojure "1.7.0-alpha4"]
+   [prismatic/schema "0.3.3" :exclusions [potemkin]]
+   [manifold "0.1.0-beta5"]
    ]
 
   :repl-options {:init-ns user

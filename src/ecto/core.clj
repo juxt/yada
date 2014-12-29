@@ -1,7 +1,6 @@
 (ns ecto.core
   (:require
    [manifold.deferred :as d]
-   [clojure.core.match :refer (match)]
    [schema.core :as s]
    [ecto.protocols :as p]
    ))
