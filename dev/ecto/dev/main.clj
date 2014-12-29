@@ -1,4 +1,4 @@
-(ns ecto.main
+(ns ecto.dev.main
   "Main entry point"
   (:require clojure.pprint)
   (:gen-class))

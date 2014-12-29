@@ -4,7 +4,8 @@
   (service-available? [_])
   (known-method? [_ method])
   (request-uri-too-long? [_ uri])
-  (allowed-method? [_ method op]))
+  (allowed-method? [_ method op])
+  (body [_ opts]))
 
 (extend-protocol Callbacks
   Boolean
@@ -17,10 +18,13 @@
   (known-method? [f method] (f method))
   (request-uri-too-long? [f uri] (f uri))
   (allowed-method? [f method op] (f method op))
+  (body [f opts] (f opts))
+
+  String
+  (body [s opts] s)
 
   Number
   (request-uri-too-long? [n uri]
-    (println "here: n,uri is" n uri)
     (> (.length uri) n))
 
   clojure.lang.PersistentHashSet

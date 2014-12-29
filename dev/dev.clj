@@ -6,9 +6,8 @@
    [clojure.tools.namespace.repl :refer (refresh refresh-all)]
    [clojure.java.io :as io]
    [com.stuartsierra.component :as component]
-   [ecto.system :refer (config new-system-map new-dependency-map new-co-dependency-map)]
-   [modular.maker :refer (make)]
-   [modular.wire-up :refer (normalize-dependency-map)]))
+   [ecto.dev.system :refer (config new-system-map new-dependency-map new-co-dependency-map)]
+   [modular.maker :refer (make)]))
 
 (def system nil)
 

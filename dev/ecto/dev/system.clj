@@ -1,4 +1,4 @@
-(ns ecto.system
+(ns ecto.dev.system
   "Components and their dependency relationships"
   (:refer-clojure :exclude (read))
   (:require
@@ -8,7 +8,7 @@
    [clojure.tools.reader.reader-types :refer (indexing-push-back-reader)]
    [com.stuartsierra.component :refer (system-map system-using using)]
    [modular.maker :refer (make)]
-   [ecto.website :refer (new-website)]
+   [ecto.dev.website :refer (new-website)]
    [modular.aleph :refer (new-http-server)]))
 
 (defn ^:private read-file

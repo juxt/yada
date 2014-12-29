@@ -1,8 +1,6 @@
 (ns ecto.core
   (:require
    [manifold.deferred :as d]
-   [bidi.bidi :as bidi]
-   bidi.swagger
    [clojure.core.match :refer (match)]
    [schema.core :as s]
    [ecto.protocols :as p]
@@ -15,24 +13,6 @@
 ;; But we shouldn't limit ourselves to only that which is declared, because so much more can be generated, like 404s, etc.
 
 ;; "It is better to have 100 functions operate on one data structure than 10 functions on 10 data structures." —Alan Perlis
-
-(defrecord Resource [])
-
-(extend-protocol bidi/Matched
-  Resource
-  (resolve-handler [op m]
-    (assoc m ::resource op))
-  (unresolve-handler [op m]
-    (when (= (:operationId op) (:handler m)) "")))
-
-(defn op-handler [op]
-  (fn [req]
-    (cond
-      :otherwise
-      {:status 200 :body "foo"})))
-
-(defn match-route [spec path & args]
-  (apply bidi/match-route spec path args))
 
 (defn check-cacheable [resource-metadata]
   ;; Check the resource metadata and return one of the following responses
@@ -47,8 +27,8 @@
 ;; middleware or another mechanism for assoc'ing evidence of credentials
 ;; to the Ring request.
 
-(defn make-handler
-  [op
+(defn make-handler-from-swagger-resource
+  [resource
    {:keys
     [
      service-available?
@@ -71,19 +51,22 @@
      ;; indicate the (negotiated) content type.
      response-body
 
-     ;; The allowed? callback will contain the entire op, the callback must
+     ;; The allowed? callback will contain the entire resource, the callback must
      ;; therefore extract the OAuth2 scopes, or whatever is needed to
      ;; authorize the request.
      allowed?
+
+     ;; The body callback with return the string body that should be returned.
+     body
 
      ]
     :or {service-available? (constantly true)
          known-method? #{:get :put :post :delete :options :head}
          request-uri-too-long? 4096
-         allowed-method? (-> op ::resource keys set)
+         allowed-method? (-> resource keys set)
 
          resource-metadata (constantly {})
-         response-body (fn [_] "Hello World!")
+         body (fn [_] nil)
          allowed? (constantly true)
          }}]
 
@@ -102,7 +85,7 @@
       {:status 414}
 
       ;; Method Not Allowed
-      (not (p/allowed-method? allowed-method? (:request-method req) op))
+      (not (p/allowed-method? allowed-method? (:request-method req) resource))
       {:status 405}
 
       :otherwise
@@ -116,16 +99,13 @@
                 resource-metadata
                 (fn [resource-metadata]
                   {:status 200
-                   :body (response-body "text/plain")
+                   :body (p/body body {:content-type "text/plain"})
                    })))))
 
         ;; Resource does not exist - follow the not-exists chain
         {:status 404}))))
 
 ;; handle-method-not-allowed 405 "Method not allowed."
-
-#_(let [req (mock/request :put "/persons")]
-  ((op-handler (apply handle-route routes (:uri req) (apply concat req))) req))
 
 ;; This is OK
 ;; ((api-handler api) (mock/request :get "/persons"))
