@@ -9,6 +9,7 @@
    [com.stuartsierra.component :refer (system-map system-using using)]
    [modular.maker :refer (make)]
    [yada.dev.website :refer (new-website)]
+   [yada.dev.database :refer (new-database)]
    [modular.aleph :refer (new-http-server)]))
 
 (defn ^:private read-file
@@ -42,6 +43,13 @@
   (merge (config-from-classpath)
          (user-config)))
 
+(defn database-components [system config]
+  (assoc system
+    :database
+    (->
+      (make new-database config)
+      (using []))))
+
 (defn http-server-components [system config]
   (assoc system
     :http-server
@@ -54,15 +62,16 @@
     :website
     (->
       (make new-website config)
-      (using []))))
+      (using {:database :database}))))
 
 (defn new-system-map
   [config]
   (apply system-map
     (apply concat
       (-> {}
-          (http-server-components config)
-          (website-components config)))))
+        (database-components config)
+        (http-server-components config)
+        (website-components config)))))
 
 (defn new-dependency-map
   []
