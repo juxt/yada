@@ -8,9 +8,15 @@
 (defn find-pets [db]
   @(:atom db))
 
+(defn find-pet-by-id [db id]
+  (when-let [row (get @(:atom db) id)]
+    (assoc row :id id)))
+
 (defn seed-database [db]
   (reset! (:atom db)
-          {1 {:name "Nemo" :animal "Fish"}})
+          {"001" {:name "Nemo" :animal "Fish"}
+           "002" {:name "George" :animal "Monkey"}
+           "003" {:name "Special Patrol Group" :animal "Hamster"}})
   db)
 
 (defrecord Database []

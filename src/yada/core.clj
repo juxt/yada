@@ -48,15 +48,20 @@
 
      ;; a function, may return a deferred value. Parameters
      ;; indicate the (negotiated) content type.
-     response-body
 
      ;; The allowed? callback will contain the entire resource, the callback must
      ;; therefore extract the OAuth2 scopes, or whatever is needed to
      ;; authorize the request.
      allowed?
 
+     ;; The model callback returns a data value that will be converted
+     ;; to the negotiated content-type and returned to the client as the
+     ;; entity body.
+     model
+
      ;; The body callback with return the string body that should be returned.
      body
+
 
      ]
     :or {service-available? (constantly true)
@@ -65,7 +70,6 @@
          allowed-method? (-> resource keys set)
 
          resource-metadata (constantly {})
-         body (fn [_] nil)
          allowed? (constantly true)
          }}]
 
@@ -96,13 +100,33 @@
            (or (check-cacheable resource-metadata)
                (d/chain
                 resource-metadata
+
                 (fn [resource-metadata]
-                  {:status 200
-                   :body (p/body body {:content-type "text/plain"})
-                   })))))
+                  (if model
+                    (d/chain
+                     (p/model model {:params (:params req)})
+                     (fn [model] (assoc resource-metadata :model model)))
+                    resource-metadata))
+
+                (fn [resource-metadata]
+                  (cond
+                    ;; TODO Render model as per negotiated content-type
+                    (:model resource-metadata)
+                    {:status 200
+                     :body (if body
+                             (p/body body {:model (:model resource-metadata)
+                                           :content-type "text/plain"})
+                             (pr-str (:model resource-metadata)))}
+
+                    :otherwise
+                    {:status 404
+                     :body "Not found"}
+                    ))))))
 
         ;; Resource does not exist - follow the not-exists chain
         {:status 404}))))
+
+;; TODO: pets should return resource-metadata with a (possibly deferred) model
 
 ;; handle-method-not-allowed 405 "Method not allowed."
 

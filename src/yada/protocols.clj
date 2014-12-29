@@ -5,6 +5,7 @@
   (known-method? [_ method])
   (request-uri-too-long? [_ uri])
   (allowed-method? [_ method op])
+  (model [_ opts])
   (body [_ opts]))
 
 (extend-protocol Callbacks
@@ -18,6 +19,7 @@
   (known-method? [f method] (f method))
   (request-uri-too-long? [f uri] (f uri))
   (allowed-method? [f method op] (f method op))
+  (model [f opts] (f opts))
   (body [f opts] (f opts))
 
   String
@@ -31,4 +33,7 @@
   (known-method? [set method]
     (contains? set method))
   (allowed-method? [set method op]
-    (contains? set method)))
+    (contains? set method))
+
+  clojure.lang.PersistentArrayMap
+  (model [m opts] m))

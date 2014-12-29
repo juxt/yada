@@ -52,7 +52,7 @@ default 'renderings' of a given data structure.
 
 ## Design choices
 
-The project uses deferreds from @ztellman's repo:manifold. This provides
+Yada uses deferreds from @ztellman's [Manifold library](https://github.com/ztellman/manifold). This provides
 async options in the places in the HTTP implementation where it is most
 needed: the determination of resource existence and the loading of the
 metadata and data associated with a resource.
@@ -61,6 +61,10 @@ Unlike promises, deferreds also provide a way of signalling errors,
 which is just what we need to handle and communicate errors properly.
 
 ## What's wrong with Liberator?
+
+Not much.
+
+### There are limits to the state machine abstraction
 
 The original webmachine design using a state transition diagram has
 served us well. However, there are a number of problems. I feel the
@@ -72,6 +76,8 @@ uses it requires initimate knowledge of the underlying flowchart. This
 flowchart gives Liberator its flexibility, but the trade-off is that it
 is tricky to do certain things, like adding CORS support, that should be
 easier in a REST library.
+
+### Too much abstraction
 
 Much the same can be said for solutions based on Ring middleware. The
 abstraction underlying Ring middleware is the higher-order
