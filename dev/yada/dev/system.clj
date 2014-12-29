@@ -1,4 +1,4 @@
-(ns ecto.dev.system
+(ns yada.dev.system
   "Components and their dependency relationships"
   (:refer-clojure :exclude (read))
   (:require
@@ -8,7 +8,7 @@
    [clojure.tools.reader.reader-types :refer (indexing-push-back-reader)]
    [com.stuartsierra.component :refer (system-map system-using using)]
    [modular.maker :refer (make)]
-   [ecto.dev.website :refer (new-website)]
+   [yada.dev.website :refer (new-website)]
    [modular.aleph :refer (new-http-server)]))
 
 (defn ^:private read-file
@@ -27,11 +27,11 @@
 
 (defn ^:private user-config
   []
-  (config-from (io/file (System/getProperty "user.home") ".ecto.edn")))
+  (config-from (io/file (System/getProperty "user.home") ".yada.edn")))
 
 (defn ^:private config-from-classpath
   []
-  (if-let [res (io/resource "ecto.edn")]
+  (if-let [res (io/resource "yada.edn")]
     (config-from (io/file res))
     {}))
 

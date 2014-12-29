@@ -1,4 +1,4 @@
-(ns ecto.protocols)
+(ns yada.protocols)
 
 (defprotocol Callbacks
   (service-available? [_])

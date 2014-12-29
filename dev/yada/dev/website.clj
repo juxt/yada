@@ -1,10 +1,10 @@
-(ns ecto.dev.website
+(ns yada.dev.website
   (:require
    [clojure.pprint :refer (pprint)]
    [modular.ring :refer (WebRequestHandler)]
    [manifold.deferred :as d]
    [bidi.bidi :refer (match-route)]
-   [ecto.core :refer (make-handler-from-swagger-resource)]
+   [yada.core :refer (make-handler-from-swagger-resource)]
    [pets :refer (pets-spec)]))
 
 ;;(match-route pets-spec "/pets/123")

@@ -1,9 +1,9 @@
-(ns ecto.core-test
+(ns yada.core-test
   (:require
    [bidi.bidi :refer (match-route)]
    [clojure.core.match :refer (match)]
    [clojure.test :refer :all]
-   [ecto.core :refer :all]
+   [yada.core :refer :all]
    [manifold.deferred :as d]
    [ring.mock.request :as mock]
    [pets :refer (pets-spec) :rename {pets-spec spec}]))

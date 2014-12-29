@@ -1,4 +1,4 @@
-# ecto
+# yada
 
 ## Design goals
 

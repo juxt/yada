@@ -1,8 +1,8 @@
-(ns ecto.core
+(ns yada.core
   (:require
    [manifold.deferred :as d]
    [schema.core :as s]
-   [ecto.protocols :as p]
+   [yada.protocols :as p]
    ))
 
 ;; API specs. are created like this
