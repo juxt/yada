@@ -14,11 +14,6 @@
     (let [res (handler (assoc req :route-params (:route-params matched)))]
       (if (d/deferrable? res) @res res))))
 
-#_(get-op-response spec
-                 (mock/request :get "/pets")
-                 :service-available?
-                 #(d/future (Thread/sleep 1000) false))
-
 (deftest handlers
   (testing "Service Unavailable"
 
