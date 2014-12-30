@@ -14,14 +14,7 @@
 
 ;; "It is better to have 100 functions operate on one data structure than 10 functions on 10 data structures." —Alan Perlis
 
-(defn check-cacheable [resource-metadata]
-  ;; Check the resource metadata and return one of the following responses
-  (cond
-    false {:status 412}
-    false {:status 304}
-    :otherwise
-    ;; We return nil which indicates the resource must be reserved
-    nil))
+
 
 ;; TODO For authentication, implementation is out-of-band, in Ring
 ;; middleware or another mechanism for assoc'ing evidence of credentials
@@ -55,6 +48,13 @@
 
 (defmacro exit-when-not [expr status]
   `(exit-when (not ~expr) ~status))
+
+(defn check-cacheable [ctx]
+  ;; Check the resource metadata and return one of the following responses
+  (cond
+    false (d/error-deferred (ex-info "Precondition Failed" {:status 412}))
+    false (d/error-deferred (ex-info "Not Modified" {:status 304}))
+    :otherwise ctx))
 
 (defn make-handler
   [swagger-ops
@@ -119,17 +119,27 @@
                      (or (get-in req [:headers "accept"]) "*/*")
                      produces))
 
-         ;; Does the resource exist?
+         ;; Does the resource exist? Call find-resource, which returns
+         ;; the resource's metadata (optionally deferred to prevent
+         ;; blocking this thread)
          (fn [ctx]
            (d/chain
             (p/find-resource find-resource {:params (:params req)})
             #(assoc ctx :resource %)))
 
-         (fn [{:keys [resource]}]
+         (fn [{:keys [resource] :as ctx}]
            (if resource
-             {:status 200}
-             {:status 404})
-           )
+
+             ;; 'Exists' flow
+             (d/chain
+              ctx
+              check-cacheable
+              (constantly {:status 200}))
+
+             ;; 'Not exists' flow
+             (d/chain
+              ctx
+              (constantly {:status 404}))))
 
          #_(if-let [resource (p/find-resource find-resource {:params (:params req)})]
              ;; Resource exists - follow the exists chain

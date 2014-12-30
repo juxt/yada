@@ -73,3 +73,4 @@
 ;; TODO: CORS/OPTIONS
 ;; TODO: CSRF
 ;; TODO: Cache-headers
+;; TODO: Vary
