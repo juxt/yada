@@ -1,9 +1,9 @@
 (ns pets
   (:require
-   [bidi.swagger :refer (map->Resource)]))
+   [bidi.swagger :refer (map->SwaggerOperations)]))
 
 (def pets-resource
-  (map->Resource
+  (map->SwaggerOperations
    {:get
     {:description "Returns all pets from the system that the user has access to"
      :operationId :findPets
@@ -28,7 +28,7 @@
      :operationId :addPet}}))
 
 (def pet-resource
-  (map->Resource
+  (map->SwaggerOperations
    {:get
     {:description "Returns a user based on a single ID, if the user does not have access to the pet"
      :operationId :findPetById}}))

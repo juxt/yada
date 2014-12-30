@@ -3,6 +3,7 @@
    [manifold.deferred :as d]
    [schema.core :as s]
    [yada.protocols :as p]
+   [yada.conneg :refer (best-allowed-content-type)]
    ))
 
 ;; API specs. are created like this
@@ -26,25 +27,44 @@
 ;; middleware or another mechanism for assoc'ing evidence of credentials
 ;; to the Ring request.
 
-(defn make-handler-from-swagger-resource
-  [resource
+(defmacro nonblocking-exit-when*
+  "Short-circuit exit a d/chain with an error if expr evaluates to
+  truthy. To avoid blocking the request thread, the callback can return
+  a deferred value."
+  [callback expr status]
+  `(fn [x#]
+     (if (and (some? ~callback) ; guard for performance
+              ~expr)
+       ;; Exit, intended to be caught with a d/catch
+       (d/error-deferred (ex-info "" {:status ~status}))
+       x#)))
+
+(defmacro nonblocking-exit-when
+  [callback expr status]
+  `(nonblocking-exit-when* ~callback (deref (d/chain ~expr)) ~status))
+
+(defmacro nonblocking-exit-when-not
+  [callback expr status]
+  `(nonblocking-exit-when* ~callback (deref (d/chain ~expr not)) ~status))
+
+(defmacro exit-when [expr status]
+  `(fn [x#]
+     (if ~expr
+       (d/error-deferred (ex-info "" {:status ~status}))
+       x#)))
+
+(defmacro exit-when-not [expr status]
+  `(exit-when (not ~expr) ~status))
+
+(defn make-handler
+  [swagger-ops
    {:keys
     [
-     service-available?
-
+     service-available?                 ; async-supported
      known-method?
-
      request-uri-too-long?
-
      allowed-method?
-
-     ;; a function, may return a deferred value. The return value
-     ;; must also contain a :data entry, containing the resource's
-     ;; data, though this should usually be a deferred too,
-     ;; because there's no guarantee it will be needed.  The
-     ;; function takes the parameters provided in the request
-     ;; (path, query, etc.)
-     resource-metadata
+     find-resource                      ; async-supported
 
      ;; a function, may return a deferred value. Parameters
      ;; indicate the (negotiated) content type.
@@ -54,77 +74,106 @@
      ;; authorize the request.
      allowed?
 
-     ;; The model callback returns a data value that will be converted
-     ;; to the negotiated content-type and returned to the client as the
-     ;; entity body.
+     ;; model determines a value, possibly deferred, that will be
+     ;; converted to the negotiated content-type and returned to the
+     ;; client as the entity body.
      model
 
-     ;; The body callback with return the string body that should be returned.
      body
-
-
      ]
-    :or {service-available? (constantly true)
-         known-method? #{:get :put :post :delete :options :head}
+    :or {known-method? #{:get :put :post :delete :options :head}
          request-uri-too-long? 4096
-         allowed-method? (-> resource keys set)
-
-         resource-metadata (constantly {})
-         allowed? (constantly true)
+         allowed-method? (-> swagger-ops keys set)
+         find-resource true
          }}]
 
   (fn [req]
-    (cond
-      ;; Service Unavailable
-      (not (p/service-available? service-available?))
-      {:status 503}
+    (let [method (:request-method req)
+          produces (get-in swagger-ops [method :produces])]
 
-      ;; Not Implemented
-      (not (p/known-method? known-method? (:request-method req)))
-      {:status 501}
-
-      ;; Request URI Too Long
-      (p/request-uri-too-long? request-uri-too-long? (:uri req))
-      {:status 414}
-
-      ;; Method Not Allowed
-      (not (p/allowed-method? allowed-method? (:request-method req) resource))
-      {:status 405}
-
-      :otherwise
-      (if-let [resource-metadata (resource-metadata {})]
-        ;; Resource exists - follow the exists chain
+      (-> {:magic ::context
+           :content-type (delay (throw (ex-info "TODO: Negotiate content-type" {})))}
         (d/chain
-         resource-metadata
-         (fn [resource-metadata]
-           (or (check-cacheable resource-metadata)
-               (d/chain
-                resource-metadata
+         (nonblocking-exit-when-not service-available? (p/service-available? service-available?) 503)
+         (exit-when-not (p/known-method? known-method? method) 501)
+         (exit-when (p/request-uri-too-long? request-uri-too-long? (:uri req)) 414)
+         (exit-when-not (p/allowed-method? allowed-method? method swagger-ops) 405)
 
-                (fn [resource-metadata]
-                  (if model
-                    (d/chain
-                     (p/model model {:params (:params req)})
-                     (fn [model] (assoc resource-metadata :model model)))
-                    resource-metadata))
+         ;; TODO Malformed
 
-                (fn [resource-metadata]
-                  (cond
-                    ;; TODO Render model as per negotiated content-type
-                    (:model resource-metadata)
-                    {:status 200
-                     :body (if body
-                             (p/body body {:model (:model resource-metadata)
-                                           :content-type "text/plain"})
-                             (pr-str (:model resource-metadata)))}
+         ;; TODO Unauthorized
+         ;; TODO Forbidden
 
-                    :otherwise
-                    {:status 404
-                     :body "Not found"}
-                    ))))))
+         ;; TODO Not implemented (if unknown Content-* header)
 
-        ;; Resource does not exist - follow the not-exists chain
-        {:status 404}))))
+         ;; TODO Unsupported media type
+
+         ;; TODO Request entity too large - shouldn't we do this later,
+         ;; when we determine we actually need to read the request body?
+
+         ;; TODO OPTIONS
+
+         ;; Content-negotiation - partly done here to throw back to the client any errors
+         #(assoc-in % [:response :content-type]
+                    (best-allowed-content-type
+                     (or (get-in req [:headers "accept"]) "*/*")
+                     produces))
+
+         ;; Does the resource exist?
+         (fn [ctx]
+           (d/chain
+            (p/find-resource find-resource {:params (:params req)})
+            #(assoc ctx :resource %)))
+
+         (fn [{:keys [resource]}]
+           (if resource
+             {:status 200}
+             {:status 404})
+           )
+
+         #_(if-let [resource (p/find-resource find-resource {:params (:params req)})]
+             ;; Resource exists - follow the exists chain
+             ;; TODO if this returns a deferred, then wrap it in a d/timeout!
+             (d/chain
+              metadata
+              (fn [metadata]
+                (or
+                 (check-cacheable metadata)
+                 (d/chain
+                  metadata
+                  (fn [metadata]
+                    (merge
+                     {:metadata metadata
+                      :content-type (delay "text/plain")}
+                     (when model
+                       (d/chain
+                        (p/model model {:params (:params req)})
+                        (fn [model] {:model model})))))
+
+                  (fn [{:keys [metadata model] :as resource}]
+                    (cond
+                      ;; TODO Render model as per negotiated content-type
+                      body
+                      (and model body)
+                      {:status 200
+                       :body (if body
+                               (p/body body {:model (:model resource-metadata)
+                                             :content-type "text/plain"})
+                               (pr-str (:model resource-metadata)))}
+
+                      :otherwise
+                      {:status 404
+                       :body "Not found"}
+                      ))))))
+
+             ;; Resource does not exist - follow the not-exists chain
+             {:status 404}))
+
+        ;; Handle exits
+        (d/catch clojure.lang.ExceptionInfo #(ex-data %))
+
+
+        ))))
 
 ;; TODO: pets should return resource-metadata with a (possibly deferred) model
 
