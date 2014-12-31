@@ -15,7 +15,6 @@
 ;; "It is better to have 100 functions operate on one data structure than 10 functions on 10 data structures." —Alan Perlis
 
 
-
 ;; TODO For authentication, implementation is out-of-band, in Ring
 ;; middleware or another mechanism for assoc'ing evidence of credentials
 ;; to the Ring request.
@@ -59,15 +58,11 @@
 (defn make-handler
   [swagger-ops
    {:keys
-    [
-     service-available?                 ; async-supported
+    [service-available?                 ; async-supported
      known-method?
      request-uri-too-long?
      allowed-method?
      find-resource                      ; async-supported
-
-     ;; a function, may return a deferred value. Parameters
-     ;; indicate the (negotiated) content type.
 
      ;; The allowed? callback will contain the entire resource, the callback must
      ;; therefore extract the OAuth2 scopes, or whatever is needed to
@@ -127,6 +122,7 @@
             (p/find-resource find-resource {:params (:params req)})
             #(assoc ctx :resource %)))
 
+         ;; Split the flow based on the existence of the resource
          (fn [{:keys [resource] :as ctx}]
            (if resource
 
@@ -139,45 +135,7 @@
              ;; 'Not exists' flow
              (d/chain
               ctx
-              (constantly {:status 404}))))
-
-         #_(if-let [resource (p/find-resource find-resource {:params (:params req)})]
-             ;; Resource exists - follow the exists chain
-             ;; TODO if this returns a deferred, then wrap it in a d/timeout!
-             (d/chain
-              metadata
-              (fn [metadata]
-                (or
-                 (check-cacheable metadata)
-                 (d/chain
-                  metadata
-                  (fn [metadata]
-                    (merge
-                     {:metadata metadata
-                      :content-type (delay "text/plain")}
-                     (when model
-                       (d/chain
-                        (p/model model {:params (:params req)})
-                        (fn [model] {:model model})))))
-
-                  (fn [{:keys [metadata model] :as resource}]
-                    (cond
-                      ;; TODO Render model as per negotiated content-type
-                      body
-                      (and model body)
-                      {:status 200
-                       :body (if body
-                               (p/body body {:model (:model resource-metadata)
-                                             :content-type "text/plain"})
-                               (pr-str (:model resource-metadata)))}
-
-                      :otherwise
-                      {:status 404
-                       :body "Not found"}
-                      ))))))
-
-             ;; Resource does not exist - follow the not-exists chain
-             {:status 404}))
+              (constantly {:status 404})))))
 
         ;; Handle exits
         (d/catch clojure.lang.ExceptionInfo #(ex-data %))
