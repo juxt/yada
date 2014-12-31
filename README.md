@@ -1,6 +1,6 @@
 # yada
 
-yada - _Y_et _A_nother _D_ependency! _A_rrrrrgh!!!
+yada - <b>Y</b>et _A_nother _D_ependency! _A_rrrrrgh!!!
 
 yada is an experimental REST library for Clojure, building on the ideas
 within [Liberator](http://clojure-liberator.github.io/liberator/), and
