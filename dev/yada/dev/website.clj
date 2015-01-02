@@ -1,3 +1,5 @@
+;; Copyright © 2015, JUXT LTD.
+
 (ns yada.dev.website
   (:require
    [com.stuartsierra.component :as component]

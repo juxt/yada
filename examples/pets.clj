@@ -1,3 +1,5 @@
+;; Copyright © 2015, JUXT LTD.
+
 (ns pets
   (:require
    [bidi.swagger :refer (map->SwaggerOperations)]))

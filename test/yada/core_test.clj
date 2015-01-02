@@ -1,3 +1,5 @@
+;; Copyright © 2015, JUXT LTD.
+
 (ns yada.core-test
   (:require
    [bidi.bidi :refer (match-route)]

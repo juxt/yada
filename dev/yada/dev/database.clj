@@ -1,3 +1,5 @@
+;; Copyright © 2015, JUXT LTD.
+
 (ns yada.dev.database
   (:require
    [com.stuartsierra.component :refer (Lifecycle)]

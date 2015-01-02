@@ -1,3 +1,5 @@
+;; Copyright © 2015, JUXT LTD.
+
 (ns yada.dev.system
   "Components and their dependency relationships"
   (:refer-clojure :exclude (read))
