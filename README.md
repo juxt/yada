@@ -7,7 +7,7 @@ within [Liberator](http://clojure-liberator.github.io/liberator/), and
 from experiences using it on commercial projects.
 
 As such, this is a toy, and is not nearly ready for use. If and when it
-is released, leiningen dependency information will be posted here.
+is released, leiningen dependency details will be posted here.
 
 ## Design goals
 
