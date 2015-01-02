@@ -9,4 +9,4 @@
   (is
    (=
     (best-allowed-content-type "text/html" ["text/plain" "text/html"])
-    ["text" "html"])))
+    "text/html")))
