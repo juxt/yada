@@ -8,8 +8,8 @@
   (request-uri-too-long? [_ uri])
   (allowed-method? [_ method swagger-ops])
   (find-resource [_ opts])
-  (model [_ opts])
-  (body [_ opts]))
+  (entity [_ resource])
+  (body [_ entity content-type]))
 
 (extend-protocol Callbacks
   Boolean
@@ -18,30 +18,40 @@
   (allowed-method? [b _ _] b)
   (find-resource [b opts] (when b {}))
 
-  clojure.lang.IFn
+  clojure.lang.Fn
   (service-available? [f] (f))
   (known-method? [f method] (f method))
   (request-uri-too-long? [f uri] (f uri))
   (allowed-method? [f method op] (f method op))
   (find-resource [f opts] (f opts))
-  (model [f opts] (f opts))
-  (body [f opts] (f opts))
+  (entity [f resource] (f resource))
+  (body [f entity content-type] (f entity content-type))
 
   String
-  (body [s opts] s)
+  (entity [s _] s)
+  (body [s _ _] s)
 
   Number
   (request-uri-too-long? [n uri]
     (> (.length uri) n))
 
-  clojure.lang.PersistentHashSet
+  java.util.Set
   (known-method? [set method]
     (contains? set method))
   (allowed-method? [set method op]
     (contains? set method))
 
-  clojure.lang.PersistentArrayMap
-  (model [m opts] m)
+  java.util.Map
+  (find-resource [m opts] m)
+  (entity [m resource] m)
+  (body [m entity content-type]
+    ;; Maps indicate keys are exact content-types
+    ;; For matching on content-type, use a vector of vectors (TODO)
+    (when-let [delegate (get m content-type)]
+      (println "delegate is" delegate)
+      (body delegate entity content-type)))
 
   nil
-  (find-resource [_ opts] nil))
+  ;; TODO: is this needed?
+  (find-resource [_ opts] nil)
+  )

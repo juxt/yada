@@ -10,7 +10,10 @@
    [clojure.tools.reader.reader-types :refer (indexing-push-back-reader)]
    [com.stuartsierra.component :refer (system-map system-using using)]
    [modular.maker :refer (make)]
+   [modular.bidi :refer (new-router new-static-resource-service)]
+   ;;[yada.dev.router :refer (new-router)]
    [yada.dev.website :refer (new-website)]
+   [yada.dev.api :refer (new-api-service)]
    [yada.dev.database :refer (new-database)]
    [modular.aleph :refer (new-http-server)]))
 
@@ -52,19 +55,36 @@
       (make new-database config)
       (using []))))
 
-(defn http-server-components [system config]
+(defn api-components [system config]
   (assoc system
-    :http-server
+    :api
     (->
-      (make new-http-server config)
-      (using []))))
+      (make new-api-service config)
+      (using {:database :database}))))
 
 (defn website-components [system config]
   (assoc system
     :website
     (->
       (make new-website config)
-      (using {:database :database}))))
+      (using {:api :api}))))
+
+(defn swagger-ui-components [system config]
+  (assoc system
+         :swagger-ui
+         (make new-static-resource-service config
+               :uri-context "/swagger-ui"
+               :resource-prefix "META-INF/resources/webjars/swagger-ui/2.0.24")))
+
+(defn router-components [system config]
+  (assoc system
+    :router
+    (make new-router config)))
+
+(defn http-server-components [system config]
+  (assoc system
+    :http-server
+    (make new-http-server config)))
 
 (defn new-system-map
   [config]
@@ -72,12 +92,16 @@
     (apply concat
       (-> {}
         (database-components config)
-        (http-server-components config)
-        (website-components config)))))
+        (api-components config)
+        (website-components config)
+        (swagger-ui-components config)
+        (router-components config)
+        (http-server-components config)))))
 
 (defn new-dependency-map
   []
-  {:http-server {:request-handler :website}})
+  {:http-server {:request-handler :router}
+   :router [:website :api :swagger-ui]})
 
 (defn new-co-dependency-map
   []

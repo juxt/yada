@@ -3,9 +3,11 @@
 (ns yada.core
   (:require
    [manifold.deferred :as d]
+   [hiccup.core :refer (html h)]
    [schema.core :as s]
    [yada.protocols :as p]
    [yada.conneg :refer (best-allowed-content-type)]
+   [yada.content :refer (representation)]
    ))
 
 ;; API specs. are created like this
@@ -30,7 +32,8 @@
      (if (and (some? ~callback) ; guard for performance
               ~expr)
        ;; Exit, intended to be caught with a d/catch
-       (d/error-deferred (ex-info "" {:status ~status}))
+       (d/error-deferred (ex-info "" {:status ~status
+                                      ::http-response true}))
        x#)))
 
 (defmacro nonblocking-exit-when
@@ -44,7 +47,8 @@
 (defmacro exit-when [expr status]
   `(fn [x#]
      (if ~expr
-       (d/error-deferred (ex-info "" {:status ~status}))
+       (d/error-deferred (ex-info "" {:status ~status
+                                      ::http-response true}))
        x#)))
 
 (defmacro exit-when-not [expr status]
@@ -58,43 +62,43 @@
     :otherwise ctx))
 
 (defn make-handler
-  [swagger-ops
+  [swagger-op
    {:keys
     [service-available?                 ; async-supported
      known-method?
      request-uri-too-long?
-     allowed-method?
-     find-resource                      ; async-supported
+     ;; allowed-method?
 
      ;; The allowed? callback will contain the entire resource, the callback must
      ;; therefore extract the OAuth2 scopes, or whatever is needed to
      ;; authorize the request.
-     allowed?
+     ;; allowed?
 
-     ;; model determines a value, possibly deferred, that will be
-     ;; converted to the negotiated content-type and returned to the
-     ;; client as the entity body.
-     model
-
-     body
+     find-resource                      ; async-supported
+     entity                             ; async-supported
+     body                               ; async-supported
      ]
     :or {known-method? #{:get :put :post :delete :options :head}
          request-uri-too-long? 4096
-         allowed-method? (-> swagger-ops keys set)
-         find-resource true
+         ;; allowed-method? (-> swagger-ops keys set)
+         find-resource true             ; by default the resource exists
+         entity (fn [resource]
+                  {:magic ::default-content
+                   :message "Placeholder"
+                   :resource resource})
+         body {}
          }}]
 
   (fn [req]
     (let [method (:request-method req)
-          produces (get-in swagger-ops [method :produces])]
+          produces (:produces swagger-op)]
 
-      (-> {:magic ::context
-           :content-type (delay (throw (ex-info "TODO: Negotiate content-type" {})))}
+      (-> {}
         (d/chain
          (nonblocking-exit-when-not service-available? (p/service-available? service-available?) 503)
          (exit-when-not (p/known-method? known-method? method) 501)
          (exit-when (p/request-uri-too-long? request-uri-too-long? (:uri req)) 414)
-         (exit-when-not (p/allowed-method? allowed-method? method swagger-ops) 405)
+         ;; (exit-when-not (p/allowed-method? allowed-method? method swagger-ops) 405)
 
          ;; TODO Malformed
 
@@ -117,11 +121,17 @@
                      produces))
 
          ;; Does the resource exist? Call find-resource, which returns
-         ;; the resource's metadata (optionally deferred to prevent
-         ;; blocking this thread)
+         ;; the resource, containing the resource's metadata (optionally
+         ;; deferred to prevent blocking this thread). It does not (yet)
+         ;; contain the resource's data. The reason for this is that it
+         ;; would be wasteful to load the resource's data if we can
+         ;; determine that the client already has a copy (see
+         ;; check-cacheable) and return a 304 (Not Modified).
          (fn [ctx]
            (d/chain
-            (p/find-resource find-resource {:params (:params req)})
+            {:params (:params req)}
+            #(p/find-resource find-resource %)
+            #(do (println "post find resource:" %) %)
             #(assoc ctx :resource %)))
 
          ;; Split the flow based on the existence of the resource
@@ -132,7 +142,37 @@
              (d/chain
               ctx
               check-cacheable
-              (constantly {:status 200}))
+
+              ;; OK, let's GET the resource's entity (data)
+              (fn [ctx]
+                (d/chain
+                 (p/entity entity resource)
+                 #(if % %
+                      (d/error-deferred
+                       (ex-info "" {:status 404
+                                    :body "Resource entity not found"
+                                    ::http-response true})))
+                 #(do (println "post entity:" %) %)
+                 #(assoc-in ctx [:resource :entity] %)))
+
+              ;; Create representation
+              (fn [ctx]
+                (let [content-type (get-in ctx [:response :content-type])
+                      entity (get-in ctx [:resource :entity])]
+                  (println "ct is " content-type ", e is" entity)
+                  (d/chain
+                   entity
+                   (fn [entity]
+                     (p/body body entity content-type))
+                   ;; on nil, compose default result (if in dev)
+                   (fn [x] (if x x
+                               (if (= (get-in ctx [:resource :entity :magic]) ::default-content)
+                                 (html [:h1 "Default content, yada yada yada"])
+                                 (representation entity content-type))))
+                   #(assoc-in ctx [:response :body] %))))
+
+              (fn [ctx] {:status 200
+                         :body (get-in ctx [:response :body])}))
 
              ;; 'Not exists' flow
              (d/chain
@@ -140,10 +180,23 @@
               (constantly {:status 404})))))
 
         ;; Handle exits
-        (d/catch clojure.lang.ExceptionInfo #(ex-data %))
+        (d/catch clojure.lang.ExceptionInfo
+            #(let [data (ex-data %)]
+               (if (::http-response data)
+                 data
+                 {:status 500
+                  :body (format "Internal Server Error: %s" (pr-str data))})))
 
+        (d/catch #(do
+                    (throw %)
+                    (identity {:status 500 :body
+                                 (html
+                                  [:body
+                                   [:h1 "Internal Server Error"]
+                                   [:p (str %)]
+                                   [:h2 "Swagger op"]
+                                   [:pre (with-out-str (clojure.pprint/pprint swagger-op))]])})))))))
 
-        ))))
 
 ;; TODO: pets should return resource-metadata with a (possibly deferred) model
 
