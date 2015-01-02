@@ -48,7 +48,6 @@
     ;; Maps indicate keys are exact content-types
     ;; For matching on content-type, use a vector of vectors (TODO)
     (when-let [delegate (get m content-type)]
-      (println "delegate is" delegate)
       (body delegate entity content-type)))
 
   nil

@@ -131,7 +131,6 @@
            (d/chain
             {:params (:params req)}
             #(p/find-resource find-resource %)
-            #(do (println "post find resource:" %) %)
             #(assoc ctx :resource %)))
 
          ;; Split the flow based on the existence of the resource
@@ -152,14 +151,12 @@
                        (ex-info "" {:status 404
                                     :body "Resource entity not found"
                                     ::http-response true})))
-                 #(do (println "post entity:" %) %)
                  #(assoc-in ctx [:resource :entity] %)))
 
               ;; Create representation
               (fn [ctx]
                 (let [content-type (get-in ctx [:response :content-type])
                       entity (get-in ctx [:resource :entity])]
-                  (println "ct is " content-type ", e is" entity)
                   (d/chain
                    entity
                    (fn [entity]
