@@ -67,6 +67,7 @@
                     :find-resource false)]
       (is (= (-> response :status) 404)))))
 
+
 ;; TODO: Response body coercion
 ;; TODO: Auth
 ;; TODO: Conneg

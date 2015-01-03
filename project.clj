@@ -26,6 +26,7 @@
                     [juxt.modular/aleph "0.0.2"]
                     [ring-mock "0.1.5"]
                     [org.webjars/swagger-ui "2.0.24"]
+                    [cheshire "5.4.0"]
                     ]
 
                    :source-paths ["dev" "examples"]}})
