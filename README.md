@@ -4,10 +4,12 @@
 
 yada is an experimental REST library for Clojure, building on the ideas
 within [Liberator](http://clojure-liberator.github.io/liberator/), and
-from experiences using it on commercial projects.
+from experiences using it on commercial projects. Its feature-set and
+rationale is very similar to [Ratpack](http://www.ratpack.io/), but
+designed for Clojure.
 
-As such, this is a toy, and is not nearly ready for use. If and when it
-is released, leiningen dependency details will be posted here.
+This is still in an experimental phase and not yet ready for use. When
+it is released, leiningen dependency details will be posted here.
 
 ## Design goals
 
@@ -22,9 +24,7 @@ information about a resource needs to be loaded from a remote datastore.
 
 ### Error handling
 
-### Easy debugging
-
-Avoid long Liberator stack traces
+Ensure that when errors happen, they are handled properly.
 
 ### Data driven
 
@@ -33,7 +33,7 @@ on data rather than functions or macros. For example, compare the amount
 of code required to adapt bidi to Swagger compared to the same for
 Compojure.
 
-### Swagger compatibility
+### First-class Swagger support
 
 Documentation is a critical component of any web API, support for it
 should be built in. Today, it seems like Swagger has built up a leading
@@ -107,6 +107,13 @@ the composeability.
 
 - debugging: stack traces are unwieldly
 - async is very difficult
+
+### Data > API > DSL
+
+A Liberator resource is almost like a map, but the values are mostly
+functions. Where Liberator does accept data, such as which HTTP methods
+are supported, this works well. Data is readily composed and
+manipulated. Yada pushes the data model further.
 
 ## Comparison with Pedestal
 
