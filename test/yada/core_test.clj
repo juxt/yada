@@ -32,7 +32,7 @@
             (get-op-response
              spec (mock/request :get "/pets")
              ;; Check status of slow backend system without blocking this thread.
-             :service-available? #(d/future (Thread/sleep 1) false))]
+             :service-available? #(future (Thread/sleep 1) false))]
         (is (= (-> response :status) 503)))))
 
   (testing "Not Implemented"

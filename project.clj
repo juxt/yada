@@ -9,7 +9,7 @@
   :dependencies
   [[org.clojure/clojure "1.7.0-alpha4"]
    [prismatic/schema "0.3.3" :exclusions [potemkin]]
-   [manifold "0.1.0-beta5"]
+   [manifold "0.1.0-beta7"]
    [potemkin "0.3.11"]
    [hiccup "1.0.5"]]
 
