@@ -184,15 +184,13 @@
                  {:status 500
                   :body (format "Internal Server Error: %s" (pr-str data))})))
 
-        (d/catch #(do
-                    (throw %)
-                    (identity {:status 500 :body
-                                 (html
-                                  [:body
-                                   [:h1 "Internal Server Error"]
-                                   [:p (str %)]
-                                   [:h2 "Swagger op"]
-                                   [:pre (with-out-str (clojure.pprint/pprint swagger-op))]])})))))))
+        (d/catch #(identity {:status 500 :body
+                             (html
+                              [:body
+                               [:h1 "Internal Server Error"]
+                               [:p (str %)]
+                               [:h2 "Swagger op"]
+                               [:pre (with-out-str (clojure.pprint/pprint swagger-op))]])}))))))
 
 
 ;; TODO: pets should return resource-metadata with a (possibly deferred) model
