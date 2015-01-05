@@ -130,3 +130,10 @@ latter.
 Pedestal uses an interceptor approach
 
 Oh, and Yada has first-class support for Swagger.
+
+### Other references
+
+[octohipster](https://github.com/myfreeweb/octohipster)
+[ring-swagger](https://github.com/metosin/ring-swagger)
+[Ratpack](https://ratpack.io)
+[Swagger](https://swagger.io)

@@ -7,13 +7,6 @@
 
 ;; A pet store database
 
-(defn find-pets [db]
-  @(:atom db))
-
-(defn find-pet-by-id [db id]
-  (when-let [row (get @(:atom db) id)]
-    (assoc row :id id)))
-
 (defn seed-database [db]
   (reset! (:atom db)
           {"001" {:name "Nemo" :animal "Fish"}

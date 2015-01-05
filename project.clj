@@ -19,11 +19,12 @@
   :profiles {:dev {:dependencies
                    [
                     [com.stuartsierra/component "0.2.2"]
-                    [bidi "1.13.0"]
+                    [bidi "1.14.0-SNAPSHOT"]
                     [org.clojure/tools.namespace "0.2.5"]
                     [juxt.modular/maker "0.5.0"]
-                    [juxt.modular/bidi "0.7.0" :exclusions [bidi]]
+                    [juxt.modular/bidi "0.7.1-SNAPSHOT" :exclusions [bidi]]
                     [juxt.modular/aleph "0.0.2"]
+                    [juxt.modular/test "0.1.0"]
                     [ring-mock "0.1.5"]
                     [org.webjars/swagger-ui "2.0.24"]
                     [cheshire "5.4.0"]

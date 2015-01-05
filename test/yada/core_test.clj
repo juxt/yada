@@ -2,13 +2,32 @@
 
 (ns yada.core-test
   (:require
+   [com.stuartsierra.component :refer (system-using system-map)]
    [bidi.bidi :refer (match-route)]
    [clojure.core.match :refer (match)]
    [clojure.test :refer :all]
    [yada.core :refer :all]
    [manifold.deferred :as d]
+   [modular.test :refer (with-system-fixture *system*)]
    [ring.mock.request :as mock]
-   [pets :refer (pets-spec) :rename {pets-spec spec}]))
+   [yada.dev.api :refer (new-api-service)]
+   [yada.dev.database :refer (new-database)]
+   [pets :refer (pets-api)]))
+
+(defn new-system
+  "Define a minimal system which is just enough for the tests in this
+  namespace to run"
+  []
+  (system-using
+   (system-map
+    :database (new-database)
+    :api (new-api-service))
+    {}))
+
+(use-fixtures :each (with-system-fixture new-system))
+
+(defn get-api []
+  (-> *system* :api :api))
 
 (defn get-op-response [spec req & {:as opts}]
   (let [matched (match-route spec (:uri req))
@@ -20,41 +39,41 @@
   (testing "Service Unavailable"
 
     (let [response (get-op-response
-                    spec (mock/request :get "/pets") :service-available? false)]
+                    (get-api) (mock/request :get "/pets") :service-available? false)]
       (is (= (-> response :status) 503)))
 
     (let [response (get-op-response
-                    spec (mock/request :get "/pets") :service-available? true)]
+                    (get-api) (mock/request :get "/pets") :service-available? true)]
       (is (not= (-> response :status) 503)))
 
     (testing "Deferred"
       (let [response
             (get-op-response
-             spec (mock/request :get "/pets")
+             (get-api) (mock/request :get "/pets")
              ;; Check status of slow backend system without blocking this thread.
              :service-available? #(future (Thread/sleep 1) false))]
         (is (= (-> response :status) 503)))))
 
   (testing "Not Implemented"
-    (let [response (get-op-response spec (mock/request :play "/pets"))]
+    (let [response (get-op-response (get-api) (mock/request :play "/pets"))]
       (is (= (-> response :status) 501)))
-    (let [response (get-op-response spec (mock/request :play "/pets")
+    (let [response (get-op-response (get-api) (mock/request :play "/pets")
                                     :known-method? (fn [x] (= x :play)))]
       (is (not= (-> response :status) 501))))
 
   (testing "Request URI Too Long"
-    (let [response (get-op-response spec (mock/request :get "/pets")
+    (let [response (get-op-response (get-api) (mock/request :get "/pets")
                                     :request-uri-too-long? 4)]
       (is (= (-> response :status) 414))))
 
   ;; TODO Reinstate - can't do this without knowledge of other operations
   #_(testing "Method Not Allowed"
-    (let [response (get-op-response spec (mock/request :put "/pets"))]
-      (is (= (-> response :status) 405))))
+      (let [response (get-op-response (get-api) (mock/request :put "/pets"))]
+        (is (= (-> response :status) 405))))
 
   (testing "OK"
-    (let [response (get-op-response spec (-> (mock/request :get "/pets")
-                                           (mock/header "Accept" "text/html")))]
+    (let [response (get-op-response (get-api) (-> (mock/request :get "/pets")
+                                                (mock/header "Accept" "text/html")))]
       (is (= (-> response :status) 200))
       ;; Some default exists
       (is (not (nil? (-> response :body))))
@@ -62,7 +81,7 @@
 
   (testing "Not found"
     (let [response (get-op-response
-                    spec
+                    (get-api)
                     (mock/request :get "/pets/100")
                     :find-resource false)]
       (is (= (-> response :status) 404)))))
