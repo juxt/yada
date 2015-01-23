@@ -1,11 +1,11 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(ns yada.dev.api
+(ns yada.dev.api-v1
   (:require
    [com.stuartsierra.component :refer (Lifecycle using)]
    [modular.bidi :refer (WebService)]
    [schema.core :as s]
-   [pets :as pets]
+   [pets-v1 :as pets]
    ))
 
 (defrecord ApiService [database]
@@ -14,7 +14,7 @@
   (stop [this] this)
   WebService
   (request-handlers [this] {})
-  (routes [this] (:api this) #_["/api" (fn [_] {:status 200 :body "api2"})] #_(:api this))
+  (routes [this] (:api this))
   (uri-context [_] ""))
 
 (defn new-api-service [& {:as opts}]

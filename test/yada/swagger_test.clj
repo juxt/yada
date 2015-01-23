@@ -12,16 +12,17 @@
    [bidi.ring :refer (Handle handle-request)]
 
    [clojure.pprint :refer (pprint)]
-   [pets :refer (pets-api)])
-  (:import (yada.swagger ResourceListing)))
+   [pets :refer (pets-api)]
+   [pets-v1 :as pets-v1])
+  (:import (yada.swagger_v1 ResourceListing)))
 
 (deftest spec
   (testing "Spec publish"
     (let [{:keys [handler] :as mc}
           (match-route
-           (pets-api nil) "/api/api-docs")]
+           (pets-v1/pets-api nil) "/api/api-docs")]
       (is handler)
-      (is (instance? yada.swagger.ResourceListing handler))
+      (is (instance? yada.swagger_v1.ResourceListing handler))
       (is (satisfies? Handle handler))
       (is (= (set (keys mc)) #{:yada.swagger/apis
                                :yada.swagger/base-path
