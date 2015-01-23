@@ -1,8 +1,11 @@
 (ns yada.swagger
   (:require
    [bidi.bidi :refer (Matched resolve-handler unresolve-handler succeed match-pair)]
-   [bidi.ring :refer (Handle)])
-  )
+   [bidi.ring :refer (Handle)]
+   [cheshire.core :as json]
+   [cheshire.generate :refer (JSONable write-string)]
+   [camel-snake-kebab :as csk])
+  (:import (clojure.lang Keyword)))
 
 (defrecord Op [op-defn]
   Matched
@@ -11,6 +14,13 @@
   Handle
   (handle-request [_ req match-context]
     {:status 200 :body "Op! TODO"}))
+
+#_(extend-protocol JSONable
+  Keyword
+  (to-json [t jg]
+    (write-string ^JsonGenerator jg "XXX"))
+  )
+
 
 (defn op [op-defn]
   (->Op op-defn))
@@ -26,7 +36,10 @@
 
   Handle
   (handle-request [_ req match-context]
-    {:status 200 :body "Swagger! TODO"}
+    {:status 200
+     :headers {"content-type" "application/json"}
+     :body (json/encode spec {:pretty true
+                              :key-fn (fn [x] (csk/->camelCase (name x)))})}
     ))
 
 (defn swagger [spec]

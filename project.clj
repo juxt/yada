@@ -11,7 +11,9 @@
    [prismatic/schema "0.3.3" :exclusions [potemkin]]
    [manifold "0.1.0-beta7"]
    [potemkin "0.3.11"]
-   [hiccup "1.0.5"]]
+   [hiccup "1.0.5"]
+   [cheshire "5.4.0"]
+   [camel-snake-kebab "0.1.4"]]
 
   :repl-options {:init-ns user
                  :welcome (println "Type (dev) to start")}
@@ -26,8 +28,6 @@
                     [juxt.modular/aleph "0.0.2"]
                     [juxt.modular/test "0.1.0"]
                     [ring-mock "0.1.5"]
-                    [org.webjars/swagger-ui "2.0.24"]
-                    [cheshire "5.4.0"]
-                    ]
+                    [org.webjars/swagger-ui "2.0.24"]]
 
                    :source-paths ["dev" "examples"]}})
