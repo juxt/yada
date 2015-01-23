@@ -11,7 +11,7 @@
    [com.stuartsierra.component :refer (system-map system-using using)]
    [modular.maker :refer (make)]
    [modular.bidi :refer (new-router new-static-resource-service)]
-   [yada.dev.website :refer (new-website)]
+   [yada.dev.swagger-ui :refer (new-website)]
    [yada.dev.api :refer (new-api-service)]
    [yada.dev.database :refer (new-database)]
    [modular.aleph :refer (new-http-server)]))

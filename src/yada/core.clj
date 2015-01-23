@@ -62,8 +62,7 @@
     :otherwise ctx))
 
 (defn make-handler
-  [swagger-op
-   {:keys
+  [{:keys
     [service-available?                 ; async-supported
      known-method?
      request-uri-too-long?
@@ -77,6 +76,8 @@
      find-resource                      ; async-supported
      entity                             ; async-supported
      body                               ; async-supported
+
+     produces
      ]
     :or {known-method? #{:get :put :post :delete :options :head}
          request-uri-too-long? 4096
@@ -90,15 +91,14 @@
          }}]
 
   (fn [req]
-    (let [method (:request-method req)
-          produces (:produces swagger-op)]
+    (let [method (:request-method req)]
 
       (-> {}
         (d/chain
          (nonblocking-exit-when-not service-available? (p/service-available? service-available?) 503)
          (exit-when-not (p/known-method? known-method? method) 501)
          (exit-when (p/request-uri-too-long? request-uri-too-long? (:uri req)) 414)
-         ;; (exit-when-not (p/allowed-method? allowed-method? method swagger-ops) 405)
+         ;; (exit-when-not (p/allowed-method? allowed-method? method) 405)
 
          ;; TODO Malformed
 
@@ -118,7 +118,7 @@
          #(assoc-in % [:response :content-type]
                     (best-allowed-content-type
                      (or (get-in req [:headers "accept"]) "*/*")
-                     produces))
+                     (p/produces produces)))
 
          ;; Does the resource exist? Call find-resource, which returns
          ;; the resource, containing the resource's metadata (optionally
@@ -189,8 +189,7 @@
                               [:body
                                [:h1 "Internal Server Error"]
                                [:p (str %)]
-                               [:h2 "Swagger op"]
-                               [:pre (with-out-str (clojure.pprint/pprint swagger-op))]])}))))))
+                               ])}))))))
 
 
 ;; TODO: pets should return resource-metadata with a (possibly deferred) model

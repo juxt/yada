@@ -31,7 +31,8 @@
 
 (defn get-op-response [spec req & {:as opts}]
   (let [matched (match-route spec (:uri req))
-        handler (make-handler (:handler matched) opts)]
+        ;; Not sure, I think we should just called handle-request on the matched
+         handler (make-handler (:handler matched) opts)]
     (let [res (handler (assoc req :route-params (:route-params matched)))]
       (if (d/deferrable? res) @res res))))
 
