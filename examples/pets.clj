@@ -1,6 +1,6 @@
 (ns pets
   (:require
-   [yada.swagger :refer (swagger op)]))
+   [yada.swagger :refer (swagger)]))
 
 (def VERSION "1.0.0")
 
@@ -17,10 +17,16 @@
                      :url "http://github.com/gruntjs/grunt/blob/master/LICENSE-MIT"}}
     :base-path "/api/1.0.0"
 
-    :paths {"/pets" {:get (op {:description "Returns all pets from the system that the user has access to"
-                               :operation-id :find-pets
-                               :responses {200 {:description "pet response"}}})
-                     :post (op {:description "Creates a new pet in the store. Duplicates are allowed"
-                                :operation-id :add-pet
-                                :responses {200 {:description "pet response"}}})}
-            ["/pets/" :id] {:get {:description "Returns a pet based on a single ID"}}}}))
+    :paths [["/pets"
+             {:get {:description "Returns all pets from the system that the user has access to"
+                    :operation-id :find-pets
+                    :responses {200 {:description "pet response"}}}
+              :post {:description "Creates a new pet in the store. Duplicates are allowed"
+                     :operation-id :add-pet
+                     :responses {200 {:description "pet response"}}}}
+
+             ]
+            [["/pets/" :id] {:get {:description "Returns a pet based on a single ID"}}]
+
+            ]
+    }))
