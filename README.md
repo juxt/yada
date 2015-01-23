@@ -131,6 +131,17 @@ Pedestal uses an interceptor approach
 
 Oh, and Yada has first-class support for Swagger.
 
+## Comparison to other swagger libraries
+
+(ref. devcon swagger talk)
+
+Most other libraries force developers to choose one of these development processes:
+
+* Define the swappger spec first - generate implementation stubs
+* Use annotations in the implementation code and generate the swagger specs
+
+Code generation techniques remove the option to change the API once the specs have been developed. Annotations on the implementation code are not ideal either. Yada uses a machine-readable information model. This information model is augmented with developer-provided values and callbacks to implement the API. The API documentation and implementation are therefore much more closely aligned.
+
 ### Other references
 
 [octohipster](https://github.com/myfreeweb/octohipster)

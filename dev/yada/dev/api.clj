@@ -5,7 +5,8 @@
    [com.stuartsierra.component :refer (Lifecycle using)]
    [modular.bidi :refer (WebService)]
    [schema.core :as s]
-   [pets :as pets]))
+   [pets :as pets]
+   ))
 
 (defrecord ApiService [database]
   Lifecycle

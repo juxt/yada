@@ -4,7 +4,10 @@
   (:require
    [yada.swagger :refer (->ResourceListing
                          ->Resource
-                         map->Operation)]
+                         map->Operation)
+    :rename {->ResourceListing rl
+             ->Resource r
+             map->Operation op}]
    [manifold.deferred :as d]
    [bidi.bidi :as bidi]))
 
@@ -15,15 +18,25 @@
   (when-let [row (get @(:atom db) id)]
     (assoc row :id id)))
 
+(def VERSION "1.0.0")
+
 (defn pets-api [database]
-  ["/api/"
-   (->ResourceListing
-    {:api-version "1.0.0"}
-    [["pet" (->Resource
-             {:description "Operations about pets"}
+  [(format "/api/%s/" VERSION)
+   (rl
+    {:api-version VERSION
+     :info {:title "Swagger Sample App"
+            :description "This is a sample server Petstore server"
+            :termsOfServiceUrl "http://helloreverb.com/terms/"
+            :contact "apiteam@wordnik.com",
+            :license "Apache 2.0",
+            :licenseUrl "http://www.apache.org/licenses/LICENSE-2.0.html"
+            }}
+    [["pet" (r
+             {:description "Operations about pets"
+              :produces ["application/json" "application/xml" "text/plain" "text/html"]}
              [["pets"
                {:get
-                (map->Operation
+                (op
                  {:description "Returns all pets from the system that the user has access to"
                   :operationId :findPets
                   :scopes [""]
@@ -42,26 +55,27 @@
                   :responses {200 {:description "pet.response"
                                    :schema []}}
 
-                  :yada/handler
+                  :handler
                   {:entity (fn [resource] (d/future (find-pets database)))
                    :body {}}
 
                   })
                 :post
-                (map->Operation
+                (op
                  {:description "Creates a new pet in the store.  Duplicates are allowed"
                   :operationId :addPet
                   :body "TODO: addPet body"})}]
 
               [["pets/" :id]
                {:get
-                (map->Operation
+                (op
                  {:description "Returns a user based on a single ID, if the user does not have access to the pet"
                   :operationId :findPetById
                   :produces ["application/json" "application/xml" "text/xml" "text/html"]
-                  :find-resource (fn [opts] {:id (-> opts :params :id)})
-                  :entity (fn [{id :id}] (d/future (find-pet-by-id database id)))
+
+                  :handler {:find-resource (fn [opts] {:id (-> opts :params :id)})
+                            :entity (fn [{id :id}] (d/future (find-pet-by-id database id)))}
                   })}]])]
-     ["user" (->Resource {:description "Operations about user"} [])]
-     ["store" (->Resource {:description "Operations about store"} [])]
+     ["user" (r {:description "Operations about user"} [])]
+     ["store" (r {:description "Operations about store"} [])]
      ])])

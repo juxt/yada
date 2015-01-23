@@ -8,7 +8,7 @@
    [schema.core :as s]
    yada.swagger
    [clojure.java.io :as io]
-   [bidi.server :as br]
+   [bidi.ring :as br]
    [hiccup.core :refer (html)]
    [cheshire.core :as json]
    clojure.pprint

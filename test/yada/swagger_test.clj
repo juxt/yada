@@ -3,11 +3,41 @@
 (ns yada.swagger-test
   (:require
 ;;   [yada.swagger :refer (map->Resource)]
+   [com.stuartsierra.component :refer (system-using system-map)]
    [bidi.bidi :refer (path-for match-route)]
    [clojure.test :refer :all]
    [ring.mock.request :refer :all]
    [clojure.data.json :as json]
-   [schema.core :as s]))
+   [schema.core :as s]
+   [bidi.ring :refer (Handle handle-request)]
+
+   [clojure.pprint :refer (pprint)]
+   [pets :refer (pets-api)])
+  (:import (yada.swagger ResourceListing)))
+
+(deftest spec
+  (testing "Spec publish"
+    (let [{:keys [handler] :as mc}
+          (match-route
+           (pets-api nil) "/api/api-docs")]
+      (is handler)
+      (is (instance? yada.swagger.ResourceListing handler))
+      (is (satisfies? Handle handler))
+      (is (= (set (keys mc)) #{:yada.swagger/apis
+                               :yada.swagger/base-path
+                               :yada.swagger/type
+                               :handler}))
+      (let [response (handle-request handler {} mc)]
+        (is response)
+        (println (:body response))
+
+        )
+
+
+      )
+
+    ))
+
 
 #_(def routes
   ["/a"
