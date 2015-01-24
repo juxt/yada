@@ -1,3 +1,11 @@
+;; Copyright © 2015, JUXT LTD.
+
+;; This possibly belongs in another library. It depends on bidi, but is
+;; independent of the yada handler. Break swag out of yada, leaving yada
+;; as an 'async liberator'. It should be easy to use the swagger parts,
+;; but plug-in a custom handler. It should also be useful to use yada
+;; without swagger.
+
 (ns yada.swagger
   (:require
    [bidi.bidi :refer (Matched resolve-handler unresolve-handler succeed match-pair unmatch-pair)]
@@ -66,4 +74,9 @@
 
 (defn swagger [spec]
   [(or (:base-path spec) "/")
-   (->Swagger (assoc spec :swagger "2.0"))])
+   (->Swagger (-> spec
+                ((partial merge {:swagger "2.0"}))
+                (update-in [:info] (partial merge {:title "Untitled"
+                                                   :version "0.0.1"}))
+
+                ))])

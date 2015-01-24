@@ -6,15 +6,15 @@
 
 (defn pets-api [database]
   (swagger
-   {:info {:version VERSION
-           :title "Swagger Petstore"
+   {:info {:title "Swagger Petstore"
            :description "A sample API that uses a petstore as an example to demonstrate features in the swagger-2.0 specification"
            :terms-of-service "http://helloreverb.com/terms/"
            :contact {:name "Wordnik API Team"
                      :email "foo@example.com"
                      :url "http://madskristensen.net"}
            :license {:name "MIT"
-                     :url "http://github.com/gruntjs/grunt/blob/master/LICENSE-MIT"}}
+                     :url "http://github.com/gruntjs/grunt/blob/master/LICENSE-MIT"}
+           :version VERSION}
     :base-path "/api/1.0.0"
 
     :paths [["/pets"
