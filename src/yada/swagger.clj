@@ -139,5 +139,6 @@
                       (when-let [body (-> op :yada/handler :body)]
                         (when (map? body) (set (keys body))))
                       (:produces spec))}
+       (:yada/opts spec)
        (:yada/handler op)))
      req)))

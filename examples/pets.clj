@@ -16,7 +16,7 @@
                      :url "http://github.com/gruntjs/grunt/blob/master/LICENSE-MIT"}
            :version VERSION}
 
-    :base-path "/api/1.0.0"
+    :base-path (str "/api/" VERSION)
 
     :paths [["/pets"
              {:get
@@ -30,6 +30,8 @@
                ;; handler. But turn from map into keyset when
                ;; publishing?
 
+               ;; Do the same for consumes, for the handlers of puts and posts... ?
+
                :yada/handler {:body {"text/html" "These are the pets!"
                                      "application/json" (constantly [{:name "Gorilla"}])}}}
 
@@ -39,7 +41,8 @@
                :responses {200 {:description "pet response"}}}}]
 
             [["/pets/" :id] {:get {:description "Returns a pet based on a single ID"}}]
-
             ]
-    }
+
+    :yada/opts {:service-available? (constantly (future true))}}
+
    handler))
