@@ -66,7 +66,8 @@
     [service-available?                 ; async-supported
      known-method?
      request-uri-too-long?
-     ;; allowed-method?
+
+     allowed-method?
 
      ;; The allowed? callback will contain the entire resource, the callback must
      ;; therefore extract the OAuth2 scopes, or whatever is needed to
@@ -81,7 +82,9 @@
      ]
     :or {known-method? #{:get :put :post :delete :options :head}
          request-uri-too-long? 4096
-         ;; allowed-method? (-> swagger-ops keys set)
+
+         allowed-method? #{:get :head}
+
          find-resource true             ; by default the resource exists
          entity (fn [resource]
                   {:magic ::default-content
@@ -99,7 +102,7 @@
          (nonblocking-exit-when-not service-available? (p/service-available? service-available?) 503)
          (exit-when-not (p/known-method? known-method? method) 501)
          (exit-when (p/request-uri-too-long? request-uri-too-long? (:uri req)) 414)
-         ;; (exit-when-not (p/allowed-method? allowed-method? method) 405)
+         (exit-when-not (p/allowed-method? allowed-method? method) 405)
 
          ;; TODO Malformed
 

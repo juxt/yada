@@ -8,6 +8,7 @@
 
 (ns yada.swagger
   (:require
+   [clojure.set :as set]
    [bidi.bidi :refer (Matched resolve-handler unresolve-handler succeed match-pair unmatch-pair)]
    [bidi.ring :refer (Handle)]
    [cheshire.core :as json]
@@ -100,4 +101,8 @@
 (defrecord DefaultAsyncHandler []
   Handler
   (handle-api-request [_ req spec op]
-    ((make-async-handler {}) req)))
+    ((make-async-handler
+      {:allowed-method?
+       (set/intersection #{:get :put :post :delete :options :head :patch}
+                         (set (keys op)))})
+     req)))
