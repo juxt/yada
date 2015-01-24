@@ -2,16 +2,28 @@
 
 (ns yada.content
   (:require
-   [hiccup.core :refer (html)]))
+   [hiccup.core :refer (html)]
+   [cheshire.core :as json]))
 
 (defprotocol Content
   (representation [_ content-type]))
 
 (defmulti render-map (fn [content content-type] content-type))
+(defmulti render-seq (fn [content content-type] content-type))
 
 (extend-protocol Content
   java.util.Map
-  (representation [content content-type] (render-map content content-type)))
+  (representation [content content-type] (render-map content content-type))
+  clojure.lang.Sequential
+  (representation [content content-type] (render-seq content content-type)))
+
+(defmethod render-map "application/json"
+  [m _]
+  (json/encode m))
+
+(defmethod render-seq "application/json"
+  [s _]
+  (json/encode s))
 
 (defmethod render-map "text/html"
   [m _]

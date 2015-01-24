@@ -15,18 +15,29 @@
            :license {:name "MIT"
                      :url "http://github.com/gruntjs/grunt/blob/master/LICENSE-MIT"}
            :version VERSION}
+
     :base-path "/api/1.0.0"
 
     :paths [["/pets"
-             {:get {:description "Returns all pets from the system that the user has access to"
-                    :operation-id :find-pets
-                    :responses {200 {:description "pet response"}}
-                    :yada/foo :bar}
-              :post {:description "Creates a new pet in the store. Duplicates are allowed"
-                     :operation-id :add-pet
-                     :responses {200 {:description "pet response"}}}}
+             {:get
+              {:description "Returns all pets from the system that the user has access to"
+               :operation-id :find-pets
+               #_:produces #_["text/html" "application/json" "text/csv"]
+               :responses {200 {:description "pet response"}}
 
-             ]
+               ;; TODO: Should we rather put these in :produces?
+               ;; i.e. produces is a map, replaces 'body' in yada's
+               ;; handler. But turn from map into keyset when
+               ;; publishing?
+
+               :yada/handler {:body {"text/html" "These are the pets!"
+                                     "application/json" (constantly [{:name "Gorilla"}])}}}
+
+              :post
+              {:description "Creates a new pet in the store. Duplicates are allowed"
+               :operation-id :add-pet
+               :responses {200 {:description "pet response"}}}}]
+
             [["/pets/" :id] {:get {:description "Returns a pet based on a single ID"}}]
 
             ]

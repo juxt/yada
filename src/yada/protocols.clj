@@ -53,6 +53,9 @@
     (when-let [delegate (get m content-type)]
       (body delegate entity content-type)))
 
+  clojure.lang.PersistentVector
+  (produces [v] (produces (set v)))
+
   nil
   ;; TODO: is this needed?
   (find-resource [_ opts] nil)

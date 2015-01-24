@@ -119,10 +119,13 @@
          ;; TODO OPTIONS
 
          ;; Content-negotiation - partly done here to throw back to the client any errors
-         #(assoc-in % [:response :content-type]
-                    (best-allowed-content-type
-                     (or (get-in req [:headers "accept"]) "*/*")
-                     (p/produces produces)))
+         #(if-let [content-type
+                   (best-allowed-content-type
+                    (or (get-in req [:headers "accept"]) "*/*")
+                    (p/produces produces))]
+            (assoc-in % [:response :content-type] content-type)
+            (d/error-deferred (ex-info "" {:status 406
+                                           ::http-response true})))
 
          ;; Does the resource exist? Call find-resource, which returns
          ;; the resource, containing the resource's metadata (optionally
@@ -165,15 +168,30 @@
                    entity
                    (fn [entity]
                      (p/body body entity content-type))
+
+                   ;; if not already a string, serialize to representation
+                   (fn [body]
+                     (if (string? body)
+                       body
+                       (representation body content-type)))
+
                    ;; on nil, compose default result (if in dev)
                    (fn [x] (if x x
                                (if (= (get-in ctx [:resource :entity :magic]) ::default-content)
                                  (html [:h1 "Default content, yada yada yada"])
+                                 ;; Er, could entity be nil here?
                                  (representation entity content-type))))
-                   #(assoc-in ctx [:response :body] %))))
+                   #(assoc-in ctx [:response :body] %)
+                   #(update-in % [:response :headers] assoc "content-type" content-type))))
 
-              (fn [ctx] {:status 200
-                         :body (get-in ctx [:response :body])}))
+              (fn [ctx]
+                (merge
+                 {:status 200
+                  :headers (get-in ctx [:response :headers])
+                  :body (get-in ctx [:response :body])
+                  }
+                 )
+                ))
 
              ;; 'Not exists' flow
              (d/chain

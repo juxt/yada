@@ -162,7 +162,8 @@
         (some (enpair allowed-types) sorted)
 
         :otherwise
-        (stringify (some (allowed-types-filter (enpair allowed-types)) sorted))))))
+        (when-let [res (some (allowed-types-filter (enpair allowed-types)) sorted)]
+          (stringify res))))))
 
 (defn split-qval [caq]
   (let [[charset & params] (string/split caq #"[\s\r\n]*;[\s\r\n]*")

@@ -40,11 +40,11 @@
     (into {} (mapcat #(map vec (partition 2 (paths "" %))) routes))))
 
 (defprotocol Handler
-  (handle-api-request [_ req spec op] "Handle an API request"))
+  (handle-api-request [_ req spec path-item op] "Handle an API request"))
 
 (extend-protocol Handler
   nil
-  (handle-api-request [_ req spec op]
+  (handle-api-request [_ req spec path-item op]
     {:status 500
      :body (str "No handler specified to handle op: " (pr-str op))}))
 
@@ -65,7 +65,8 @@
      (::handler match-context)
      req
      (::swagger-spec match-context)
-     this)))
+     this
+     (get this (:request-method req)))))
 
 (defn prune-namespaced-keywords
   "Deep remove of namespaced keywords from a map. This is so that extra
@@ -122,9 +123,21 @@
 
 (defrecord DefaultAsyncHandler []
   Handler
-  (handle-api-request [_ req spec op]
+  (handle-api-request [_ req spec path-item op]
+    ;; If op is nil we could respond with a 405 (Method Not Allowed) but
+    ;; we opt for letting the yada handler do this because it might want
+    ;; to handle this situation differently. There might be other
+    ;; responses, (e.g. 503, 403), that override the 405 (e.g.  if
+    ;; revealing a 405 leaks information about the API to an untrusted
+    ;; party).
     ((make-async-handler
-      {:allowed-method?
-       (set/intersection #{:get :put :post :delete :options :head :patch}
-                         (set (keys op)))})
+      (merge
+       {:allowed-method?
+        (set/intersection #{:get :put :post :delete :options :head :patch}
+                          (set (keys path-item)))
+        :produces (or (:produces op)
+                      (when-let [body (-> op :yada/handler :body)]
+                        (when (map? body) (set (keys body))))
+                      (:produces spec))}
+       (:yada/handler op)))
      req)))
