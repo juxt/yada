@@ -4,7 +4,7 @@
 
 (def VERSION "1.0.0")
 
-(defn pets-api [database]
+(defn pets-api [database handler]
   (swagger
    {:info {:title "Swagger Petstore"
            :description "A sample API that uses a petstore as an example to demonstrate features in the swagger-2.0 specification"
@@ -29,4 +29,5 @@
             [["/pets/" :id] {:get {:description "Returns a pet based on a single ID"}}]
 
             ]
-    }))
+    }
+   handler))

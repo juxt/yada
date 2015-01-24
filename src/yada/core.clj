@@ -61,7 +61,7 @@
     false (d/error-deferred (ex-info "Not Modified" {:status 304}))
     :otherwise ctx))
 
-(defn make-handler
+(defn make-async-handler
   [{:keys
     [service-available?                 ; async-supported
      known-method?
@@ -88,6 +88,7 @@
                    :message "Placeholder"
                    :resource resource})
          body {}
+         produces #{"text/html"}
          }}]
 
   (fn [req]

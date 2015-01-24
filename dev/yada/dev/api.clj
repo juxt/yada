@@ -6,15 +6,16 @@
    [modular.bidi :refer (WebService)]
    [schema.core :as s]
    [pets :as pets]
-   ))
+   [yada.swagger :refer (Handler ->DefaultAsyncHandler)]
+   [yada.core :refer (make-async-handler)]))
 
 (defrecord ApiService [database]
   Lifecycle
-  (start [this] (assoc this :api (pets/pets-api database)))
+  (start [this] (assoc this :api (pets/pets-api database (->DefaultAsyncHandler))))
   (stop [this] this)
   WebService
   (request-handlers [this] {})
-  (routes [this] (:api this) #_["/api" (fn [_] {:status 200 :body "api2"})] #_(:api this))
+  (routes [this] (:api this))
   (uri-context [_] ""))
 
 (defn new-api-service [& {:as opts}]

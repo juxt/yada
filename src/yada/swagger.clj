@@ -12,7 +12,8 @@
    [bidi.ring :refer (Handle)]
    [cheshire.core :as json]
    [cheshire.generate :refer (JSONable write-string)]
-   [camel-snake-kebab :as csk])
+   [camel-snake-kebab :as csk]
+   [yada.core :refer (make-async-handler)])
   (:import (clojure.lang Keyword)))
 
 (defn swagger-paths [routes]
@@ -37,6 +38,14 @@
             )]
     (into {} (mapcat #(map vec (partition 2 (paths "" %))) routes))))
 
+(defprotocol Handler
+  (handle-api-request [_ req spec op] "Handle an API request"))
+
+(extend-protocol Handler
+  nil
+  (handle-api-request [_ req spec op] {:status 500
+                                   :body (str "No handler specified to handle op: " (pr-str op))}))
+
 ;; We override bidi's default map implementation, thereby replacing
 ;; bidi's request-method guards with one that interprets various Swagger
 ;; objects.
@@ -50,15 +59,17 @@
     (some #(unmatch-pair % m) this))
   Handle
   (handle-request [this req match-context]
-    {:status 200
-     :body (pr-str this)}))
+    (handle-api-request (::handler match-context) req (::swagger-spec match-context) this)))
 
-(defrecord Swagger [spec]
+(defrecord Swagger [spec handler]
   Matched
   (resolve-handler [this m]
     (if (= (:remainder m) "/swagger.json")
       (merge (dissoc m :remainder) {:handler this})
-      (resolve-handler (:paths spec) (assoc m ::swagger-spec spec))))
+      (resolve-handler (:paths spec)
+                       (merge m
+                              {::swagger-spec spec}
+                              (when handler {::handler handler})))))
   (unresolve-handler [_ m]
     (throw (ex-info "TODO" {})))
 
@@ -72,11 +83,21 @@
                            :key-fn (fn [x] (csk/->camelCase (name x)))}))}
     ))
 
-(defn swagger [spec]
-  [(or (:base-path spec) "/")
-   (->Swagger (-> spec
-                ((partial merge {:swagger "2.0"}))
-                (update-in [:info] (partial merge {:title "Untitled"
-                                                   :version "0.0.1"}))
+(defn swagger
+  ([spec handler]
+   [(or (:base-path spec) "/")
+    (->Swagger (-> spec
+                 ((partial merge {:swagger "2.0"}))
+                 (update-in [:info] (partial merge {:title "Untitled"
+                                                    :version "0.0.1"})))
+               handler)])
+  ([spec]
+   (swagger spec nil)))
 
-                ))])
+
+;; A default async handler that adapts yada.core to this ns
+
+(defrecord DefaultAsyncHandler []
+  Handler
+  (handle-api-request [_ req spec op]
+    ((make-async-handler {}) req)))
