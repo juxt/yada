@@ -20,7 +20,8 @@
     :paths [["/pets"
              {:get {:description "Returns all pets from the system that the user has access to"
                     :operation-id :find-pets
-                    :responses {200 {:description "pet response"}}}
+                    :responses {200 {:description "pet response"}}
+                    :yada/foo :bar}
               :post {:description "Creates a new pet in the store. Duplicates are allowed"
                      :operation-id :add-pet
                      :responses {200 {:description "pet response"}}}}

@@ -14,7 +14,8 @@
    [cheshire.core :as json]
    [cheshire.generate :refer (JSONable write-string)]
    [camel-snake-kebab :as csk]
-   [yada.core :refer (make-async-handler)])
+   [yada.core :refer (make-async-handler)]
+   [clojure.walk :refer (postwalk)])
   (:import (clojure.lang Keyword)))
 
 (defn swagger-paths [routes]
@@ -35,8 +36,7 @@
                        (apply concat
                               (for [route matched]
                                 (paths pattern route)))
-                       :otherwise [pattern matched]))))
-            )]
+                       :otherwise [pattern matched])))))]
     (into {} (mapcat #(map vec (partition 2 (paths "" %))) routes))))
 
 (defprotocol Handler
@@ -44,8 +44,9 @@
 
 (extend-protocol Handler
   nil
-  (handle-api-request [_ req spec op] {:status 500
-                                   :body (str "No handler specified to handle op: " (pr-str op))}))
+  (handle-api-request [_ req spec op]
+    {:status 500
+     :body (str "No handler specified to handle op: " (pr-str op))}))
 
 ;; We override bidi's default map implementation, thereby replacing
 ;; bidi's request-method guards with one that interprets various Swagger
@@ -60,7 +61,27 @@
     (some #(unmatch-pair % m) this))
   Handle
   (handle-request [this req match-context]
-    (handle-api-request (::handler match-context) req (::swagger-spec match-context) this)))
+    (handle-api-request
+     (::handler match-context)
+     req
+     (::swagger-spec match-context)
+     this)))
+
+(defn prune-namespaced-keywords
+  "Deep remove of namespaced keywords from a map. This is so that extra
+  entries can be added to an API structure, which can be pruned prior to
+  publication as a Swagger JSON spec."
+  [m]
+  (postwalk
+   (fn [a]
+     (if (map? a)
+       (reduce-kv (fn [acc k v]
+                    (if (and (keyword? k) (namespace k))
+                      acc
+                      (assoc acc k v)))
+                  {} a)
+       a))
+   m))
 
 (defrecord Swagger [spec handler]
   Matched
@@ -80,9 +101,10 @@
      :headers {"content-type" "application/json"}
      :body (-> spec
              (update-in [:paths] swagger-paths)
-             (json/encode {:pretty true
-                           :key-fn (fn [x] (csk/->camelCase (name x)))}))}
-    ))
+             prune-namespaced-keywords
+             (json/encode
+              {:pretty true
+               :key-fn (fn [x] (csk/->camelCase (name x)))}))}))
 
 (defn swagger
   ([spec handler]
