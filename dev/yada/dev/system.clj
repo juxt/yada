@@ -10,11 +10,12 @@
    [clojure.tools.reader.reader-types :refer (indexing-push-back-reader)]
    [com.stuartsierra.component :refer (system-map system-using using)]
    [modular.maker :refer (make)]
-   [modular.bidi :refer (new-router new-static-resource-service)]
-   [yada.dev.swagger-ui :refer (new-website)]
+   [modular.bidi :refer (new-router new-static-resource-service new-redirect)]
+   [yada.dev.website :refer (new-website)]
    [yada.dev.api :refer (new-api-service)]
    [yada.dev.database :refer (new-database)]
-   [modular.aleph :refer (new-http-server)]))
+   [modular.aleph :refer (new-http-server)]
+   [tangrammer.component.co-dependency :refer (co-using system-co-using)]))
 
 (defn ^:private read-file
   [f]
@@ -66,14 +67,14 @@
     :website
     (->
       (make new-website config)
-      (using {:api :api}))))
+      (using {}))))
 
 (defn swagger-ui-components [system config]
   (assoc system
          :swagger-ui
          (make new-static-resource-service config
                :uri-context "/swagger-ui"
-               :resource-prefix "META-INF/resources/webjars/swagger-ui/2.0.24")))
+               :resource-prefix "META-INF/resources/webjars/swagger-ui/2.1.0-alpha.6")))
 
 (defn router-components [system config]
   (assoc system
@@ -95,19 +96,24 @@
         (website-components config)
         (swagger-ui-components config)
         (router-components config)
-        (http-server-components config)))))
+        (http-server-components config)
+        (assoc :redirect (new-redirect :from "/" :to :yada.dev.website/index))
+        ))))
 
 (defn new-dependency-map
   []
   {:http-server {:request-handler :router}
-   :router [:website :api :swagger-ui]})
+   :router [:api :swagger-ui :website :redirect]
+   :website {:swagger-ui :swagger-ui
+             :api :api}})
 
 (defn new-co-dependency-map
   []
-  {})
+  {:website {:router :router}})
 
 (defn new-production-system
   "Create the production system"
   []
   (-> (new-system-map (config))
-      (system-using (new-dependency-map))))
+      (system-using (new-dependency-map))
+      (system-co-using (new-co-dependency-map))))

@@ -87,14 +87,18 @@
 (defrecord Swagger [spec handler]
   Matched
   (resolve-handler [this m]
-    (if (= (:remainder m) "/swagger.json")
-      (merge (dissoc m :remainder) {:handler this})
-      (resolve-handler (:paths spec)
+    (if (= (:remainder m) (str (or (:base-path spec) "") "/swagger.json"))
+      (-> m
+          (assoc :handler this)
+          (dissoc :remainder))
+      (resolve-handler [[(or (:base-path spec) "") (:paths spec)]]
                        (merge m
                               {::swagger-spec spec}
                               (when handler {::handler handler})))))
-  (unresolve-handler [_ m]
-    (throw (ex-info "TODO" {})))
+  (unresolve-handler [this m]
+    (if (= this (:handler m))
+      (or (:base-path spec) "")
+      (unresolve-handler (:paths spec) m)))
 
   Handle
   (handle-request [_ req match-context]
@@ -109,12 +113,11 @@
 
 (defn swagger
   ([spec handler]
-   [(or (:base-path spec) "/")
-    (->Swagger (-> spec
-                 ((partial merge {:swagger "2.0"}))
-                 (update-in [:info] (partial merge {:title "Untitled"
-                                                    :version "0.0.1"})))
-               handler)])
+   (->Swagger (-> spec
+                  ((partial merge {:swagger "2.0"}))
+                  (update-in [:info] (partial merge {:title "Untitled"
+                                                     :version "0.0.1"})))
+              handler))
   ([spec]
    (swagger spec nil)))
 

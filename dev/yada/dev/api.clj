@@ -15,7 +15,7 @@
   (stop [this] this)
   WebService
   (request-handlers [this] {})
-  (routes [this] (:api this))
+  (routes [this] ["" (:api this)])
   (uri-context [_] ""))
 
 (defn new-api-service [& {:as opts}]

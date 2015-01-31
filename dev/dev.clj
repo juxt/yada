@@ -8,8 +8,10 @@
    [clojure.tools.namespace.repl :refer (refresh refresh-all)]
    [clojure.java.io :as io]
    [com.stuartsierra.component :as component]
+   [tangrammer.component.co-dependency :as co-dependency]
    [yada.dev.system :refer (config new-system-map new-dependency-map new-co-dependency-map)]
-   [modular.maker :refer (make)]))
+   [modular.maker :refer (make)]
+   [bidi.bidi :as bidi]))
 
 (def system nil)
 
@@ -36,7 +38,7 @@
   []
   (alter-var-root
    #'system
-   component/start
+   co-dependency/start-system
 ))
 
 (defn stop
@@ -56,3 +58,14 @@
 (defn reset []
   (stop)
   (refresh :after 'dev/go))
+
+
+
+(defn routes []
+  (-> system :router :routes))
+
+(defn match-route [path & args]
+  (apply bidi/match-route (routes) path args))
+
+(defn path-for [target & args]
+  (apply bidi/path-for (routes) target args))

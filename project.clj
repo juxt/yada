@@ -4,12 +4,13 @@
   :description "A library for Clojure web APIs"
   :url "http://github.com/juxt/yada"
 
-  :exclusions [com.stuartsierra/component org.clojure/clojure]
+  :exclusions [com.stuartsierra/component
+               org.clojure/clojure]
 
   :dependencies
   [[org.clojure/clojure "1.7.0-alpha4"]
-   [prismatic/schema "0.3.3" :exclusions [potemkin]]
-   [manifold "0.1.0-beta7"]
+   [prismatic/schema "0.3.5" :exclusions [potemkin]]
+   [manifold "0.1.0-beta8"]
    [potemkin "0.3.11"]
    [hiccup "1.0.5"]
    [cheshire "5.4.0"]
@@ -21,13 +22,18 @@
   :profiles {:dev {:dependencies
                    [
                     [com.stuartsierra/component "0.2.2"]
-                    [bidi "1.15.0"]
+                    [bidi "1.16.0"]
                     [org.clojure/tools.namespace "0.2.5"]
                     [juxt.modular/maker "0.5.0"]
-                    [juxt.modular/bidi "0.7.2" :exclusions [bidi]]
-                    [juxt.modular/aleph "0.0.2"]
+                    [juxt.modular/bidi "0.7.3" :exclusions [bidi]]
+                    [juxt.modular/aleph "0.0.3"]
                     [juxt.modular/test "0.1.0"]
                     [ring-mock "0.1.5"]
-                    [org.webjars/swagger-ui "2.0.24"]]
+                    [org.webjars/swagger-ui "2.1.0-alpha.6"]
+                    [malcolmsparks/co-dependency "0.1.5"]
+
+                    ;; while bidi is in checkouts
+                    [compojure "1.1.6"]
+                    ]
 
                    :source-paths ["dev" "examples"]}})
