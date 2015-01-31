@@ -10,7 +10,7 @@
   (:require
    [clojure.set :as set]
    [bidi.bidi :refer (Matched resolve-handler unresolve-handler succeed match-pair unmatch-pair)]
-   [bidi.ring :refer (Handle)]
+   [bidi.ring :refer (Ring)]
    [cheshire.core :as json]
    [cheshire.generate :refer (JSONable write-string)]
    [camel-snake-kebab :as csk]
@@ -59,8 +59,8 @@
       (some #(match-pair % m) this)))
   (unresolve-handler [this m]
     (some #(unmatch-pair % m) this))
-  Handle
-  (handle-request [this req match-context]
+  Ring
+  (request [this req match-context]
     (handle-api-request
      (::handler match-context)
      req
@@ -100,8 +100,8 @@
       (or (:base-path spec) "")
       (unresolve-handler (:paths spec) m)))
 
-  Handle
-  (handle-request [_ req match-context]
+  Ring
+  (request [_ req match-context]
     {:status 200
      :headers {"content-type" "application/json"}
      :body (-> spec

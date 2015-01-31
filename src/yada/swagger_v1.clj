@@ -3,7 +3,7 @@
 (ns yada.swagger-v1
   (:require
    [bidi.bidi :as bidi :refer (Matched resolve-handler unresolve-handler)]
-   [bidi.ring :refer (Handle)]
+   [bidi.ring :refer (Ring)]
    [hiccup.core :refer (html h)]
    [cheshire.core :as json]
    [clojure.walk :refer (postwalk)]
@@ -87,8 +87,8 @@
       ""
       (unresolve-handler (:resources this) m)))
 
-  Handle
-  (handle-request [this req match-context]
+  Ring
+  (request [this req match-context]
     {:status 200
      :body (json/encode
             (postwalk

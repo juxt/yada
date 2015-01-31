@@ -22,10 +22,10 @@
   :profiles {:dev {:dependencies
                    [
                     [com.stuartsierra/component "0.2.2"]
-                    [bidi "1.16.0"]
+                    [bidi "1.17.0"]
                     [org.clojure/tools.namespace "0.2.5"]
                     [juxt.modular/maker "0.5.0"]
-                    [juxt.modular/bidi "0.7.3" :exclusions [bidi]]
+                    [juxt.modular/bidi "0.7.4" :exclusions [bidi]]
                     [juxt.modular/aleph "0.0.3"]
                     [juxt.modular/test "0.1.0"]
                     [ring-mock "0.1.5"]

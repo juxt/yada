@@ -9,7 +9,7 @@
    [ring.mock.request :refer :all]
    [clojure.data.json :as json]
    [schema.core :as s]
-   [bidi.ring :refer (Handle handle-request)]
+   [bidi.ring :as br]
 
    [clojure.pprint :refer (pprint)]
    [pets :refer (pets-api)]
@@ -23,12 +23,12 @@
            (pets-v1/pets-api nil) "/api/api-docs")]
       (is handler)
       (is (instance? yada.swagger_v1.ResourceListing handler))
-      (is (satisfies? Handle handler))
+      (is (satisfies? br/Ring handler))
       (is (= (set (keys mc)) #{:yada.swagger/apis
                                :yada.swagger/base-path
                                :yada.swagger/type
                                :handler}))
-      (let [response (handle-request handler {} mc)]
+      (let [response (br/request handler {} mc)]
         (is response)
         (println (:body response))
 
