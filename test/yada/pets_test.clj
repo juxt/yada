@@ -1,6 +1,6 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(ns yada.core-test
+(ns yada.pets-test
   (:require
    [com.stuartsierra.component :refer (system-using system-map)]
    [bidi.bidi :refer (match-route)]
@@ -10,7 +10,7 @@
    [manifold.deferred :as d]
    [modular.test :refer (with-system-fixture *system*)]
    [ring.mock.request :as mock]
-   [yada.dev.api :refer (new-api-service)]
+   [yada.dev.pets :refer (new-pets-api-service)]
    [yada.dev.database :refer (new-database)]
    [pets :refer (pets-api)]))
 
@@ -21,13 +21,13 @@
   (system-using
    (system-map
     :database (new-database)
-    :api (new-api-service))
+    :api (new-pets-api-service))
     {}))
 
 (use-fixtures :each (with-system-fixture new-system))
 
 (defn get-api []
-  (-> *system* :api :api))
+  ["" (-> *system* :api :api)])
 
 (defn get-op-response [spec req & {:as opts}]
   (let [handler (make-async-handler opts)

@@ -22,18 +22,21 @@
   :profiles {:dev {:dependencies
                    [
                     [com.stuartsierra/component "0.2.2"]
-                    [bidi "1.17.0"]
-                    [org.clojure/tools.namespace "0.2.5"]
-                    [juxt.modular/maker "0.5.0"]
-                    [juxt.modular/bidi "0.7.4" :exclusions [bidi]]
-                    [juxt.modular/aleph "0.0.3"]
-                    [juxt.modular/test "0.1.0"]
-                    [ring-mock "0.1.5"]
-                    [org.webjars/swagger-ui "2.1.0-alpha.6"]
                     [malcolmsparks/co-dependency "0.1.5"]
+                    [org.clojure/tools.namespace "0.2.5"]
 
-                    ;; while bidi is in checkouts
-                    [compojure "1.1.6"]
+                    [markdown-clj "0.9.62"]
+                    [ring-mock "0.1.5"]
+
+                    [juxt.modular/aleph "0.0.3"]
+                    [juxt.modular/bidi "0.8.0-SNAPSHOT" #_:exclusions #_[bidi]]
+                    [juxt.modular/maker "0.5.0"]
+                    [juxt.modular/test "0.1.0"]
+
+                    [org.webjars/swagger-ui "2.1.0-alpha.6"]
+                    [org.webjars/jquery "2.1.3"]
+                    [org.webjars/bootstrap "3.3.2"]
                     ]
 
-                   :source-paths ["dev" "examples"]}})
+                   :source-paths ["dev" "examples"]
+                   :resources ["dev"]}})

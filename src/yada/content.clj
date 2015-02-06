@@ -15,7 +15,9 @@
   java.util.Map
   (representation [content content-type] (render-map content content-type))
   clojure.lang.Sequential
-  (representation [content content-type] (render-seq content content-type)))
+  (representation [content content-type] (render-seq content content-type))
+  nil
+  (representation [_ content-type] nil))
 
 (defmethod render-map "application/json"
   [m _]

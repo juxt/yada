@@ -74,144 +74,140 @@
      ;; authorize the request.
      ;; allowed?
 
-     find-resource                      ; async-supported
+     resource                           ; async-supported
      entity                             ; async-supported
      body                               ; async-supported
 
      produces
-     ]
-    :or {known-method? #{:get :put :post :delete :options :head}
-         request-uri-too-long? 4096
+     ] :or {resource {}}
+    } ]
 
-         allowed-method? #{:get :head}
-
-         find-resource true             ; by default the resource exists
-         entity (fn [resource]
-                  {:magic ::default-content
-                   :message "Placeholder"
-                   :resource resource})
-         body {}
-         produces #{"text/html"}
-         }}]
-
+  ;; We use this let binding to deduce the values of resource-map
+  ;; entries that have not been given, based on the values of entries
+  ;; that have. This approach makes it possible for developers to leave
+  ;; out entries that are implied by the other entries. For example, if a body has been specified, we resource
   (fn [req]
     (let [method (:request-method req)]
 
       (-> {}
-        (d/chain
-         (nonblocking-exit-when-not service-available? (p/service-available? service-available?) 503)
-         (exit-when-not (p/known-method? known-method? method) 501)
-         (exit-when (p/request-uri-too-long? request-uri-too-long? (:uri req)) 414)
-         (exit-when-not (p/allowed-method? allowed-method? method) 405)
+          (d/chain
+           (nonblocking-exit-when-not service-available? (p/service-available? service-available?) 503)
+           (exit-when-not (p/known-method? known-method? method) 501)
+           (exit-when (p/request-uri-too-long? request-uri-too-long? (:uri req)) 414)
+           (exit-when-not (p/allowed-method? allowed-method? method) 405)
 
-         ;; TODO Malformed
+           ;; TODO Malformed
 
-         ;; TODO Unauthorized
-         ;; TODO Forbidden
+           ;; TODO Unauthorized
+           ;; TODO Forbidden
 
-         ;; TODO Not implemented (if unknown Content-* header)
+           ;; TODO Not implemented (if unknown Content-* header)
 
-         ;; TODO Unsupported media type
+           ;; TODO Unsupported media type
 
-         ;; TODO Request entity too large - shouldn't we do this later,
-         ;; when we determine we actually need to read the request body?
+           ;; TODO Request entity too large - shouldn't we do this later,
+           ;; when we determine we actually need to read the request body?
 
-         ;; TODO OPTIONS
+           ;; TODO OPTIONS
 
-         ;; Content-negotiation - partly done here to throw back to the client any errors
-         #(if-let [content-type
-                   (best-allowed-content-type
-                    (or (get-in req [:headers "accept"]) "*/*")
-                    (p/produces produces))]
-            (assoc-in % [:response :content-type] content-type)
-            (d/error-deferred (ex-info "" {:status 406
-                                           ::http-response true})))
+           ;; Content-negotiation - partly done here to throw back to the client any errors
+           #(if-let [content-type
+                     (best-allowed-content-type
+                      (or (get-in req [:headers "accept"]) "*/*")
+                      (p/produces produces))]
+              (assoc-in % [:response :content-type] content-type)
+              (d/error-deferred (ex-info "" {:status 406
+                                             ::http-response true})))
 
-         ;; Does the resource exist? Call find-resource, which returns
-         ;; the resource, containing the resource's metadata (optionally
-         ;; deferred to prevent blocking this thread). It does not (yet)
-         ;; contain the resource's data. The reason for this is that it
-         ;; would be wasteful to load the resource's data if we can
-         ;; determine that the client already has a copy (see
-         ;; check-cacheable) and return a 304 (Not Modified).
-         (fn [ctx]
-           (d/chain
-            {:params (:params req)}
-            #(p/find-resource find-resource %)
-            #(assoc ctx :resource %)))
-
-         ;; Split the flow based on the existence of the resource
-         (fn [{:keys [resource] :as ctx}]
-           (if resource
-
-             ;; 'Exists' flow
+           ;; Does the resource exist? Call resource, which returns
+           ;; the resource, containing the resource's metadata (optionally
+           ;; deferred to prevent blocking this thread). It does not (yet)
+           ;; contain the resource's data. The reason for this is that it
+           ;; would be wasteful to load the resource's data if we can
+           ;; determine that the client already has a copy (see
+           ;; check-cacheable) and return a 304 (Not Modified).
+           (fn [ctx]
              (d/chain
-              ctx
-              check-cacheable
+              {:params (:params req)}
+              #(p/resource resource %)
+              #(assoc ctx :resource %)))
 
-              ;; OK, let's GET the resource's entity (data)
-              (fn [ctx]
-                (d/chain
-                 (p/entity entity resource)
-                 #(if % %
-                      (d/error-deferred
-                       (ex-info "" {:status 404
-                                    :body "Resource entity not found"
-                                    ::http-response true})))
-                 #(assoc-in ctx [:resource :entity] %)))
+           ;; Split the flow based on the existence of the resource
+           (fn [{:keys [resource] :as ctx}]
+             (if resource
 
-              ;; Create representation
-              (fn [ctx]
-                (let [content-type (get-in ctx [:response :content-type])
-                      entity (get-in ctx [:resource :entity])]
+               ;; 'Exists' flow
+               (d/chain
+                ctx
+                check-cacheable
+
+                ;; OK, let's GET the resource's entity (data)
+                (fn [ctx]
                   (d/chain
-                   entity
-                   (fn [entity]
-                     (p/body body entity content-type))
+                   (p/entity entity resource)
+                   #_#(if % %
+                        (d/error-deferred
+                         (ex-info "" {:status 404
+                                      :body "Resource entity not found"
+                                      ::http-response true})))
+                   #(assoc-in ctx [:resource :entity] %)))
 
-                   ;; if not already a string, serialize to representation
-                   (fn [body]
-                     (if (string? body)
-                       body
-                       (representation body content-type)))
+                ;; Create representation
+                (fn [ctx]
+                  (let [content-type (get-in ctx [:response :content-type])
+                        entity (get-in ctx [:resource :entity])]
+                    (d/chain
+                     entity
+                     (fn [entity]
+                       (p/body body entity content-type))
 
-                   ;; on nil, compose default result (if in dev)
-                   (fn [x] (if x x
-                               (if (= (get-in ctx [:resource :entity :magic]) ::default-content)
-                                 (html [:h1 "Default content, yada yada yada"])
-                                 ;; Er, could entity be nil here?
-                                 (representation entity content-type))))
-                   #(assoc-in ctx [:response :body] %)
-                   #(update-in % [:response :headers] assoc "content-type" content-type))))
+                     ;; if not already a string, serialize to representation
+                     (fn [body]
+                       (if (string? body)
+                         body
+                         (representation body content-type)))
 
-              (fn [ctx]
-                (merge
-                 {:status 200
-                  :headers (get-in ctx [:response :headers])
-                  :body (get-in ctx [:response :body])
-                  }
-                 )
-                ))
+                     ;; on nil, compose default result (if in dev)
+                     (fn [x] (if x x
+                                 (if (= (get-in ctx [:resource :entity :magic]) :yada/default-content)
+                                   (html [:h1 "Default content, yada yada yada"])
+                                   ;; Er, could entity be nil here?
+                                   (representation entity content-type))))
+                     #(assoc-in ctx [:response :body] %)
+                     #(update-in % [:response :headers] assoc "content-type" content-type))))
 
-             ;; 'Not exists' flow
-             (d/chain
-              ctx
-              (constantly {:status 404})))))
+                (fn [ctx]
+                  (merge
+                   {:status 200
+                    :headers (get-in ctx [:response :headers])
+                    :body (get-in ctx [:response :body])
+                    }
+                   )
+                  ))
 
-        ;; Handle exits
-        (d/catch clojure.lang.ExceptionInfo
-            #(let [data (ex-data %)]
-               (if (::http-response data)
-                 data
-                 {:status 500
-                  :body (format "Internal Server Error: %s" (pr-str data))})))
+               ;; 'Not exists' flow
+               (d/chain
+                ctx
+                (constantly {:status 404})))))
 
-        (d/catch #(identity {:status 500 :body
-                             (html
-                              [:body
-                               [:h1 "Internal Server Error"]
-                               [:p (str %)]
-                               ])}))))))
+          ;; Handle exits
+          (d/catch clojure.lang.ExceptionInfo
+              #(let [data (ex-data %)]
+                 (if (::http-response data)
+                   data
+                   (throw (ex-info "Internal Server Error (ex-info)" {} %))
+                   #_{:status 500
+                      :body (format "Internal Server Error: %s" (pr-str data))})))
+
+          (d/catch #(identity
+                     (throw (ex-info "Internal Server Error" {} %))
+                     #_{:status 500 :body
+                        (html
+                         [:body
+                          [:h1 "Internal Server Error"]
+                          [:p (str %)]
+                          [:pre (with-out-str (apply str (interpose "\n" (seq (.getStackTrace %)))))]
+                          ])}))))))
 
 
 ;; TODO: pets should return resource-metadata with a (possibly deferred) model

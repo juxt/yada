@@ -12,7 +12,8 @@
    [modular.maker :refer (make)]
    [modular.bidi :refer (new-router new-static-resource-service new-redirect)]
    [yada.dev.website :refer (new-website)]
-   [yada.dev.api :refer (new-api-service)]
+   [yada.dev.pets :refer (new-pets-api-service)]
+   [yada.dev.demo :refer (new-demo-api-service)]
    [yada.dev.database :refer (new-database)]
    [modular.aleph :refer (new-http-server)]
    [tangrammer.component.co-dependency :refer (co-using system-co-using)]))
@@ -57,17 +58,28 @@
 
 (defn api-components [system config]
   (assoc system
-    :api
+    :pets-api
     (->
-      (make new-api-service config)
-      (using {:database :database}))))
+      (make new-pets-api-service config)
+      (using {:database :database}))
+    :demo-api
+    (make new-demo-api-service config)
+    ))
 
 (defn website-components [system config]
-  (assoc system
-    :website
-    (->
-      (make new-website config)
-      (using {}))))
+  (assoc
+   system
+   :website (make new-website config)
+   :jquery (make new-static-resource-service config
+                 :uri-context "/jquery"
+                 :resource-prefix "META-INF/resources/webjars/jquery/2.1.3")
+   :bootstrap (make new-static-resource-service config
+                    :uri-context "/bootstrap"
+                    :resource-prefix "META-INF/resources/webjars/bootstrap/3.3.2")
+   :web-resources (make new-static-resource-service config
+                        :uri-context "/static"
+                        :resource-prefix "public")
+   ))
 
 (defn swagger-ui-components [system config]
   (assoc system
@@ -103,9 +115,12 @@
 (defn new-dependency-map
   []
   {:http-server {:request-handler :router}
-   :router [:api :swagger-ui :website :redirect]
+   :router [:pets-api :demo-api :swagger-ui :website
+            :jquery :bootstrap
+            :web-resources
+            :redirect]
    :website {:swagger-ui :swagger-ui
-             :api :api}})
+             :pets-api :pets-api}})
 
 (defn new-co-dependency-map
   []

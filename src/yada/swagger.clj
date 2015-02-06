@@ -111,19 +111,7 @@
               {:pretty true
                :key-fn (fn [x] (csk/->camelCase (name x)))}))}))
 
-(defn swagger
-  ([spec handler]
-   (->Swagger (-> spec
-                  ((partial merge {:swagger "2.0"}))
-                  (update-in [:info] (partial merge {:title "Untitled"
-                                                     :version "0.0.1"})))
-              handler))
-  ([spec]
-   (swagger spec nil)))
-
-
 ;; A default async handler that adapts yada.core to this ns
-
 (defrecord DefaultAsyncHandler []
   Handler
   (handle-api-request [_ req spec path-item op]
@@ -145,3 +133,13 @@
        (:yada/opts spec)
        (:yada/handler op)))
      req)))
+
+(defn swagger
+  ([spec handler]
+   (->Swagger (-> spec
+                  ((partial merge {:swagger "2.0"}))
+                  (update-in [:info] (partial merge {:title "Untitled"
+                                                     :version "0.0.1"})))
+              handler))
+  ([spec]
+   (swagger spec (->DefaultAsyncHandler))))

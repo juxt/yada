@@ -1,26 +1,26 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(ns yada.dev.api
+(ns yada.dev.pets
   (:require
    [com.stuartsierra.component :refer (Lifecycle using)]
-   [modular.bidi :refer (WebService)]
+   [bidi.bidi :refer (RouteProvider)]
    [schema.core :as s]
    [pets :as pets]
    [yada.swagger :refer (Handler ->DefaultAsyncHandler)]
    [yada.core :refer (make-async-handler)]))
 
-(defrecord ApiService [database]
+(defrecord PetsApiService [database]
   Lifecycle
-  (start [this] (assoc this :api (pets/pets-api database (->DefaultAsyncHandler))))
+  (start [this] (assoc this
+                       :api (pets/pets-api database (->DefaultAsyncHandler))))
   (stop [this] this)
-  WebService
-  (request-handlers [this] {})
-  (routes [this] ["" (:api this)])
-  (uri-context [_] ""))
 
-(defn new-api-service [& {:as opts}]
+  RouteProvider
+  (routes [this] ["" (:api this)]))
+
+(defn new-pets-api-service [& {:as opts}]
   (-> (->> opts
         (merge {})
         (s/validate {})
-        map->ApiService)
+        map->PetsApiService)
     (using [:database])))

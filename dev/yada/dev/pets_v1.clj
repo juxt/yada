@@ -1,9 +1,9 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(ns yada.dev.api-v1
+(ns yada.dev.pets-v1
   (:require
    [com.stuartsierra.component :refer (Lifecycle using)]
-   [modular.bidi :refer (WebService)]
+   [bidi.bidi :refer (RouteProvider)]
    [schema.core :as s]
    [pets-v1 :as pets]
    ))
@@ -12,10 +12,8 @@
   Lifecycle
   (start [this] (assoc this :api (pets/pets-api database)))
   (stop [this] this)
-  WebService
-  (request-handlers [this] {})
-  (routes [this] (:api this))
-  (uri-context [_] ""))
+  RouteProvider
+  (routes [this] (:api this)))
 
 (defn new-api-service [& {:as opts}]
   (-> (->> opts
