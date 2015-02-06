@@ -1,0 +1,1224 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head profile="http://dublincore.org/documents/2008/08/04/dc-html/">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="robots" content="index,follow" />
+    <meta name="creator" content="rfcmarkup version 1.109" />
+    <link rel="schema.DC" href="http://purl.org/dc/elements/1.1/" />
+<meta name="DC.Relation.Replaces" content="rfc2616" />
+<meta name="DC.Identifier" content="urn:ietf:rfc:7235" />
+<meta name="DC.Date.Issued" content="June, 2014" />
+<meta name="DC.Creator" content="Fielding, Roy" />
+<meta name="DC.Creator" content="Reschke, Julian" />
+<meta name="DC.Description.Abstract" content="The Hypertext Transfer Protocol (HTTP) is a stateless application-
+level protocol for distributed, collaborative, hypermedia information
+systems. This document defines the HTTP Authentication framework." />
+<meta name="DC.Title" content="Hypertext Transfer Protocol (HTTP/1.1): Authentication" />
+
+    <link rel="icon" href="/images/rfc.png" type="image/png" />
+    <link rel="shortcut icon" href="/images/rfc.png" type="image/png" />
+    <title>RFC 7235 - Hypertext Transfer Protocol (HTTP/1.1): Authentication</title>
+    
+    
+    <style type="text/css">
+	body {
+	    margin: 0px 8px;
+            font-size: 1em;
+	}
+        h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+	    font-weight: bold;
+            line-height: 0pt;
+            display: inline;
+            white-space: pre;
+            font-family: monospace;
+            font-size: 1em;
+	    font-weight: bold;
+        }
+        pre {
+            font-size: 1em;
+            margin-top: 0px;
+            margin-bottom: 0px;
+        }
+	.pre {
+	    white-space: pre;
+	    font-family: monospace;
+	}
+	.header{
+	    font-weight: bold;
+	}
+        .newpage {
+            page-break-before: always;
+        }
+        .invisible {
+            text-decoration: none;
+            color: white;
+        }
+        a.selflink {
+          color: black;
+          text-decoration: none;
+        }
+        @media print {
+            body {
+                font-family: monospace;
+                font-size: 10.5pt;
+            }
+            h1, h2, h3, h4, h5, h6 {
+                font-size: 1em;
+            }
+        
+            a:link, a:visited {
+                color: inherit;
+                text-decoration: none;
+            }
+            .noprint {
+                display: none;
+            }
+        }
+	@media screen {
+	    .grey, .grey a:link, .grey a:visited {
+		color: #777;
+	    }
+            .docinfo {
+                background-color: #EEE;
+            }
+            .top {
+                border-top: 7px solid #EEE;
+            }
+            .bgwhite  { background-color: white; }
+            .bgred    { background-color: #F44; }
+            .bggrey   { background-color: #666; }
+            .bgbrown  { background-color: #840; }            
+            .bgorange { background-color: #FA0; }
+            .bgyellow { background-color: #EE0; }
+            .bgmagenta{ background-color: #F4F; }
+            .bgblue   { background-color: #66F; }
+            .bgcyan   { background-color: #4DD; }
+            .bggreen  { background-color: #4F4; }
+
+            .legend   { font-size: 90%; }
+            .cplate   { font-size: 70%; border: solid grey 1px; }
+	}
+    </style>
+    <!--[if IE]>
+    <style>
+    body {
+       font-size: 13px;
+       margin: 10px 10px;
+    }
+    </style>
+    <![endif]-->
+
+    <script type="text/javascript"><!--
+    function addHeaderTags() {
+	var spans = document.getElementsByTagName("span");
+	for (var i=0; i < spans.length; i++) {
+	    var elem = spans[i];
+	    if (elem) {
+		var level = elem.getAttribute("class");
+                if (level == "h1" || level == "h2" || level == "h3" || level == "h4" || level == "h5" || level == "h6") {
+                    elem.innerHTML = "<"+level+">"+elem.innerHTML+"</"+level+">";		
+                }
+	    }
+	}
+    }
+    var legend_html = "Colour legend:<br />      <table>         <tr><td>Unknown:</td>                   <td><span class='cplate bgwhite'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Draft:</td>                     <td><span class='cplate bgred'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Informational:</td>             <td><span class='cplate bgorange'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Experimental:</td>              <td><span class='cplate bgyellow'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Best Common Practice:</td>      <td><span class='cplate bgmagenta'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Proposed Standard:</td>         <td><span class='cplate bgblue'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Draft Standard (old designation):</td> <td><span class='cplate bgcyan'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Internet Standard:</td>         <td><span class='cplate bggreen'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Historic:</td>                  <td><span class='cplate bggrey'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Obsolete:</td>                  <td><span class='cplate bgbrown'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>     </table>";
+    function showElem(id) {
+        var elem = document.getElementById(id);
+        elem.innerHTML = eval(id+"_html");
+        elem.style.visibility='visible';
+    }
+    function hideElem(id) {
+        var elem = document.getElementById(id);
+        elem.style.visibility='hidden';        
+        elem.innerHTML = "";
+    }
+    // -->
+    </script>
+</head>
+<body onload="addHeaderTags()">
+   <div style="height: 13px;">
+      <div onmouseover="this.style.cursor='pointer';"
+         onclick="showElem('legend');"
+         onmouseout="hideElem('legend')"
+	 style="height: 6px; position: absolute;"
+         class="pre noprint docinfo bgblue"
+         title="Click for colour legend." >                                                                        </div>
+      <div id="legend"
+           class="docinfo noprint pre legend"
+           style="position:absolute; top: 4px; left: 4ex; visibility:hidden; background-color: white; padding: 4px 9px 5px 7px; border: solid #345 1px; "
+           onmouseover="showElem('legend');"
+           onmouseout="hideElem('legend');">
+      </div>
+   </div>
+<span class="pre noprint docinfo top">[<a href="../html/" title="Document search and retrieval page">Docs</a>] [<a href="/rfc/rfc7235.txt" title="Plaintext version of this document">txt</a>|<a href="/pdf/rfc7235" title="PDF version of this document">pdf</a>] [<a href="./draft-ietf-httpbis-p7-auth" title="draft-ietf-httpbis-p7-auth">draft-ietf-httpbi...</a>] [<a href="/rfcdiff?difftype=--hwdiff&amp;url2=rfc7235" title="Inline diff (wdiff)">Diff1</a>] [<a href="/rfcdiff?url2=rfc7235" title="Side-by-side diff">Diff2</a>] [<a href="https://datatracker.ietf.org/ipr/search/?option=rfc_search&rfc_search=7235" title="IPR disclosures related to this document">IPR</a>]           </span><br />
+<span class="pre noprint docinfo">                                                                        </span><br />
+<span class="pre noprint docinfo">                                                       PROPOSED STANDARD</span><br />
+<span class="pre noprint docinfo">                                                                        </span><br />
+<pre>
+Internet Engineering Task Force (IETF)                  R. Fielding, Ed.
+Request for Comments: 7235                                         Adobe
+Obsoletes: <a href="./rfc2616">2616</a>                                          J. Reschke, Ed.
+Updates: <a href="./rfc2617">2617</a>                                                 greenbytes
+Category: Standards Track                                      June 2014
+ISSN: 2070-1721
+
+
+         <span class="h1">Hypertext Transfer Protocol (HTTP/1.1): Authentication</span>
+
+Abstract
+
+   The Hypertext Transfer Protocol (HTTP) is a stateless application-
+   level protocol for distributed, collaborative, hypermedia information
+   systems.  This document defines the HTTP Authentication framework.
+
+Status of This Memo
+
+   This is an Internet Standards Track document.
+
+   This document is a product of the Internet Engineering Task Force
+   (IETF).  It represents the consensus of the IETF community.  It has
+   received public review and has been approved for publication by the
+   Internet Engineering Steering Group (IESG).  Further information on
+   Internet Standards is available in <a href="./rfc5741#section-2">Section&nbsp;2 of RFC 5741</a>.
+
+   Information about the current status of this document, any errata,
+   and how to provide feedback on it may be obtained at
+   <a href="http://www.rfc-editor.org/info/rfc7235">http://www.rfc-editor.org/info/rfc7235</a>.
+
+Copyright Notice
+
+   Copyright (c) 2014 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to <a href="./bcp78">BCP 78</a> and the IETF Trust's Legal
+   Provisions Relating to IETF Documents
+   (<a href="http://trustee.ietf.org/license-info">http://trustee.ietf.org/license-info</a>) in effect on the date of
+   publication of this document.  Please review these documents
+   carefully, as they describe your rights and restrictions with respect
+   to this document.  Code Components extracted from this document must
+   include Simplified BSD License text as described in <a href="#section-4">Section 4</a>.e of
+   the Trust Legal Provisions and are provided without warranty as
+   described in the Simplified BSD License.
+
+   This document may contain material from IETF Documents or IETF
+   Contributions published or made publicly available before November
+   10, 2008.  The person(s) controlling the copyright in some of this
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                    [Page 1]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-2" id="page-2" href="#page-2" class="invisible"> </a>
+<span class="grey"><a href="./rfc7235">RFC 7235</a>                 HTTP/1.1 Authentication               June 2014</span>
+
+
+   material may not have granted the IETF Trust the right to allow
+   modifications of such material outside the IETF Standards Process.
+   Without obtaining an adequate license from the person(s) controlling
+   the copyright in such materials, this document may not be modified
+   outside the IETF Standards Process, and derivative works of it may
+   not be created outside the IETF Standards Process, except to format
+   it for publication as an RFC or to translate it into languages other
+   than English.
+
+Table of Contents
+
+   <a href="#section-1">1</a>. Introduction ....................................................<a href="#page-3">3</a>
+      <a href="#section-1.1">1.1</a>. Conformance and Error Handling .............................<a href="#page-3">3</a>
+      <a href="#section-1.2">1.2</a>. Syntax Notation ............................................<a href="#page-3">3</a>
+   <a href="#section-2">2</a>. Access Authentication Framework .................................<a href="#page-3">3</a>
+      <a href="#section-2.1">2.1</a>. Challenge and Response .....................................<a href="#page-3">3</a>
+      <a href="#section-2.2">2.2</a>. Protection Space (Realm) ...................................<a href="#page-5">5</a>
+   <a href="#section-3">3</a>. Status Code Definitions .........................................<a href="#page-6">6</a>
+      <a href="#section-3.1">3.1</a>. 401 Unauthorized ...........................................<a href="#page-6">6</a>
+      <a href="#section-3.2">3.2</a>. 407 Proxy Authentication Required ..........................<a href="#page-6">6</a>
+   <a href="#section-4">4</a>. Header Field Definitions ........................................<a href="#page-7">7</a>
+      <a href="#section-4.1">4.1</a>. WWW-Authenticate ...........................................<a href="#page-7">7</a>
+      <a href="#section-4.2">4.2</a>. Authorization ..............................................<a href="#page-8">8</a>
+      <a href="#section-4.3">4.3</a>. Proxy-Authenticate .........................................<a href="#page-8">8</a>
+      <a href="#section-4.4">4.4</a>. Proxy-Authorization ........................................<a href="#page-9">9</a>
+   <a href="#section-5">5</a>. IANA Considerations .............................................<a href="#page-9">9</a>
+      <a href="#section-5.1">5.1</a>. Authentication Scheme Registry .............................<a href="#page-9">9</a>
+           <a href="#section-5.1.1">5.1.1</a>. Procedure ...........................................<a href="#page-9">9</a>
+           <a href="#section-5.1.2">5.1.2</a>. Considerations for New Authentication Schemes ......<a href="#page-10">10</a>
+      <a href="#section-5.2">5.2</a>. Status Code Registration ..................................<a href="#page-11">11</a>
+      <a href="#section-5.3">5.3</a>. Header Field Registration .................................<a href="#page-11">11</a>
+   <a href="#section-6">6</a>. Security Considerations ........................................<a href="#page-12">12</a>
+      <a href="#section-6.1">6.1</a>. Confidentiality of Credentials ............................<a href="#page-12">12</a>
+      <a href="#section-6.2">6.2</a>. Authentication Credentials and Idle Clients ...............<a href="#page-12">12</a>
+      <a href="#section-6.3">6.3</a>. Protection Spaces .........................................<a href="#page-13">13</a>
+   <a href="#section-7">7</a>. Acknowledgments ................................................<a href="#page-14">14</a>
+   <a href="#section-8">8</a>. References .....................................................<a href="#page-14">14</a>
+      <a href="#section-8.1">8.1</a>. Normative References ......................................<a href="#page-14">14</a>
+      <a href="#section-8.2">8.2</a>. Informative References ....................................<a href="#page-14">14</a>
+   <a href="#appendix-A">Appendix A</a>. Changes from RFCs 2616 and 2617 .......................<a href="#page-16">16</a>
+   <a href="#appendix-B">Appendix B</a>. Imported ABNF .........................................<a href="#page-16">16</a>
+   <a href="#appendix-C">Appendix C</a>. Collected ABNF ........................................<a href="#page-17">17</a>
+   Index .............................................................<a href="#page-18">18</a>
+
+
+
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                    [Page 2]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-3" id="page-3" href="#page-3" class="invisible"> </a>
+<span class="grey"><a href="./rfc7235">RFC 7235</a>                 HTTP/1.1 Authentication               June 2014</span>
+
+
+<span class="h2"><a class="selflink" name="section-1" href="#section-1">1</a>.  Introduction</span>
+
+   HTTP provides a general framework for access control and
+   authentication, via an extensible set of challenge-response
+   authentication schemes, which can be used by a server to challenge a
+   client request and by a client to provide authentication information.
+   This document defines HTTP/1.1 authentication in terms of the
+   architecture defined in "Hypertext Transfer Protocol (HTTP/1.1):
+   Message Syntax and Routing" [<a href="./rfc7230" title="&quot;Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing&quot;">RFC7230</a>], including the general
+   framework previously described in "HTTP Authentication: Basic and
+   Digest Access Authentication" [<a href="./rfc2617" title="&quot;HTTP Authentication: Basic and Digest Access Authentication&quot;">RFC2617</a>] and the related fields and
+   status codes previously defined in "Hypertext Transfer Protocol --
+   HTTP/1.1" [<a href="./rfc2616" title="&quot;Hypertext Transfer Protocol -- HTTP/1.1&quot;">RFC2616</a>].
+
+   The IANA Authentication Scheme Registry (<a href="#section-5.1">Section 5.1</a>) lists
+   registered authentication schemes and their corresponding
+   specifications, including the "basic" and "digest" authentication
+   schemes previously defined by <a href="./rfc2617">RFC 2617</a>.
+
+<span class="h3"><a class="selflink" name="section-1.1" href="#section-1.1">1.1</a>.  Conformance and Error Handling</span>
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
+   document are to be interpreted as described in [<a href="./rfc2119" title="&quot;Key words for use in RFCs to Indicate Requirement Levels&quot;">RFC2119</a>].
+
+   Conformance criteria and considerations regarding error handling are
+   defined in <a href="./rfc7230#section-2.5">Section&nbsp;2.5 of [RFC7230]</a>.
+
+<span class="h3"><a class="selflink" name="section-1.2" href="#section-1.2">1.2</a>.  Syntax Notation</span>
+
+   This specification uses the Augmented Backus-Naur Form (ABNF)
+   notation of [<a href="./rfc5234" title="&quot;Augmented BNF for Syntax Specifications: ABNF&quot;">RFC5234</a>] with a list extension, defined in <a href="./rfc7230#section-7">Section&nbsp;7 of
+   [RFC7230]</a>, that allows for compact definition of comma-separated
+   lists using a '#' operator (similar to how the '*' operator indicates
+   repetition).  <a href="#appendix-B">Appendix B</a> describes rules imported from other
+   documents.  <a href="#appendix-C">Appendix C</a> shows the collected grammar with all list
+   operators expanded to standard ABNF notation.
+
+<span class="h2"><a class="selflink" name="section-2" href="#section-2">2</a>.  Access Authentication Framework</span>
+
+<span class="h3"><a class="selflink" name="section-2.1" href="#section-2.1">2.1</a>.  Challenge and Response</span>
+
+   HTTP provides a simple challenge-response authentication framework
+   that can be used by a server to challenge a client request and by a
+   client to provide authentication information.  It uses a case-
+   insensitive token as a means to identify the authentication scheme,
+   followed by additional information necessary for achieving
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                    [Page 3]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-4" id="page-4" href="#page-4" class="invisible"> </a>
+<span class="grey"><a href="./rfc7235">RFC 7235</a>                 HTTP/1.1 Authentication               June 2014</span>
+
+
+   authentication via that scheme.  The latter can be either a comma-
+   separated list of parameters or a single sequence of characters
+   capable of holding base64-encoded information.
+
+   Authentication parameters are name=value pairs, where the name token
+   is matched case-insensitively, and each parameter name MUST only
+   occur once per challenge.
+
+     auth-scheme    = token
+
+     auth-param     = token BWS "=" BWS ( token / quoted-string )
+
+     token68        = 1*( ALPHA / DIGIT /
+                          "-" / "." / "_" / "~" / "+" / "/" ) *"="
+
+   The token68 syntax allows the 66 unreserved URI characters
+   ([<a href="./rfc3986" title="&quot;Uniform Resource Identifier (URI): Generic Syntax&quot;">RFC3986</a>]), plus a few others, so that it can hold a base64,
+   base64url (URL and filename safe alphabet), base32, or base16 (hex)
+   encoding, with or without padding, but excluding whitespace
+   ([<a href="./rfc4648" title="&quot;The Base16, Base32, and Base64 Data Encodings&quot;">RFC4648</a>]).
+
+   A 401 (Unauthorized) response message is used by an origin server to
+   challenge the authorization of a user agent, including a
+   WWW-Authenticate header field containing at least one challenge
+   applicable to the requested resource.
+
+   A 407 (Proxy Authentication Required) response message is used by a
+   proxy to challenge the authorization of a client, including a
+   Proxy-Authenticate header field containing at least one challenge
+   applicable to the proxy for the requested resource.
+
+     challenge   = auth-scheme [ 1*SP ( token68 / #auth-param ) ]
+
+      Note: Many clients fail to parse a challenge that contains an
+      unknown scheme.  A workaround for this problem is to list well-
+      supported schemes (such as "basic") first.
+
+   A user agent that wishes to authenticate itself with an origin server
+   -- usually, but not necessarily, after receiving a 401 (Unauthorized)
+   -- can do so by including an Authorization header field with the
+   request.
+
+   A client that wishes to authenticate itself with a proxy -- usually,
+   but not necessarily, after receiving a 407 (Proxy Authentication
+   Required) -- can do so by including a Proxy-Authorization header
+   field with the request.
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                    [Page 4]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-5" id="page-5" href="#page-5" class="invisible"> </a>
+<span class="grey"><a href="./rfc7235">RFC 7235</a>                 HTTP/1.1 Authentication               June 2014</span>
+
+
+   Both the Authorization field value and the Proxy-Authorization field
+   value contain the client's credentials for the realm of the resource
+   being requested, based upon a challenge received in a response
+   (possibly at some point in the past).  When creating their values,
+   the user agent ought to do so by selecting the challenge with what it
+   considers to be the most secure auth-scheme that it understands,
+   obtaining credentials from the user as appropriate.  Transmission of
+   credentials within header field values implies significant security
+   considerations regarding the confidentiality of the underlying
+   connection, as described in <a href="#section-6.1">Section 6.1</a>.
+
+     credentials = auth-scheme [ 1*SP ( token68 / #auth-param ) ]
+
+   Upon receipt of a request for a protected resource that omits
+   credentials, contains invalid credentials (e.g., a bad password) or
+   partial credentials (e.g., when the authentication scheme requires
+   more than one round trip), an origin server SHOULD send a 401
+   (Unauthorized) response that contains a WWW-Authenticate header field
+   with at least one (possibly new) challenge applicable to the
+   requested resource.
+
+   Likewise, upon receipt of a request that omits proxy credentials or
+   contains invalid or partial proxy credentials, a proxy that requires
+   authentication SHOULD generate a 407 (Proxy Authentication Required)
+   response that contains a Proxy-Authenticate header field with at
+   least one (possibly new) challenge applicable to the proxy.
+
+   A server that receives valid credentials that are not adequate to
+   gain access ought to respond with the 403 (Forbidden) status code
+   (<a href="./rfc7231#section-6.5.3">Section&nbsp;6.5.3 of [RFC7231]</a>).
+
+   HTTP does not restrict applications to this simple challenge-response
+   framework for access authentication.  Additional mechanisms can be
+   used, such as authentication at the transport level or via message
+   encapsulation, and with additional header fields specifying
+   authentication information.  However, such additional mechanisms are
+   not defined by this specification.
+
+<span class="h3"><a class="selflink" name="section-2.2" href="#section-2.2">2.2</a>.  Protection Space (Realm)</span>
+
+   The "realm" authentication parameter is reserved for use by
+   authentication schemes that wish to indicate a scope of protection.
+
+   A protection space is defined by the canonical root URI (the scheme
+   and authority components of the effective request URI; see <a href="#section-5.5">Section</a>
+   <a href="#section-5.5">5.5</a> of [<a href="./rfc7230" title="&quot;Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing&quot;">RFC7230</a>]) of the server being accessed, in combination with
+   the realm value if present.  These realms allow the protected
+   resources on a server to be partitioned into a set of protection
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                    [Page 5]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-6" id="page-6" href="#page-6" class="invisible"> </a>
+<span class="grey"><a href="./rfc7235">RFC 7235</a>                 HTTP/1.1 Authentication               June 2014</span>
+
+
+   spaces, each with its own authentication scheme and/or authorization
+   database.  The realm value is a string, generally assigned by the
+   origin server, that can have additional semantics specific to the
+   authentication scheme.  Note that a response can have multiple
+   challenges with the same auth-scheme but with different realms.
+
+   The protection space determines the domain over which credentials can
+   be automatically applied.  If a prior request has been authorized,
+   the user agent MAY reuse the same credentials for all other requests
+   within that protection space for a period of time determined by the
+   authentication scheme, parameters, and/or user preferences (such as a
+   configurable inactivity timeout).  Unless specifically allowed by the
+   authentication scheme, a single protection space cannot extend
+   outside the scope of its server.
+
+   For historical reasons, a sender MUST only generate the quoted-string
+   syntax.  Recipients might have to support both token and
+   quoted-string syntax for maximum interoperability with existing
+   clients that have been accepting both notations for a long time.
+
+<span class="h2"><a class="selflink" name="section-3" href="#section-3">3</a>.  Status Code Definitions</span>
+
+<span class="h3"><a class="selflink" name="section-3.1" href="#section-3.1">3.1</a>.  401 Unauthorized</span>
+
+   The 401 (Unauthorized) status code indicates that the request has not
+   been applied because it lacks valid authentication credentials for
+   the target resource.  The server generating a 401 response MUST send
+   a WWW-Authenticate header field (<a href="#section-4.1">Section 4.1</a>) containing at least one
+   challenge applicable to the target resource.
+
+   If the request included authentication credentials, then the 401
+   response indicates that authorization has been refused for those
+   credentials.  The user agent MAY repeat the request with a new or
+   replaced Authorization header field (<a href="#section-4.2">Section 4.2</a>).  If the 401
+   response contains the same challenge as the prior response, and the
+   user agent has already attempted authentication at least once, then
+   the user agent SHOULD present the enclosed representation to the
+   user, since it usually contains relevant diagnostic information.
+
+<span class="h3"><a class="selflink" name="section-3.2" href="#section-3.2">3.2</a>.  407 Proxy Authentication Required</span>
+
+   The 407 (Proxy Authentication Required) status code is similar to 401
+   (Unauthorized), but it indicates that the client needs to
+   authenticate itself in order to use a proxy.  The proxy MUST send a
+   Proxy-Authenticate header field (<a href="#section-4.3">Section 4.3</a>) containing a challenge
+   applicable to that proxy for the target resource.  The client MAY
+   repeat the request with a new or replaced Proxy-Authorization header
+   field (<a href="#section-4.4">Section 4.4</a>).
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                    [Page 6]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-7" id="page-7" href="#page-7" class="invisible"> </a>
+<span class="grey"><a href="./rfc7235">RFC 7235</a>                 HTTP/1.1 Authentication               June 2014</span>
+
+
+<span class="h2"><a class="selflink" name="section-4" href="#section-4">4</a>.  Header Field Definitions</span>
+
+   This section defines the syntax and semantics of header fields
+   related to the HTTP authentication framework.
+
+<span class="h3"><a class="selflink" name="section-4.1" href="#section-4.1">4.1</a>.  WWW-Authenticate</span>
+
+   The "WWW-Authenticate" header field indicates the authentication
+   scheme(s) and parameters applicable to the target resource.
+
+     WWW-Authenticate = 1#challenge
+
+   A server generating a 401 (Unauthorized) response MUST send a
+   WWW-Authenticate header field containing at least one challenge.  A
+   server MAY generate a WWW-Authenticate header field in other response
+   messages to indicate that supplying credentials (or different
+   credentials) might affect the response.
+
+   A proxy forwarding a response MUST NOT modify any WWW-Authenticate
+   fields in that response.
+
+   User agents are advised to take special care in parsing the field
+   value, as it might contain more than one challenge, and each
+   challenge can contain a comma-separated list of authentication
+   parameters.  Furthermore, the header field itself can occur multiple
+   times.
+
+   For instance:
+
+     WWW-Authenticate: Newauth realm="apps", type=1,
+                       title="Login to \"apps\"", Basic realm="simple"
+
+   This header field contains two challenges; one for the "Newauth"
+   scheme with a realm value of "apps", and two additional parameters
+   "type" and "title", and another one for the "Basic" scheme with a
+   realm value of "simple".
+
+      Note: The challenge grammar production uses the list syntax as
+      well.  Therefore, a sequence of comma, whitespace, and comma can
+      be considered either as applying to the preceding challenge, or to
+      be an empty entry in the list of challenges.  In practice, this
+      ambiguity does not affect the semantics of the header field value
+      and thus is harmless.
+
+
+
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                    [Page 7]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-8" id="page-8" href="#page-8" class="invisible"> </a>
+<span class="grey"><a href="./rfc7235">RFC 7235</a>                 HTTP/1.1 Authentication               June 2014</span>
+
+
+<span class="h3"><a class="selflink" name="section-4.2" href="#section-4.2">4.2</a>.  Authorization</span>
+
+   The "Authorization" header field allows a user agent to authenticate
+   itself with an origin server -- usually, but not necessarily, after
+   receiving a 401 (Unauthorized) response.  Its value consists of
+   credentials containing the authentication information of the user
+   agent for the realm of the resource being requested.
+
+     Authorization = credentials
+
+   If a request is authenticated and a realm specified, the same
+   credentials are presumed to be valid for all other requests within
+   this realm (assuming that the authentication scheme itself does not
+   require otherwise, such as credentials that vary according to a
+   challenge value or using synchronized clocks).
+
+   A proxy forwarding a request MUST NOT modify any Authorization fields
+   in that request.  See <a href="./rfc7234#section-3.2">Section&nbsp;3.2 of [RFC7234]</a> for details of and
+   requirements pertaining to handling of the Authorization field by
+   HTTP caches.
+
+<span class="h3"><a class="selflink" name="section-4.3" href="#section-4.3">4.3</a>.  Proxy-Authenticate</span>
+
+   The "Proxy-Authenticate" header field consists of at least one
+   challenge that indicates the authentication scheme(s) and parameters
+   applicable to the proxy for this effective request URI (<a href="./rfc7230#section-5.5">Section&nbsp;5.5
+   of [RFC7230]</a>).  A proxy MUST send at least one Proxy-Authenticate
+   header field in each 407 (Proxy Authentication Required) response
+   that it generates.
+
+     Proxy-Authenticate = 1#challenge
+
+   Unlike WWW-Authenticate, the Proxy-Authenticate header field applies
+   only to the next outbound client on the response chain.  This is
+   because only the client that chose a given proxy is likely to have
+   the credentials necessary for authentication.  However, when multiple
+   proxies are used within the same administrative domain, such as
+   office and regional caching proxies within a large corporate network,
+   it is common for credentials to be generated by the user agent and
+   passed through the hierarchy until consumed.  Hence, in such a
+   configuration, it will appear as if Proxy-Authenticate is being
+   forwarded because each proxy will send the same challenge set.
+
+   Note that the parsing considerations for WWW-Authenticate apply to
+   this header field as well; see <a href="#section-4.1">Section 4.1</a> for details.
+
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                    [Page 8]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-9" id="page-9" href="#page-9" class="invisible"> </a>
+<span class="grey"><a href="./rfc7235">RFC 7235</a>                 HTTP/1.1 Authentication               June 2014</span>
+
+
+<span class="h3"><a class="selflink" name="section-4.4" href="#section-4.4">4.4</a>.  Proxy-Authorization</span>
+
+   The "Proxy-Authorization" header field allows the client to identify
+   itself (or its user) to a proxy that requires authentication.  Its
+   value consists of credentials containing the authentication
+   information of the client for the proxy and/or realm of the resource
+   being requested.
+
+     Proxy-Authorization = credentials
+
+   Unlike Authorization, the Proxy-Authorization header field applies
+   only to the next inbound proxy that demanded authentication using the
+   Proxy-Authenticate field.  When multiple proxies are used in a chain,
+   the Proxy-Authorization header field is consumed by the first inbound
+   proxy that was expecting to receive credentials.  A proxy MAY relay
+   the credentials from the client request to the next proxy if that is
+   the mechanism by which the proxies cooperatively authenticate a given
+   request.
+
+<span class="h2"><a class="selflink" name="section-5" href="#section-5">5</a>.  IANA Considerations</span>
+
+<span class="h3"><a class="selflink" name="section-5.1" href="#section-5.1">5.1</a>.  Authentication Scheme Registry</span>
+
+   The "Hypertext Transfer Protocol (HTTP) Authentication Scheme
+   Registry" defines the namespace for the authentication schemes in
+   challenges and credentials.  It has been created and is now
+   maintained at &lt;<a href="http://www.iana.org/assignments/http-authschemes">http://www.iana.org/assignments/http-authschemes</a>&gt;.
+
+<span class="h4"><a class="selflink" name="section-5.1.1" href="#section-5.1.1">5.1.1</a>.  Procedure</span>
+
+   Registrations MUST include the following fields:
+
+   o  Authentication Scheme Name
+
+   o  Pointer to specification text
+
+   o  Notes (optional)
+
+   Values to be added to this namespace require IETF Review (see
+   <a href="./rfc5226#section-4.1">[RFC5226], Section&nbsp;4.1</a>).
+
+
+
+
+
+
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                    [Page 9]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-10" id="page-10" href="#page-10" class="invisible"> </a>
+<span class="grey"><a href="./rfc7235">RFC 7235</a>                 HTTP/1.1 Authentication               June 2014</span>
+
+
+<span class="h4"><a class="selflink" name="section-5.1.2" href="#section-5.1.2">5.1.2</a>.  Considerations for New Authentication Schemes</span>
+
+   There are certain aspects of the HTTP Authentication Framework that
+   put constraints on how new authentication schemes can work:
+
+   o  HTTP authentication is presumed to be stateless: all of the
+      information necessary to authenticate a request MUST be provided
+      in the request, rather than be dependent on the server remembering
+      prior requests.  Authentication based on, or bound to, the
+      underlying connection is outside the scope of this specification
+      and inherently flawed unless steps are taken to ensure that the
+      connection cannot be used by any party other than the
+      authenticated user (see <a href="./rfc7230#section-2.3">Section&nbsp;2.3 of [RFC7230]</a>).
+
+   o  The authentication parameter "realm" is reserved for defining
+      protection spaces as described in <a href="#section-2.2">Section 2.2</a>.  New schemes MUST
+      NOT use it in a way incompatible with that definition.
+
+   o  The "token68" notation was introduced for compatibility with
+      existing authentication schemes and can only be used once per
+      challenge or credential.  Thus, new schemes ought to use the
+      auth-param syntax instead, because otherwise future extensions
+      will be impossible.
+
+   o  The parsing of challenges and credentials is defined by this
+      specification and cannot be modified by new authentication
+      schemes.  When the auth-param syntax is used, all parameters ought
+      to support both token and quoted-string syntax, and syntactical
+      constraints ought to be defined on the field value after parsing
+      (i.e., quoted-string processing).  This is necessary so that
+      recipients can use a generic parser that applies to all
+      authentication schemes.
+
+      Note: The fact that the value syntax for the "realm" parameter is
+      restricted to quoted-string was a bad design choice not to be
+      repeated for new parameters.
+
+   o  Definitions of new schemes ought to define the treatment of
+      unknown extension parameters.  In general, a "must-ignore" rule is
+      preferable to a "must-understand" rule, because otherwise it will
+      be hard to introduce new parameters in the presence of legacy
+      recipients.  Furthermore, it's good to describe the policy for
+      defining new parameters (such as "update the specification" or
+      "use this registry").
+
+   o  Authentication schemes need to document whether they are usable in
+      origin-server authentication (i.e., using WWW-Authenticate),
+      and/or proxy authentication (i.e., using Proxy-Authenticate).
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                   [Page 10]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-11" id="page-11" href="#page-11" class="invisible"> </a>
+<span class="grey"><a href="./rfc7235">RFC 7235</a>                 HTTP/1.1 Authentication               June 2014</span>
+
+
+   o  The credentials carried in an Authorization header field are
+      specific to the user agent and, therefore, have the same effect on
+      HTTP caches as the "private" Cache-Control response directive
+      (<a href="./rfc7234#section-5.2.2.6">Section&nbsp;5.2.2.6 of [RFC7234]</a>), within the scope of the request in
+      which they appear.
+
+      Therefore, new authentication schemes that choose not to carry
+      credentials in the Authorization header field (e.g., using a newly
+      defined header field) will need to explicitly disallow caching, by
+      mandating the use of either Cache-Control request directives
+      (e.g., "no-store", <a href="./rfc7234#section-5.2.1.5">Section&nbsp;5.2.1.5 of [RFC7234]</a>) or response
+      directives (e.g., "private").
+
+<span class="h3"><a class="selflink" name="section-5.2" href="#section-5.2">5.2</a>.  Status Code Registration</span>
+
+   The "Hypertext Transfer Protocol (HTTP) Status Code Registry" located
+   at &lt;<a href="http://www.iana.org/assignments/http-status-codes">http://www.iana.org/assignments/http-status-codes</a>&gt; has been
+   updated with the registrations below:
+
+   +-------+-------------------------------+-------------+
+   | Value | Description                   | Reference   |
+   +-------+-------------------------------+-------------+
+   | 401   | Unauthorized                  | <a href="#section-3.1">Section 3.1</a> |
+   | 407   | Proxy Authentication Required | <a href="#section-3.2">Section 3.2</a> |
+   +-------+-------------------------------+-------------+
+
+<span class="h3"><a class="selflink" name="section-5.3" href="#section-5.3">5.3</a>.  Header Field Registration</span>
+
+   HTTP header fields are registered within the "Message Headers"
+   registry maintained at
+   &lt;<a href="http://www.iana.org/assignments/message-headers/">http://www.iana.org/assignments/message-headers/</a>&gt;.
+
+   This document defines the following HTTP header fields, so the
+   "Permanent Message Header Field Names" registry has been updated
+   accordingly (see [<a href="#ref-BCP90" title="&quot;Registration Procedures for Message Header Fields&quot;">BCP90</a>]).
+
+   +---------------------+----------+----------+-------------+
+   | Header Field Name   | Protocol | Status   | Reference   |
+   +---------------------+----------+----------+-------------+
+   | Authorization       | http     | standard | <a href="#section-4.2">Section 4.2</a> |
+   | Proxy-Authenticate  | http     | standard | <a href="#section-4.3">Section 4.3</a> |
+   | Proxy-Authorization | http     | standard | <a href="#section-4.4">Section 4.4</a> |
+   | WWW-Authenticate    | http     | standard | <a href="#section-4.1">Section 4.1</a> |
+   +---------------------+----------+----------+-------------+
+
+   The change controller is: "IETF (iesg@ietf.org) - Internet
+   Engineering Task Force".
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                   [Page 11]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-12" id="page-12" href="#page-12" class="invisible"> </a>
+<span class="grey"><a href="./rfc7235">RFC 7235</a>                 HTTP/1.1 Authentication               June 2014</span>
+
+
+<span class="h2"><a class="selflink" name="section-6" href="#section-6">6</a>.  Security Considerations</span>
+
+   This section is meant to inform developers, information providers,
+   and users of known security concerns specific to HTTP authentication.
+   More general security considerations are addressed in HTTP messaging
+   [<a href="./rfc7230" title="&quot;Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing&quot;">RFC7230</a>] and semantics [<a href="./rfc7231" title="&quot;Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content&quot;">RFC7231</a>].
+
+   Everything about the topic of HTTP authentication is a security
+   consideration, so the list of considerations below is not exhaustive.
+   Furthermore, it is limited to security considerations regarding the
+   authentication framework, in general, rather than discussing all of
+   the potential considerations for specific authentication schemes
+   (which ought to be documented in the specifications that define those
+   schemes).  Various organizations maintain topical information and
+   links to current research on Web application security (e.g.,
+   [<a href="#ref-OWASP" title="&quot;A Guide to Building Secure Web Applications and Web Services&quot;">OWASP</a>]), including common pitfalls for implementing and using the
+   authentication schemes found in practice.
+
+<span class="h3"><a class="selflink" name="section-6.1" href="#section-6.1">6.1</a>.  Confidentiality of Credentials</span>
+
+   The HTTP authentication framework does not define a single mechanism
+   for maintaining the confidentiality of credentials; instead, each
+   authentication scheme defines how the credentials are encoded prior
+   to transmission.  While this provides flexibility for the development
+   of future authentication schemes, it is inadequate for the protection
+   of existing schemes that provide no confidentiality on their own, or
+   that do not sufficiently protect against replay attacks.
+   Furthermore, if the server expects credentials that are specific to
+   each individual user, the exchange of those credentials will have the
+   effect of identifying that user even if the content within
+   credentials remains confidential.
+
+   HTTP depends on the security properties of the underlying transport-
+   or session-level connection to provide confidential transmission of
+   header fields.  In other words, if a server limits access to
+   authenticated users using this framework, the server needs to ensure
+   that the connection is properly secured in accordance with the nature
+   of the authentication scheme used.  For example, services that depend
+   on individual user authentication often require a connection to be
+   secured with TLS ("Transport Layer Security", [<a href="./rfc5246" title="&quot;The Transport Layer Security (TLS) Protocol Version 1.2&quot;">RFC5246</a>]) prior to
+   exchanging any credentials.
+
+<span class="h3"><a class="selflink" name="section-6.2" href="#section-6.2">6.2</a>.  Authentication Credentials and Idle Clients</span>
+
+   Existing HTTP clients and user agents typically retain authentication
+   information indefinitely.  HTTP does not provide a mechanism for the
+   origin server to direct clients to discard these cached credentials,
+   since the protocol has no awareness of how credentials are obtained
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                   [Page 12]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-13" id="page-13" href="#page-13" class="invisible"> </a>
+<span class="grey"><a href="./rfc7235">RFC 7235</a>                 HTTP/1.1 Authentication               June 2014</span>
+
+
+   or managed by the user agent.  The mechanisms for expiring or
+   revoking credentials can be specified as part of an authentication
+   scheme definition.
+
+   Circumstances under which credential caching can interfere with the
+   application's security model include but are not limited to:
+
+   o  Clients that have been idle for an extended period, following
+      which the server might wish to cause the client to re-prompt the
+      user for credentials.
+
+   o  Applications that include a session termination indication (such
+      as a "logout" or "commit" button on a page) after which the server
+      side of the application "knows" that there is no further reason
+      for the client to retain the credentials.
+
+   User agents that cache credentials are encouraged to provide a
+   readily accessible mechanism for discarding cached credentials under
+   user control.
+
+<span class="h3"><a class="selflink" name="section-6.3" href="#section-6.3">6.3</a>.  Protection Spaces</span>
+
+   Authentication schemes that solely rely on the "realm" mechanism for
+   establishing a protection space will expose credentials to all
+   resources on an origin server.  Clients that have successfully made
+   authenticated requests with a resource can use the same
+   authentication credentials for other resources on the same origin
+   server.  This makes it possible for a different resource to harvest
+   authentication credentials for other resources.
+
+   This is of particular concern when an origin server hosts resources
+   for multiple parties under the same canonical root URI (<a href="#section-2.2">Section 2.2</a>).
+   Possible mitigation strategies include restricting direct access to
+   authentication credentials (i.e., not making the content of the
+   Authorization request header field available), and separating
+   protection spaces by using a different host name (or port number) for
+   each party.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                   [Page 13]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-14" id="page-14" href="#page-14" class="invisible"> </a>
+<span class="grey"><a href="./rfc7235">RFC 7235</a>                 HTTP/1.1 Authentication               June 2014</span>
+
+
+<span class="h2"><a class="selflink" name="section-7" href="#section-7">7</a>.  Acknowledgments</span>
+
+   This specification takes over the definition of the HTTP
+   Authentication Framework, previously defined in <a href="./rfc2617">RFC 2617</a>.  We thank
+   John Franks, Phillip M. Hallam-Baker, Jeffery L. Hostetler, Scott D.
+   Lawrence, Paul J. Leach, Ari Luotonen, and Lawrence C. Stewart for
+   their work on that specification.  See <a href="./rfc2617#section-6">Section&nbsp;6 of [RFC2617]</a> for
+   further acknowledgements.
+
+   See <a href="./rfc7230#section-10">Section&nbsp;10 of [RFC7230]</a> for the Acknowledgments related to this
+   document revision.
+
+<span class="h2"><a class="selflink" name="section-8" href="#section-8">8</a>.  References</span>
+
+<span class="h3"><a class="selflink" name="section-8.1" href="#section-8.1">8.1</a>.  Normative References</span>
+
+   [<a name="ref-RFC2119" id="ref-RFC2119">RFC2119</a>]  Bradner, S., "Key words for use in RFCs to Indicate
+              Requirement Levels", <a href="./bcp14">BCP 14</a>, <a href="./rfc2119">RFC 2119</a>, March 1997.
+
+   [<a name="ref-RFC5234" id="ref-RFC5234">RFC5234</a>]  Crocker, D., Ed. and P. Overell, "Augmented BNF for Syntax
+              Specifications: ABNF", STD 68, <a href="./rfc5234">RFC 5234</a>, January 2008.
+
+   [<a name="ref-RFC7230" id="ref-RFC7230">RFC7230</a>]  Fielding, R., Ed. and J. Reschke, Ed., "Hypertext Transfer
+              Protocol (HTTP/1.1): Message Syntax and Routing",
+              <a href="./rfc7230">RFC 7230</a>, June 2014.
+
+   [<a name="ref-RFC7231" id="ref-RFC7231">RFC7231</a>]  Fielding, R., Ed. and J. Reschke, Ed., "Hypertext Transfer
+              Protocol (HTTP/1.1): Semantics and Content", <a href="./rfc7231">RFC 7231</a>,
+              June 2014.
+
+   [<a name="ref-RFC7234" id="ref-RFC7234">RFC7234</a>]  Fielding, R., Ed., Nottingham, M., Ed., and J. Reschke,
+              Ed., "Hypertext Transfer Protocol (HTTP/1.1): Caching",
+              <a href="./rfc7234">RFC 7234</a>, June 2014.
+
+<span class="h3"><a class="selflink" name="section-8.2" href="#section-8.2">8.2</a>.  Informative References</span>
+
+   [<a name="ref-BCP90" id="ref-BCP90">BCP90</a>]    Klyne, G., Nottingham, M., and J. Mogul, "Registration
+              Procedures for Message Header Fields", <a href="./bcp90">BCP 90</a>, <a href="./rfc3864">RFC 3864</a>,
+              September 2004.
+
+   [<a name="ref-OWASP" id="ref-OWASP">OWASP</a>]    van der Stock, A., Ed., "A Guide to Building Secure Web
+              Applications and Web Services", The Open Web Application
+              Security Project (OWASP) 2.0.1, July 2005,
+              &lt;<a href="https://www.owasp.org/">https://www.owasp.org/</a>&gt;.
+
+   [<a name="ref-RFC2616" id="ref-RFC2616">RFC2616</a>]  Fielding, R., Gettys, J., Mogul, J., Frystyk, H.,
+              Masinter, L., Leach, P., and T. Berners-Lee, "Hypertext
+              Transfer Protocol -- HTTP/1.1", <a href="./rfc2616">RFC 2616</a>, June 1999.
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                   [Page 14]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-15" id="page-15" href="#page-15" class="invisible"> </a>
+<span class="grey"><a href="./rfc7235">RFC 7235</a>                 HTTP/1.1 Authentication               June 2014</span>
+
+
+   [<a name="ref-RFC2617" id="ref-RFC2617">RFC2617</a>]  Franks, J., Hallam-Baker, P., Hostetler, J., Lawrence, S.,
+              Leach, P., Luotonen, A., and L. Stewart, "HTTP
+              Authentication: Basic and Digest Access Authentication",
+              <a href="./rfc2617">RFC 2617</a>, June 1999.
+
+   [<a name="ref-RFC3986" id="ref-RFC3986">RFC3986</a>]  Berners-Lee, T., Fielding, R., and L. Masinter, "Uniform
+              Resource Identifier (URI): Generic Syntax", STD 66,
+              <a href="./rfc3986">RFC 3986</a>, January 2005.
+
+   [<a name="ref-RFC4648" id="ref-RFC4648">RFC4648</a>]  Josefsson, S., "The Base16, Base32, and Base64 Data
+              Encodings", <a href="./rfc4648">RFC 4648</a>, October 2006.
+
+   [<a name="ref-RFC5226" id="ref-RFC5226">RFC5226</a>]  Narten, T. and H. Alvestrand, "Guidelines for Writing an
+              IANA Considerations Section in RFCs", <a href="./bcp26">BCP 26</a>, <a href="./rfc5226">RFC 5226</a>,
+              May 2008.
+
+   [<a name="ref-RFC5246" id="ref-RFC5246">RFC5246</a>]  Dierks, T. and E. Rescorla, "The Transport Layer Security
+              (TLS) Protocol Version 1.2", <a href="./rfc5246">RFC 5246</a>, August 2008.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                   [Page 15]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-16" id="page-16" href="#page-16" class="invisible"> </a>
+<span class="grey"><a href="./rfc7235">RFC 7235</a>                 HTTP/1.1 Authentication               June 2014</span>
+
+
+<span class="h2"><a class="selflink" name="appendix-A" href="#appendix-A">Appendix A</a>.  Changes from RFCs 2616 and 2617</span>
+
+   The framework for HTTP Authentication is now defined by this
+   document, rather than <a href="./rfc2617">RFC 2617</a>.
+
+   The "realm" parameter is no longer always required on challenges;
+   consequently, the ABNF allows challenges without any auth parameters.
+   (<a href="#section-2">Section 2</a>)
+
+   The "token68" alternative to auth-param lists has been added for
+   consistency with legacy authentication schemes such as "Basic".
+   (<a href="#section-2">Section 2</a>)
+
+   This specification introduces the Authentication Scheme Registry,
+   along with considerations for new authentication schemes.
+   (<a href="#section-5.1">Section 5.1</a>)
+
+<span class="h2"><a class="selflink" name="appendix-B" href="#appendix-B">Appendix B</a>.  Imported ABNF</span>
+
+   The following core rules are included by reference, as defined in
+   <a href="./rfc5234#appendix-B.1">Appendix&nbsp;B.1 of [RFC5234]</a>: ALPHA (letters), CR (carriage return),
+   CRLF (CR LF), CTL (controls), DIGIT (decimal 0-9), DQUOTE (double
+   quote), HEXDIG (hexadecimal 0-9/A-F/a-f), LF (line feed), OCTET (any
+   8-bit sequence of data), SP (space), and VCHAR (any visible US-ASCII
+   character).
+
+   The rules below are defined in [<a href="./rfc7230" title="&quot;Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing&quot;">RFC7230</a>]:
+
+     BWS           = &lt;BWS, see <a href="./rfc7230#section-3.2.3">[RFC7230], Section&nbsp;3.2.3</a>&gt;
+     OWS           = &lt;OWS, see <a href="./rfc7230#section-3.2.3">[RFC7230], Section&nbsp;3.2.3</a>&gt;
+     quoted-string = &lt;quoted-string, see <a href="./rfc7230#section-3.2.6">[RFC7230], Section&nbsp;3.2.6</a>&gt;
+     token         = &lt;token, see <a href="./rfc7230#section-3.2.6">[RFC7230], Section&nbsp;3.2.6</a>&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                   [Page 16]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-17" id="page-17" href="#page-17" class="invisible"> </a>
+<span class="grey"><a href="./rfc7235">RFC 7235</a>                 HTTP/1.1 Authentication               June 2014</span>
+
+
+<span class="h2"><a class="selflink" name="appendix-C" href="#appendix-C">Appendix C</a>.  Collected ABNF</span>
+
+   In the collected ABNF below, list rules are expanded as per <a href="#section-1.2">Section</a>
+   <a href="#section-1.2">1.2</a> of [<a href="./rfc7230" title="&quot;Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing&quot;">RFC7230</a>].
+
+   Authorization = credentials
+
+   BWS = &lt;BWS, see <a href="./rfc7230#section-3.2.3">[RFC7230], Section&nbsp;3.2.3</a>&gt;
+
+   OWS = &lt;OWS, see <a href="./rfc7230#section-3.2.3">[RFC7230], Section&nbsp;3.2.3</a>&gt;
+
+   Proxy-Authenticate = *( "," OWS ) challenge *( OWS "," [ OWS
+    challenge ] )
+   Proxy-Authorization = credentials
+
+   WWW-Authenticate = *( "," OWS ) challenge *( OWS "," [ OWS challenge
+    ] )
+
+   auth-param = token BWS "=" BWS ( token / quoted-string )
+   auth-scheme = token
+
+   challenge = auth-scheme [ 1*SP ( token68 / [ ( "," / auth-param ) *(
+    OWS "," [ OWS auth-param ] ) ] ) ]
+   credentials = auth-scheme [ 1*SP ( token68 / [ ( "," / auth-param )
+    *( OWS "," [ OWS auth-param ] ) ] ) ]
+
+   quoted-string = &lt;quoted-string, see <a href="./rfc7230#section-3.2.6">[RFC7230], Section&nbsp;3.2.6</a>&gt;
+
+   token = &lt;token, see <a href="./rfc7230#section-3.2.6">[RFC7230], Section&nbsp;3.2.6</a>&gt;
+   token68 = 1*( ALPHA / DIGIT / "-" / "." / "_" / "~" / "+" / "/" )
+    *"="
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                   [Page 17]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-18" id="page-18" href="#page-18" class="invisible"> </a>
+<span class="grey"><a href="./rfc7235">RFC 7235</a>                 HTTP/1.1 Authentication               June 2014</span>
+
+
+Index
+
+   4
+      401 Unauthorized (status code)  6
+      407 Proxy Authentication Required (status code)  6
+
+   A
+      Authorization header field  8
+
+   C
+      Canonical Root URI  5
+
+   G
+      Grammar
+         auth-param  4
+         auth-scheme  4
+         Authorization  8
+         challenge  4
+         credentials  5
+         Proxy-Authenticate  8
+         Proxy-Authorization  9
+         token68  4
+         WWW-Authenticate  7
+
+   P
+      Protection Space  5
+      Proxy-Authenticate header field  8
+      Proxy-Authorization header field  9
+
+   R
+      Realm  5
+
+   W
+      WWW-Authenticate header field  7
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                   [Page 18]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-19" id="page-19" href="#page-19" class="invisible"> </a>
+<span class="grey"><a href="./rfc7235">RFC 7235</a>                 HTTP/1.1 Authentication               June 2014</span>
+
+
+Authors' Addresses
+
+   Roy T. Fielding (editor)
+   Adobe Systems Incorporated
+   345 Park Ave
+   San Jose, CA  95110
+   USA
+
+   EMail: fielding@gbiv.com
+   URI:   <a href="http://roy.gbiv.com/">http://roy.gbiv.com/</a>
+
+
+   Julian F. Reschke (editor)
+   greenbytes GmbH
+   Hafenweg 16
+   Muenster, NW  48155
+   Germany
+
+   EMail: julian.reschke@greenbytes.de
+   URI:   <a href="http://greenbytes.de/tech/webdav/">http://greenbytes.de/tech/webdav/</a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Fielding &amp; Reschke           Standards Track                   [Page 19]
+
+</pre><br />
+<span class="noprint"><small><small>Html markup produced by rfcmarkup 1.109, available from
+<a href="https://tools.ietf.org/tools/rfcmarkup/">https://tools.ietf.org/tools/rfcmarkup/</a>
+</small></small></span>
+</body></html>

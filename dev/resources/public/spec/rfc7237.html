@@ -1,0 +1,438 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head profile="http://dublincore.org/documents/2008/08/04/dc-html/">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="robots" content="index,follow" />
+    <meta name="creator" content="rfcmarkup version 1.109" />
+    <link rel="schema.DC" href="http://purl.org/dc/elements/1.1/" />
+<meta name="DC.Identifier" content="urn:ietf:rfc:7237" />
+<meta name="DC.Description.Abstract" content="This document registers those Hypertext Transfer Protocol (HTTP)
+methods that have been defined in RFCs before the IANA HTTP Method
+Registry was established." />
+<meta name="DC.Creator" content="Julian Reschke &lt;julian.reschke@greenbytes.de&gt;" />
+<meta name="DC.Date.Issued" content="June, 2014" />
+<meta name="DC.Title" content="Initial Hypertext Transfer Protocol (HTTP) Method Registrations" />
+
+    <link rel="icon" href="/images/rfc.png" type="image/png" />
+    <link rel="shortcut icon" href="/images/rfc.png" type="image/png" />
+    <title>RFC 7237 - Initial Hypertext Transfer Protocol (HTTP) Method Registrations</title>
+    
+    
+    <style type="text/css">
+	body {
+	    margin: 0px 8px;
+            font-size: 1em;
+	}
+        h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+	    font-weight: bold;
+            line-height: 0pt;
+            display: inline;
+            white-space: pre;
+            font-family: monospace;
+            font-size: 1em;
+	    font-weight: bold;
+        }
+        pre {
+            font-size: 1em;
+            margin-top: 0px;
+            margin-bottom: 0px;
+        }
+	.pre {
+	    white-space: pre;
+	    font-family: monospace;
+	}
+	.header{
+	    font-weight: bold;
+	}
+        .newpage {
+            page-break-before: always;
+        }
+        .invisible {
+            text-decoration: none;
+            color: white;
+        }
+        a.selflink {
+          color: black;
+          text-decoration: none;
+        }
+        @media print {
+            body {
+                font-family: monospace;
+                font-size: 10.5pt;
+            }
+            h1, h2, h3, h4, h5, h6 {
+                font-size: 1em;
+            }
+        
+            a:link, a:visited {
+                color: inherit;
+                text-decoration: none;
+            }
+            .noprint {
+                display: none;
+            }
+        }
+	@media screen {
+	    .grey, .grey a:link, .grey a:visited {
+		color: #777;
+	    }
+            .docinfo {
+                background-color: #EEE;
+            }
+            .top {
+                border-top: 7px solid #EEE;
+            }
+            .bgwhite  { background-color: white; }
+            .bgred    { background-color: #F44; }
+            .bggrey   { background-color: #666; }
+            .bgbrown  { background-color: #840; }            
+            .bgorange { background-color: #FA0; }
+            .bgyellow { background-color: #EE0; }
+            .bgmagenta{ background-color: #F4F; }
+            .bgblue   { background-color: #66F; }
+            .bgcyan   { background-color: #4DD; }
+            .bggreen  { background-color: #4F4; }
+
+            .legend   { font-size: 90%; }
+            .cplate   { font-size: 70%; border: solid grey 1px; }
+	}
+    </style>
+    <!--[if IE]>
+    <style>
+    body {
+       font-size: 13px;
+       margin: 10px 10px;
+    }
+    </style>
+    <![endif]-->
+
+    <script type="text/javascript"><!--
+    function addHeaderTags() {
+	var spans = document.getElementsByTagName("span");
+	for (var i=0; i < spans.length; i++) {
+	    var elem = spans[i];
+	    if (elem) {
+		var level = elem.getAttribute("class");
+                if (level == "h1" || level == "h2" || level == "h3" || level == "h4" || level == "h5" || level == "h6") {
+                    elem.innerHTML = "<"+level+">"+elem.innerHTML+"</"+level+">";		
+                }
+	    }
+	}
+    }
+    var legend_html = "Colour legend:<br />      <table>         <tr><td>Unknown:</td>                   <td><span class='cplate bgwhite'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Draft:</td>                     <td><span class='cplate bgred'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Informational:</td>             <td><span class='cplate bgorange'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Experimental:</td>              <td><span class='cplate bgyellow'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Best Common Practice:</td>      <td><span class='cplate bgmagenta'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Proposed Standard:</td>         <td><span class='cplate bgblue'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Draft Standard (old designation):</td> <td><span class='cplate bgcyan'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Internet Standard:</td>         <td><span class='cplate bggreen'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Historic:</td>                  <td><span class='cplate bggrey'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Obsolete:</td>                  <td><span class='cplate bgbrown'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>     </table>";
+    function showElem(id) {
+        var elem = document.getElementById(id);
+        elem.innerHTML = eval(id+"_html");
+        elem.style.visibility='visible';
+    }
+    function hideElem(id) {
+        var elem = document.getElementById(id);
+        elem.style.visibility='hidden';        
+        elem.innerHTML = "";
+    }
+    // -->
+    </script>
+</head>
+<body onload="addHeaderTags()">
+   <div style="height: 13px;">
+      <div onmouseover="this.style.cursor='pointer';"
+         onclick="showElem('legend');"
+         onmouseout="hideElem('legend')"
+	 style="height: 6px; position: absolute;"
+         class="pre noprint docinfo bgorange"
+         title="Click for colour legend." >                                                                        </div>
+      <div id="legend"
+           class="docinfo noprint pre legend"
+           style="position:absolute; top: 4px; left: 4ex; visibility:hidden; background-color: white; padding: 4px 9px 5px 7px; border: solid #345 1px; "
+           onmouseover="showElem('legend');"
+           onmouseout="hideElem('legend');">
+      </div>
+   </div>
+<span class="pre noprint docinfo top">[<a href="../html/" title="Document search and retrieval page">Docs</a>] [<a href="/rfc/rfc7237.txt" title="Plaintext version of this document">txt</a>|<a href="/pdf/rfc7237" title="PDF version of this document">pdf</a>] [<a href="./draft-ietf-httpbis-method-registrations" title="draft-ietf-httpbis-method-registrations">draft-ietf-httpbi...</a>] [<a href="/rfcdiff?difftype=--hwdiff&amp;url2=rfc7237" title="Inline diff (wdiff)">Diff1</a>] [<a href="/rfcdiff?url2=rfc7237" title="Side-by-side diff">Diff2</a>]                 </span><br />
+<span class="pre noprint docinfo">                                                                        </span><br />
+<span class="pre noprint docinfo">                                                           INFORMATIONAL</span><br />
+<span class="pre noprint docinfo">                                                                        </span><br />
+<pre>
+Internet Engineering Task Force (IETF)                        J. Reschke
+Request for Comments: 7237                                    greenbytes
+Category: Informational                                        June 2014
+ISSN: 2070-1721
+
+
+    <span class="h1">Initial Hypertext Transfer Protocol (HTTP) Method Registrations</span>
+
+Abstract
+
+   This document registers those Hypertext Transfer Protocol (HTTP)
+   methods that have been defined in RFCs before the IANA HTTP Method
+   Registry was established.
+
+Status of This Memo
+
+   This document is not an Internet Standards Track specification; it is
+   published for informational purposes.
+
+   This document is a product of the Internet Engineering Task Force
+   (IETF).  It represents the consensus of the IETF community.  It has
+   received public review and has been approved for publication by the
+   Internet Engineering Steering Group (IESG).  Not all documents
+   approved by the IESG are a candidate for any level of Internet
+   Standard; see <a href="./rfc5741#section-2">Section&nbsp;2 of RFC 5741</a>.
+
+   Information about the current status of this document, any errata,
+   and how to provide feedback on it may be obtained at
+   <a href="http://www.rfc-editor.org/info/rfc7237">http://www.rfc-editor.org/info/rfc7237</a>.
+
+Copyright Notice
+
+   Copyright (c) 2014 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to <a href="./bcp78">BCP 78</a> and the IETF Trust's Legal
+   Provisions Relating to IETF Documents
+   (<a href="http://trustee.ietf.org/license-info">http://trustee.ietf.org/license-info</a>) in effect on the date of
+   publication of this document.  Please review these documents
+   carefully, as they describe your rights and restrictions with respect
+   to this document.  Code Components extracted from this document must
+   include Simplified BSD License text as described in <a href="#section-4">Section 4</a>.e of
+   the Trust Legal Provisions and are provided without warranty as
+   described in the Simplified BSD License.
+
+
+
+
+
+
+
+<span class="grey">Reschke                       Informational                     [Page 1]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-2" id="page-2" href="#page-2" class="invisible"> </a>
+<span class="grey"><a href="./rfc7237">RFC 7237</a>                HTTP Method Registrations              June 2014</span>
+
+
+Table of Contents
+
+   <a href="#section-1">1</a>.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-2">2</a>
+   <a href="#section-2">2</a>.  Security Considerations . . . . . . . . . . . . . . . . . . . . <a href="#page-2">2</a>
+   <a href="#section-3">3</a>.  IANA Considerations . . . . . . . . . . . . . . . . . . . . . . <a href="#page-3">3</a>
+   <a href="#section-4">4</a>.  Normative References  . . . . . . . . . . . . . . . . . . . . . <a href="#page-4">4</a>
+
+<span class="h2"><a class="selflink" name="section-1" href="#section-1">1</a>.  Introduction</span>
+
+   This document registers those Hypertext Transfer Protocol (HTTP)
+   methods that have been defined in RFCs other than [<a href="./rfc7231" title="&quot;Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content&quot;">RFC7231</a>] before
+   the IANA HTTP Method Registry was established.
+
+<span class="h2"><a class="selflink" name="section-2" href="#section-2">2</a>.  Security Considerations</span>
+
+   There are no security considerations related to the registration
+   itself.
+
+   Security considerations applicable to the individual HTTP methods
+   ought to be discussed in the specifications that define them.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="grey">Reschke                       Informational                     [Page 2]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-3" id="page-3" href="#page-3" class="invisible"> </a>
+<span class="grey"><a href="./rfc7237">RFC 7237</a>                HTTP Method Registrations              June 2014</span>
+
+
+<span class="h2"><a class="selflink" name="section-3" href="#section-3">3</a>.  IANA Considerations</span>
+
+   The table below provides registrations of HTTP method names that have
+   been added to the IANA "Hypertext Transfer Protocol (HTTP) Method
+   Registry" at &lt;<a href="http://www.iana.org/assignments/http-methods">http://www.iana.org/assignments/http-methods</a>&gt; (see
+   <a href="./rfc7231#section-8.1">Section&nbsp;8.1 of [RFC7231]</a>).
+
+   +-------------------+------+------------+---------------------------+
+   | Method Name       | Safe | Idempotent | Reference                 |
+   +-------------------+------+------------+---------------------------+
+   | ACL               | no   | yes        | <a href="./rfc3744#section-8.1">[RFC3744], Section&nbsp;8.1</a>    |
+   | BASELINE-CONTROL  | no   | yes        | <a href="./rfc3253#section-12.6">[RFC3253], Section&nbsp;12.6</a>   |
+   | BIND              | no   | yes        | <a href="./rfc5842#section-4">[RFC5842], Section&nbsp;4</a>      |
+   | CHECKIN           | no   | yes        | <a href="./rfc3253#section-4.4">[RFC3253], Section&nbsp;4.4</a>    |
+   |                   |      |            | and [<a href="./rfc3253" title="&quot;Versioning Extensions to WebDAV (Web Distributed Authoring and Versioning)&quot;">RFC3253</a>], Section    |
+   |                   |      |            | 9.4                       |
+   | CHECKOUT          | no   | yes        | <a href="./rfc3253#section-4.3">[RFC3253], Section&nbsp;4.3</a>    |
+   |                   |      |            | and [<a href="./rfc3253" title="&quot;Versioning Extensions to WebDAV (Web Distributed Authoring and Versioning)&quot;">RFC3253</a>], Section    |
+   |                   |      |            | 8.8                       |
+   | COPY              | no   | yes        | <a href="./rfc4918#section-9.8">[RFC4918], Section&nbsp;9.8</a>    |
+   | LABEL             | no   | yes        | <a href="./rfc3253#section-8.2">[RFC3253], Section&nbsp;8.2</a>    |
+   | LINK              | no   | yes        | [<a href="./rfc2068" title="&quot;Hypertext Transfer Protocol -- HTTP/1.1&quot;">RFC2068</a>], Section        |
+   |                   |      |            | 19.6.1.2                  |
+   | LOCK              | no   | no         | <a href="./rfc4918#section-9.10">[RFC4918], Section&nbsp;9.10</a>   |
+   | MERGE             | no   | yes        | <a href="./rfc3253#section-11.2">[RFC3253], Section&nbsp;11.2</a>   |
+   | MKACTIVITY        | no   | yes        | <a href="./rfc3253#section-13.5">[RFC3253], Section&nbsp;13.5</a>   |
+   | MKCALENDAR        | no   | yes        | <a href="./rfc4791#section-5.3.1">[RFC4791], Section&nbsp;5.3.1</a>  |
+   | MKCOL             | no   | yes        | <a href="./rfc4918#section-9.3">[RFC4918], Section&nbsp;9.3</a>    |
+   | MKREDIRECTREF     | no   | yes        | <a href="./rfc4437#section-6">[RFC4437], Section&nbsp;6</a>      |
+   | MKWORKSPACE       | no   | yes        | <a href="./rfc3253#section-6.3">[RFC3253], Section&nbsp;6.3</a>    |
+   | MOVE              | no   | yes        | <a href="./rfc4918#section-9.9">[RFC4918], Section&nbsp;9.9</a>    |
+   | ORDERPATCH        | no   | yes        | <a href="./rfc3648#section-7">[RFC3648], Section&nbsp;7</a>      |
+   | PATCH             | no   | no         | <a href="./rfc5789#section-2">[RFC5789], Section&nbsp;2</a>      |
+   | PROPFIND          | yes  | yes        | <a href="./rfc4918#section-9.1">[RFC4918], Section&nbsp;9.1</a>    |
+   | PROPPATCH         | no   | yes        | <a href="./rfc4918#section-9.2">[RFC4918], Section&nbsp;9.2</a>    |
+   | REBIND            | no   | yes        | <a href="./rfc5842#section-6">[RFC5842], Section&nbsp;6</a>      |
+   | REPORT            | yes  | yes        | <a href="./rfc3253#section-3.6">[RFC3253], Section&nbsp;3.6</a>    |
+   | SEARCH            | yes  | yes        | <a href="./rfc5323#section-2">[RFC5323], Section&nbsp;2</a>      |
+   | UNBIND            | no   | yes        | <a href="./rfc5842#section-5">[RFC5842], Section&nbsp;5</a>      |
+   | UNCHECKOUT        | no   | yes        | <a href="./rfc3253#section-4.5">[RFC3253], Section&nbsp;4.5</a>    |
+   | UNLINK            | no   | yes        | [<a href="./rfc2068" title="&quot;Hypertext Transfer Protocol -- HTTP/1.1&quot;">RFC2068</a>], Section        |
+   |                   |      |            | 19.6.1.3                  |
+   | UNLOCK            | no   | yes        | <a href="./rfc4918#section-9.11">[RFC4918], Section&nbsp;9.11</a>   |
+   | UPDATE            | no   | yes        | <a href="./rfc3253#section-7.1">[RFC3253], Section&nbsp;7.1</a>    |
+   | UPDATEREDIRECTREF | no   | yes        | <a href="./rfc4437#section-7">[RFC4437], Section&nbsp;7</a>      |
+   | VERSION-CONTROL   | no   | yes        | <a href="./rfc3253#section-3.5">[RFC3253], Section&nbsp;3.5</a>    |
+   +-------------------+------+------------+---------------------------+
+
+
+
+
+<span class="grey">Reschke                       Informational                     [Page 3]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-4" id="page-4" href="#page-4" class="invisible"> </a>
+<span class="grey"><a href="./rfc7237">RFC 7237</a>                HTTP Method Registrations              June 2014</span>
+
+
+<span class="h2"><a class="selflink" name="section-4" href="#section-4">4</a>.  Normative References</span>
+
+   [<a name="ref-RFC2068" id="ref-RFC2068">RFC2068</a>]  Fielding, R., Gettys, J., Mogul, J., Nielsen, H., and T.
+              Berners-Lee, "Hypertext Transfer Protocol -- HTTP/1.1",
+              <a href="./rfc2068">RFC 2068</a>, January 1997.
+
+   [<a name="ref-RFC3253" id="ref-RFC3253">RFC3253</a>]  Clemm, G., Amsden, J., Ellison, T., Kaler, C., and J.
+              Whitehead, "Versioning Extensions to WebDAV (Web
+              Distributed Authoring and Versioning)", <a href="./rfc3253">RFC 3253</a>,
+              March 2002.
+
+   [<a name="ref-RFC3648" id="ref-RFC3648">RFC3648</a>]  Whitehead, J. and J. Reschke, Ed., "Web Distributed
+              Authoring and Versioning (WebDAV) Ordered Collections
+              Protocol", <a href="./rfc3648">RFC 3648</a>, December 2003.
+
+   [<a name="ref-RFC3744" id="ref-RFC3744">RFC3744</a>]  Clemm, G., Reschke, J., Sedlar, E., and J. Whitehead, "Web
+              Distributed Authoring and Versioning (WebDAV) Access
+              Control Protocol", <a href="./rfc3744">RFC 3744</a>, May 2004.
+
+   [<a name="ref-RFC4437" id="ref-RFC4437">RFC4437</a>]  Whitehead, J., Clemm, G., and J. Reschke, Ed., "Web
+              Distributed Authoring and Versioning (WebDAV) Redirect
+              Reference Resources", <a href="./rfc4437">RFC 4437</a>, March 2006.
+
+   [<a name="ref-RFC4791" id="ref-RFC4791">RFC4791</a>]  Daboo, C., Desruisseaux, B., and L. Dusseault,
+              "Calendaring Extensions to WebDAV (CalDAV)", <a href="./rfc4791">RFC 4791</a>,
+              March 2007.
+
+   [<a name="ref-RFC4918" id="ref-RFC4918">RFC4918</a>]  Dusseault, L., Ed., "HTTP Extensions for Web Distributed
+              Authoring and Versioning (WebDAV)", <a href="./rfc4918">RFC 4918</a>, June 2007.
+
+   [<a name="ref-RFC5323" id="ref-RFC5323">RFC5323</a>]  Reschke, J., Ed., Reddy, S., Davis, J., and A. Babich,
+              "Web Distributed Authoring and Versioning (WebDAV)
+              SEARCH", <a href="./rfc5323">RFC 5323</a>, November 2008.
+
+   [<a name="ref-RFC5789" id="ref-RFC5789">RFC5789</a>]  Dusseault, L. and J. Snell, "PATCH Method for HTTP",
+              <a href="./rfc5789">RFC 5789</a>, March 2010.
+
+   [<a name="ref-RFC5842" id="ref-RFC5842">RFC5842</a>]  Clemm, G., Crawford, J., Reschke, J., Ed., and J.
+              Whitehead, "Binding Extensions to Web Distributed
+              Authoring and Versioning (WebDAV)", <a href="./rfc5842">RFC 5842</a>, April 2010.
+
+   [<a name="ref-RFC7231" id="ref-RFC7231">RFC7231</a>]  Fielding, R., Ed. and J. Reschke, Ed., "Hypertext Transfer
+              Protocol (HTTP/1.1): Semantics and Content", <a href="./rfc7231">RFC 7231</a>,
+              June 2014.
+
+
+
+
+
+
+
+<span class="grey">Reschke                       Informational                     [Page 4]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-5" id="page-5" href="#page-5" class="invisible"> </a>
+<span class="grey"><a href="./rfc7237">RFC 7237</a>                HTTP Method Registrations              June 2014</span>
+
+
+Author's Address
+
+   Julian F. Reschke
+   greenbytes GmbH
+   Hafenweg 16
+   Muenster, NW  48155
+   Germany
+
+   EMail: julian.reschke@greenbytes.de
+   URI:   <a href="http://greenbytes.de/tech/webdav/">http://greenbytes.de/tech/webdav/</a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Reschke                       Informational                     [Page 5]
+
+</pre><br />
+<span class="noprint"><small><small>Html markup produced by rfcmarkup 1.109, available from
+<a href="https://tools.ietf.org/tools/rfcmarkup/">https://tools.ietf.org/tools/rfcmarkup/</a>
+</small></small></span>
+</body></html>

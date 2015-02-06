@@ -1,0 +1,493 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head profile="http://dublincore.org/documents/2008/08/04/dc-html/">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="robots" content="index,follow" />
+    <meta name="creator" content="rfcmarkup version 1.109" />
+    <link rel="schema.DC" href="http://purl.org/dc/elements/1.1/" />
+<meta name="DC.Identifier" content="urn:ietf:rfc:7238" />
+<meta name="DC.Description.Abstract" content="This document specifies the additional Hypertext Transfer Protocol
+(HTTP) status code 308 (Permanent Redirect)." />
+<meta name="DC.Creator" content="Julian Reschke &lt;julian.reschke@greenbytes.de&gt;" />
+<meta name="DC.Date.Issued" content="June, 2014" />
+<meta name="DC.Title" content="The Hypertext Transfer Protocol Status Code 308 (Permanent Redirect)" />
+
+    <link rel="icon" href="/images/rfc.png" type="image/png" />
+    <link rel="shortcut icon" href="/images/rfc.png" type="image/png" />
+    <title>RFC 7238 - The Hypertext Transfer Protocol Status Code 308 (Permanent Redirect)</title>
+    
+    
+    <style type="text/css">
+	body {
+	    margin: 0px 8px;
+            font-size: 1em;
+	}
+        h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+	    font-weight: bold;
+            line-height: 0pt;
+            display: inline;
+            white-space: pre;
+            font-family: monospace;
+            font-size: 1em;
+	    font-weight: bold;
+        }
+        pre {
+            font-size: 1em;
+            margin-top: 0px;
+            margin-bottom: 0px;
+        }
+	.pre {
+	    white-space: pre;
+	    font-family: monospace;
+	}
+	.header{
+	    font-weight: bold;
+	}
+        .newpage {
+            page-break-before: always;
+        }
+        .invisible {
+            text-decoration: none;
+            color: white;
+        }
+        a.selflink {
+          color: black;
+          text-decoration: none;
+        }
+        @media print {
+            body {
+                font-family: monospace;
+                font-size: 10.5pt;
+            }
+            h1, h2, h3, h4, h5, h6 {
+                font-size: 1em;
+            }
+        
+            a:link, a:visited {
+                color: inherit;
+                text-decoration: none;
+            }
+            .noprint {
+                display: none;
+            }
+        }
+	@media screen {
+	    .grey, .grey a:link, .grey a:visited {
+		color: #777;
+	    }
+            .docinfo {
+                background-color: #EEE;
+            }
+            .top {
+                border-top: 7px solid #EEE;
+            }
+            .bgwhite  { background-color: white; }
+            .bgred    { background-color: #F44; }
+            .bggrey   { background-color: #666; }
+            .bgbrown  { background-color: #840; }            
+            .bgorange { background-color: #FA0; }
+            .bgyellow { background-color: #EE0; }
+            .bgmagenta{ background-color: #F4F; }
+            .bgblue   { background-color: #66F; }
+            .bgcyan   { background-color: #4DD; }
+            .bggreen  { background-color: #4F4; }
+
+            .legend   { font-size: 90%; }
+            .cplate   { font-size: 70%; border: solid grey 1px; }
+	}
+    </style>
+    <!--[if IE]>
+    <style>
+    body {
+       font-size: 13px;
+       margin: 10px 10px;
+    }
+    </style>
+    <![endif]-->
+
+    <script type="text/javascript"><!--
+    function addHeaderTags() {
+	var spans = document.getElementsByTagName("span");
+	for (var i=0; i < spans.length; i++) {
+	    var elem = spans[i];
+	    if (elem) {
+		var level = elem.getAttribute("class");
+                if (level == "h1" || level == "h2" || level == "h3" || level == "h4" || level == "h5" || level == "h6") {
+                    elem.innerHTML = "<"+level+">"+elem.innerHTML+"</"+level+">";		
+                }
+	    }
+	}
+    }
+    var legend_html = "Colour legend:<br />      <table>         <tr><td>Unknown:</td>                   <td><span class='cplate bgwhite'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Draft:</td>                     <td><span class='cplate bgred'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Informational:</td>             <td><span class='cplate bgorange'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Experimental:</td>              <td><span class='cplate bgyellow'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Best Common Practice:</td>      <td><span class='cplate bgmagenta'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Proposed Standard:</td>         <td><span class='cplate bgblue'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Draft Standard (old designation):</td> <td><span class='cplate bgcyan'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Internet Standard:</td>         <td><span class='cplate bggreen'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Historic:</td>                  <td><span class='cplate bggrey'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Obsolete:</td>                  <td><span class='cplate bgbrown'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>     </table>";
+    function showElem(id) {
+        var elem = document.getElementById(id);
+        elem.innerHTML = eval(id+"_html");
+        elem.style.visibility='visible';
+    }
+    function hideElem(id) {
+        var elem = document.getElementById(id);
+        elem.style.visibility='hidden';        
+        elem.innerHTML = "";
+    }
+    // -->
+    </script>
+</head>
+<body onload="addHeaderTags()">
+   <div style="height: 13px;">
+      <div onmouseover="this.style.cursor='pointer';"
+         onclick="showElem('legend');"
+         onmouseout="hideElem('legend')"
+	 style="height: 6px; position: absolute;"
+         class="pre noprint docinfo bgyellow"
+         title="Click for colour legend." >                                                                        </div>
+      <div id="legend"
+           class="docinfo noprint pre legend"
+           style="position:absolute; top: 4px; left: 4ex; visibility:hidden; background-color: white; padding: 4px 9px 5px 7px; border: solid #345 1px; "
+           onmouseover="showElem('legend');"
+           onmouseout="hideElem('legend');">
+      </div>
+   </div>
+<span class="pre noprint docinfo top">[<a href="../html/" title="Document search and retrieval page">Docs</a>] [<a href="/rfc/rfc7238.txt" title="Plaintext version of this document">txt</a>|<a href="/pdf/rfc7238" title="PDF version of this document">pdf</a>] [<a href="./draft-reschke-http-status-308" title="draft-reschke-http-status-308">draft-reschke-htt...</a>] [<a href="/rfcdiff?difftype=--hwdiff&amp;url2=rfc7238" title="Inline diff (wdiff)">Diff1</a>] [<a href="/rfcdiff?url2=rfc7238" title="Side-by-side diff">Diff2</a>]                 </span><br />
+<span class="pre noprint docinfo">                                                                        </span><br />
+<span class="pre noprint docinfo">                                                            EXPERIMENTAL</span><br />
+<span class="pre noprint docinfo">                                                                        </span><br />
+<pre>
+Internet Engineering Task Force (IETF)                        J. Reschke
+Request for Comments: 7238                                    greenbytes
+Category: Experimental                                         June 2014
+ISSN: 2070-1721
+
+
+  <span class="h1">The Hypertext Transfer Protocol Status Code 308 (Permanent Redirect)</span>
+
+Abstract
+
+   This document specifies the additional Hypertext Transfer Protocol
+   (HTTP) status code 308 (Permanent Redirect).
+
+Status of This Memo
+
+   This document is not an Internet Standards Track specification; it is
+   published for examination, experimental implementation, and
+   evaluation.
+
+   This document defines an Experimental Protocol for the Internet
+   community.  This document is a product of the Internet Engineering
+   Task Force (IETF).  It represents the consensus of the IETF
+   community.  It has received public review and has been approved for
+   publication by the Internet Engineering Steering Group (IESG).  Not
+   all documents approved by the IESG are a candidate for any level of
+   Internet Standard; see <a href="./rfc5741#section-2">Section&nbsp;2 of RFC 5741</a>.
+
+   Information about the current status of this document, any errata,
+   and how to provide feedback on it may be obtained at
+   <a href="http://www.rfc-editor.org/info/rfc7238">http://www.rfc-editor.org/info/rfc7238</a>.
+
+Copyright Notice
+
+   Copyright (c) 2014 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to <a href="./bcp78">BCP 78</a> and the IETF Trust's Legal
+   Provisions Relating to IETF Documents
+   (<a href="http://trustee.ietf.org/license-info">http://trustee.ietf.org/license-info</a>) in effect on the date of
+   publication of this document.  Please review these documents
+   carefully, as they describe your rights and restrictions with respect
+   to this document.  Code Components extracted from this document must
+   include Simplified BSD License text as described in <a href="#section-4">Section 4</a>.e of
+   the Trust Legal Provisions and are provided without warranty as
+   described in the Simplified BSD License.
+
+
+
+
+
+
+<span class="grey">Reschke                       Experimental                      [Page 1]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-2" id="page-2" href="#page-2" class="invisible"> </a>
+<span class="grey"><a href="./rfc7238">RFC 7238</a>                  HTTP Status Code 308                 June 2014</span>
+
+
+Table of Contents
+
+   <a href="#section-1">1</a>.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-2">2</a>
+   <a href="#section-2">2</a>.  Notational Conventions  . . . . . . . . . . . . . . . . . . . . <a href="#page-2">2</a>
+   <a href="#section-3">3</a>.  308 Permanent Redirect  . . . . . . . . . . . . . . . . . . . . <a href="#page-2">2</a>
+   <a href="#section-4">4</a>.  Deployment Considerations . . . . . . . . . . . . . . . . . . . <a href="#page-3">3</a>
+   <a href="#section-5">5</a>.  Security Considerations . . . . . . . . . . . . . . . . . . . . <a href="#page-4">4</a>
+   <a href="#section-6">6</a>.  IANA Considerations . . . . . . . . . . . . . . . . . . . . . . <a href="#page-4">4</a>
+   <a href="#section-7">7</a>.  Acknowledgements  . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-5">5</a>
+   <a href="#section-8">8</a>.  References  . . . . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-5">5</a>
+     <a href="#section-8.1">8.1</a>.  Normative References  . . . . . . . . . . . . . . . . . . . <a href="#page-5">5</a>
+     <a href="#section-8.2">8.2</a>.  Informative References  . . . . . . . . . . . . . . . . . . <a href="#page-5">5</a>
+
+<span class="h2"><a class="selflink" name="section-1" href="#section-1">1</a>.  Introduction</span>
+
+   HTTP defines a set of status codes for the purpose of redirecting a
+   request to a different URI ([<a href="./rfc3986" title="&quot;Uniform Resource Identifier (URI): Generic Syntax&quot;">RFC3986</a>]).  The history of these status
+   codes is summarized in <a href="./rfc7231#section-6.4">Section&nbsp;6.4 of [RFC7231]</a>, which also
+   classifies the existing status codes into four categories.
+
+   The first of these categories contains the status codes 301 (Moved
+   Permanently), 302 (Found), and 307 (Temporary Redirect), which can be
+   classified as below:
+
+   +-------------------------------------------+-----------+-----------+
+   |                                           | Permanent | Temporary |
+   +-------------------------------------------+-----------+-----------+
+   | Allows changing the request method from   | 301       | 302       |
+   | POST to GET                               |           |           |
+   | Does not allow changing the request       | -         | 307       |
+   | method from POST to GET                   |           |           |
+   +-------------------------------------------+-----------+-----------+
+
+   <a href="./rfc7231#section-6.4.7">Section&nbsp;6.4.7 of [RFC7231]</a> states that HTTP does not define a
+   permanent variant of status code 307; this specification adds the
+   status code 308, defining this missing variant (<a href="#section-3">Section 3</a>).
+
+<span class="h2"><a class="selflink" name="section-2" href="#section-2">2</a>.  Notational Conventions</span>
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
+   document are to be interpreted as described in [<a href="./rfc2119" title="&quot;Key words for use in RFCs to Indicate Requirement Levels&quot;">RFC2119</a>].
+
+<span class="h2"><a class="selflink" name="section-3" href="#section-3">3</a>.  308 Permanent Redirect</span>
+
+   The 308 (Permanent Redirect) status code indicates that the target
+   resource has been assigned a new permanent URI and any future
+   references to this resource ought to use one of the enclosed URIs.
+
+
+
+<span class="grey">Reschke                       Experimental                      [Page 2]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-3" id="page-3" href="#page-3" class="invisible"> </a>
+<span class="grey"><a href="./rfc7238">RFC 7238</a>                  HTTP Status Code 308                 June 2014</span>
+
+
+   Clients with link editing capabilities ought to automatically re-link
+   references to the effective request URI (<a href="./rfc7230#section-5.5">Section&nbsp;5.5 of [RFC7230]</a>) to
+   one or more of the new references sent by the server, where possible.
+
+   The server SHOULD generate a Location header field (<a href="./rfc7231#section-7.1.2">[RFC7231],
+   Section&nbsp;7.1.2</a>) in the response containing a preferred URI reference
+   for the new permanent URI.  The user agent MAY use the Location field
+   value for automatic redirection.  The server's response payload
+   usually contains a short hypertext note with a hyperlink to the new
+   URI(s).
+
+   A 308 response is cacheable by default; i.e., unless otherwise
+   indicated by the method definition or explicit cache controls (see
+   <a href="./rfc7234#section-4.2.2">[RFC7234], Section&nbsp;4.2.2</a>).
+
+      Note: This status code is similar to 301 (Moved Permanently)
+      (<a href="./rfc7231#section-6.4.2">[RFC7231], Section&nbsp;6.4.2</a>), except that it does not allow changing
+      the request method from POST to GET.
+
+<span class="h2"><a class="selflink" name="section-4" href="#section-4">4</a>.  Deployment Considerations</span>
+
+   <a href="./rfc7231#section-6">Section&nbsp;6 of [RFC7231]</a> requires recipients to treat unknown 3xx
+   status codes the same way as status code 300 Multiple Choices
+   (<a href="./rfc7231#section-6.4.1">[RFC7231], Section&nbsp;6.4.1</a>).  Thus, servers will not be able to rely
+   on automatic redirection happening similar to status codes 301, 302,
+   or 307.
+
+   Therefore, initial use of status code 308 will be restricted to cases
+   where the server has sufficient confidence in the client's
+   understanding the new code or when a fallback to the semantics of
+   status code 300 is not problematic.  Server implementers are advised
+   not to vary the status code based on characteristics of the request,
+   such as the User-Agent header field ("User-Agent Sniffing") -- doing
+   so usually results in code that is both hard to maintain and hard to
+   debug and would also require special attention to caching (i.e.,
+   setting a "Vary" response header field, as defined in <a href="./rfc7231#section-7.1.4">Section&nbsp;7.1.4
+   of [RFC7231]</a>).
+
+   Note that many existing HTML-based user agents will emulate a refresh
+   when encountering an HTML &lt;meta&gt; refresh directive ([<a href="#ref-HTML" title="&quot;HTML 4.01 Specification&quot;">HTML</a>]).  This
+   can be used as another fallback.  For example:
+
+   Client request:
+
+     GET / HTTP/1.1
+     Host: example.com
+
+
+
+
+
+<span class="grey">Reschke                       Experimental                      [Page 3]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-4" id="page-4" href="#page-4" class="invisible"> </a>
+<span class="grey"><a href="./rfc7238">RFC 7238</a>                  HTTP Status Code 308                 June 2014</span>
+
+
+   Server response:
+
+     HTTP/1.1 308 Permanent Redirect
+     Content-Type: text/html; charset=UTF-8
+     Location: http://example.com/new
+     Content-Length: 454
+
+     &lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+                           "<a href="http://www.w3.org/TR/html4/strict.dtd">http://www.w3.org/TR/html4/strict.dtd</a>"&gt;
+     &lt;html&gt;
+        &lt;head&gt;
+           &lt;title&gt;Permanent Redirect&lt;/title&gt;
+           &lt;meta http-equiv="refresh"
+                 content="0; url=http://example.com/new"&gt;
+        &lt;/head&gt;
+        &lt;body&gt;
+           &lt;p&gt;
+              The document has been moved to
+              &lt;a href="http://example.com/new"
+              &gt;http://example.com/new&lt;/a&gt;.
+           &lt;/p&gt;
+        &lt;/body&gt;
+     &lt;/html&gt;
+
+<span class="h2"><a class="selflink" name="section-5" href="#section-5">5</a>.  Security Considerations</span>
+
+   All security considerations that apply to HTTP redirects apply to the
+   308 status code as well (see <a href="./rfc7231#section-9">Section&nbsp;9 of [RFC7231]</a>).
+
+<span class="h2"><a class="selflink" name="section-6" href="#section-6">6</a>.  IANA Considerations</span>
+
+   The registration below has been added to the "Hypertext Transfer
+   Protocol (HTTP) Status Code Registry" (defined in <a href="./rfc7231#section-8.2">Section&nbsp;8.2 of
+   [RFC7231]</a> and located at
+   &lt;<a href="http://www.iana.org/assignments/http-status-codes">http://www.iana.org/assignments/http-status-codes</a>&gt;):
+
+   +-------+--------------------+---------------------------------+
+   | Value | Description        | Reference                       |
+   +-------+--------------------+---------------------------------+
+   | 308   | Permanent Redirect | <a href="#section-3">Section 3</a> of this specification |
+   +-------+--------------------+---------------------------------+
+
+
+
+
+
+
+
+
+
+
+<span class="grey">Reschke                       Experimental                      [Page 4]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-5" id="page-5" href="#page-5" class="invisible"> </a>
+<span class="grey"><a href="./rfc7238">RFC 7238</a>                  HTTP Status Code 308                 June 2014</span>
+
+
+<span class="h2"><a class="selflink" name="section-7" href="#section-7">7</a>.  Acknowledgements</span>
+
+   The definition for the new status code 308 reuses text from the
+   HTTP/1.1 definitions of status codes 301 and 307.
+
+   Furthermore, thanks to Ben Campbell, Cyrus Daboo, Eran Hammer-Lahav,
+   Bjoern Hoehrmann, Subramanian Moonesamy, Peter Saint-Andre, and
+   Robert Sparks for feedback on this document.
+
+<span class="h2"><a class="selflink" name="section-8" href="#section-8">8</a>.  References</span>
+
+<span class="h3"><a class="selflink" name="section-8.1" href="#section-8.1">8.1</a>.  Normative References</span>
+
+   [<a name="ref-RFC2119" id="ref-RFC2119">RFC2119</a>]  Bradner, S., "Key words for use in RFCs to Indicate
+              Requirement Levels", <a href="./bcp14">BCP 14</a>, <a href="./rfc2119">RFC 2119</a>, March 1997.
+
+   [<a name="ref-RFC3986" id="ref-RFC3986">RFC3986</a>]  Berners-Lee, T., Fielding, R., and L. Masinter, "Uniform
+              Resource Identifier (URI): Generic Syntax", STD 66,
+              <a href="./rfc3986">RFC 3986</a>, January 2005.
+
+   [<a name="ref-RFC7230" id="ref-RFC7230">RFC7230</a>]  Fielding, R., Ed. and J. Reschke, Ed., "Hypertext Transfer
+              Protocol (HTTP/1.1): Message Syntax and Routing",
+              <a href="./rfc7230">RFC 7230</a>, June 2014.
+
+   [<a name="ref-RFC7231" id="ref-RFC7231">RFC7231</a>]  Fielding, R., Ed. and J. Reschke, Ed., "Hypertext Transfer
+              Protocol (HTTP/1.1): Semantics and Content", <a href="./rfc7231">RFC 7231</a>,
+              June 2014.
+
+   [<a name="ref-RFC7234" id="ref-RFC7234">RFC7234</a>]  Fielding, R., Ed., Nottingham, M., Ed., and J. Reschke,
+              Ed., "Hypertext Transfer Protocol (HTTP/1.1): Caching",
+              <a href="./rfc7234">RFC 7234</a>, June 2014.
+
+<span class="h3"><a class="selflink" name="section-8.2" href="#section-8.2">8.2</a>.  Informative References</span>
+
+   [<a name="ref-HTML" id="ref-HTML">HTML</a>]     Raggett, D., Le Hors, A., and I. Jacobs, "HTML 4.01
+              Specification", W3C Recommendation REC-html401-19991224,
+              December 1999,
+              &lt;<a href="http://www.w3.org/TR/1999/REC-html401-19991224">http://www.w3.org/TR/1999/REC-html401-19991224</a>&gt;.
+
+              Latest version available at
+              &lt;<a href="http://www.w3.org/TR/html401">http://www.w3.org/TR/html401</a>&gt;.
+
+
+
+
+
+
+
+
+
+
+<span class="grey">Reschke                       Experimental                      [Page 5]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-6" id="page-6" href="#page-6" class="invisible"> </a>
+<span class="grey"><a href="./rfc7238">RFC 7238</a>                  HTTP Status Code 308                 June 2014</span>
+
+
+Author's Address
+
+   Julian F. Reschke
+   greenbytes GmbH
+   Hafenweg 16
+   Muenster, NW  48155
+   Germany
+
+   EMail: julian.reschke@greenbytes.de
+   URI:   <a href="http://greenbytes.de/tech/webdav/">http://greenbytes.de/tech/webdav/</a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Reschke                       Experimental                      [Page 6]
+
+</pre><br />
+<span class="noprint"><small><small>Html markup produced by rfcmarkup 1.109, available from
+<a href="https://tools.ietf.org/tools/rfcmarkup/">https://tools.ietf.org/tools/rfcmarkup/</a>
+</small></small></span>
+</body></html>

@@ -1,0 +1,1732 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head profile="http://dublincore.org/documents/2008/08/04/dc-html/">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="robots" content="index,follow" />
+    <meta name="creator" content="rfcmarkup version 1.109" />
+    <link rel="schema.DC" href="http://purl.org/dc/elements/1.1/" />
+<meta name="DC.Relation.Replaces" content="rfc2616" />
+<meta name="DC.Identifier" content="urn:ietf:rfc:7232" />
+<meta name="DC.Date.Issued" content="June, 2014" />
+<meta name="DC.Creator" content="Fielding, Roy" />
+<meta name="DC.Creator" content="Reschke, Julian" />
+<meta name="DC.Description.Abstract" content="The Hypertext Transfer Protocol (HTTP) is a stateless application-
+level protocol for distributed, collaborative, hypertext information
+systems. This document defines HTTP/1.1 conditional requests,
+including metadata header fields for indicating state changes, request
+header fields for making preconditions on such state, and rules for
+constructing the responses to a conditional request when one or more
+preconditions evaluate to false." />
+<meta name="DC.Title" content="Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests" />
+
+    <link rel="icon" href="/images/rfc.png" type="image/png" />
+    <link rel="shortcut icon" href="/images/rfc.png" type="image/png" />
+    <title>RFC 7232 - Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests</title>
+    
+    
+    <style type="text/css">
+	body {
+	    margin: 0px 8px;
+            font-size: 1em;
+	}
+        h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+	    font-weight: bold;
+            line-height: 0pt;
+            display: inline;
+            white-space: pre;
+            font-family: monospace;
+            font-size: 1em;
+	    font-weight: bold;
+        }
+        pre {
+            font-size: 1em;
+            margin-top: 0px;
+            margin-bottom: 0px;
+        }
+	.pre {
+	    white-space: pre;
+	    font-family: monospace;
+	}
+	.header{
+	    font-weight: bold;
+	}
+        .newpage {
+            page-break-before: always;
+        }
+        .invisible {
+            text-decoration: none;
+            color: white;
+        }
+        a.selflink {
+          color: black;
+          text-decoration: none;
+        }
+        @media print {
+            body {
+                font-family: monospace;
+                font-size: 10.5pt;
+            }
+            h1, h2, h3, h4, h5, h6 {
+                font-size: 1em;
+            }
+        
+            a:link, a:visited {
+                color: inherit;
+                text-decoration: none;
+            }
+            .noprint {
+                display: none;
+            }
+        }
+	@media screen {
+	    .grey, .grey a:link, .grey a:visited {
+		color: #777;
+	    }
+            .docinfo {
+                background-color: #EEE;
+            }
+            .top {
+                border-top: 7px solid #EEE;
+            }
+            .bgwhite  { background-color: white; }
+            .bgred    { background-color: #F44; }
+            .bggrey   { background-color: #666; }
+            .bgbrown  { background-color: #840; }            
+            .bgorange { background-color: #FA0; }
+            .bgyellow { background-color: #EE0; }
+            .bgmagenta{ background-color: #F4F; }
+            .bgblue   { background-color: #66F; }
+            .bgcyan   { background-color: #4DD; }
+            .bggreen  { background-color: #4F4; }
+
+            .legend   { font-size: 90%; }
+            .cplate   { font-size: 70%; border: solid grey 1px; }
+	}
+    </style>
+    <!--[if IE]>
+    <style>
+    body {
+       font-size: 13px;
+       margin: 10px 10px;
+    }
+    </style>
+    <![endif]-->
+
+    <script type="text/javascript"><!--
+    function addHeaderTags() {
+	var spans = document.getElementsByTagName("span");
+	for (var i=0; i < spans.length; i++) {
+	    var elem = spans[i];
+	    if (elem) {
+		var level = elem.getAttribute("class");
+                if (level == "h1" || level == "h2" || level == "h3" || level == "h4" || level == "h5" || level == "h6") {
+                    elem.innerHTML = "<"+level+">"+elem.innerHTML+"</"+level+">";		
+                }
+	    }
+	}
+    }
+    var legend_html = "Colour legend:<br />      <table>         <tr><td>Unknown:</td>                   <td><span class='cplate bgwhite'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Draft:</td>                     <td><span class='cplate bgred'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Informational:</td>             <td><span class='cplate bgorange'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Experimental:</td>              <td><span class='cplate bgyellow'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Best Common Practice:</td>      <td><span class='cplate bgmagenta'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Proposed Standard:</td>         <td><span class='cplate bgblue'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Draft Standard (old designation):</td> <td><span class='cplate bgcyan'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Internet Standard:</td>         <td><span class='cplate bggreen'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Historic:</td>                  <td><span class='cplate bggrey'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Obsolete:</td>                  <td><span class='cplate bgbrown'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>     </table>";
+    function showElem(id) {
+        var elem = document.getElementById(id);
+        elem.innerHTML = eval(id+"_html");
+        elem.style.visibility='visible';
+    }
+    function hideElem(id) {
+        var elem = document.getElementById(id);
+        elem.style.visibility='hidden';        
+        elem.innerHTML = "";
+    }
+    // -->
+    </script>
+</head>
+<body onload="addHeaderTags()">
+   <div style="height: 13px;">
+      <div onmouseover="this.style.cursor='pointer';"
+         onclick="showElem('legend');"
+         onmouseout="hideElem('legend')"
+	 style="height: 6px; position: absolute;"
+         class="pre noprint docinfo bgblue"
+         title="Click for colour legend." >                                                                        </div>
+      <div id="legend"
+           class="docinfo noprint pre legend"
+           style="position:absolute; top: 4px; left: 4ex; visibility:hidden; background-color: white; padding: 4px 9px 5px 7px; border: solid #345 1px; "
+           onmouseover="showElem('legend');"
+           onmouseout="hideElem('legend');">
+      </div>
+   </div>
+<span class="pre noprint docinfo top">[<a href="../html/" title="Document search and retrieval page">Docs</a>] [<a href="/rfc/rfc7232.txt" title="Plaintext version of this document">txt</a>|<a href="/pdf/rfc7232" title="PDF version of this document">pdf</a>] [<a href="./draft-ietf-httpbis-p4-conditional" title="draft-ietf-httpbis-p4-conditional">draft-ietf-httpbi...</a>] [<a href="/rfcdiff?difftype=--hwdiff&amp;url2=rfc7232" title="Inline diff (wdiff)">Diff1</a>] [<a href="/rfcdiff?url2=rfc7232" title="Side-by-side diff">Diff2</a>]                 </span><br />
+<span class="pre noprint docinfo">                                                                        </span><br />
+<span class="pre noprint docinfo">                                                       PROPOSED STANDARD</span><br />
+<span class="pre noprint docinfo">                                                                        </span><br />
+<pre>
+Internet Engineering Task Force (IETF)                  R. Fielding, Ed.
+Request for Comments: 7232                                         Adobe
+Obsoletes: <a href="./rfc2616">2616</a>                                          J. Reschke, Ed.
+Category: Standards Track                                     greenbytes
+ISSN: 2070-1721                                                June 2014
+
+
+      <span class="h1">Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests</span>
+
+Abstract
+
+   The Hypertext Transfer Protocol (HTTP) is a stateless application-
+   level protocol for distributed, collaborative, hypertext information
+   systems.  This document defines HTTP/1.1 conditional requests,
+   including metadata header fields for indicating state changes,
+   request header fields for making preconditions on such state, and
+   rules for constructing the responses to a conditional request when
+   one or more preconditions evaluate to false.
+
+Status of This Memo
+
+   This is an Internet Standards Track document.
+
+   This document is a product of the Internet Engineering Task Force
+   (IETF).  It represents the consensus of the IETF community.  It has
+   received public review and has been approved for publication by the
+   Internet Engineering Steering Group (IESG).  Further information on
+   Internet Standards is available in <a href="./rfc5741#section-2">Section&nbsp;2 of RFC 5741</a>.
+
+   Information about the current status of this document, any errata,
+   and how to provide feedback on it may be obtained at
+   <a href="http://www.rfc-editor.org/info/rfc7232">http://www.rfc-editor.org/info/rfc7232</a>.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                    [Page 1]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-2" id="page-2" href="#page-2" class="invisible"> </a>
+<span class="grey"><a href="./rfc7232">RFC 7232</a>              HTTP/1.1 Conditional Requests            June 2014</span>
+
+
+Copyright Notice
+
+   Copyright (c) 2014 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to <a href="./bcp78">BCP 78</a> and the IETF Trust's Legal
+   Provisions Relating to IETF Documents
+   (<a href="http://trustee.ietf.org/license-info">http://trustee.ietf.org/license-info</a>) in effect on the date of
+   publication of this document.  Please review these documents
+   carefully, as they describe your rights and restrictions with respect
+   to this document.  Code Components extracted from this document must
+   include Simplified BSD License text as described in <a href="#section-4">Section 4</a>.e of
+   the Trust Legal Provisions and are provided without warranty as
+   described in the Simplified BSD License.
+
+   This document may contain material from IETF Documents or IETF
+   Contributions published or made publicly available before November
+   10, 2008.  The person(s) controlling the copyright in some of this
+   material may not have granted the IETF Trust the right to allow
+   modifications of such material outside the IETF Standards Process.
+   Without obtaining an adequate license from the person(s) controlling
+   the copyright in such materials, this document may not be modified
+   outside the IETF Standards Process, and derivative works of it may
+   not be created outside the IETF Standards Process, except to format
+   it for publication as an RFC or to translate it into languages other
+   than English.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                    [Page 2]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-3" id="page-3" href="#page-3" class="invisible"> </a>
+<span class="grey"><a href="./rfc7232">RFC 7232</a>              HTTP/1.1 Conditional Requests            June 2014</span>
+
+
+Table of Contents
+
+   <a href="#section-1">1</a>. Introduction ....................................................<a href="#page-4">4</a>
+      <a href="#section-1.1">1.1</a>. Conformance and Error Handling .............................<a href="#page-4">4</a>
+      <a href="#section-1.2">1.2</a>. Syntax Notation ............................................<a href="#page-4">4</a>
+   <a href="#section-2">2</a>. Validators ......................................................<a href="#page-5">5</a>
+      <a href="#section-2.1">2.1</a>. Weak versus Strong .........................................<a href="#page-5">5</a>
+      <a href="#section-2.2">2.2</a>. Last-Modified ..............................................<a href="#page-7">7</a>
+           <a href="#section-2.2.1">2.2.1</a>. Generation ..........................................<a href="#page-7">7</a>
+           <a href="#section-2.2.2">2.2.2</a>. Comparison ..........................................<a href="#page-8">8</a>
+      <a href="#section-2.3">2.3</a>. ETag .......................................................<a href="#page-9">9</a>
+           <a href="#section-2.3.1">2.3.1</a>. Generation .........................................<a href="#page-10">10</a>
+           <a href="#section-2.3.2">2.3.2</a>. Comparison .........................................<a href="#page-10">10</a>
+           2.3.3. Example: Entity-Tags Varying on
+                  Content-Negotiated Resources .......................<a href="#page-11">11</a>
+      <a href="#section-2.4">2.4</a>. When to Use Entity-Tags and Last-Modified Dates ...........<a href="#page-12">12</a>
+   <a href="#section-3">3</a>. Precondition Header Fields .....................................<a href="#page-13">13</a>
+      <a href="#section-3.1">3.1</a>. If-Match ..................................................<a href="#page-13">13</a>
+      <a href="#section-3.2">3.2</a>. If-None-Match .............................................<a href="#page-14">14</a>
+      <a href="#section-3.3">3.3</a>. If-Modified-Since .........................................<a href="#page-16">16</a>
+      <a href="#section-3.4">3.4</a>. If-Unmodified-Since .......................................<a href="#page-17">17</a>
+      <a href="#section-3.5">3.5</a>. If-Range ..................................................<a href="#page-18">18</a>
+   <a href="#section-4">4</a>. Status Code Definitions ........................................<a href="#page-18">18</a>
+      <a href="#section-4.1">4.1</a>. 304 Not Modified ..........................................<a href="#page-18">18</a>
+      <a href="#section-4.2">4.2</a>. 412 Precondition Failed ...................................<a href="#page-19">19</a>
+   <a href="#section-5">5</a>. Evaluation .....................................................<a href="#page-19">19</a>
+   <a href="#section-6">6</a>. Precedence .....................................................<a href="#page-20">20</a>
+   <a href="#section-7">7</a>. IANA Considerations ............................................<a href="#page-22">22</a>
+      <a href="#section-7.1">7.1</a>. Status Code Registration ..................................<a href="#page-22">22</a>
+      <a href="#section-7.2">7.2</a>. Header Field Registration .................................<a href="#page-22">22</a>
+   <a href="#section-8">8</a>. Security Considerations ........................................<a href="#page-22">22</a>
+   <a href="#section-9">9</a>. Acknowledgments ................................................<a href="#page-23">23</a>
+   <a href="#section-10">10</a>. References ....................................................<a href="#page-24">24</a>
+      <a href="#section-10.1">10.1</a>. Normative References .....................................<a href="#page-24">24</a>
+      <a href="#section-10.2">10.2</a>. Informative References ...................................<a href="#page-24">24</a>
+   <a href="#appendix-A">Appendix A</a>. Changes from <a href="./rfc2616">RFC 2616</a> .................................<a href="#page-25">25</a>
+   <a href="#appendix-B">Appendix B</a>. Imported ABNF .........................................<a href="#page-25">25</a>
+   <a href="#appendix-C">Appendix C</a>. Collected ABNF ........................................<a href="#page-26">26</a>
+   Index .............................................................<a href="#page-27">27</a>
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                    [Page 3]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-4" id="page-4" href="#page-4" class="invisible"> </a>
+<span class="grey"><a href="./rfc7232">RFC 7232</a>              HTTP/1.1 Conditional Requests            June 2014</span>
+
+
+<span class="h2"><a class="selflink" name="section-1" href="#section-1">1</a>.  Introduction</span>
+
+   Conditional requests are HTTP requests [<a href="./rfc7231" title="&quot;Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content&quot;">RFC7231</a>] that include one or
+   more header fields indicating a precondition to be tested before
+   applying the method semantics to the target resource.  This document
+   defines the HTTP/1.1 conditional request mechanisms in terms of the
+   architecture, syntax notation, and conformance criteria defined in
+   [<a href="./rfc7230" title="&quot;Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing&quot;">RFC7230</a>].
+
+   Conditional GET requests are the most efficient mechanism for HTTP
+   cache updates [<a href="./rfc7234" title="&quot;Hypertext Transfer Protocol (HTTP/1.1): Caching&quot;">RFC7234</a>].  Conditionals can also be applied to
+   state-changing methods, such as PUT and DELETE, to prevent the "lost
+   update" problem: one client accidentally overwriting the work of
+   another client that has been acting in parallel.
+
+   Conditional request preconditions are based on the state of the
+   target resource as a whole (its current value set) or the state as
+   observed in a previously obtained representation (one value in that
+   set).  A resource might have multiple current representations, each
+   with its own observable state.  The conditional request mechanisms
+   assume that the mapping of requests to a "selected representation"
+   (<a href="./rfc7231#section-3">Section&nbsp;3 of [RFC7231]</a>) will be consistent over time if the server
+   intends to take advantage of conditionals.  Regardless, if the
+   mapping is inconsistent and the server is unable to select the
+   appropriate representation, then no harm will result when the
+   precondition evaluates to false.
+
+   The conditional request preconditions defined by this specification
+   (<a href="#section-3">Section 3</a>) are evaluated when applicable to the recipient
+   (<a href="#section-5">Section 5</a>) according to their order of precedence (<a href="#section-6">Section 6</a>).
+
+<span class="h3"><a class="selflink" name="section-1.1" href="#section-1.1">1.1</a>.  Conformance and Error Handling</span>
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
+   document are to be interpreted as described in [<a href="./rfc2119" title="&quot;Key words for use in RFCs to Indicate Requirement Levels&quot;">RFC2119</a>].
+
+   Conformance criteria and considerations regarding error handling are
+   defined in <a href="./rfc7230#section-2.5">Section&nbsp;2.5 of [RFC7230]</a>.
+
+<span class="h3"><a class="selflink" name="section-1.2" href="#section-1.2">1.2</a>.  Syntax Notation</span>
+
+   This specification uses the Augmented Backus-Naur Form (ABNF)
+   notation of [<a href="./rfc5234" title="&quot;Augmented BNF for Syntax Specifications: ABNF&quot;">RFC5234</a>] with a list extension, defined in <a href="./rfc7230#section-7">Section&nbsp;7 of
+   [RFC7230]</a>, that allows for compact definition of comma-separated
+   lists using a '#' operator (similar to how the '*' operator indicates
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                    [Page 4]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-5" id="page-5" href="#page-5" class="invisible"> </a>
+<span class="grey"><a href="./rfc7232">RFC 7232</a>              HTTP/1.1 Conditional Requests            June 2014</span>
+
+
+   repetition).  <a href="#appendix-B">Appendix B</a> describes rules imported from other
+   documents.  <a href="#appendix-C">Appendix C</a> shows the collected grammar with all list
+   operators expanded to standard ABNF notation.
+
+<span class="h2"><a class="selflink" name="section-2" href="#section-2">2</a>.  Validators</span>
+
+   This specification defines two forms of metadata that are commonly
+   used to observe resource state and test for preconditions:
+   modification dates (<a href="#section-2.2">Section 2.2</a>) and opaque entity tags
+   (<a href="#section-2.3">Section 2.3</a>).  Additional metadata that reflects resource state has
+   been defined by various extensions of HTTP, such as Web Distributed
+   Authoring and Versioning (WebDAV, [<a href="./rfc4918" title="&quot;HTTP Extensions for Web Distributed Authoring and Versioning (WebDAV)&quot;">RFC4918</a>]), that are beyond the
+   scope of this specification.  A resource metadata value is referred
+   to as a "validator" when it is used within a precondition.
+
+<span class="h3"><a class="selflink" name="section-2.1" href="#section-2.1">2.1</a>.  Weak versus Strong</span>
+
+   Validators come in two flavors: strong or weak.  Weak validators are
+   easy to generate but are far less useful for comparisons.  Strong
+   validators are ideal for comparisons but can be very difficult (and
+   occasionally impossible) to generate efficiently.  Rather than impose
+   that all forms of resource adhere to the same strength of validator,
+   HTTP exposes the type of validator in use and imposes restrictions on
+   when weak validators can be used as preconditions.
+
+   A "strong validator" is representation metadata that changes value
+   whenever a change occurs to the representation data that would be
+   observable in the payload body of a 200 (OK) response to GET.
+
+   A strong validator might change for reasons other than a change to
+   the representation data, such as when a semantically significant part
+   of the representation metadata is changed (e.g., Content-Type), but
+   it is in the best interests of the origin server to only change the
+   value when it is necessary to invalidate the stored responses held by
+   remote caches and authoring tools.
+
+   Cache entries might persist for arbitrarily long periods, regardless
+   of expiration times.  Thus, a cache might attempt to validate an
+   entry using a validator that it obtained in the distant past.  A
+   strong validator is unique across all versions of all representations
+   associated with a particular resource over time.  However, there is
+   no implication of uniqueness across representations of different
+   resources (i.e., the same strong validator might be in use for
+   representations of multiple resources at the same time and does not
+   imply that those representations are equivalent).
+
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                    [Page 5]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-6" id="page-6" href="#page-6" class="invisible"> </a>
+<span class="grey"><a href="./rfc7232">RFC 7232</a>              HTTP/1.1 Conditional Requests            June 2014</span>
+
+
+   There are a variety of strong validators used in practice.  The best
+   are based on strict revision control, wherein each change to a
+   representation always results in a unique node name and revision
+   identifier being assigned before the representation is made
+   accessible to GET.  A collision-resistant hash function applied to
+   the representation data is also sufficient if the data is available
+   prior to the response header fields being sent and the digest does
+   not need to be recalculated every time a validation request is
+   received.  However, if a resource has distinct representations that
+   differ only in their metadata, such as might occur with content
+   negotiation over media types that happen to share the same data
+   format, then the origin server needs to incorporate additional
+   information in the validator to distinguish those representations.
+
+   In contrast, a "weak validator" is representation metadata that might
+   not change for every change to the representation data.  This
+   weakness might be due to limitations in how the value is calculated,
+   such as clock resolution, an inability to ensure uniqueness for all
+   possible representations of the resource, or a desire of the resource
+   owner to group representations by some self-determined set of
+   equivalency rather than unique sequences of data.  An origin server
+   SHOULD change a weak entity-tag whenever it considers prior
+   representations to be unacceptable as a substitute for the current
+   representation.  In other words, a weak entity-tag ought to change
+   whenever the origin server wants caches to invalidate old responses.
+
+   For example, the representation of a weather report that changes in
+   content every second, based on dynamic measurements, might be grouped
+   into sets of equivalent representations (from the origin server's
+   perspective) with the same weak validator in order to allow cached
+   representations to be valid for a reasonable period of time (perhaps
+   adjusted dynamically based on server load or weather quality).
+   Likewise, a representation's modification time, if defined with only
+   one-second resolution, might be a weak validator if it is possible
+   for the representation to be modified twice during a single second
+   and retrieved between those modifications.
+
+   Likewise, a validator is weak if it is shared by two or more
+   representations of a given resource at the same time, unless those
+   representations have identical representation data.  For example, if
+   the origin server sends the same validator for a representation with
+   a gzip content coding applied as it does for a representation with no
+   content coding, then that validator is weak.  However, two
+   simultaneous representations might share the same strong validator if
+   they differ only in the representation metadata, such as when two
+   different media types are available for the same representation data.
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                    [Page 6]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-7" id="page-7" href="#page-7" class="invisible"> </a>
+<span class="grey"><a href="./rfc7232">RFC 7232</a>              HTTP/1.1 Conditional Requests            June 2014</span>
+
+
+   Strong validators are usable for all conditional requests, including
+   cache validation, partial content ranges, and "lost update"
+   avoidance.  Weak validators are only usable when the client does not
+   require exact equality with previously obtained representation data,
+   such as when validating a cache entry or limiting a web traversal to
+   recent changes.
+
+<span class="h3"><a class="selflink" name="section-2.2" href="#section-2.2">2.2</a>.  Last-Modified</span>
+
+   The "Last-Modified" header field in a response provides a timestamp
+   indicating the date and time at which the origin server believes the
+   selected representation was last modified, as determined at the
+   conclusion of handling the request.
+
+     Last-Modified = HTTP-date
+
+   An example of its use is
+
+     Last-Modified: Tue, 15 Nov 1994 12:45:26 GMT
+
+<span class="h4"><a class="selflink" name="section-2.2.1" href="#section-2.2.1">2.2.1</a>.  Generation</span>
+
+   An origin server SHOULD send Last-Modified for any selected
+   representation for which a last modification date can be reasonably
+   and consistently determined, since its use in conditional requests
+   and evaluating cache freshness ([<a href="./rfc7234" title="&quot;Hypertext Transfer Protocol (HTTP/1.1): Caching&quot;">RFC7234</a>]) results in a substantial
+   reduction of HTTP traffic on the Internet and can be a significant
+   factor in improving service scalability and reliability.
+
+   A representation is typically the sum of many parts behind the
+   resource interface.  The last-modified time would usually be the most
+   recent time that any of those parts were changed.  How that value is
+   determined for any given resource is an implementation detail beyond
+   the scope of this specification.  What matters to HTTP is how
+   recipients of the Last-Modified header field can use its value to
+   make conditional requests and test the validity of locally cached
+   responses.
+
+   An origin server SHOULD obtain the Last-Modified value of the
+   representation as close as possible to the time that it generates the
+   Date field value for its response.  This allows a recipient to make
+   an accurate assessment of the representation's modification time,
+   especially if the representation changes near the time that the
+   response is generated.
+
+   An origin server with a clock MUST NOT send a Last-Modified date that
+   is later than the server's time of message origination (Date).  If
+   the last modification time is derived from implementation-specific
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                    [Page 7]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-8" id="page-8" href="#page-8" class="invisible"> </a>
+<span class="grey"><a href="./rfc7232">RFC 7232</a>              HTTP/1.1 Conditional Requests            June 2014</span>
+
+
+   metadata that evaluates to some time in the future, according to the
+   origin server's clock, then the origin server MUST replace that value
+   with the message origination date.  This prevents a future
+   modification date from having an adverse impact on cache validation.
+
+   An origin server without a clock MUST NOT assign Last-Modified values
+   to a response unless these values were associated with the resource
+   by some other system or user with a reliable clock.
+
+<span class="h4"><a class="selflink" name="section-2.2.2" href="#section-2.2.2">2.2.2</a>.  Comparison</span>
+
+   A Last-Modified time, when used as a validator in a request, is
+   implicitly weak unless it is possible to deduce that it is strong,
+   using the following rules:
+
+   o  The validator is being compared by an origin server to the actual
+      current validator for the representation and,
+
+   o  That origin server reliably knows that the associated
+      representation did not change twice during the second covered by
+      the presented validator.
+
+   or
+
+   o  The validator is about to be used by a client in an
+      If-Modified-Since, If-Unmodified-Since, or If-Range header field,
+      because the client has a cache entry for the associated
+      representation, and
+
+   o  That cache entry includes a Date value, which gives the time when
+      the origin server sent the original response, and
+
+   o  The presented Last-Modified time is at least 60 seconds before the
+      Date value.
+
+   or
+
+   o  The validator is being compared by an intermediate cache to the
+      validator stored in its cache entry for the representation, and
+
+   o  That cache entry includes a Date value, which gives the time when
+      the origin server sent the original response, and
+
+   o  The presented Last-Modified time is at least 60 seconds before the
+      Date value.
+
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                    [Page 8]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-9" id="page-9" href="#page-9" class="invisible"> </a>
+<span class="grey"><a href="./rfc7232">RFC 7232</a>              HTTP/1.1 Conditional Requests            June 2014</span>
+
+
+   This method relies on the fact that if two different responses were
+   sent by the origin server during the same second, but both had the
+   same Last-Modified time, then at least one of those responses would
+   have a Date value equal to its Last-Modified time.  The arbitrary
+   60-second limit guards against the possibility that the Date and
+   Last-Modified values are generated from different clocks or at
+   somewhat different times during the preparation of the response.  An
+   implementation MAY use a value larger than 60 seconds, if it is
+   believed that 60 seconds is too short.
+
+<span class="h3"><a class="selflink" name="section-2.3" href="#section-2.3">2.3</a>.  ETag</span>
+
+   The "ETag" header field in a response provides the current entity-tag
+   for the selected representation, as determined at the conclusion of
+   handling the request.  An entity-tag is an opaque validator for
+   differentiating between multiple representations of the same
+   resource, regardless of whether those multiple representations are
+   due to resource state changes over time, content negotiation
+   resulting in multiple representations being valid at the same time,
+   or both.  An entity-tag consists of an opaque quoted string, possibly
+   prefixed by a weakness indicator.
+
+     ETag       = entity-tag
+
+     entity-tag = [ weak ] opaque-tag
+     weak       = %x57.2F ; "W/", case-sensitive
+     opaque-tag = DQUOTE *etagc DQUOTE
+     etagc      = %x21 / %x23-7E / obs-text
+                ; VCHAR except double quotes, plus obs-text
+
+      Note: Previously, opaque-tag was defined to be a quoted-string
+      (<a href="./rfc2616#section-3.11">[RFC2616], Section&nbsp;3.11</a>); thus, some recipients might perform
+      backslash unescaping.  Servers therefore ought to avoid backslash
+      characters in entity tags.
+
+   An entity-tag can be more reliable for validation than a modification
+   date in situations where it is inconvenient to store modification
+   dates, where the one-second resolution of HTTP date values is not
+   sufficient, or where modification dates are not consistently
+   maintained.
+
+   Examples:
+
+     ETag: "xyzzy"
+     ETag: W/"xyzzy"
+     ETag: ""
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                    [Page 9]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-10" id="page-10" href="#page-10" class="invisible"> </a>
+<span class="grey"><a href="./rfc7232">RFC 7232</a>              HTTP/1.1 Conditional Requests            June 2014</span>
+
+
+   An entity-tag can be either a weak or strong validator, with strong
+   being the default.  If an origin server provides an entity-tag for a
+   representation and the generation of that entity-tag does not satisfy
+   all of the characteristics of a strong validator (<a href="#section-2.1">Section 2.1</a>), then
+   the origin server MUST mark the entity-tag as weak by prefixing its
+   opaque value with "W/" (case-sensitive).
+
+<span class="h4"><a class="selflink" name="section-2.3.1" href="#section-2.3.1">2.3.1</a>.  Generation</span>
+
+   The principle behind entity-tags is that only the service author
+   knows the implementation of a resource well enough to select the most
+   accurate and efficient validation mechanism for that resource, and
+   that any such mechanism can be mapped to a simple sequence of octets
+   for easy comparison.  Since the value is opaque, there is no need for
+   the client to be aware of how each entity-tag is constructed.
+
+   For example, a resource that has implementation-specific versioning
+   applied to all changes might use an internal revision number, perhaps
+   combined with a variance identifier for content negotiation, to
+   accurately differentiate between representations.  Other
+   implementations might use a collision-resistant hash of
+   representation content, a combination of various file attributes, or
+   a modification timestamp that has sub-second resolution.
+
+   An origin server SHOULD send an ETag for any selected representation
+   for which detection of changes can be reasonably and consistently
+   determined, since the entity-tag's use in conditional requests and
+   evaluating cache freshness ([<a href="./rfc7234" title="&quot;Hypertext Transfer Protocol (HTTP/1.1): Caching&quot;">RFC7234</a>]) can result in a substantial
+   reduction of HTTP network traffic and can be a significant factor in
+   improving service scalability and reliability.
+
+<span class="h4"><a class="selflink" name="section-2.3.2" href="#section-2.3.2">2.3.2</a>.  Comparison</span>
+
+   There are two entity-tag comparison functions, depending on whether
+   or not the comparison context allows the use of weak validators:
+
+   o  Strong comparison: two entity-tags are equivalent if both are not
+      weak and their opaque-tags match character-by-character.
+
+   o  Weak comparison: two entity-tags are equivalent if their
+      opaque-tags match character-by-character, regardless of either or
+      both being tagged as "weak".
+
+
+
+
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                   [Page 10]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-11" id="page-11" href="#page-11" class="invisible"> </a>
+<span class="grey"><a href="./rfc7232">RFC 7232</a>              HTTP/1.1 Conditional Requests            June 2014</span>
+
+
+   The example below shows the results for a set of entity-tag pairs and
+   both the weak and strong comparison function results:
+
+   +--------+--------+-------------------+-----------------+
+   | ETag 1 | ETag 2 | Strong Comparison | Weak Comparison |
+   +--------+--------+-------------------+-----------------+
+   | W/"1"  | W/"1"  | no match          | match           |
+   | W/"1"  | W/"2"  | no match          | no match        |
+   | W/"1"  | "1"    | no match          | match           |
+   | "1"    | "1"    | match             | match           |
+   +--------+--------+-------------------+-----------------+
+
+<span class="h4"><a class="selflink" name="section-2.3.3" href="#section-2.3.3">2.3.3</a>.  Example: Entity-Tags Varying on Content-Negotiated Resources</span>
+
+   Consider a resource that is subject to content negotiation (<a href="#section-3.4">Section</a>
+   <a href="#section-3.4">3.4</a> of [<a href="./rfc7231" title="&quot;Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content&quot;">RFC7231</a>]), and where the representations sent in response to
+   a GET request vary based on the Accept-Encoding request header field
+   (<a href="./rfc7231#section-5.3.4">Section&nbsp;5.3.4 of [RFC7231]</a>):
+
+   &gt;&gt; Request:
+
+     GET /index HTTP/1.1
+     Host: www.example.com
+     Accept-Encoding: gzip
+
+
+   In this case, the response might or might not use the gzip content
+   coding.  If it does not, the response might look like:
+
+   &gt;&gt; Response:
+
+     HTTP/1.1 200 OK
+     Date: Fri, 26 Mar 2010 00:05:00 GMT
+     ETag: "123-a"
+     Content-Length: 70
+     Vary: Accept-Encoding
+     Content-Type: text/plain
+
+     Hello World!
+     Hello World!
+     Hello World!
+     Hello World!
+     Hello World!
+
+
+
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                   [Page 11]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-12" id="page-12" href="#page-12" class="invisible"> </a>
+<span class="grey"><a href="./rfc7232">RFC 7232</a>              HTTP/1.1 Conditional Requests            June 2014</span>
+
+
+   An alternative representation that does use gzip content coding would
+   be:
+
+   &gt;&gt; Response:
+
+     HTTP/1.1 200 OK
+     Date: Fri, 26 Mar 2010 00:05:00 GMT
+     ETag: "123-b"
+     Content-Length: 43
+     Vary: Accept-Encoding
+     Content-Type: text/plain
+     Content-Encoding: gzip
+
+     ...binary data...
+
+      Note: Content codings are a property of the representation data,
+      so a strong entity-tag for a content-encoded representation has to
+      be distinct from the entity tag of an unencoded representation to
+      prevent potential conflicts during cache updates and range
+      requests.  In contrast, transfer codings (<a href="./rfc7230#section-4">Section&nbsp;4 of [RFC7230]</a>)
+      apply only during message transfer and do not result in distinct
+      entity-tags.
+
+<span class="h3"><a class="selflink" name="section-2.4" href="#section-2.4">2.4</a>.  When to Use Entity-Tags and Last-Modified Dates</span>
+
+   In 200 (OK) responses to GET or HEAD, an origin server:
+
+   o  SHOULD send an entity-tag validator unless it is not feasible to
+      generate one.
+
+   o  MAY send a weak entity-tag instead of a strong entity-tag, if
+      performance considerations support the use of weak entity-tags, or
+      if it is unfeasible to send a strong entity-tag.
+
+   o  SHOULD send a Last-Modified value if it is feasible to send one.
+
+   In other words, the preferred behavior for an origin server is to
+   send both a strong entity-tag and a Last-Modified value in successful
+   responses to a retrieval request.
+
+   A client:
+
+   o  MUST send that entity-tag in any cache validation request (using
+      If-Match or If-None-Match) if an entity-tag has been provided by
+      the origin server.
+
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                   [Page 12]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-13" id="page-13" href="#page-13" class="invisible"> </a>
+<span class="grey"><a href="./rfc7232">RFC 7232</a>              HTTP/1.1 Conditional Requests            June 2014</span>
+
+
+   o  SHOULD send the Last-Modified value in non-subrange cache
+      validation requests (using If-Modified-Since) if only a
+      Last-Modified value has been provided by the origin server.
+
+   o  MAY send the Last-Modified value in subrange cache validation
+      requests (using If-Unmodified-Since) if only a Last-Modified value
+      has been provided by an HTTP/1.0 origin server.  The user agent
+      SHOULD provide a way to disable this, in case of difficulty.
+
+   o  SHOULD send both validators in cache validation requests if both
+      an entity-tag and a Last-Modified value have been provided by the
+      origin server.  This allows both HTTP/1.0 and HTTP/1.1 caches to
+      respond appropriately.
+
+<span class="h2"><a class="selflink" name="section-3" href="#section-3">3</a>.  Precondition Header Fields</span>
+
+   This section defines the syntax and semantics of HTTP/1.1 header
+   fields for applying preconditions on requests.  <a href="#section-5">Section 5</a> defines
+   when the preconditions are applied.  <a href="#section-6">Section 6</a> defines the order of
+   evaluation when more than one precondition is present.
+
+<span class="h3"><a class="selflink" name="section-3.1" href="#section-3.1">3.1</a>.  If-Match</span>
+
+   The "If-Match" header field makes the request method conditional on
+   the recipient origin server either having at least one current
+   representation of the target resource, when the field-value is "*",
+   or having a current representation of the target resource that has an
+   entity-tag matching a member of the list of entity-tags provided in
+   the field-value.
+
+   An origin server MUST use the strong comparison function when
+   comparing entity-tags for If-Match (<a href="#section-2.3.2">Section 2.3.2</a>), since the client
+   intends this precondition to prevent the method from being applied if
+   there have been any changes to the representation data.
+
+     If-Match = "*" / 1#entity-tag
+
+   Examples:
+
+     If-Match: "xyzzy"
+     If-Match: "xyzzy", "r2d2xxxx", "c3piozzzz"
+     If-Match: *
+
+   If-Match is most often used with state-changing methods (e.g., POST,
+   PUT, DELETE) to prevent accidental overwrites when multiple user
+   agents might be acting in parallel on the same resource (i.e., to
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                   [Page 13]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-14" id="page-14" href="#page-14" class="invisible"> </a>
+<span class="grey"><a href="./rfc7232">RFC 7232</a>              HTTP/1.1 Conditional Requests            June 2014</span>
+
+
+   prevent the "lost update" problem).  It can also be used with safe
+   methods to abort a request if the selected representation does not
+   match one already stored (or partially stored) from a prior request.
+
+   An origin server that receives an If-Match header field MUST evaluate
+   the condition prior to performing the method (<a href="#section-5">Section 5</a>).  If the
+   field-value is "*", the condition is false if the origin server does
+   not have a current representation for the target resource.  If the
+   field-value is a list of entity-tags, the condition is false if none
+   of the listed tags match the entity-tag of the selected
+   representation.
+
+   An origin server MUST NOT perform the requested method if a received
+   If-Match condition evaluates to false; instead, the origin server
+   MUST respond with either a) the 412 (Precondition Failed) status code
+   or b) one of the 2xx (Successful) status codes if the origin server
+   has verified that a state change is being requested and the final
+   state is already reflected in the current state of the target
+   resource (i.e., the change requested by the user agent has already
+   succeeded, but the user agent might not be aware of it, perhaps
+   because the prior response was lost or a compatible change was made
+   by some other user agent).  In the latter case, the origin server
+   MUST NOT send a validator header field in the response unless it can
+   verify that the request is a duplicate of an immediately prior change
+   made by the same user agent.
+
+   The If-Match header field can be ignored by caches and intermediaries
+   because it is not applicable to a stored response.
+
+<span class="h3"><a class="selflink" name="section-3.2" href="#section-3.2">3.2</a>.  If-None-Match</span>
+
+   The "If-None-Match" header field makes the request method conditional
+   on a recipient cache or origin server either not having any current
+   representation of the target resource, when the field-value is "*",
+   or having a selected representation with an entity-tag that does not
+   match any of those listed in the field-value.
+
+   A recipient MUST use the weak comparison function when comparing
+   entity-tags for If-None-Match (<a href="#section-2.3.2">Section 2.3.2</a>), since weak entity-tags
+   can be used for cache validation even if there have been changes to
+   the representation data.
+
+     If-None-Match = "*" / 1#entity-tag
+
+
+
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                   [Page 14]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-15" id="page-15" href="#page-15" class="invisible"> </a>
+<span class="grey"><a href="./rfc7232">RFC 7232</a>              HTTP/1.1 Conditional Requests            June 2014</span>
+
+
+   Examples:
+
+     If-None-Match: "xyzzy"
+     If-None-Match: W/"xyzzy"
+     If-None-Match: "xyzzy", "r2d2xxxx", "c3piozzzz"
+     If-None-Match: W/"xyzzy", W/"r2d2xxxx", W/"c3piozzzz"
+     If-None-Match: *
+
+   If-None-Match is primarily used in conditional GET requests to enable
+   efficient updates of cached information with a minimum amount of
+   transaction overhead.  When a client desires to update one or more
+   stored responses that have entity-tags, the client SHOULD generate an
+   If-None-Match header field containing a list of those entity-tags
+   when making a GET request; this allows recipient servers to send a
+   304 (Not Modified) response to indicate when one of those stored
+   responses matches the selected representation.
+
+   If-None-Match can also be used with a value of "*" to prevent an
+   unsafe request method (e.g., PUT) from inadvertently modifying an
+   existing representation of the target resource when the client
+   believes that the resource does not have a current representation
+   (<a href="./rfc7231#section-4.2.1">Section&nbsp;4.2.1 of [RFC7231]</a>).  This is a variation on the "lost
+   update" problem that might arise if more than one client attempts to
+   create an initial representation for the target resource.
+
+   An origin server that receives an If-None-Match header field MUST
+   evaluate the condition prior to performing the method (<a href="#section-5">Section 5</a>).
+   If the field-value is "*", the condition is false if the origin
+   server has a current representation for the target resource.  If the
+   field-value is a list of entity-tags, the condition is false if one
+   of the listed tags match the entity-tag of the selected
+   representation.
+
+   An origin server MUST NOT perform the requested method if the
+   condition evaluates to false; instead, the origin server MUST respond
+   with either a) the 304 (Not Modified) status code if the request
+   method is GET or HEAD or b) the 412 (Precondition Failed) status code
+   for all other request methods.
+
+   Requirements on cache handling of a received If-None-Match header
+   field are defined in <a href="./rfc7234#section-4.3.2">Section&nbsp;4.3.2 of [RFC7234]</a>.
+
+
+
+
+
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                   [Page 15]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-16" id="page-16" href="#page-16" class="invisible"> </a>
+<span class="grey"><a href="./rfc7232">RFC 7232</a>              HTTP/1.1 Conditional Requests            June 2014</span>
+
+
+<span class="h3"><a class="selflink" name="section-3.3" href="#section-3.3">3.3</a>.  If-Modified-Since</span>
+
+   The "If-Modified-Since" header field makes a GET or HEAD request
+   method conditional on the selected representation's modification date
+   being more recent than the date provided in the field-value.
+   Transfer of the selected representation's data is avoided if that
+   data has not changed.
+
+     If-Modified-Since = HTTP-date
+
+   An example of the field is:
+
+     If-Modified-Since: Sat, 29 Oct 1994 19:43:31 GMT
+
+   A recipient MUST ignore If-Modified-Since if the request contains an
+   If-None-Match header field; the condition in If-None-Match is
+   considered to be a more accurate replacement for the condition in
+   If-Modified-Since, and the two are only combined for the sake of
+   interoperating with older intermediaries that might not implement
+   If-None-Match.
+
+   A recipient MUST ignore the If-Modified-Since header field if the
+   received field-value is not a valid HTTP-date, or if the request
+   method is neither GET nor HEAD.
+
+   A recipient MUST interpret an If-Modified-Since field-value's
+   timestamp in terms of the origin server's clock.
+
+   If-Modified-Since is typically used for two distinct purposes: 1) to
+   allow efficient updates of a cached representation that does not have
+   an entity-tag and 2) to limit the scope of a web traversal to
+   resources that have recently changed.
+
+   When used for cache updates, a cache will typically use the value of
+   the cached message's Last-Modified field to generate the field value
+   of If-Modified-Since.  This behavior is most interoperable for cases
+   where clocks are poorly synchronized or when the server has chosen to
+   only honor exact timestamp matches (due to a problem with
+   Last-Modified dates that appear to go "back in time" when the origin
+   server's clock is corrected or a representation is restored from an
+   archived backup).  However, caches occasionally generate the field
+   value based on other data, such as the Date header field of the
+   cached message or the local clock time that the message was received,
+   particularly when the cached message does not contain a Last-Modified
+   field.
+
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                   [Page 16]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-17" id="page-17" href="#page-17" class="invisible"> </a>
+<span class="grey"><a href="./rfc7232">RFC 7232</a>              HTTP/1.1 Conditional Requests            June 2014</span>
+
+
+   When used for limiting the scope of retrieval to a recent time
+   window, a user agent will generate an If-Modified-Since field value
+   based on either its own local clock or a Date header field received
+   from the server in a prior response.  Origin servers that choose an
+   exact timestamp match based on the selected representation's
+   Last-Modified field will not be able to help the user agent limit its
+   data transfers to only those changed during the specified window.
+
+   An origin server that receives an If-Modified-Since header field
+   SHOULD evaluate the condition prior to performing the method
+   (<a href="#section-5">Section 5</a>).  The origin server SHOULD NOT perform the requested
+   method if the selected representation's last modification date is
+   earlier than or equal to the date provided in the field-value;
+   instead, the origin server SHOULD generate a 304 (Not Modified)
+   response, including only those metadata that are useful for
+   identifying or updating a previously cached response.
+
+   Requirements on cache handling of a received If-Modified-Since header
+   field are defined in <a href="./rfc7234#section-4.3.2">Section&nbsp;4.3.2 of [RFC7234]</a>.
+
+<span class="h3"><a class="selflink" name="section-3.4" href="#section-3.4">3.4</a>.  If-Unmodified-Since</span>
+
+   The "If-Unmodified-Since" header field makes the request method
+   conditional on the selected representation's last modification date
+   being earlier than or equal to the date provided in the field-value.
+   This field accomplishes the same purpose as If-Match for cases where
+   the user agent does not have an entity-tag for the representation.
+
+     If-Unmodified-Since = HTTP-date
+
+   An example of the field is:
+
+     If-Unmodified-Since: Sat, 29 Oct 1994 19:43:31 GMT
+
+   A recipient MUST ignore If-Unmodified-Since if the request contains
+   an If-Match header field; the condition in If-Match is considered to
+   be a more accurate replacement for the condition in
+   If-Unmodified-Since, and the two are only combined for the sake of
+   interoperating with older intermediaries that might not implement
+   If-Match.
+
+   A recipient MUST ignore the If-Unmodified-Since header field if the
+   received field-value is not a valid HTTP-date.
+
+   A recipient MUST interpret an If-Unmodified-Since field-value's
+   timestamp in terms of the origin server's clock.
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                   [Page 17]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-18" id="page-18" href="#page-18" class="invisible"> </a>
+<span class="grey"><a href="./rfc7232">RFC 7232</a>              HTTP/1.1 Conditional Requests            June 2014</span>
+
+
+   If-Unmodified-Since is most often used with state-changing methods
+   (e.g., POST, PUT, DELETE) to prevent accidental overwrites when
+   multiple user agents might be acting in parallel on a resource that
+   does not supply entity-tags with its representations (i.e., to
+   prevent the "lost update" problem).  It can also be used with safe
+   methods to abort a request if the selected representation does not
+   match one already stored (or partially stored) from a prior request.
+
+   An origin server that receives an If-Unmodified-Since header field
+   MUST evaluate the condition prior to performing the method
+   (<a href="#section-5">Section 5</a>).  The origin server MUST NOT perform the requested method
+   if the selected representation's last modification date is more
+   recent than the date provided in the field-value; instead the origin
+   server MUST respond with either a) the 412 (Precondition Failed)
+   status code or b) one of the 2xx (Successful) status codes if the
+   origin server has verified that a state change is being requested and
+   the final state is already reflected in the current state of the
+   target resource (i.e., the change requested by the user agent has
+   already succeeded, but the user agent might not be aware of that
+   because the prior response message was lost or a compatible change
+   was made by some other user agent).  In the latter case, the origin
+   server MUST NOT send a validator header field in the response unless
+   it can verify that the request is a duplicate of an immediately prior
+   change made by the same user agent.
+
+   The If-Unmodified-Since header field can be ignored by caches and
+   intermediaries because it is not applicable to a stored response.
+
+<span class="h3"><a class="selflink" name="section-3.5" href="#section-3.5">3.5</a>.  If-Range</span>
+
+   The "If-Range" header field provides a special conditional request
+   mechanism that is similar to the If-Match and If-Unmodified-Since
+   header fields but that instructs the recipient to ignore the Range
+   header field if the validator doesn't match, resulting in transfer of
+   the new selected representation instead of a 412 (Precondition
+   Failed) response.  If-Range is defined in <a href="./rfc7233#section-3.2">Section&nbsp;3.2 of [RFC7233]</a>.
+
+<span class="h2"><a class="selflink" name="section-4" href="#section-4">4</a>.  Status Code Definitions</span>
+
+<span class="h3"><a class="selflink" name="section-4.1" href="#section-4.1">4.1</a>.  304 Not Modified</span>
+
+   The 304 (Not Modified) status code indicates that a conditional GET
+   or HEAD request has been received and would have resulted in a 200
+   (OK) response if it were not for the fact that the condition
+   evaluated to false.  In other words, there is no need for the server
+   to transfer a representation of the target resource because the
+   request indicates that the client, which made the request
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                   [Page 18]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-19" id="page-19" href="#page-19" class="invisible"> </a>
+<span class="grey"><a href="./rfc7232">RFC 7232</a>              HTTP/1.1 Conditional Requests            June 2014</span>
+
+
+   conditional, already has a valid representation; the server is
+   therefore redirecting the client to make use of that stored
+   representation as if it were the payload of a 200 (OK) response.
+
+   The server generating a 304 response MUST generate any of the
+   following header fields that would have been sent in a 200 (OK)
+   response to the same request: Cache-Control, Content-Location, Date,
+   ETag, Expires, and Vary.
+
+   Since the goal of a 304 response is to minimize information transfer
+   when the recipient already has one or more cached representations, a
+   sender SHOULD NOT generate representation metadata other than the
+   above listed fields unless said metadata exists for the purpose of
+   guiding cache updates (e.g., Last-Modified might be useful if the
+   response does not have an ETag field).
+
+   Requirements on a cache that receives a 304 response are defined in
+   <a href="./rfc7234#section-4.3.4">Section&nbsp;4.3.4 of [RFC7234]</a>.  If the conditional request originated
+   with an outbound client, such as a user agent with its own cache
+   sending a conditional GET to a shared proxy, then the proxy SHOULD
+   forward the 304 response to that client.
+
+   A 304 response cannot contain a message-body; it is always terminated
+   by the first empty line after the header fields.
+
+<span class="h3"><a class="selflink" name="section-4.2" href="#section-4.2">4.2</a>.  412 Precondition Failed</span>
+
+   The 412 (Precondition Failed) status code indicates that one or more
+   conditions given in the request header fields evaluated to false when
+   tested on the server.  This response code allows the client to place
+   preconditions on the current resource state (its current
+   representations and metadata) and, thus, prevent the request method
+   from being applied if the target resource is in an unexpected state.
+
+<span class="h2"><a class="selflink" name="section-5" href="#section-5">5</a>.  Evaluation</span>
+
+   Except when excluded below, a recipient cache or origin server MUST
+   evaluate received request preconditions after it has successfully
+   performed its normal request checks and just before it would perform
+   the action associated with the request method.  A server MUST ignore
+   all received preconditions if its response to the same request
+   without those conditions would have been a status code other than a
+   2xx (Successful) or 412 (Precondition Failed).  In other words,
+   redirects and failures take precedence over the evaluation of
+   preconditions in conditional requests.
+
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                   [Page 19]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-20" id="page-20" href="#page-20" class="invisible"> </a>
+<span class="grey"><a href="./rfc7232">RFC 7232</a>              HTTP/1.1 Conditional Requests            June 2014</span>
+
+
+   A server that is not the origin server for the target resource and
+   cannot act as a cache for requests on the target resource MUST NOT
+   evaluate the conditional request header fields defined by this
+   specification, and it MUST forward them if the request is forwarded,
+   since the generating client intends that they be evaluated by a
+   server that can provide a current representation.  Likewise, a server
+   MUST ignore the conditional request header fields defined by this
+   specification when received with a request method that does not
+   involve the selection or modification of a selected representation,
+   such as CONNECT, OPTIONS, or TRACE.
+
+   Conditional request header fields that are defined by extensions to
+   HTTP might place conditions on all recipients, on the state of the
+   target resource in general, or on a group of resources.  For
+   instance, the "If" header field in WebDAV can make a request
+   conditional on various aspects of multiple resources, such as locks,
+   if the recipient understands and implements that field (<a href="./rfc4918#section-10.4">[RFC4918],
+   Section&nbsp;10.4</a>).
+
+   Although conditional request header fields are defined as being
+   usable with the HEAD method (to keep HEAD's semantics consistent with
+   those of GET), there is no point in sending a conditional HEAD
+   because a successful response is around the same size as a 304 (Not
+   Modified) response and more useful than a 412 (Precondition Failed)
+   response.
+
+<span class="h2"><a class="selflink" name="section-6" href="#section-6">6</a>.  Precedence</span>
+
+   When more than one conditional request header field is present in a
+   request, the order in which the fields are evaluated becomes
+   important.  In practice, the fields defined in this document are
+   consistently implemented in a single, logical order, since "lost
+   update" preconditions have more strict requirements than cache
+   validation, a validated cache is more efficient than a partial
+   response, and entity tags are presumed to be more accurate than date
+   validators.
+
+   A recipient cache or origin server MUST evaluate the request
+   preconditions defined by this specification in the following order:
+
+   1.  When recipient is the origin server and If-Match is present,
+       evaluate the If-Match precondition:
+
+       *  if true, continue to step 3
+
+       *  if false, respond 412 (Precondition Failed) unless it can be
+          determined that the state-changing request has already
+          succeeded (see <a href="#section-3.1">Section 3.1</a>)
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                   [Page 20]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-21" id="page-21" href="#page-21" class="invisible"> </a>
+<span class="grey"><a href="./rfc7232">RFC 7232</a>              HTTP/1.1 Conditional Requests            June 2014</span>
+
+
+   2.  When recipient is the origin server, If-Match is not present, and
+       If-Unmodified-Since is present, evaluate the If-Unmodified-Since
+       precondition:
+
+       *  if true, continue to step 3
+
+       *  if false, respond 412 (Precondition Failed) unless it can be
+          determined that the state-changing request has already
+          succeeded (see <a href="#section-3.4">Section 3.4</a>)
+
+   3.  When If-None-Match is present, evaluate the If-None-Match
+       precondition:
+
+       *  if true, continue to step 5
+
+       *  if false for GET/HEAD, respond 304 (Not Modified)
+
+       *  if false for other methods, respond 412 (Precondition Failed)
+
+   4.  When the method is GET or HEAD, If-None-Match is not present, and
+       If-Modified-Since is present, evaluate the If-Modified-Since
+       precondition:
+
+       *  if true, continue to step 5
+
+       *  if false, respond 304 (Not Modified)
+
+   5.  When the method is GET and both Range and If-Range are present,
+       evaluate the If-Range precondition:
+
+       *  if the validator matches and the Range specification is
+          applicable to the selected representation, respond 206
+          (Partial Content) [<a href="./rfc7233" title="&quot;Hypertext Transfer Protocol (HTTP/1.1): Range Requests&quot;">RFC7233</a>]
+
+   6.  Otherwise,
+
+       *  all conditions are met, so perform the requested action and
+          respond according to its success or failure.
+
+   Any extension to HTTP/1.1 that defines additional conditional request
+   header fields ought to define its own expectations regarding the
+   order for evaluating such fields in relation to those defined in this
+   document and other conditionals that might be found in practice.
+
+
+
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                   [Page 21]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-22" id="page-22" href="#page-22" class="invisible"> </a>
+<span class="grey"><a href="./rfc7232">RFC 7232</a>              HTTP/1.1 Conditional Requests            June 2014</span>
+
+
+<span class="h2"><a class="selflink" name="section-7" href="#section-7">7</a>.  IANA Considerations</span>
+
+<span class="h3"><a class="selflink" name="section-7.1" href="#section-7.1">7.1</a>.  Status Code Registration</span>
+
+   The "Hypertext Transfer Protocol (HTTP) Status Code Registry" located
+   at &lt;<a href="http://www.iana.org/assignments/http-status-codes">http://www.iana.org/assignments/http-status-codes</a>&gt; has been
+   updated with the registrations below:
+
+   +-------+---------------------+-------------+
+   | Value | Description         | Reference   |
+   +-------+---------------------+-------------+
+   | 304   | Not Modified        | <a href="#section-4.1">Section 4.1</a> |
+   | 412   | Precondition Failed | <a href="#section-4.2">Section 4.2</a> |
+   +-------+---------------------+-------------+
+
+<span class="h3"><a class="selflink" name="section-7.2" href="#section-7.2">7.2</a>.  Header Field Registration</span>
+
+   HTTP header fields are registered within the "Message Headers"
+   registry maintained at
+   &lt;<a href="http://www.iana.org/assignments/message-headers/">http://www.iana.org/assignments/message-headers/</a>&gt;.
+
+   This document defines the following HTTP header fields, so their
+   associated registry entries have been updated according to the
+   permanent registrations below (see [<a href="#ref-BCP90" title="&quot;Registration Procedures for Message Header Fields&quot;">BCP90</a>]):
+
+   +---------------------+----------+----------+-------------+
+   | Header Field Name   | Protocol | Status   | Reference   |
+   +---------------------+----------+----------+-------------+
+   | ETag                | http     | standard | <a href="#section-2.3">Section 2.3</a> |
+   | If-Match            | http     | standard | <a href="#section-3.1">Section 3.1</a> |
+   | If-Modified-Since   | http     | standard | <a href="#section-3.3">Section 3.3</a> |
+   | If-None-Match       | http     | standard | <a href="#section-3.2">Section 3.2</a> |
+   | If-Unmodified-Since | http     | standard | <a href="#section-3.4">Section 3.4</a> |
+   | Last-Modified       | http     | standard | <a href="#section-2.2">Section 2.2</a> |
+   +---------------------+----------+----------+-------------+
+
+   The change controller is: "IETF (iesg@ietf.org) - Internet
+   Engineering Task Force".
+
+<span class="h2"><a class="selflink" name="section-8" href="#section-8">8</a>.  Security Considerations</span>
+
+   This section is meant to inform developers, information providers,
+   and users of known security concerns specific to the HTTP conditional
+   request mechanisms.  More general security considerations are
+   addressed in HTTP "Message Syntax and Routing" [<a href="./rfc7230" title="&quot;Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing&quot;">RFC7230</a>] and
+   "Semantics and Content" [<a href="./rfc7231" title="&quot;Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content&quot;">RFC7231</a>].
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                   [Page 22]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-23" id="page-23" href="#page-23" class="invisible"> </a>
+<span class="grey"><a href="./rfc7232">RFC 7232</a>              HTTP/1.1 Conditional Requests            June 2014</span>
+
+
+   The validators defined by this specification are not intended to
+   ensure the validity of a representation, guard against malicious
+   changes, or detect man-in-the-middle attacks.  At best, they enable
+   more efficient cache updates and optimistic concurrent writes when
+   all participants are behaving nicely.  At worst, the conditions will
+   fail and the client will receive a response that is no more harmful
+   than an HTTP exchange without conditional requests.
+
+   An entity-tag can be abused in ways that create privacy risks.  For
+   example, a site might deliberately construct a semantically invalid
+   entity-tag that is unique to the user or user agent, send it in a
+   cacheable response with a long freshness time, and then read that
+   entity-tag in later conditional requests as a means of re-identifying
+   that user or user agent.  Such an identifying tag would become a
+   persistent identifier for as long as the user agent retained the
+   original cache entry.  User agents that cache representations ought
+   to ensure that the cache is cleared or replaced whenever the user
+   performs privacy-maintaining actions, such as clearing stored cookies
+   or changing to a private browsing mode.
+
+<span class="h2"><a class="selflink" name="section-9" href="#section-9">9</a>.  Acknowledgments</span>
+
+   See <a href="./rfc7230#section-10">Section&nbsp;10 of [RFC7230]</a>.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                   [Page 23]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-24" id="page-24" href="#page-24" class="invisible"> </a>
+<span class="grey"><a href="./rfc7232">RFC 7232</a>              HTTP/1.1 Conditional Requests            June 2014</span>
+
+
+<span class="h2"><a class="selflink" name="section-10" href="#section-10">10</a>.  References</span>
+
+<span class="h3"><a class="selflink" name="section-10.1" href="#section-10.1">10.1</a>.  Normative References</span>
+
+   [<a name="ref-RFC2119" id="ref-RFC2119">RFC2119</a>]  Bradner, S., "Key words for use in RFCs to Indicate
+              Requirement Levels", <a href="./bcp14">BCP 14</a>, <a href="./rfc2119">RFC 2119</a>, March 1997.
+
+   [<a name="ref-RFC5234" id="ref-RFC5234">RFC5234</a>]  Crocker, D., Ed. and P. Overell, "Augmented BNF for Syntax
+              Specifications: ABNF", STD 68, <a href="./rfc5234">RFC 5234</a>, January 2008.
+
+   [<a name="ref-RFC7230" id="ref-RFC7230">RFC7230</a>]  Fielding, R., Ed. and J. Reschke, Ed., "Hypertext Transfer
+              Protocol (HTTP/1.1): Message Syntax and Routing",
+              <a href="./rfc7230">RFC 7230</a>, June 2014.
+
+   [<a name="ref-RFC7231" id="ref-RFC7231">RFC7231</a>]  Fielding, R., Ed. and J. Reschke, Ed., "Hypertext Transfer
+              Protocol (HTTP/1.1): Semantics and Content", <a href="./rfc7231">RFC 7231</a>,
+              June 2014.
+
+   [<a name="ref-RFC7233" id="ref-RFC7233">RFC7233</a>]  Fielding, R., Ed., Lafon, Y., Ed., and J. Reschke, Ed.,
+              "Hypertext Transfer Protocol (HTTP/1.1): Range Requests",
+              <a href="./rfc7233">RFC 7233</a>, June 2014.
+
+   [<a name="ref-RFC7234" id="ref-RFC7234">RFC7234</a>]  Fielding, R., Ed., Nottingham, M., Ed., and J. Reschke,
+              Ed., "Hypertext Transfer Protocol (HTTP/1.1): Caching",
+              <a href="./rfc7234">RFC 7234</a>, June 2014.
+
+<span class="h3"><a class="selflink" name="section-10.2" href="#section-10.2">10.2</a>.  Informative References</span>
+
+   [<a name="ref-BCP90" id="ref-BCP90">BCP90</a>]    Klyne, G., Nottingham, M., and J. Mogul, "Registration
+              Procedures for Message Header Fields", <a href="./bcp90">BCP 90</a>, <a href="./rfc3864">RFC 3864</a>,
+              September 2004.
+
+   [<a name="ref-RFC2616" id="ref-RFC2616">RFC2616</a>]  Fielding, R., Gettys, J., Mogul, J., Frystyk, H.,
+              Masinter, L., Leach, P., and T. Berners-Lee, "Hypertext
+              Transfer Protocol -- HTTP/1.1", <a href="./rfc2616">RFC 2616</a>, June 1999.
+
+   [<a name="ref-RFC4918" id="ref-RFC4918">RFC4918</a>]  Dusseault, L., Ed., "HTTP Extensions for Web Distributed
+              Authoring and Versioning (WebDAV)", <a href="./rfc4918">RFC 4918</a>, June 2007.
+
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                   [Page 24]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-25" id="page-25" href="#page-25" class="invisible"> </a>
+<span class="grey"><a href="./rfc7232">RFC 7232</a>              HTTP/1.1 Conditional Requests            June 2014</span>
+
+
+<span class="h2"><a class="selflink" name="appendix-A" href="#appendix-A">Appendix A</a>.  Changes from <a href="./rfc2616">RFC 2616</a></span>
+
+   The definition of validator weakness has been expanded and clarified.
+   (<a href="#section-2.1">Section 2.1</a>)
+
+   Weak entity-tags are now allowed in all requests except range
+   requests.  (Sections <a href="#section-2.1">2.1</a> and <a href="#section-3.2">3.2</a>)
+
+   The ETag header field ABNF has been changed to not use quoted-string,
+   thus avoiding escaping issues.  (<a href="#section-2.3">Section 2.3</a>)
+
+   ETag is defined to provide an entity tag for the selected
+   representation, thereby clarifying what it applies to in various
+   situations (such as a PUT response).  (<a href="#section-2.3">Section 2.3</a>)
+
+   The precedence for evaluation of conditional requests has been
+   defined.  (<a href="#section-6">Section 6</a>)
+
+<span class="h2"><a class="selflink" name="appendix-B" href="#appendix-B">Appendix B</a>.  Imported ABNF</span>
+
+   The following core rules are included by reference, as defined in
+   <a href="./rfc5234#appendix-B.1">Appendix&nbsp;B.1 of [RFC5234]</a>: ALPHA (letters), CR (carriage return),
+   CRLF (CR LF), CTL (controls), DIGIT (decimal 0-9), DQUOTE (double
+   quote), HEXDIG (hexadecimal 0-9/A-F/a-f), LF (line feed), OCTET (any
+   8-bit sequence of data), SP (space), and VCHAR (any visible US-ASCII
+   character).
+
+   The rules below are defined in [<a href="./rfc7230" title="&quot;Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing&quot;">RFC7230</a>]:
+
+     OWS           = &lt;OWS, see <a href="./rfc7230#section-3.2.3">[RFC7230], Section&nbsp;3.2.3</a>&gt;
+     obs-text      = &lt;obs-text, see <a href="./rfc7230#section-3.2.6">[RFC7230], Section&nbsp;3.2.6</a>&gt;
+
+   The rules below are defined in other parts:
+
+     HTTP-date     = &lt;HTTP-date, see <a href="./rfc7231#section-7.1.1.1">[RFC7231], Section&nbsp;7.1.1.1</a>&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                   [Page 25]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-26" id="page-26" href="#page-26" class="invisible"> </a>
+<span class="grey"><a href="./rfc7232">RFC 7232</a>              HTTP/1.1 Conditional Requests            June 2014</span>
+
+
+<span class="h2"><a class="selflink" name="appendix-C" href="#appendix-C">Appendix C</a>.  Collected ABNF</span>
+
+   In the collected ABNF below, list rules are expanded as per <a href="#section-1.2">Section</a>
+   <a href="#section-1.2">1.2</a> of [<a href="./rfc7230" title="&quot;Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing&quot;">RFC7230</a>].
+
+   ETag = entity-tag
+
+   HTTP-date = &lt;HTTP-date, see <a href="./rfc7231#section-7.1.1.1">[RFC7231], Section&nbsp;7.1.1.1</a>&gt;
+
+   If-Match = "*" / ( *( "," OWS ) entity-tag *( OWS "," [ OWS
+    entity-tag ] ) )
+   If-Modified-Since = HTTP-date
+   If-None-Match = "*" / ( *( "," OWS ) entity-tag *( OWS "," [ OWS
+    entity-tag ] ) )
+   If-Unmodified-Since = HTTP-date
+
+   Last-Modified = HTTP-date
+
+   OWS = &lt;OWS, see <a href="./rfc7230#section-3.2.3">[RFC7230], Section&nbsp;3.2.3</a>&gt;
+
+   entity-tag = [ weak ] opaque-tag
+   etagc = "!" / %x23-7E ; '#'-'~'
+    / obs-text
+
+   obs-text = &lt;obs-text, see <a href="./rfc7230#section-3.2.6">[RFC7230], Section&nbsp;3.2.6</a>&gt;
+   opaque-tag = DQUOTE *etagc DQUOTE
+
+   weak = %x57.2F ; W/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                   [Page 26]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-27" id="page-27" href="#page-27" class="invisible"> </a>
+<span class="grey"><a href="./rfc7232">RFC 7232</a>              HTTP/1.1 Conditional Requests            June 2014</span>
+
+
+Index
+
+   3
+      304 Not Modified (status code)  19
+
+   4
+      412 Precondition Failed (status code)  18
+
+   E
+      ETag header field  9
+
+   G
+      Grammar
+         entity-tag  9
+         ETag  9
+         etagc  9
+         If-Match  13
+         If-Modified-Since  15
+         If-None-Match  14
+         If-Unmodified-Since  17
+         Last-Modified  7
+         opaque-tag  9
+         weak  9
+
+   I
+      If-Match header field  13
+      If-Modified-Since header field  16
+      If-None-Match header field  14
+      If-Unmodified-Since header field  17
+
+   L
+      Last-Modified header field  7
+
+   M
+      metadata  5
+
+   S
+      selected representation  4
+
+   V
+      validator  5
+         strong  5
+         weak  5
+
+
+
+
+
+
+
+
+<span class="grey">Fielding &amp; Reschke           Standards Track                   [Page 27]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-28" id="page-28" href="#page-28" class="invisible"> </a>
+<span class="grey"><a href="./rfc7232">RFC 7232</a>              HTTP/1.1 Conditional Requests            June 2014</span>
+
+
+Authors' Addresses
+
+   Roy T. Fielding (editor)
+   Adobe Systems Incorporated
+   345 Park Ave
+   San Jose, CA  95110
+   USA
+
+   EMail: fielding@gbiv.com
+   URI:   <a href="http://roy.gbiv.com/">http://roy.gbiv.com/</a>
+
+
+   Julian F. Reschke (editor)
+   greenbytes GmbH
+   Hafenweg 16
+   Muenster, NW  48155
+   Germany
+
+   EMail: julian.reschke@greenbytes.de
+   URI:   <a href="http://greenbytes.de/tech/webdav/">http://greenbytes.de/tech/webdav/</a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Fielding &amp; Reschke           Standards Track                   [Page 28]
+
+</pre><br />
+<span class="noprint"><small><small>Html markup produced by rfcmarkup 1.109, available from
+<a href="https://tools.ietf.org/tools/rfcmarkup/">https://tools.ietf.org/tools/rfcmarkup/</a>
+</small></small></span>
+</body></html>

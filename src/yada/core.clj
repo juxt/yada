@@ -23,18 +23,22 @@
 ;; middleware or another mechanism for assoc'ing evidence of credentials
 ;; to the Ring request.
 
+(defn not* [[result m]]
+  [(not result) m])
+
 (defmacro nonblocking-exit-when*
   "Short-circuit exit a d/chain with an error if expr evaluates to
   truthy. To avoid blocking the request thread, the callback can return
   a deferred value."
   [callback expr status]
   `(fn [x#]
-     (if (and (some? ~callback) ; guard for performance
-              ~expr)
+     (let [[b# m#] (when (some? ~callback) ; guard for performance
+                   ~expr)]
        ;; Exit, intended to be caught with a d/catch
-       (d/error-deferred (ex-info "" {:status ~status
-                                      ::http-response true}))
-       x#)))
+       (if b#
+         (d/error-deferred (ex-info "" (merge {:status ~status
+                                               ::http-response true} m#)))
+         x#))))
 
 (defmacro nonblocking-exit-when
   [callback expr status]
@@ -42,17 +46,19 @@
 
 (defmacro nonblocking-exit-when-not
   [callback expr status]
-  `(nonblocking-exit-when* ~callback (deref (d/chain ~expr not)) ~status))
+  `(nonblocking-exit-when* ~callback (deref (d/chain ~expr not*)) ~status))
 
 (defmacro exit-when [expr status]
   `(fn [x#]
-     (if ~expr
-       (d/error-deferred (ex-info "" {:status ~status
-                                      ::http-response true}))
-       x#)))
+     (let [[b# m#] ~expr]
+       (if b#
+         (d/error-deferred (ex-info "" (merge {:status ~status
+                                               ::http-response true}
+                                              m#)))
+         x#))))
 
 (defmacro exit-when-not [expr status]
-  `(exit-when (not ~expr) ~status))
+  `(exit-when (not* ~expr) ~status))
 
 (defn check-cacheable [ctx]
   ;; Check the resource metadata and return one of the following responses
@@ -137,53 +143,84 @@
              (if resource
 
                ;; 'Exists' flow
-               (d/chain
-                ctx
-                check-cacheable
+               (case method
+                 :get
+                 (d/chain
+                  ctx
+                  check-cacheable
 
-                ;; OK, let's GET the resource's entity (data)
-                (fn [ctx]
-                  (d/chain
-                   (p/entity entity resource)
-                   #_#(if % %
-                        (d/error-deferred
-                         (ex-info "" {:status 404
-                                      :body "Resource entity not found"
-                                      ::http-response true})))
-                   #(assoc-in ctx [:resource :entity] %)))
-
-                ;; Create representation
-                (fn [ctx]
-                  (let [content-type (get-in ctx [:response :content-type])
-                        entity (get-in ctx [:resource :entity])]
+                  ;; OK, let's GET the resource's entity (data)
+                  (fn [ctx]
                     (d/chain
-                     entity
-                     (fn [entity]
-                       (p/body body entity content-type))
+                     (p/entity entity resource)
+                     #_#(if % %
+                            (d/error-deferred
+                             (ex-info "" {:status 404
+                                          :body "Resource entity not found"
+                                          ::http-response true})))
+                     #(assoc-in ctx [:resource :entity] %)))
 
-                     ;; if not already a string, serialize to representation
-                     (fn [body]
-                       (if (string? body)
-                         body
-                         (representation body content-type)))
+                  ;; Create representation
+                  (fn [ctx]
+                    (let [content-type (get-in ctx [:response :content-type])
+                          entity (get-in ctx [:resource :entity])]
+                      (d/chain
+                       entity
+                       (fn [entity]
+                         (p/body body entity content-type))
 
-                     ;; on nil, compose default result (if in dev)
-                     (fn [x] (if x x
-                                 (if (= (get-in ctx [:resource :entity :magic]) :yada/default-content)
-                                   (html [:h1 "Default content, yada yada yada"])
-                                   ;; Er, could entity be nil here?
-                                   (representation entity content-type))))
-                     #(assoc-in ctx [:response :body] %)
-                     #(update-in % [:response :headers] assoc "content-type" content-type))))
+                       ;; if not already a string, serialize to representation
+                       (fn [body]
+                         (if (string? body)
+                           body
+                           (representation body content-type)))
 
-                (fn [ctx]
-                  (merge
-                   {:status 200
-                    :headers (get-in ctx [:response :headers])
-                    :body (get-in ctx [:response :body])
-                    }
-                   )
-                  ))
+                       ;; on nil, compose default result (if in dev)
+                       (fn [x] (if x x
+                                   (if (= (get-in ctx [:resource :entity :magic]) :yada/default-content)
+                                     (html [:h1 "Default content, yada yada yada"])
+                                     ;; Er, could entity be nil here?
+                                     (representation entity content-type))))
+                       #(assoc-in ctx [:response :body] %)
+                       #(update-in % [:response :headers] assoc "content-type" content-type))))
+
+                  (fn [ctx]
+                    (merge
+                     {:status 200
+                      :headers (get-in ctx [:response :headers])
+                      :body (get-in ctx [:response :body])
+                      }
+                     )
+                    ))
+
+                 :put
+                 (d/chain
+                  ctx
+                  check-cacheable
+
+                  (fn [ctx]
+                    (when-let [etag (get-in req [:headers "if-match"])]
+                      (prn "req etag is" etag)
+                      (prn "res etag is" (get-in ctx [:resource :etag]))
+                      (when (not= etag (get-in ctx [:resource :etag]))
+                        (throw
+                         (ex-info "Precondition failed"
+                                  {:status 412
+                                   ::http-response true})))
+
+                      )
+                    ctx
+                    )
+
+                  (fn [ctx]
+                    {:status 204
+                     :headers (get-in ctx [:response :headers])
+                     :body (get-in ctx [:response :body])
+                     }
+                    ))
+
+                 (throw (ex-info "TODO!" {}))
+                 )
 
                ;; 'Not exists' flow
                (d/chain

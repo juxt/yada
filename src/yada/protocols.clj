@@ -1,6 +1,8 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(ns yada.protocols)
+(ns yada.protocols
+  (:require
+   [manifold.deferred :as d]))
 
 (defprotocol Callbacks
   (service-available? [_] "Return whether the service is available")
@@ -14,17 +16,25 @@
 
 (extend-protocol Callbacks
   Boolean
-  (service-available? [b] b)
-  (request-uri-too-long? [b _] b)
-  (allowed-method? [b _] b)
+  (service-available? [b] [b {}])
+  (known-method? [b method] [b {}])
+  (request-uri-too-long? [b _] [b {}])
+  (allowed-method? [b _] [b {}])
   (resource [b opts] (when b {}))
 
   clojure.lang.Fn
-  (service-available? [f] (f))
-  (known-method? [f method] (f method))
-  (request-uri-too-long? [f uri] (f uri))
-  (allowed-method? [f method] (f method))
-  (resource [f opts] (f opts))
+  (service-available? [f] (let [res (f)]
+                            (if (d/deferrable? res)
+                              (d/chain (service-available? @res))
+                              (service-available? res))))
+  (known-method? [f method] (known-method? (f method) method))
+  (request-uri-too-long? [f uri] (request-uri-too-long? (f uri) uri))
+  (allowed-method? [f method] (allowed-method? (f method) method))
+  (resource [f opts] (let [res (f opts)]
+                       (if (d/deferrable? res)
+                         (d/chain (resource res opts))
+                         (resource res opts))))
+
   (entity [f resource] (f resource))
   (body [f entity content-type] (f entity content-type))
   (produces [f] (f))
@@ -33,15 +43,22 @@
   (body [s _ _] s)
 
   Number
+  (service-available? [n] [false {:headers {"retry-after" n}}])
   (request-uri-too-long? [n uri]
-    (> (.length uri) n))
+    (request-uri-too-long? (> (.length uri) n) uri))
 
   java.util.Set
   (known-method? [set method]
-    (contains? set method))
+    [(contains? set method) {}])
   (allowed-method? [set method]
-    (contains? set method))
+    [(contains? set method) {}])
   (produces [set] set)
+
+  clojure.lang.Keyword
+  (known-method? [k method]
+    (known-method? #{k} method))
+  (allowed-method? [k method]
+    (allowed-method? #{k} method))
 
   java.util.Map
   (resource [m _] m)
@@ -64,7 +81,8 @@
     (known-method? #{:get :put :post :delete :options :head} method))
   (request-uri-too-long? [_ uri]
     (request-uri-too-long? 4096 uri))
-  (allowed-method? [_ _] #{:get :head})
+  (allowed-method? [_ method]
+    (allowed-method? #{:get :head} method))
   (resource [_ opts] nil)
   (entity [_ resource]
     nil)

@@ -1,0 +1,326 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head profile="http://dublincore.org/documents/2008/08/04/dc-html/">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="robots" content="index,follow" />
+    <meta name="creator" content="rfcmarkup version 1.109" />
+    <link rel="schema.DC" href="http://purl.org/dc/elements/1.1/" />
+<meta name="DC.Identifier" content="urn:ietf:rfc:7236" />
+<meta name="DC.Description.Abstract" content="This document registers Hypertext Transfer Protocol (HTTP)
+authentication schemes that have been defined in RFCs before the IANA
+HTTP Authentication Scheme Registry was established." />
+<meta name="DC.Creator" content="Julian Reschke &lt;julian.reschke@greenbytes.de&gt;" />
+<meta name="DC.Date.Issued" content="June, 2014" />
+<meta name="DC.Title" content="Initial Hypertext Transfer Protocol (HTTP) Authentication Scheme Registrations" />
+
+    <link rel="icon" href="/images/rfc.png" type="image/png" />
+    <link rel="shortcut icon" href="/images/rfc.png" type="image/png" />
+    <title>RFC 7236 - Initial Hypertext Transfer Protocol (HTTP) Authentication Scheme Registrations</title>
+    
+    
+    <style type="text/css">
+	body {
+	    margin: 0px 8px;
+            font-size: 1em;
+	}
+        h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+	    font-weight: bold;
+            line-height: 0pt;
+            display: inline;
+            white-space: pre;
+            font-family: monospace;
+            font-size: 1em;
+	    font-weight: bold;
+        }
+        pre {
+            font-size: 1em;
+            margin-top: 0px;
+            margin-bottom: 0px;
+        }
+	.pre {
+	    white-space: pre;
+	    font-family: monospace;
+	}
+	.header{
+	    font-weight: bold;
+	}
+        .newpage {
+            page-break-before: always;
+        }
+        .invisible {
+            text-decoration: none;
+            color: white;
+        }
+        a.selflink {
+          color: black;
+          text-decoration: none;
+        }
+        @media print {
+            body {
+                font-family: monospace;
+                font-size: 10.5pt;
+            }
+            h1, h2, h3, h4, h5, h6 {
+                font-size: 1em;
+            }
+        
+            a:link, a:visited {
+                color: inherit;
+                text-decoration: none;
+            }
+            .noprint {
+                display: none;
+            }
+        }
+	@media screen {
+	    .grey, .grey a:link, .grey a:visited {
+		color: #777;
+	    }
+            .docinfo {
+                background-color: #EEE;
+            }
+            .top {
+                border-top: 7px solid #EEE;
+            }
+            .bgwhite  { background-color: white; }
+            .bgred    { background-color: #F44; }
+            .bggrey   { background-color: #666; }
+            .bgbrown  { background-color: #840; }            
+            .bgorange { background-color: #FA0; }
+            .bgyellow { background-color: #EE0; }
+            .bgmagenta{ background-color: #F4F; }
+            .bgblue   { background-color: #66F; }
+            .bgcyan   { background-color: #4DD; }
+            .bggreen  { background-color: #4F4; }
+
+            .legend   { font-size: 90%; }
+            .cplate   { font-size: 70%; border: solid grey 1px; }
+	}
+    </style>
+    <!--[if IE]>
+    <style>
+    body {
+       font-size: 13px;
+       margin: 10px 10px;
+    }
+    </style>
+    <![endif]-->
+
+    <script type="text/javascript"><!--
+    function addHeaderTags() {
+	var spans = document.getElementsByTagName("span");
+	for (var i=0; i < spans.length; i++) {
+	    var elem = spans[i];
+	    if (elem) {
+		var level = elem.getAttribute("class");
+                if (level == "h1" || level == "h2" || level == "h3" || level == "h4" || level == "h5" || level == "h6") {
+                    elem.innerHTML = "<"+level+">"+elem.innerHTML+"</"+level+">";		
+                }
+	    }
+	}
+    }
+    var legend_html = "Colour legend:<br />      <table>         <tr><td>Unknown:</td>                   <td><span class='cplate bgwhite'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Draft:</td>                     <td><span class='cplate bgred'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Informational:</td>             <td><span class='cplate bgorange'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Experimental:</td>              <td><span class='cplate bgyellow'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Best Common Practice:</td>      <td><span class='cplate bgmagenta'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Proposed Standard:</td>         <td><span class='cplate bgblue'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Draft Standard (old designation):</td> <td><span class='cplate bgcyan'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Internet Standard:</td>         <td><span class='cplate bggreen'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Historic:</td>                  <td><span class='cplate bggrey'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Obsolete:</td>                  <td><span class='cplate bgbrown'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>     </table>";
+    function showElem(id) {
+        var elem = document.getElementById(id);
+        elem.innerHTML = eval(id+"_html");
+        elem.style.visibility='visible';
+    }
+    function hideElem(id) {
+        var elem = document.getElementById(id);
+        elem.style.visibility='hidden';        
+        elem.innerHTML = "";
+    }
+    // -->
+    </script>
+</head>
+<body onload="addHeaderTags()">
+   <div style="height: 13px;">
+      <div onmouseover="this.style.cursor='pointer';"
+         onclick="showElem('legend');"
+         onmouseout="hideElem('legend')"
+	 style="height: 6px; position: absolute;"
+         class="pre noprint docinfo bgorange"
+         title="Click for colour legend." >                                                                        </div>
+      <div id="legend"
+           class="docinfo noprint pre legend"
+           style="position:absolute; top: 4px; left: 4ex; visibility:hidden; background-color: white; padding: 4px 9px 5px 7px; border: solid #345 1px; "
+           onmouseover="showElem('legend');"
+           onmouseout="hideElem('legend');">
+      </div>
+   </div>
+<span class="pre noprint docinfo top">[<a href="../html/" title="Document search and retrieval page">Docs</a>] [<a href="/rfc/rfc7236.txt" title="Plaintext version of this document">txt</a>|<a href="/pdf/rfc7236" title="PDF version of this document">pdf</a>] [<a href="./draft-ietf-httpbis-authscheme-registrations" title="draft-ietf-httpbis-authscheme-registrations">draft-ietf-httpbi...</a>] [<a href="/rfcdiff?difftype=--hwdiff&amp;url2=rfc7236" title="Inline diff (wdiff)">Diff1</a>] [<a href="/rfcdiff?url2=rfc7236" title="Side-by-side diff">Diff2</a>]                 </span><br />
+<span class="pre noprint docinfo">                                                                        </span><br />
+<span class="pre noprint docinfo">                                                           INFORMATIONAL</span><br />
+<span class="pre noprint docinfo">                                                                        </span><br />
+<pre>
+Internet Engineering Task Force (IETF)                        J. Reschke
+Request for Comments: 7236                                    greenbytes
+Category: Informational                                        June 2014
+ISSN: 2070-1721
+
+
+               <span class="h1">Initial Hypertext Transfer Protocol (HTTP)</span>
+                  <span class="h1">Authentication Scheme Registrations</span>
+
+Abstract
+
+   This document registers Hypertext Transfer Protocol (HTTP)
+   authentication schemes that have been defined in RFCs before the IANA
+   HTTP Authentication Scheme Registry was established.
+
+Status of This Memo
+
+   This document is not an Internet Standards Track specification; it is
+   published for informational purposes.
+
+   This document is a product of the Internet Engineering Task Force
+   (IETF).  It represents the consensus of the IETF community.  It has
+   received public review and has been approved for publication by the
+   Internet Engineering Steering Group (IESG).  Not all documents
+   approved by the IESG are a candidate for any level of Internet
+   Standard; see <a href="./rfc5741#section-2">Section&nbsp;2 of RFC 5741</a>.
+
+   Information about the current status of this document, any errata,
+   and how to provide feedback on it may be obtained at
+   <a href="http://www.rfc-editor.org/info/rfc7236">http://www.rfc-editor.org/info/rfc7236</a>.
+
+Copyright Notice
+
+   Copyright (c) 2014 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to <a href="./bcp78">BCP 78</a> and the IETF Trust's Legal
+   Provisions Relating to IETF Documents
+   (<a href="http://trustee.ietf.org/license-info">http://trustee.ietf.org/license-info</a>) in effect on the date of
+   publication of this document.  Please review these documents
+   carefully, as they describe your rights and restrictions with respect
+   to this document.  Code Components extracted from this document must
+   include Simplified BSD License text as described in <a href="#section-4">Section 4</a>.e of
+   the Trust Legal Provisions and are provided without warranty as
+   described in the Simplified BSD License.
+
+
+
+
+
+
+<span class="grey">Reschke                       Informational                     [Page 1]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-2" id="page-2" href="#page-2" class="invisible"> </a>
+<span class="grey"><a href="./rfc7236">RFC 7236</a>        HTTP Authentication Scheme Registrations       June 2014</span>
+
+
+Table of Contents
+
+   <a href="#section-1">1</a>.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-2">2</a>
+   <a href="#section-2">2</a>.  Security Considerations . . . . . . . . . . . . . . . . . . . . <a href="#page-2">2</a>
+   <a href="#section-3">3</a>.  IANA Considerations . . . . . . . . . . . . . . . . . . . . . . <a href="#page-2">2</a>
+   <a href="#section-4">4</a>.  Normative References  . . . . . . . . . . . . . . . . . . . . . <a href="#page-3">3</a>
+
+<span class="h2"><a class="selflink" name="section-1" href="#section-1">1</a>.  Introduction</span>
+
+   This document registers Hypertext Transfer Protocol (HTTP)
+   authentication schemes that have been defined in RFCs before the IANA
+   HTTP Authentication Scheme Registry was established.
+
+<span class="h2"><a class="selflink" name="section-2" href="#section-2">2</a>.  Security Considerations</span>
+
+   There are no security considerations related to the registration
+   itself.
+
+   Security considerations applicable to the individual authentication
+   schemes ought to be discussed in the specifications that define them.
+
+<span class="h2"><a class="selflink" name="section-3" href="#section-3">3</a>.  IANA Considerations</span>
+
+   The registrations below have been added to the IANA "Hypertext
+   Transfer Protocol (HTTP) Authentication Scheme Registry" at
+   &lt;<a href="http://www.iana.org/assignments/http-authschemes">http://www.iana.org/assignments/http-authschemes</a>&gt; (see <a href="./rfc7235#section-5.1">Section&nbsp;5.1
+   of [RFC7235]</a>).
+
+   +----------------+------------+-------------------------------------+
+   | Authentication | Reference  | Notes                               |
+   | Scheme Name    |            |                                     |
+   +----------------+------------+-------------------------------------+
+   | Basic          | [<a href="./rfc2617" title="&quot;HTTP Authentication: Basic and Digest Access Authentication&quot;">RFC2617</a>], |                                     |
+   |                | <a href="#section-2">Section 2</a>  |                                     |
+   | Bearer         | [<a href="./rfc6750" title="&quot;The OAuth 2.0 Authorization Framework: Bearer Token Usage&quot;">RFC6750</a>]  |                                     |
+   | Digest         | [<a href="./rfc2617" title="&quot;HTTP Authentication: Basic and Digest Access Authentication&quot;">RFC2617</a>], |                                     |
+   |                | <a href="#section-3">Section 3</a>  |                                     |
+   | Negotiate      | [<a href="./rfc4559" title="&quot;SPNEGO-based Kerberos and NTLM HTTP Authentication in Microsoft Windows&quot;">RFC4559</a>], | This authentication scheme violates |
+   |                | <a href="#section-3">Section 3</a>  | both HTTP semantics (being          |
+   |                |            | connection-oriented) and syntax     |
+   |                |            | (use of syntax incompatible with    |
+   |                |            | the WWW-Authenticate and            |
+   |                |            | Authorization header field syntax). |
+   | OAuth          | [<a href="./rfc5849" title="&quot;The OAuth 1.0 Protocol&quot;">RFC5849</a>], |                                     |
+   |                | Section    |                                     |
+   |                | 3.5.1      |                                     |
+   +----------------+------------+-------------------------------------+
+
+
+
+
+<span class="grey">Reschke                       Informational                     [Page 2]</span>
+</pre><!--NewPage--><pre class='newpage'><a name="page-3" id="page-3" href="#page-3" class="invisible"> </a>
+<span class="grey"><a href="./rfc7236">RFC 7236</a>        HTTP Authentication Scheme Registrations       June 2014</span>
+
+
+<span class="h2"><a class="selflink" name="section-4" href="#section-4">4</a>.  Normative References</span>
+
+   [<a name="ref-RFC2617" id="ref-RFC2617">RFC2617</a>]  Franks, J., Hallam-Baker, P., Hostetler, J., Lawrence, S.,
+              Leach, P., Luotonen, A., and L. Stewart, "HTTP
+              Authentication: Basic and Digest Access Authentication",
+              <a href="./rfc2617">RFC 2617</a>, June 1999.
+
+   [<a name="ref-RFC4559" id="ref-RFC4559">RFC4559</a>]  Jaganathan, K., Zhu, L., and J. Brezak, "SPNEGO-based
+              Kerberos and NTLM HTTP Authentication in Microsoft
+              Windows", <a href="./rfc4559">RFC 4559</a>, June 2006.
+
+   [<a name="ref-RFC5849" id="ref-RFC5849">RFC5849</a>]  Hammer-Lahav, E., "The OAuth 1.0 Protocol", <a href="./rfc5849">RFC 5849</a>,
+              April 2010.
+
+   [<a name="ref-RFC6750" id="ref-RFC6750">RFC6750</a>]  Jones, M. and D. Hardt, "The OAuth 2.0 Authorization
+              Framework: Bearer Token Usage", <a href="./rfc6750">RFC 6750</a>, October 2012.
+
+   [<a name="ref-RFC7235" id="ref-RFC7235">RFC7235</a>]  Fielding, R., Ed. and J. Reschke, Ed., "Hypertext Transfer
+              Protocol (HTTP/1.1): Authentication", <a href="./rfc7235">RFC 7235</a>, June 2014.
+
+Author's Address
+
+   Julian F. Reschke
+   greenbytes GmbH
+   Hafenweg 16
+   Muenster, NW  48155
+   Germany
+
+   EMail: julian.reschke@greenbytes.de
+   URI:   <a href="http://greenbytes.de/tech/webdav/">http://greenbytes.de/tech/webdav/</a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Reschke                       Informational                     [Page 3]
+
+</pre><br />
+<span class="noprint"><small><small>Html markup produced by rfcmarkup 1.109, available from
+<a href="https://tools.ietf.org/tools/rfcmarkup/">https://tools.ietf.org/tools/rfcmarkup/</a>
+</small></small></span>
+</body></html>

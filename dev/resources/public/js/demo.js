@@ -2,22 +2,28 @@ clearIt = function(ix) {
     var id = "response-"+ix;
 
     // Clear
-    $("div#"+id+" .status").html("");
+    $("div#"+id+" .status").text("");
+    $("div#"+id+" .headers").text("");
     $("div#"+id+" .body").val("");
 }
 
-tryIt = function(meth, u, ix) {
+tryIt = function(meth, u, ix, headers) {
     clearIt(ix);
 
     var id = "response-"+ix;
     $("div#"+id+" .status").html("Waiting&#8230;");
 
-    $.ajax({type: meth, url: u})
+    $.ajax({type: meth,
+            url: u,
+            headers: headers})
         .done(function(msg, textStatus, jqXHR) {
             $("div#"+id+" .status").text(jqXHR.status);
+            $("div#"+id+" .headers").text(jqXHR.getAllResponseHeaders());
             $("div#"+id+" .body").val(msg);
         })
         .fail(function(jqXHR) {
             $("div#"+id+" .status").text(jqXHR.status);
+            $("div#"+id+" .headers").text(jqXHR.getAllResponseHeaders());
+            $("div#"+id+" .body").val(jqXHR.responseText);
         })
 }
