@@ -11,6 +11,24 @@ designed for Clojure.
 This is still in an experimental phase and not yet ready for use. When
 it is released, leiningen dependency details will be posted here.
 
+## Getting started
+
+Although yada is a library, if you clone this repo you can run some examples from the repl. This is a good way of seeing how far yada is progressing.
+
+```
+cd yada
+lein repl
+```
+
+Once the REPL starts, type in and run the following :-
+
+```
+user> (dev)
+dev> (go)
+```
+
+Now browse to http://localhost:8080
+
 ## Design goals
 
 ### Asynchronous support
