@@ -162,18 +162,15 @@
 
                   ;; Create representation
                   (fn [ctx]
-                    (let [content-type (get-in ctx [:response :content-type])
-                          entity (get-in ctx [:resource :entity])]
+                    (let [content-type (get-in ctx [:response :content-type])]
                       (d/chain
                        entity
                        (fn [entity]
-                         (p/body body entity content-type))
+                         (p/body body ctx))
 
                        ;; if not already a string, serialize to representation
                        (fn [body]
-                         (if (string? body)
-                           body
-                           (representation body content-type)))
+                         (representation body content-type))
 
                        ;; on nil, compose default result (if in dev)
                        (fn [x] (if x x
@@ -182,11 +179,11 @@
                                      ;; Er, could entity be nil here?
                                      (representation entity content-type))))
                        #(assoc-in ctx [:response :body] %)
-                       #(update-in % [:response :headers] assoc "content-type" content-type))))
+                       #_#(update-in % [:response :headers] assoc "content-type" content-type))))
 
                   (fn [ctx]
                     (merge
-                     {:status 200
+                     {:status (or (get-in ctx [:response :status]) 200)
                       :headers (get-in ctx [:response :headers])
                       :body (get-in ctx [:response :body])
                       }

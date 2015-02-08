@@ -16,6 +16,9 @@
   (representation [content content-type] (render-map content content-type))
   clojure.lang.Sequential
   (representation [content content-type] (render-seq content content-type))
+  Object
+  ;; Default is to return object unmarshalled
+  (representation [content _] content)
   nil
   (representation [_ content-type] nil))
 

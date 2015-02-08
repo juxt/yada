@@ -1,1 +1,15 @@
 /* Styles */
+
+.status {
+    font-family: monospace;
+}
+
+.headers {
+    font-family: monospace;
+    white-space: pre;
+}
+
+.body {
+    font-family: monospace;
+    width: 100%;
+}

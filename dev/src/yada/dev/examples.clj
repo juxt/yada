@@ -25,7 +25,14 @@
 
 (defrecord BodyAsFunction []
   Example
-  (resource-map [_] '{:body (fn [entity opts] "Hello World!")})
+  (resource-map [_] '{:body (fn [ctx] "Hello World!")})
+  (request [_] {:method :get}))
+
+(defrecord AsyncBody []
+  Example
+  (resource-map [_] '{:body (fn [ctx]
+                              (future (Thread/sleep 500)
+                                      "Hello World!"))})
   (request [_] {:method :get}))
 
 (defrecord PutResourceMatchedEtag []
@@ -145,7 +152,7 @@
 
               [:div
                [:h4 "Resource Map"]
-               [:pre (escape-html (resource-map h))]]
+               [:pre (escape-html (with-out-str (clojure.pprint/pprint (resource-map h))))]]
 
               (let [{:keys [method headers]} (request h)]
                 [:div
@@ -178,7 +185,7 @@
                   [:td.headers ""]]
                  [:tr
                   [:td "Body"]
-                  [:td [:textarea.body {:style "width: 100%" :rows 2} ""]]]]]]
+                  [:td [:textarea.body ""]]]]]]
 
               (when-let [[spec sect] (try (http-spec h)
                                           (catch AbstractMethodError e))]
@@ -219,6 +226,7 @@
            (merge {:handlers
                    [(->BodyAsString)
                     (->BodyAsFunction)
+                    (->AsyncBody)
                     (->PutResourceMatchedEtag)
                     (->PutResourceUnmatchedEtag)
                     (->ServiceUnavailable)

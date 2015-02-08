@@ -13,7 +13,7 @@ behave.
 ```clojure
 (def resource
   {:allowed-method? #{:get}
-   :body "Hello World!"}
+   :body "Hello World!"})
 ```
 
 A Ring handler is a function that takes a request map and returns a
@@ -37,9 +37,9 @@ provided, offering tailored functionality.
 
 ```
 
-The beauty of a resource map is that it is a normal Clojure map, and as
-such can be generated and otherwise composed prior to the formation of a
-Ring handler.
+A resource map is just a normal Clojure map, and as such can be
+generated and otherwise composed prior to the formation of a Ring
+handler.
 
 ## Routing
 

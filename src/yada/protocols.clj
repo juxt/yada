@@ -11,7 +11,7 @@
   (allowed-method? [_ method])
   (resource [_ opts] "Return the resource. Typically this is just the resources's meta-data and does not include the body.")
   (entity [_ resource] "Given a resource, return the entity (a data model). For example, for a customer resource, return the customer data for that customer.")
-  (body [_ entity opts] "Return the representation, of a given entity, as a string. The opts parameter contains the result of any content negotiation.")
+  (body [_ ctx] "Return the representation, of a given entity, as a string. See yada documentation for the structure of the ctx argument.")
   (produces [_] "Return the content-types, as a set, that the resource can produce"))
 
 (extend-protocol Callbacks
@@ -41,16 +41,14 @@
 
   (entity [f resource] (f resource))
 
-  (body [f entity opts]
-    (let [res (f entity opts)]
-      (if (d/deferrable? res)
-        (d/chain (body @res entity opts))
-        (body res entity opts))))
+  (body [f ctx]
+    ;; body is not called recursively
+    (f ctx))
 
   (produces [f] (f))
 
   String
-  (body [s _ _] s)
+  (body [s _] s)
 
   Number
   (service-available? [n] [false {:headers {"retry-after" n}}])
@@ -74,11 +72,11 @@
   (resource [m _] m)
   (entity [m resource]
     (assoc m :resource resource))
-  (body [m entity content-type]
+  (body [m ctx]
     ;; Maps indicate keys are exact content-types
     ;; For matching on content-type, use a vector of vectors (TODO)
-    (when-let [delegate (get m content-type)]
-      (body delegate entity content-type)))
+    (when-let [delegate (get m (get-in ctx [:response :content-type]))]
+      (body delegate ctx)))
 
   clojure.lang.PersistentVector
   (produces [v] (produces (set v)))
@@ -96,7 +94,7 @@
   (resource [_ opts] nil)
   (entity [_ resource]
     nil)
-  (body [_ entity content-type]
+  (body [_ _]
     nil)
   (produces [_]
     #{"text/html"})

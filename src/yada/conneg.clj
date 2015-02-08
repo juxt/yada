@@ -1,9 +1,9 @@
-;; Copyright © 2015, JUXT LTD.
-
 (ns yada.conneg
   (:require [clojure.string :as string])
   (:import (javax.xml.ws ProtocolException))
   )
+
+;; https://github.com/rnewman/clj-conneg
 
 ;;;
 ;;; TODO: sort by level for text/html. Maybe also sort by charset.
