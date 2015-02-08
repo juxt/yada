@@ -11,7 +11,7 @@
   (allowed-method? [_ method])
   (resource [_ opts] "Return the resource. Typically this is just the resources's meta-data and does not include the body.")
   (entity [_ resource] "Given a resource, return the entity (a data model). For example, for a customer resource, return the customer data for that customer.")
-  (body [_ entity content-type] "Return the representation, in the given content-type, of a given entity")
+  (body [_ entity opts] "Return the representation, of a given entity, as a string. The opts parameter contains the result of any content negotiation.")
   (produces [_] "Return the content-types, as a set, that the resource can produce"))
 
 (extend-protocol Callbacks
@@ -23,20 +23,30 @@
   (resource [b opts] (when b {}))
 
   clojure.lang.Fn
-  (service-available? [f] (let [res (f)]
-                            (if (d/deferrable? res)
-                              (d/chain (service-available? @res))
-                              (service-available? res))))
+  (service-available? [f]
+    (let [res (f)]
+      (if (d/deferrable? res)
+        (d/chain (service-available? @res))
+        (service-available? res))))
+
   (known-method? [f method] (known-method? (f method) method))
   (request-uri-too-long? [f uri] (request-uri-too-long? (f uri) uri))
   (allowed-method? [f method] (allowed-method? (f method) method))
-  (resource [f opts] (let [res (f opts)]
-                       (if (d/deferrable? res)
-                         (d/chain (resource @res opts))
-                         (resource res opts))))
+
+  (resource [f opts]
+    (let [res (f opts)]
+      (if (d/deferrable? res)
+        (d/chain (resource @res opts))
+        (resource res opts))))
 
   (entity [f resource] (f resource))
-  (body [f entity content-type] (f entity content-type))
+
+  (body [f entity opts]
+    (let [res (f entity opts)]
+      (if (d/deferrable? res)
+        (d/chain (body @res entity opts))
+        (body res entity opts))))
+
   (produces [f] (f))
 
   String

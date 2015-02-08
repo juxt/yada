@@ -23,6 +23,11 @@
   (resource-map [_] '{:body "Hello World!"})
   (request [_] {:method :get}))
 
+(defrecord BodyAsFunction []
+  Example
+  (resource-map [_] '{:body (fn [entity opts] "Hello World!")})
+  (request [_] {:method :get}))
+
 (defrecord PutResourceMatchedEtag []
   Example
   (resource-map [_] '{:allowed-method? :put
@@ -90,9 +95,8 @@
   (last (string/split (.getName (type r)) #"\.")))
 
 (defn description [r]
-  (if-let [s (io/resource (str "examples/" (title r) ".md"))]
-    (markdown/md-to-html-string (slurp s))
-    (throw (ex-info (format "Failed to find description for %s" (title r)) {}))))
+  (when-let [s (io/resource (str "examples/" (title r) ".md"))]
+    (markdown/md-to-html-string (slurp s))))
 
 (defn ->meth
   [m]
@@ -214,6 +218,7 @@
   (-> (->> opts
            (merge {:handlers
                    [(->BodyAsString)
+                    (->BodyAsFunction)
                     (->PutResourceMatchedEtag)
                     (->PutResourceUnmatchedEtag)
                     (->ServiceUnavailable)
