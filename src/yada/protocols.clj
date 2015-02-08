@@ -97,7 +97,7 @@
   (body [_ _]
     nil)
   (produces [_]
-    #{"text/html"})
+    nil)
 
 
   )

@@ -13,3 +13,15 @@
     font-family: monospace;
     width: 100%;
 }
+
+.example {
+    border: 1px solid #888;
+    padding: 0px 10px;
+    margin: 20px 0px 0px 0px;
+}
+
+.example h3 {
+    margin-top: 10px;
+    margin-bottom: 20px;
+    font-style: italic;
+}

@@ -35,6 +35,21 @@
                                       "Hello World!"))})
   (request [_] {:method :get}))
 
+(def simple-body-map '{:body {"text/html" (fn [ctx] "<h1>Hello World!</h1>")
+                              "text/plain" (fn [ctx] "Hello World!")}} )
+
+(defrecord BodyContentTypeNegotiation []
+  Example
+  (resource-map [_] simple-body-map)
+  (request [_] {:method :get
+                :headers {"Accept" "text/html"}}))
+
+(defrecord BodyContentTypeNegotiation2 []
+  Example
+  (resource-map [_] simple-body-map)
+  (request [_] {:method :get
+                :headers {"Accept" "text/plain"}}))
+
 (defrecord PutResourceMatchedEtag []
   Example
   (resource-map [_] '{:allowed-method? :put
@@ -146,62 +161,62 @@
         (map-indexed
          (fn [ix h]
            (let [url (path-for routes (keyword (path h)))]
-             [:div.handler
-              [:h3 [:a {:name (str "example-" ix)}] (spaced (title h))]
-              [:p (description h)]
+             [:div
+              [:a {:name (str "example-" ix)}]
+              [:div.example
+               [:h3 (spaced (title h))]
+               [:p (description h)]
 
-              [:div
-               [:h4 "Resource Map"]
-               [:pre (escape-html (with-out-str (clojure.pprint/pprint (resource-map h))))]]
+               [:div
+                [:h4 "Resource Map"]
+                [:pre (escape-html (with-out-str (clojure.pprint/pprint (resource-map h))))]]
 
-              (let [{:keys [method headers]} (request h)]
-                [:div
-                 [:h4 "Request"]
-                 [:p (format "Click on the %s button to run this example, and check the response below"
-                             (->meth method))]
-                 [:pre
-                  (->meth method) (format " %s HTTP/1.1" url)
-                  (for [[k v] headers] (format "\n%s: \"%s\"" k v))]
-                 [:p
-                  [:button.btn.btn-primary
-                   {:type "button"
-                    :onClick (format "tryIt('%s','%s','%s',%s)"
-                                     (->meth method)
-                                     url
-                                     ix (json/encode headers))}
-                   "Try it"]
-                  " "
-                  [:button.btn
-                   {:type "button"
-                    :onClick (format "clearIt('%s')" ix)}
-                   "Clear"]]])
+               (let [{:keys [method headers]} (request h)]
+                 [:div
+                  [:h4 "Request"]
+                  [:pre
+                   (->meth method) (format " %s HTTP/1.1" url)
+                   (for [[k v] headers] (format "\n%s: \"%s\"" k v))]
+                  [:p
+                   [:button.btn.btn-primary
+                    {:type "button"
+                     :onClick (format "tryIt('%s','%s','%s',%s)"
+                                      (->meth method)
+                                      url
+                                      ix (json/encode headers))}
+                    "Try it"]
+                   " "
+                   [:button.btn
+                    {:type "button"
+                     :onClick (format "clearIt('%s')" ix)}
+                    "Clear"]]])
 
-              [:div {:id (str "response-" ix)}
-               [:h4 "Response"]
+               [:div {:id (str "response-" ix)}
+                [:h4 "Response"]
 
-               [:table.table
-                [:tbody
-                 [:tr
-                  [:td "Status"]
-                  [:td.status ""]]
-                 [:tr
-                  [:td "Headers"]
-                  [:td.headers ""]]
-                 [:tr
-                  [:td "Body"]
-                  [:td [:textarea.body ""]]]]]]
+                [:table.table
+                 [:tbody
+                  [:tr
+                   [:td "Status"]
+                   [:td.status ""]]
+                  [:tr
+                   [:td "Headers"]
+                   [:td.headers ""]]
+                  [:tr
+                   [:td "Body"]
+                   [:td [:textarea.body ""]]]]]]
 
-              (when-let [[spec sect] (try (http-spec h)
-                                          (catch AbstractMethodError e))]
-                [:div
-                 [:p [:a {:href (format "/static/spec/rfc%s.html#section-%s" spec sect)
-                          :target "_spec"}
-                      (format "Section %s in RFC %s" sect spec)]]]
+               (when-let [[spec sect] (try (http-spec h)
+                                           (catch AbstractMethodError e))]
+                 [:div
+                  [:p [:a {:href (format "/static/spec/rfc%s.html#section-%s" spec sect)
+                           :target "_spec"}
+                       (format "Section %s in RFC %s" sect spec)]]]
 
-                )
-              [:div ]
+                 )
 
-              [:hr]]))
+
+               ]]))
          handlers)]]]
 
      [:script {:src "/jquery/jquery.min.js"}]
@@ -231,6 +246,8 @@
                    [(->BodyAsString)
                     (->BodyAsFunction)
                     (->AsyncBody)
+                    (->BodyContentTypeNegotiation)
+                    (->BodyContentTypeNegotiation2)
                     (->PutResourceMatchedEtag)
                     (->PutResourceUnmatchedEtag)
                     (->ServiceUnavailable)
