@@ -13,7 +13,7 @@
    [modular.bidi :refer (new-router new-static-resource-service new-redirect)]
    [yada.dev.website :refer (new-website)]
    [yada.dev.pets :refer (new-pets-api-service)]
-   [yada.dev.demo :refer (new-demo-api-service)]
+   [yada.dev.examples :refer (new-examples-service)]
    [yada.dev.database :refer (new-database)]
    [modular.aleph :refer (new-http-server)]
    [tangrammer.component.co-dependency :refer (co-using system-co-using)]))
@@ -62,8 +62,8 @@
     (->
       (make new-pets-api-service config)
       (using {:database :database}))
-    :demo-api
-    (make new-demo-api-service config)
+    :examples
+    (make new-examples-service config)
     ))
 
 (defn website-components [system config]
@@ -115,7 +115,7 @@
 (defn new-dependency-map
   []
   {:http-server {:request-handler :router}
-   :router [:pets-api :demo-api :swagger-ui :website
+   :router [:pets-api :examples :swagger-ui :website
             :jquery :bootstrap
             :web-resources
             :redirect]

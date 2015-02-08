@@ -1,6 +1,6 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(ns yada.dev.demo
+(ns yada.dev.examples
   (:require
    [bidi.bidi :refer (handler RouteProvider path-for)]
    [schema.core :as s]
@@ -128,12 +128,12 @@
      [:meta {:charset "utf-8"}]
      [:meta {:http-equiv "X-UA-Compatible" :content "IE=edge"}]
      [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
-     [:title "Yada Demo"]
+     [:title "Yada Examples"]
      [:link {:href "/bootstrap/css/bootstrap.min.css" :rel "stylesheet"}]
      [:link {:href "/bootstrap/css/bootstrap-theme.min.css" :rel "stylesheet"}]
      [:link {:href "/static/css/style.css" :rel "stylesheet"}]
      (slurp (io/resource "shim.html"))
-     [:script {:src "/static/js/demo.js"}]]
+     [:script {:src "/static/js/examples.js"}]]
     [:body
      [:div.container
       [:div.row
@@ -141,7 +141,7 @@
         [:ul.main-menu.nav.nav-stacked.affix
          (map-indexed
           (fn [ix h]
-            [:li.small [:a {:href (str "#demo-" ix)} (spaced (title h))]])
+            [:li.small [:a {:href (str "#example-" ix)} (spaced (title h))]])
           handlers)]]
 
        [:div.col-md-6 {:role "main"}
@@ -152,7 +152,7 @@
          (fn [ix h]
            (let [url (path-for routes (keyword (path h)))]
              [:div.handler
-              [:h3 [:a {:name (str "demo-" ix)}] (spaced (title h))]
+              [:h3 [:a {:name (str "example-" ix)}] (spaced (title h))]
               [:p (markdown/md-to-html-string (description h))]
 
               [:div
@@ -209,10 +209,10 @@
      [:script {:src "/jquery/jquery.min.js"}]
      [:script {:src "/bootstrap/js/bootstrap.min.js"}]]]))
 
-(defrecord DemoApiService [router handlers]
+(defrecord ExamplesService [router handlers]
   RouteProvider
   (routes [this]
-    ["/demo/"
+    ["/examples/"
      (vec
       (concat
        (for [h handlers]
@@ -227,7 +227,7 @@
              :body (index (:routes @router) handlers)
              }))]]))]))
 
-(defn new-demo-api-service [& {:as opts}]
+(defn new-examples-api-service [& {:as opts}]
   (-> (->> opts
            (merge {:handlers
                    [(->BodyAsString)
@@ -242,6 +242,6 @@
                     (->ResourceDoesNotExist)
                     (->ResourceDoesNotExistAsync)]})
            (s/validate {:handlers [(s/protocol Example)]})
-           map->DemoApiService)
+           map->ExamplesService)
       (using [])
       (co-using [:router])))
