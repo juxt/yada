@@ -32,7 +32,7 @@
   (allowed-method? [f method] (allowed-method? (f method) method))
   (resource [f opts] (let [res (f opts)]
                        (if (d/deferrable? res)
-                         (d/chain (resource res opts))
+                         (d/chain (resource @res opts))
                          (resource res opts))))
 
   (entity [f resource] (f resource))
