@@ -160,20 +160,24 @@
                  [:p (format "Click on the %s button to run this example, and check the response below"
                              (->meth method))]
                  [:pre
+                  (->meth method) (format " %s HTTP/1.1" url)
+                  (for [[k v] headers] (format "\n%s: \"%s\"" k v))]
+                 [:p
                   [:button.btn.btn-primary
                    {:type "button"
                     :onClick (format "tryIt('%s','%s','%s',%s)"
                                      (->meth method)
                                      url
                                      ix (json/encode headers))}
-                   (->meth method)] (format " %s HTTP/1.1" url)
-                  (for [[k v] headers] (format "\n%s: \"%s\"" k v))]])
+                   "Try it"]
+                  " "
+                  [:button.btn
+                   {:type "button"
+                    :onClick (format "clearIt('%s')" ix)}
+                   "Clear"]]])
 
               [:div {:id (str "response-" ix)}
-               [:h4 "Response " [:button.btn
-                                 {:type "button"
-                                  :onClick (format "clearIt('%s')" ix)}
-                                 "Clear"]]
+               [:h4 "Response"]
 
                [:table.table
                 [:tbody
