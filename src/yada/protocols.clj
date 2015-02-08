@@ -12,7 +12,8 @@
   (resource [_ opts] "Return the resource. Typically this is just the resources's meta-data and does not include the body.")
   (entity [_ resource] "Given a resource, return the entity (a data model). For example, for a customer resource, return the customer data for that customer.")
   (body [_ ctx] "Return the representation, of a given entity, as a string. See yada documentation for the structure of the ctx argument.")
-  (produces [_] "Return the content-types, as a set, that the resource can produce"))
+  (produces [_] "Return the content-types, as a set, that the resource can produce")
+  (produces-from-body [_] "If produces yields nil, try to extract from body"))
 
 (extend-protocol Callbacks
   Boolean
@@ -46,9 +47,11 @@
     (f ctx))
 
   (produces [f] (f))
+  (produces-from-body [f] nil)
 
   String
   (body [s _] s)
+  (produces-from-body [s] nil)
 
   Number
   (service-available? [n] [false {:headers {"retry-after" n}}])
@@ -77,6 +80,7 @@
     ;; For matching on content-type, use a vector of vectors (TODO)
     (when-let [delegate (get m (get-in ctx [:response :content-type]))]
       (body delegate ctx)))
+  (produces-from-body [m] (keys m))
 
   clojure.lang.PersistentVector
   (produces [v] (produces (set v)))
@@ -98,6 +102,5 @@
     nil)
   (produces [_]
     nil)
-
-
-  )
+  (produces-from-body [_]
+    nil))

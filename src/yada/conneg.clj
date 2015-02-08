@@ -155,8 +155,8 @@
   ([accepts-header allowed-types]    ; Set of strings or pairs. true/nil/:all for any.
      (let [sorted (map :type (sorted-accept accepts-header allowed-types))]
        (cond
-        (contains? #{:all nil true} allowed-types)
-        (first sorted)
+         #_(contains? #{:all nil true} allowed-types)
+         #_(first sorted)
 
         (fn? allowed-types)
         (some (enpair allowed-types) sorted)

@@ -69,7 +69,7 @@
 
 (defn make-async-handler
   [{:keys
-    [service-available?                 ; async-supported
+    [service-available? ; async-supported
      known-method?
      request-uri-too-long?
 
@@ -80,9 +80,9 @@
      ;; authorize the request.
      ;; allowed?
 
-     resource                           ; async-supported
-     entity                             ; async-supported
-     body                               ; async-supported
+     resource  ; async-supported
+     entity    ; async-supported
+     body      ; async-supported
 
      produces
      ] :or {resource {}}
@@ -117,13 +117,21 @@
            ;; TODO OPTIONS
 
            ;; Content-negotiation - partly done here to throw back to the client any errors
-           #(if-let [content-type
-                     (best-allowed-content-type
-                      (or (get-in req [:headers "accept"]) "*/*")
-                      (p/produces produces))]
-              (assoc-in % [:response :content-type] content-type)
-              (d/error-deferred (ex-info "" {:status 406
-                                             ::http-response true})))
+           #(let [produces (or (p/produces produces)
+                               (p/produces-from-body body))]
+              (if-let [content-type
+                       (best-allowed-content-type
+                        (or (get-in req [:headers "accept"]) "*/*")
+                        produces
+                        )]
+                (assoc-in % [:response :content-type] content-type)
+                (if produces
+                  ;; If there is a produces specification, but not
+                  ;; matched content-type, it's a 406.
+                  (d/error-deferred (ex-info "" {:status 406
+                                                 ::http-response true}))
+                  ;; Otherwise return the context unchanged
+                  %)))
 
            ;; Does the resource exist? Call resource, which returns
            ;; the resource, containing the resource's metadata (optionally
@@ -179,7 +187,10 @@
                                      ;; Er, could entity be nil here?
                                      (representation entity content-type))))
                        #(assoc-in ctx [:response :body] %)
-                       #_#(update-in % [:response :headers] assoc "content-type" content-type))))
+                       #(if content-type
+                          (update-in % [:response :headers] assoc "content-type" content-type)
+                          %
+                          ))))
 
                   (fn [ctx]
                     (merge

@@ -176,7 +176,7 @@
                   [:h4 "Request"]
                   [:pre
                    (->meth method) (format " %s HTTP/1.1" url)
-                   (for [[k v] headers] (format "\n%s: \"%s\"" k v))]
+                   (for [[k v] headers] (format "\n%s: %s" k v))]
                   [:p
                    [:button.btn.btn-primary
                     {:type "button"
