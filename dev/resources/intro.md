@@ -1,4 +1,4 @@
-# Yada examples
+# Examples
 
 These examples form a learning aid, reference and cookbook for how to achieve common goals when creating web APIs with yada.
 
