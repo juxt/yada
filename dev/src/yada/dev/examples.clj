@@ -140,8 +140,7 @@
               [:p (description h)]
 
               [:div
-               [:h4 "Resource"]
-               [:p "A resource has been created on the server with the following options :-"]
+               [:h4 "Resource Map"]
                [:pre (escape-html (resource-map h))]]
 
               (let [{:keys [method headers]} (request h)]
