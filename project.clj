@@ -29,7 +29,7 @@
                     [ring-mock "0.1.5"]
 
                     [juxt.modular/aleph "0.0.3"]
-                    [juxt.modular/bidi "0.8.0-SNAPSHOT" #_:exclusions #_[bidi]]
+                    [juxt.modular/bidi "0.8.0"]
                     [juxt.modular/maker "0.5.0"]
                     [juxt.modular/test "0.1.0"]
 
