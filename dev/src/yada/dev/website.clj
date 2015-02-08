@@ -41,7 +41,7 @@
             yada is and how it can help you write web apps and APIs."]
 
                [:ol
-                [:li [:a {:href (path-for (:routes @router) :yada.dev.demo/index)} "Documentation"]]
+                [:li [:a {:href (path-for (:routes @router) :yada.dev.examples/index)} "Documentation"]]
                 [:li [:a {:href
                           (format "%s/index.html?url=%s/swagger.json"
                                   (path-for (:routes @router) swagger-ui-resources)

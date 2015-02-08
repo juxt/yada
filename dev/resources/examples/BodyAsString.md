@@ -1,0 +1,1 @@
+The simplest resource-map contains a constant body value, which is returned in the response.

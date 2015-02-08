@@ -1,14 +1,6 @@
-# Yada documentation
+# Yada examples
 
-This documentation consists of a series of simple examples and builds up
-progressively, so it's a good idea to start at the beginning and make
-sure you understand each example before moving onwards.
-
-This documentation is executable. Each example can be run by clicking on
-the buttons.
-
-The examples also form a reference or cookbook for how to achieve common
-goals when creating web APIs.
+These examples form a learning aid, reference and cookbook for how to achieve common goals when creating web APIs with yada.
 
 Before we begin, we should define a few terms.
 

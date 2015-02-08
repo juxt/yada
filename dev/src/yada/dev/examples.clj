@@ -14,35 +14,25 @@
    [tangrammer.component.co-dependency :refer (co-using)]))
 
 (defprotocol Example
-  (description [_] "Return description")
   (resource-map [_] "Return handler")
   (request [_] "Return request sent to handler")
   (http-spec [_] "Which section of an RFC does this relate to"))
 
 (defrecord BodyAsString []
   Example
-  (description [_] "The simplest resource-map contains a constant body value, which is returned in the response.")
   (resource-map [_] '{:body "Hello World!"})
   (request [_] {:method :get}))
 
 (defrecord PutResourceMatchedEtag []
   Example
-  (description [_] "PUT a resource. The resource-map returns a resource
-  with an etag which matches the value of the 'If-Match' header in the
-  request. This means the PUT can proceed.
-
-> If-Match is most often used with state-changing methods (e.g., POST, PUT, DELETE) to prevent accidental overwrites when multiple user agents might be acting in parallel on the same resource (i.e., to the \"lost update\" problem).")
   (resource-map [_] '{:allowed-method? :put
                       :resource {:etag "58614618"}})
   (request [_] {:method :put
                 :headers {"If-Match" "58614618"}})
   (http-spec [_] ["7232" "3.1"]))
 
-
-
 (defrecord PutResourceUnmatchedEtag []
   Example
-  (description [_] "PUT a resource, as above, but this time the etag doesn't match so the status should return 412 (Precondition Failed)")
   (resource-map [_] '{:allowed-method? :put
                       :resource {:etag "58614618"}})
   (request [_] {:method :put
@@ -51,56 +41,45 @@
 
 (defrecord ServiceUnavailable []
   Example
-  (description [_] "Return a 503 due to the service being unavailable.")
   (resource-map [_] '{:service-available? false})
   (request [_] {:method :get})
   (http-spec [_] ["7231" "6.6.4"]))
 
 (defrecord ServiceUnavailableAsync []
   Example
-  (description [_] "Return a 503 due to the service being
-  unavailable. The availability of the service is determined
-  asynchronously. In this test, a short-lived sleep is used to simulate
-  the effect of asynchronously checking service availability.")
   (resource-map [_] '{:service-available? #(future (Thread/sleep 500) false)})
   (request [_] {:method :get}))
 
 (defrecord ServiceUnavailableRetryAfter []
   Example
-  (description [_] "Return a 503 with a retry header")
   (resource-map [_] '{:service-available? 120})
   (request [_] {:method :get})
   (http-spec [_] ["7231" "6.6.4"]))
 
 (defrecord ServiceUnavailableRetryAfter2 []
   Example
-  (description [_] "Return a 503 with a retry header")
   (resource-map [_] '{:service-available? (constantly 120)})
   (request [_] {:method :get})
   (http-spec [_] ["7231" "6.6.4"]))
 
 (defrecord ServiceUnavailableRetryAfter3 []
   Example
-  (description [_] "Return a 503 with a retry header")
   (resource-map [_] '{:service-available? #(future (Thread/sleep 500) 120)})
   (request [_] {:method :get})
   (http-spec [_] ["7231" "6.6.4"]))
 
 (defrecord DisallowedMethod []
   Example
-  (description [_] "Return a 405 by using the GET method when only the POST method is allowed.")
   (resource-map [_] '{:allowed-method? #{:post}})
   (request [_] {:method :get}))
 
 (defrecord ResourceDoesNotExist []
   Example
-  (description [_] "Return a 404 because the resource does not exist")
   (resource-map [_] '{:resource nil})
   (request [_] {:method :get}))
 
 (defrecord ResourceDoesNotExistAsync []
   Example
-  (description [_] "Return a 404 because the resource does not exist. In this example, the resource check is a function which returns a deferred value, simulating an asynchronous call (for example, to a database)")
   (resource-map [_] '{:resource (fn [opts] (future (Thread/sleep 500) false))})
   (request [_] {:method :get}))
 
@@ -109,6 +88,11 @@
 
 (defn path [r]
   (last (string/split (.getName (type r)) #"\.")))
+
+(defn description [r]
+  (if-let [s (io/resource (str "examples/" (title r) ".md"))]
+    (markdown/md-to-html-string (slurp s))
+    (throw (ex-info (format "Failed to find description for %s" (title r)) {}))))
 
 (defn ->meth
   [m]
@@ -153,7 +137,7 @@
            (let [url (path-for routes (keyword (path h)))]
              [:div.handler
               [:h3 [:a {:name (str "example-" ix)}] (spaced (title h))]
-              [:p (markdown/md-to-html-string (description h))]
+              [:p (description h)]
 
               [:div
                [:h4 "Resource"]
@@ -227,7 +211,7 @@
              :body (index (:routes @router) handlers)
              }))]]))]))
 
-(defn new-examples-api-service [& {:as opts}]
+(defn new-examples-service [& {:as opts}]
   (-> (->> opts
            (merge {:handlers
                    [(->BodyAsString)
