@@ -23,6 +23,14 @@
   (resource-map [_] '{:body "Hello World!"})
   (request [_] {:method :get}))
 
+(defrecord StatusAndHeaders []
+  Example
+  (resource-map [_] '{:status 280
+                      :headers {"content-type" "text/plain"
+                                "x-extra" "foo"}
+                      :body "Hello World!"})
+  (request [_] {:method :get}))
+
 (defrecord BodyAsFunction []
   Example
   (resource-map [_] '{:body (fn [ctx] "Hello World!")})
@@ -117,7 +125,11 @@
   (last (string/split (.getName (type r)) #"\.")))
 
 (defn description [r]
-  (when-let [s (io/resource (str "examples/" (title r) ".md"))]
+  (when-let [s (io/resource (str "examples/pre/" (title r) ".md"))]
+    (markdown/md-to-html-string (slurp s))))
+
+(defn post-description [r]
+  (when-let [s (io/resource (str "examples/post/" (title r) ".md"))]
     (markdown/md-to-html-string (slurp s))))
 
 (defn ->meth
@@ -206,6 +218,9 @@
                    [:td "Body"]
                    [:td [:textarea.body ""]]]]]]
 
+               (when-let [text (post-description h)]
+                 [:p text])
+
                (when-let [[spec sect] (try (http-spec h)
                                            (catch AbstractMethodError e))]
                  [:div
@@ -244,6 +259,7 @@
   (-> (->> opts
            (merge {:handlers
                    [(->BodyAsString)
+                    (->StatusAndHeaders)
                     (->BodyAsFunction)
                     (->AsyncBody)
                     (->BodyContentTypeNegotiation)

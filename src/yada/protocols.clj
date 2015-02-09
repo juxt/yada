@@ -13,7 +13,9 @@
   (entity [_ resource] "Given a resource, return the entity (a data model). For example, for a customer resource, return the customer data for that customer.")
   (body [_ ctx] "Return the representation, of a given entity, as a string. See yada documentation for the structure of the ctx argument.")
   (produces [_] "Return the content-types, as a set, that the resource can produce")
-  (produces-from-body [_] "If produces yields nil, try to extract from body"))
+  (produces-from-body [_] "If produces yields nil, try to extract from body")
+  (status [_] "Override the response status")
+  (headers [_] "Override the response headers"))
 
 (extend-protocol Callbacks
   Boolean
@@ -57,6 +59,7 @@
   (service-available? [n] [false {:headers {"retry-after" n}}])
   (request-uri-too-long? [n uri]
     (request-uri-too-long? (> (.length uri) n) uri))
+  (status [n] n)
 
   java.util.Set
   (known-method? [set method]
@@ -81,6 +84,7 @@
     (when-let [delegate (get m (get-in ctx [:response :content-type]))]
       (body delegate ctx)))
   (produces-from-body [m] (keys m))
+  (headers [m] m)
 
   clojure.lang.PersistentVector
   (produces [v] (produces (set v)))
@@ -96,11 +100,9 @@
   (allowed-method? [_ method]
     (allowed-method? #{:get :head} method))
   (resource [_ opts] nil)
-  (entity [_ resource]
-    nil)
-  (body [_ _]
-    nil)
-  (produces [_]
-    nil)
-  (produces-from-body [_]
-    nil))
+  (entity [_ resource] nil)
+  (body [_ _] nil)
+  (produces [_] nil)
+  (produces-from-body [_] nil)
+  (status [_] nil)
+  (headers [_] nil))

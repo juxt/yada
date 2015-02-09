@@ -80,6 +80,9 @@
      ;; authorize the request.
      ;; allowed?
 
+     status    ; async-supported
+     headers   ; async-supported
+
      resource  ; async-supported
      entity    ; async-supported
      body      ; async-supported
@@ -194,8 +197,13 @@
 
                   (fn [ctx]
                     (merge
-                     {:status (or (get-in ctx [:response :status]) 200)
-                      :headers (get-in ctx [:response :headers])
+                     {:status (or (get-in ctx [:response :status])
+                                  (p/status status)
+                                  200)
+                      :headers (merge
+                                (get-in ctx [:response :headers])
+                                (p/headers headers))
+                      ;; TODO :status and :headers should be implemented like this in all cases
                       :body (get-in ctx [:response :body])
                       }
                      )
