@@ -31,7 +31,7 @@
                       :body "Hello World!"})
   (request [_] {:method :get}))
 
-(defrecord BodyAsFunction []
+(defrecord DynamicBody []
   Example
   (resource-map [_] '{:body (fn [ctx] "Hello World!")})
   (request [_] {:method :get}))
@@ -160,7 +160,7 @@
      [:div.container
       [:div.row
        [:div#sidebar-menu.col-md-3.hidden-xs.hidden-sm
-        [:ul.main-menu.nav.nav-stacked.affix
+        [:ul.main-menu.nav.nav-stacked
          (map-indexed
           (fn [ix h]
             [:li.small [:a {:href (str "#example-" ix)} (spaced (title h))]])
@@ -201,7 +201,7 @@
                    [:button.btn
                     {:type "button"
                      :onClick (format "clearIt('%s')" ix)}
-                    "Clear"]]])
+                    "Reset"]]])
 
                [:div {:id (str "response-" ix)}
                 [:h4 "Response"]
@@ -216,7 +216,8 @@
                    [:td.headers ""]]
                   [:tr
                    [:td "Body"]
-                   [:td [:textarea.body ""]]]]]]
+                   [:td [:textarea.body ""]]]
+                  ]]]
 
                (when-let [text (post-description h)]
                  [:p text])
@@ -260,7 +261,7 @@
            (merge {:handlers
                    [(->BodyAsString)
                     (->StatusAndHeaders)
-                    (->BodyAsFunction)
+                    (->DynamicBody)
                     (->AsyncBody)
                     (->BodyContentTypeNegotiation)
                     (->BodyContentTypeNegotiation2)
