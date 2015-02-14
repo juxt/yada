@@ -25,3 +25,12 @@
     margin-bottom: 20px;
     font-style: italic;
 }
+
+.green {
+    color: #3a3;
+}
+
+.red {
+    color: #f33;
+    font-weight: bold;
+}

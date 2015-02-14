@@ -23,7 +23,7 @@
 ;; middleware or another mechanism for assoc'ing evidence of credentials
 ;; to the Ring request.
 
-(defn not* [[result m]]
+(defn- not* [[result m]]
   [(not result) m])
 
 (defmacro nonblocking-exit-when*
@@ -69,26 +69,32 @@
 
 (defn make-async-handler
   [{:keys
-    [service-available? ; async-supported
+    [service-available?                 ; async-supported
      known-method?
      request-uri-too-long?
 
-     allowed-method?
+     #_allowed-method?
 
      ;; The allowed? callback will contain the entire resource, the callback must
      ;; therefore extract the OAuth2 scopes, or whatever is needed to
      ;; authorize the request.
      ;; allowed?
 
-     status    ; async-supported
-     headers   ; async-supported
+     status                             ; async-supported
+     headers                            ; async-supported
 
-     resource  ; async-supported
-     entity    ; async-supported
-     body      ; async-supported
+     resource                           ; async-supported
+     body                               ; async-supported
+
+     ;; Actions
+     put                                ; async-supported
+     post                               ; async-supported
+     delete                             ; async-supported
+     patch                              ; async-supported
 
      produces
-     ] :or {resource {}}
+     ] ;; :or {resource {}}
+    :as resource-map
     } ]
 
   ;; We use this let binding to deduce the values of resource-map
@@ -98,12 +104,23 @@
   (fn [req]
     (let [method (:request-method req)]
 
-      (-> {}
+      (-> {:resource-map resource-map}
           (d/chain
            (nonblocking-exit-when-not service-available? (p/service-available? service-available?) 503)
            (exit-when-not (p/known-method? known-method? method) 501)
            (exit-when (p/request-uri-too-long? request-uri-too-long? (:uri req)) 414)
-           (exit-when-not (p/allowed-method? allowed-method? method) 405)
+           #_(exit-when-not (p/allowed-method? allowed-method? method) 405)
+
+           (fn [ctx]
+             (if-not
+                 (case method
+                   :get (or (some? resource) body)
+                   :put put
+                   nil)
+               (d/error-deferred (ex-info ""
+                                          {:status 405
+                                           ::http-response true}))
+               ctx))
 
            ;; TODO Malformed
 
@@ -151,33 +168,27 @@
 
            ;; Split the flow based on the existence of the resource
            (fn [{:keys [resource] :as ctx}]
-             (if resource
+             (if (or (some? resource) body)
 
                ;; 'Exists' flow
                (case method
-                 :get
+                 (:get :head)
                  (d/chain
                   ctx
                   check-cacheable
 
-                  ;; OK, let's GET the resource's entity (data)
+                  ;; OK, let's deref the resource's state, iff it exists
                   (fn [ctx]
-                    (d/chain
-                     (p/entity entity resource)
-                     #_#(if % %
-                            (d/error-deferred
-                             (ex-info "" {:status 404
-                                          :body "Resource entity not found"
-                                          ::http-response true})))
-                     #(assoc-in ctx [:resource :entity] %)))
+                    (if-let [state (:state resource)]
+                      (d/chain state #(assoc-in ctx [:resource :state] %))
+                      ctx))
 
                   ;; Create representation
                   (fn [ctx]
                     (let [content-type (get-in ctx [:response :content-type])]
                       (d/chain
-                       entity
-                       (fn [entity]
-                         (p/body body ctx))
+
+                       (p/body body ctx)
 
                        ;; if not already a string, serialize to representation
                        (fn [body]
@@ -185,10 +196,8 @@
 
                        ;; on nil, compose default result (if in dev)
                        (fn [x] (if x x
-                                   (if (= (get-in ctx [:resource :entity :magic]) :yada/default-content)
-                                     (html [:h1 "Default content, yada yada yada"])
-                                     ;; Er, could entity be nil here?
-                                     (representation entity content-type))))
+                                   (representation nil content-type)))
+
                        #(assoc-in ctx [:response :body] %)
                        #(if content-type
                           (update-in % [:response :headers] assoc "content-type" content-type)
@@ -216,8 +225,6 @@
 
                   (fn [ctx]
                     (when-let [etag (get-in req [:headers "if-match"])]
-                      (prn "req etag is" etag)
-                      (prn "res etag is" (get-in ctx [:resource :etag]))
                       (when (not= etag (get-in ctx [:resource :etag]))
                         (throw
                          (ex-info "Precondition failed"

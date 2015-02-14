@@ -8,10 +8,8 @@
   (service-available? [_] "Return whether the service is available")
   (known-method? [_ method])
   (request-uri-too-long? [_ uri])
-  (allowed-method? [_ method])
   (resource [_ opts] "Return the resource. Typically this is just the resources's meta-data and does not include the body.")
-  (entity [_ resource] "Given a resource, return the entity (a data model). For example, for a customer resource, return the customer data for that customer.")
-  (body [_ ctx] "Return the representation, of a given entity, as a string. See yada documentation for the structure of the ctx argument.")
+  (body [_ ctx] "Return a representation of the resource. See yada documentation for the structure of the ctx argument.")
   (produces [_] "Return the content-types, as a set, that the resource can produce")
   (produces-from-body [_] "If produces yields nil, try to extract from body")
   (status [_] "Override the response status")
@@ -22,7 +20,6 @@
   (service-available? [b] [b {}])
   (known-method? [b method] [b {}])
   (request-uri-too-long? [b _] [b {}])
-  (allowed-method? [b _] [b {}])
   (resource [b opts] (when b {}))
 
   clojure.lang.Fn
@@ -34,15 +31,12 @@
 
   (known-method? [f method] (known-method? (f method) method))
   (request-uri-too-long? [f uri] (request-uri-too-long? (f uri) uri))
-  (allowed-method? [f method] (allowed-method? (f method) method))
 
   (resource [f opts]
     (let [res (f opts)]
       (if (d/deferrable? res)
         (d/chain (resource @res opts))
         (resource res opts))))
-
-  (entity [f resource] (f resource))
 
   (body [f ctx]
     ;; body is not called recursively
@@ -64,20 +58,14 @@
   java.util.Set
   (known-method? [set method]
     [(contains? set method) {}])
-  (allowed-method? [set method]
-    [(contains? set method) {}])
   (produces [set] set)
 
   clojure.lang.Keyword
   (known-method? [k method]
     (known-method? #{k} method))
-  (allowed-method? [k method]
-    (allowed-method? #{k} method))
 
   java.util.Map
   (resource [m _] m)
-  (entity [m resource]
-    (assoc m :resource resource))
   (body [m ctx]
     ;; Maps indicate keys are exact content-types
     ;; For matching on content-type, use a vector of vectors (TODO)
@@ -97,10 +85,7 @@
     (known-method? #{:get :put :post :delete :options :head} method))
   (request-uri-too-long? [_ uri]
     (request-uri-too-long? 4096 uri))
-  (allowed-method? [_ method]
-    (allowed-method? #{:get :head} method))
   (resource [_ opts] nil)
-  (entity [_ resource] nil)
   (body [_ _] nil)
   (produces [_] nil)
   (produces-from-body [_] nil)

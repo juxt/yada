@@ -43,12 +43,12 @@ handler.
 
 ## Routing
 
-Generally, resources and independent from URI routing (although the
+Generally, resources are independent from URI routing (although the
 representations they return may well contain URIs to other
 resources). Yada is designed for use with (and has special support for)
-[bidi](https://github.com/juxt/bidi) but it can easily be used with a different
-routing library.
+[bidi](https://github.com/juxt/bidi) but it can easily be used with a
+different routing library.
 
 ## Examples
 
-Now follow the examples. Use the menu for quick access to individual examples.
+Now follow the examples. Use the menu for quick access to individual examples. To run all the examples together, see the [tests page](tests.html).

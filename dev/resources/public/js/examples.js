@@ -1,5 +1,5 @@
-clearIt = function(ix) {
-    var id = "response-"+ix;
+clearIt = function(title) {
+    var id = "response-"+title;
 
     // Clear
     $("div#"+id+" .status").text("");
@@ -7,10 +7,10 @@ clearIt = function(ix) {
     $("div#"+id+" .body").val("");
 }
 
-tryIt = function(meth, u, ix, headers) {
-    clearIt(ix);
+tryIt = function(meth, u, title, headers) {
+    clearIt(title);
 
-    var id = "response-"+ix;
+    var id = "response-"+title;
     $("div#"+id+" .status").html("Waiting&#8230;");
 
     $.ajax({type: meth,
