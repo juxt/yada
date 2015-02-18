@@ -2,13 +2,15 @@
 
 (ns yada.protocols
   (:require
-   [manifold.deferred :as d]))
+   [manifold.deferred :as d]
+   [clojure.tools.logging :refer :all]))
 
 (defprotocol Callbacks
   (service-available? [_] "Return whether the service is available")
   (known-method? [_ method])
   (request-uri-too-long? [_ uri])
-  (resource [_ opts] "Return the resource. Typically this is just the resources's meta-data and does not include the body.")
+  (resource [_ req] "Return the resource. Typically this is just the resources's meta-data and does not include the body.")
+  (state [_ ctx] "Return the state, if not available in the resource.")
   (body [_ ctx] "Return a representation of the resource. See yada documentation for the structure of the ctx argument.")
   (produces [_] "Return the content-types, as a set, that the resource can produce")
   (produces-from-body [_] "If produces yields nil, try to extract from body")
@@ -20,23 +22,29 @@
   (service-available? [b] [b {}])
   (known-method? [b method] [b {}])
   (request-uri-too-long? [b _] [b {}])
-  (resource [b opts] (when b {}))
+  (resource [b req] (if b {} false))
 
   clojure.lang.Fn
   (service-available? [f]
     (let [res (f)]
       (if (d/deferrable? res)
-        (d/chain (service-available? @res))
+        (d/chain res #(service-available? %))
         (service-available? res))))
 
   (known-method? [f method] (known-method? (f method) method))
   (request-uri-too-long? [f uri] (request-uri-too-long? (f uri) uri))
 
-  (resource [f opts]
-    (let [res (f opts)]
+  (resource [f req]
+    (let [res (f req)]
       (if (d/deferrable? res)
-        (d/chain (resource @res opts))
-        (resource res opts))))
+        (d/chain res #(resource % req))
+        (resource res req))))
+
+  (state [f ctx]
+    (let [res (f ctx)]
+      (if (d/deferrable? res)
+        (d/chain res #(state % ctx))
+        (state res ctx))))
 
   (body [f ctx]
     ;; body is not called recursively
@@ -66,6 +74,7 @@
 
   java.util.Map
   (resource [m _] m)
+  (state [m _] m)
   (body [m ctx]
     ;; Maps indicate keys are exact content-types
     ;; For matching on content-type, use a vector of vectors (TODO)
@@ -85,7 +94,8 @@
     (known-method? #{:get :put :post :delete :options :head} method))
   (request-uri-too-long? [_ uri]
     (request-uri-too-long? 4096 uri))
-  (resource [_ opts] nil)
+  (resource [_ _] nil)
+  (state [_ _] nil)
   (body [_ _] nil)
   (produces [_] nil)
   (produces-from-body [_] nil)

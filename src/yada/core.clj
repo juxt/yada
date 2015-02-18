@@ -7,7 +7,8 @@
    [schema.core :as s]
    [yada.protocols :as p]
    [yada.conneg :refer (best-allowed-content-type)]
-   [yada.content :refer (representation)]
+   [yada.representation :as rep]
+   [clojure.tools.logging :refer :all]
    ))
 
 ;; API specs. are created like this
@@ -67,6 +68,10 @@
     false (d/error-deferred (ex-info "Not Modified" {:status 304}))
     :otherwise ctx))
 
+(defn spyctx [ctx]
+  (debugf "Context is %s" ctx)
+  ctx)
+
 (defn make-async-handler
   [{:keys
     [service-available?                 ; async-supported
@@ -84,6 +89,7 @@
      headers                            ; async-supported
 
      resource                           ; async-supported
+     state                              ; async-supported
      body                               ; async-supported
 
      ;; Actions
@@ -101,26 +107,31 @@
   ;; entries that have not been given, based on the values of entries
   ;; that have. This approach makes it possible for developers to leave
   ;; out entries that are implied by the other entries. For example, if a body has been specified, we resource
+
+
+
   (fn [req]
     (let [method (:request-method req)]
 
-      (-> {:resource-map resource-map}
+      (-> {:request req
+           :resource-map resource-map}
+
           (d/chain
            (nonblocking-exit-when-not service-available? (p/service-available? service-available?) 503)
            (exit-when-not (p/known-method? known-method? method) 501)
            (exit-when (p/request-uri-too-long? request-uri-too-long? (:uri req)) 414)
-           #_(exit-when-not (p/allowed-method? allowed-method? method) 405)
 
            (fn [ctx]
              (if-not
                  (case method
-                   :get (or (some? resource) body)
+                   :get (or (some? resource) state body)
                    :put put
                    nil)
                (d/error-deferred (ex-info ""
                                           {:status 405
                                            ::http-response true}))
                ctx))
+
 
            ;; TODO Malformed
 
@@ -153,6 +164,7 @@
                   ;; Otherwise return the context unchanged
                   %)))
 
+
            ;; Does the resource exist? Call resource, which returns
            ;; the resource, containing the resource's metadata (optionally
            ;; deferred to prevent blocking this thread). It does not (yet)
@@ -162,13 +174,14 @@
            ;; check-cacheable) and return a 304 (Not Modified).
            (fn [ctx]
              (d/chain
-              {:params (:params req)}
-              #(p/resource resource %)
+              (p/resource resource req)
               #(assoc ctx :resource %)))
 
            ;; Split the flow based on the existence of the resource
            (fn [{:keys [resource] :as ctx}]
-             (if (or (some? resource) body)
+
+
+             (if (and (not (false? resource)) (or resource state body))
 
                ;; 'Exists' flow
                (case method
@@ -177,26 +190,48 @@
                   ctx
                   check-cacheable
 
-                  ;; OK, let's deref the resource's state, iff it exists
+                  ;; OK, let's pick the resource's state
                   (fn [ctx]
-                    (if-let [state (:state resource)]
-                      (d/chain state #(assoc-in ctx [:resource :state] %))
-                      ctx))
+                    (d/chain
+                     ;; note the priorities:
+                     (or (:state resource) state) ; could be nil
+                     #(p/state % ctx)
+                     #(assoc-in ctx [:resource :state] %)))
 
-                  ;; Create representation
+                  ;; Create body
                   (fn [ctx]
-                    (let [content-type (get-in ctx [:response :content-type])]
+                    (let [state (get-in ctx [:resource :state])
+                          content-type
+                          (or (get-in ctx [:response :content-type])
+                              ;; It's possible another callback has set the content-type header
+                              (get-in headers ["content-type"])
+                              (when-not body (rep/content-type-default state)))]
+
                       (d/chain
 
-                       (p/body body ctx)
+                       ;; St
+                       (cond
+                         body (p/body body ctx)
+                         state state ; the state here can still be deferred
+                         )
 
-                       ;; if not already a string, serialize to representation
-                       (fn [body]
-                         (representation body content-type))
+                       ;; serialize to representation (an existing string will be left intact)
+                       (fn [state]
+                         (debugf "state is %s" state)
+                         state
+                         )
+
+                       (fn [state]
+                         (debugf "calling content with state = %s, content-type = %s" state content-type)
+                         (rep/content state content-type))
+
+                       (fn [state]
+                         (debugf "content is %s" state)
+                         state
+                         )
 
                        ;; on nil, compose default result (if in dev)
-                       (fn [x] (if x x
-                                   (representation nil content-type)))
+                       #_(fn [x] (if x x (rep/content nil content-type)))
 
                        #(assoc-in ctx [:response :body] %)
                        #(if content-type
@@ -213,10 +248,7 @@
                                 (get-in ctx [:response :headers])
                                 (p/headers headers))
                       ;; TODO :status and :headers should be implemented like this in all cases
-                      :body (get-in ctx [:response :body])
-                      }
-                     )
-                    ))
+                      :body (get-in ctx [:response :body])})))
 
                  :put
                  (d/chain
@@ -246,9 +278,7 @@
                  )
 
                ;; 'Not exists' flow
-               (d/chain
-                ctx
-                (constantly {:status 404})))))
+               (d/chain ctx (constantly {:status 404})))))
 
           ;; Handle exits
           (d/catch clojure.lang.ExceptionInfo

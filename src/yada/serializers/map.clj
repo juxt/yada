@@ -2,4 +2,4 @@
 
 (ns yada.serializers.map
   (:require
-   [yada.content :refer (Content)]))
+   [yada.representation :refer (Content)]))

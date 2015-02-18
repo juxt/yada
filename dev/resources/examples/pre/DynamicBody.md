@@ -1,4 +1,4 @@
-In the first example, we showed how the `body` entry could be declared
+In the first example, we showed how the __:body__ entry could be declared
 as a constant value. This is fine for static content but often the
 body's content depends in some way on the request.
 

@@ -14,9 +14,14 @@
    [tangrammer.component.co-dependency :refer (co-using)]
    [ring.mock.request :refer (request) :rename {request mock-request}]))
 
+(defn basename [r]
+  (last (string/split (.getName (type r)) #"\.")))
+
 (defprotocol Example
   (resource-map [_] "Return handler")
   (request [_] "Return request sent to handler")
+  (path [_] "Where a resource is mounted")
+  (path-args [_] "Any path arguments to use in the URI")
   (expected-response [_] "What the response should be")
   (http-spec [_] "Which section of an RFC does this relate to"))
 
@@ -29,9 +34,9 @@
 (defrecord StatusAndHeaders []
   Example
   (resource-map [_] '{:status 280
-                      :headers {"content-type" "text/plain"
+                      :headers {"content-type" "text/plain;charset=utf-8"
                                 "x-extra" "foo"}
-                      :body "Hello World!"})
+                      :body "Look, headers ^^^"})
   (request [_] {:method :get})
   (expected-response [_] {:status 280}))
 
@@ -49,8 +54,7 @@
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 
-(def simple-body-map '{:body {"text/html" (fn [ctx] "<h1>Hello World!</h1>")
-                              "text/plain" (fn [ctx] "Hello World!")}} )
+;; TODO Async body options (lots more options than just this one)
 
 (comment
   ;; client's content type already indicates content, e.g. application/json
@@ -85,6 +89,10 @@
 
 ;; Conneg
 
+(def simple-body-map
+  '{:body {"text/html" (fn [ctx] "<h1>Hello World!</h1>")
+           "text/plain" (fn [ctx] "Hello World!")}} )
+
 (defrecord BodyContentTypeNegotiation []
   Example
   (resource-map [_] simple-body-map)
@@ -97,6 +105,78 @@
   (resource-map [_] simple-body-map)
   (request [_] {:method :get
                 :headers {"Accept" "text/plain"}})
+  (expected-response [_] {:status 200}))
+
+;; Resource metadata (conditional requests)
+
+(defrecord ResourceExists []
+  Example
+  (resource-map [_] '{:resource true})
+  (request [_] {:method :get})
+  (expected-response [_] {:status 200}))
+
+(defrecord ResourceFunction []
+  Example
+  (resource-map [_] '{:resource (fn [req] true)})
+  (request [_] {:method :get})
+  (expected-response [_] {:status 200}))
+
+(defrecord ResourceExistsAsync []
+  Example
+  (resource-map [_] '{:resource (fn [req] (future (Thread/sleep 500) true))})
+  (request [_] {:method :get})
+  (expected-response [_] {:status 200}))
+
+(defrecord ResourceDoesNotExist []
+  Example
+  (resource-map [_] '{:resource false})
+  (request [_] {:method :get})
+  (expected-response [_] {:status 404}))
+
+(defrecord ResourceDoesNotExistAsync []
+  Example
+  (resource-map [_] '{:resource (fn [opts] (future (Thread/sleep 500) false))})
+  (request [_] {:method :get})
+  (expected-response [_] {:status 404}))
+
+;; Resource State
+
+(defrecord PathParameter []
+  Example
+  (resource-map [_] '{:body (fn [ctx] (format "Account number is %s" (-> ctx :request :route-params :account)))})
+  (path [r] [(basename r) "/" [long :account]])
+  (path-args [_] [:account 17382343])
+  (request [_] {:method :get})
+  (expected-response [_] {:status 200}))
+
+(defrecord ResourceState []
+  Example
+  (resource-map [_] '{:resource (fn [{{account :account} :route-params}]
+                                  (when (== account 17382343)
+                                    {:state {:balance 1300}}))})
+  (path [r] [(basename r) "/" [long :account]])
+  (path-args [_] [:account 17382343])
+  (request [_] {:method :get})
+  (expected-response [_] {:status 200}))
+
+(defrecord ResourceStateWithBody []
+  Example
+  (resource-map [_] '{:resource (fn [{{account :account} :route-params}]
+                                  (when (== account 17382343)
+                                    {:state {:balance 1300}}))
+                      :body {"text/plain" (fn [ctx] (format "Your balance is ฿%s " (-> ctx :resource :state :balance)))}
+                      })
+  (path [r] [(basename r) "/" [long :account]])
+  (path-args [_] [:account 17382343])
+  (request [_] {:method :get})
+  (expected-response [_] {:status 200}))
+
+(defrecord ResourceStateTopLevel []
+  Example
+  (resource-map [_] '{:state (fn [ctx] {:accno (-> ctx :request :route-params :account)})})
+  (path [r] [(basename r) "/" [long :account]])
+  (path-args [_] [:account 17382343])
+  (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 
 ;; POSTS
@@ -188,23 +268,18 @@
   (request [_] {:method :delete})
   (expected-response [_] {:status 405}))
 
-(defrecord ResourceDoesNotExist []
-  Example
-  (resource-map [_] '{:resource false})
-  (request [_] {:method :get})
-  (expected-response [_] {:status 404}))
-
-(defrecord ResourceDoesNotExistAsync []
-  Example
-  (resource-map [_] '{:resource (fn [opts] (future (Thread/sleep 500) false))})
-  (request [_] {:method :get})
-  (expected-response [_] {:status 404}))
-
 (defn title [r]
   (last (string/split (.getName (type r)) #"\.")))
 
-(defn path [r]
-  (last (string/split (.getName (type r)) #"\.")))
+(defn get-path [r]
+  (or
+   (try (path r) (catch AbstractMethodError e))
+   (last (string/split (.getName (type r)) #"\."))))
+
+(defn get-path-args [r]
+  (or
+   (try (path-args r) (catch AbstractMethodError e))
+   []))
 
 (defn description [r]
   (when-let [s (io/resource (str "examples/pre/" (title r) ".md"))]
@@ -275,7 +350,7 @@
         [:tbody
          (map-indexed
           (fn [ix h]
-            (let [url (path-for routes (keyword (path h)))
+            (let [url (apply path-for routes (keyword (basename h)) (get-path-args h))
                   {:keys [method headers]} (request h)]
               [:tr {:id (str "test-" (title h))}
                [:td (inc ix)]
@@ -319,7 +394,7 @@
 
       (map
        (fn [h]
-         (let [url (path-for routes (keyword (path h)))]
+         (let [url (apply path-for routes (keyword (basename h)) (get-path-args h))]
            [:div
             [:p [:a {:name (str (title h))}] "&nbsp;"]
             [:div
@@ -330,6 +405,11 @@
               [:div
                [:h4 "Resource Map"]
                [:pre (escape-html (with-out-str (clojure.pprint/pprint (resource-map h))))]]
+
+              #_[:div
+               [:h4 "Bidi route"]
+               [:pre (str ["/" [[(get-path h) 'handler]]])]
+               ]
 
               (let [{:keys [method headers]} (request h)]
                 [:div
@@ -402,7 +482,7 @@
      (vec
       (concat
        (for [h handlers]
-         [(path h) (handler (keyword (path h))
+         [(get-path h) (handler (keyword (basename h))
                             (make-async-handler (eval (resource-map h))))])
        [["index.html"
          (handler
@@ -426,6 +506,15 @@
                     (->AsyncBody)
                     (->BodyContentTypeNegotiation)
                     (->BodyContentTypeNegotiation2)
+                    (->ResourceExists)
+                    (->ResourceFunction)
+                    (->ResourceExistsAsync)
+                    (->ResourceDoesNotExist)
+                    (->ResourceDoesNotExistAsync)
+                    (->PathParameter)
+                    (->ResourceState)
+                    (->ResourceStateWithBody)
+                    (->ResourceStateTopLevel)
                     (->PutResourceMatchedEtag)
                     (->PutResourceUnmatchedEtag)
                     (->ServiceUnavailable)
@@ -437,8 +526,7 @@
                     (->DisallowedGet)
                     (->DisallowedPut)
                     (->DisallowedDelete)
-                    (->ResourceDoesNotExist)
-                    (->ResourceDoesNotExistAsync)]})
+                    ]})
            (s/validate {:handlers [(s/protocol Example)]})
            map->ExamplesService)
       (using [])

@@ -1,0 +1,1 @@
+Of course it's OK to use yada with routing libraries other than bidi, such as [Compojure](https://github.com/weavejester/compojure). However, there are some features which will be covered later, such as Swagger integration, that require some of the features unique to bidi or unavailable in other routing libraries. For this reason, these examples use bidi.

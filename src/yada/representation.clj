@@ -1,26 +1,34 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(ns yada.content
+(ns yada.representation
   (:require
    [hiccup.core :refer (html)]
    [cheshire.core :as json]))
 
 (defprotocol Content
-  (representation [_ content-type]))
+  (content [_ content-type] "Get resource's content, given the content-type")
+  (content-type-default [_] "Return the default content type of the object if not specified explicitly"))
 
-(defmulti render-map (fn [content content-type] content-type))
-(defmulti render-seq (fn [content content-type] content-type))
+(defmulti render-map (fn [state content-type] content-type))
+(defmulti render-seq (fn [state content-type] content-type))
 
 (extend-protocol Content
   java.util.Map
-  (representation [content content-type] (render-map content content-type))
+  (content [state content-type] (render-map state content-type))
+  (content-type-default [_] "application/json")
   clojure.lang.Sequential
-  (representation [content content-type] (render-seq content content-type))
+  (content [state content-type] (render-seq state content-type))
+  (content-type-default [_] "application/json")
+  String
+  (content [state _] state)
+  (content-type-default [_] "text/plain")
   Object
   ;; Default is to return object unmarshalled
-  (representation [content _] content)
+  (content [state _] state)
+  (content-type-default [_] nil)
   nil
-  (representation [_ content-type] nil))
+  (content [_ content-type] nil)
+  (content-type-default [_] nil))
 
 (defmethod render-map "application/json"
   [m _]

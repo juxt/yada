@@ -34,3 +34,8 @@
     color: #f33;
     font-weight: bold;
 }
+
+code {
+    color: black;
+    background: white;
+}

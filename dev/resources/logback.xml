@@ -1,0 +1,20 @@
+<configuration scan="true" scanPeriod="1 seconds" debug="false">
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <!-- encoders are assigned the type
+         ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
+    <encoder>
+      <charset>UTF-8</charset>
+      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+    </encoder>
+    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+      <level>DEBUG</level>
+    </filter>
+  </appender>
+
+  <logger name="yada.dev" level="DEBUG"/>
+  <logger name="yada.core" level="DEBUG"/>
+
+  <root level="INFO">
+    <appender-ref ref="CONSOLE" />
+  </root>
+</configuration>
