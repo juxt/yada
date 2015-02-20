@@ -2,7 +2,8 @@
 
 (ns yada.dev.examples
   (:require
-   [bidi.bidi :refer (handler RouteProvider path-for)]
+   [bidi.bidi :refer (handler RouteProvider path-for alts)]
+   [bidi.ring :refer (redirect)]
    [schema.core :as s]
    [clojure.java.io :as io]
    [clojure.string :as string]
@@ -177,6 +178,15 @@
   (path [r] [(basename r) "/" [long :account]])
   (path-args [_] [:account 17382343])
   (request [_] {:method :get})
+  (expected-response [_] {:status 200}))
+
+;; Conditional GETs
+
+(defrecord ConditionalGet []
+  Example
+  (resource-map [_] {:body "Hello World!"})
+  (request [_] {:method :get
+                :headers {"Accept" "text/plain"}})
   (expected-response [_] {:status 200}))
 
 ;; POSTS
@@ -478,24 +488,27 @@
 (defrecord ExamplesService [router handlers]
   RouteProvider
   (routes [this]
-    ["/examples/"
-     (vec
-      (concat
-       (for [h handlers]
-         [(get-path h) (handler (keyword (basename h))
-                            (make-async-handler (eval (resource-map h))))])
-       [["index.html"
-         (handler
-          ::index
-          (fn [_]
-            (ok
-             (index (:routes @router) handlers))))]
-        ["tests.html"
-         (handler
-          ::tests
-          (fn [_]
-            (ok (tests (:routes @router) handlers))))
-         ]]))]))
+    ["/examples"
+     [["/"
+       (vec
+        (concat
+         (for [h handlers]
+           [(get-path h) (handler (keyword (basename h))
+                                  (make-async-handler (eval (resource-map h))))])
+         [["index.html"
+           (handler
+            ::index
+            (fn [_]
+              (ok
+               (index (:routes @router) handlers))))]
+          ["tests.html"
+           (handler
+            ::tests
+            (fn [_]
+              (ok (tests (:routes @router) handlers))))
+           ]
+          ["" (redirect ::index)]]))]
+      ["" (redirect ::index)]]]))
 
 (defn new-examples-service [& {:as opts}]
   (-> (->> opts
@@ -515,6 +528,9 @@
                     (->ResourceState)
                     (->ResourceStateWithBody)
                     (->ResourceStateTopLevel)
+
+                    (->ConditionalGet)
+
                     (->PutResourceMatchedEtag)
                     (->PutResourceUnmatchedEtag)
                     (->ServiceUnavailable)
