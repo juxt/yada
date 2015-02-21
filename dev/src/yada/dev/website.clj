@@ -56,6 +56,7 @@
                   (for [i (range 7230 (inc 7240))]
                     [:li [:a {:href (format "/static/spec/rfc%d.html" i)}
                           (format "RFC %d: %s" i (or (get titles i) ""))]])]]
+                [:li [:a {:href (path-for (:routes @router) :yada.dev.examples/tests)} "Tests"]]
                 ]]
 
               [:script {:src "/jquery/jquery.min.js"}]
