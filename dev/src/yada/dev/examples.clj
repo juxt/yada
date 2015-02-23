@@ -11,7 +11,7 @@
    [yada.core :refer (make-async-handler)]
    [hiccup.core :refer (html h) :rename {h escape-html}]
    [markdown.core :as markdown]
-   [com.stuartsierra.component :refer (using)]
+   [com.stuartsierra.component :refer (using Lifecycle)]
    [tangrammer.component.co-dependency :refer (co-using)]
    [ring.mock.request :refer (request) :rename {request mock-request}]))
 
@@ -182,9 +182,11 @@
 
 ;; Conditional GETs
 
-(defrecord ConditionalGet []
+(defrecord ConditionalGet [start-time]
   Example
-  (resource-map [_] {:body "Hello World!"})
+  (resource-map [_] {:body "Hello World!"
+                     :resource {:last-modified start-time}
+                     })
   (request [_] {:method :get
                 :headers {"Accept" "text/plain"}})
   (expected-response [_] {:status 200}))
@@ -193,7 +195,7 @@
 
 #_(defrecord PostNewResource []
   Example
-  (resource-map [_] {})
+  (resource-map [_] '{})
   (request [_] {:method :get
                 :headers {"Accept" "text/plain"}})
   (expected-response [_] {:status 200}))
@@ -485,35 +487,14 @@
    :headers {"content-type" "text/html;charset=utf-8"}
    :body body})
 
-(defrecord ExamplesService [router handlers]
-  RouteProvider
-  (routes [this]
-    ["/examples"
-     [["/"
-       (vec
-        (concat
-         (for [h handlers]
-           [(get-path h) (handler (keyword (basename h))
-                                  (make-async-handler (eval (resource-map h))))])
-         [["index.html"
-           (handler
-            ::index
-            (fn [_]
-              (ok
-               (index (:routes @router) handlers))))]
-          ["tests.html"
-           (handler
-            ::tests
-            (fn [_]
-              (ok (tests (:routes @router) handlers))))
-           ]
-          ["" (redirect ::index)]]))]
-      ["" (redirect ::index)]]]))
+(defrecord ExamplesService [router]
+  Lifecycle
+  (start [component] (assoc component :start-time (java.util.Date.)))
+  (stop [component] component)
 
-(defn new-examples-service [& {:as opts}]
-  (-> (->> opts
-           (merge {:handlers
-                   [(->BodyAsString)
+  RouteProvider
+  (routes [component]
+    (let [handlers [(->BodyAsString)
                     (->StatusAndHeaders)
                     (->DynamicBody)
                     (->AsyncBody)
@@ -529,7 +510,7 @@
                     (->ResourceStateWithBody)
                     (->ResourceStateTopLevel)
 
-                    (->ConditionalGet)
+                    (->ConditionalGet (:start-time component))
 
                     (->PutResourceMatchedEtag)
                     (->PutResourceUnmatchedEtag)
@@ -542,8 +523,35 @@
                     (->DisallowedGet)
                     (->DisallowedPut)
                     (->DisallowedDelete)
-                    ]})
-           (s/validate {:handlers [(s/protocol Example)]})
+                    ]]
+      (s/validate [(s/protocol Example)] handlers)
+      ["/examples"
+       [["/"
+         (vec
+          (concat
+           (for [h handlers]
+             [(get-path h) (handler (keyword (basename h))
+                                    (make-async-handler (eval (resource-map h))))])
+           [["index.html"
+             (handler
+              ::index
+              (fn [_]
+                (ok
+                 (index (:routes @router) handlers))))]
+            ["tests.html"
+             (handler
+              ::tests
+              (fn [_]
+                (ok (tests (:routes @router) handlers))))
+             ]
+            ["" (redirect ::index)]]))]
+        ["" (redirect ::index)]]]
+      )))
+
+(defn new-examples-service [& {:as opts}]
+  (-> (->> opts
+           (merge {})
+
            map->ExamplesService)
       (using [])
       (co-using [:router])))
