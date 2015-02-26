@@ -11,6 +11,7 @@
   (request-uri-too-long? [_ uri])
   (resource [_ req] "Return the resource. Typically this is just the resources's meta-data and does not include the body.")
   (state [_ ctx] "Return the state, if not available in the resource.")
+  (last-modified [_ ctx] "Return the date that the resource was last modified.")
   (body [_ ctx] "Return a representation of the resource. See yada documentation for the structure of the ctx argument.")
   (produces [_] "Return the content-types, as a set, that the resource can produce")
   (produces-from-body [_] "If produces yields nil, try to extract from body")
@@ -46,6 +47,12 @@
         (d/chain res #(state % ctx))
         (state res ctx))))
 
+  (last-modified [f ctx]
+    (let [res (f ctx)]
+      (if (d/deferrable? res)
+        (d/chain res #(last-modified % ctx))
+        (last-modified res ctx))))
+
   (body [f ctx]
     ;; body is not called recursively
     (f ctx))
@@ -62,6 +69,7 @@
   (request-uri-too-long? [n uri]
     (request-uri-too-long? (> (.length uri) n) uri))
   (status [n] n)
+  (last-modified [l _] (java.util.Date. l))
 
   java.util.Set
   (known-method? [set method]
@@ -85,6 +93,9 @@
 
   clojure.lang.PersistentVector
   (produces [v] (produces (set v)))
+
+  java.util.Date
+  (last-modified [d _] d)
 
   nil
   ;; These represent the handler defaults, all of which can be

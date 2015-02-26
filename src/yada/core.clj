@@ -61,12 +61,7 @@
 (defmacro exit-when-not [expr status]
   `(exit-when (not* ~expr) ~status))
 
-(defn check-cacheable [ctx]
-  ;; Check the resource metadata and return one of the following responses
-  (cond
-    false (d/error-deferred (ex-info "Precondition Failed" {:status 412}))
-    false (d/error-deferred (ex-info "Not Modified" {:status 304}))
-    :otherwise ctx))
+
 
 (defn spyctx [ctx]
   (debugf "Context is %s" ctx)
@@ -170,8 +165,7 @@
            ;; deferred to prevent blocking this thread). It does not (yet)
            ;; contain the resource's data. The reason for this is that it
            ;; would be wasteful to load the resource's data if we can
-           ;; determine that the client already has a copy (see
-           ;; check-cacheable) and return a 304 (Not Modified).
+           ;; determine that the client already has a copy and return a 304 (Not Modified).
            (fn [ctx]
              (d/chain
               (p/resource resource req)
@@ -180,7 +174,6 @@
            ;; Split the flow based on the existence of the resource
            (fn [{:keys [resource] :as ctx}]
 
-
              (if (and (not (false? resource)) (or resource state body))
 
                ;; 'Exists' flow
@@ -188,7 +181,9 @@
                  (:get :head)
                  (d/chain
                   ctx
-                  check-cacheable
+
+                  ;; Conditional request
+                  ;; TODO
 
                   ;; OK, let's pick the resource's state
                   (fn [ctx]
@@ -209,7 +204,7 @@
 
                       (d/chain
 
-                       ;; St
+                       ;; Determine body
                        (cond
                          body (p/body body ctx)
                          state state ; the state here can still be deferred
@@ -217,18 +212,9 @@
 
                        ;; serialize to representation (an existing string will be left intact)
                        (fn [state]
-                         (debugf "state is %s" state)
-                         state
-                         )
-
-                       (fn [state]
                          (debugf "calling content with state = %s, content-type = %s" state content-type)
                          (rep/content state content-type))
 
-                       (fn [state]
-                         (debugf "content is %s" state)
-                         state
-                         )
 
                        ;; on nil, compose default result (if in dev)
                        #_(fn [x] (if x x (rep/content nil content-type)))
@@ -238,6 +224,13 @@
                           (update-in % [:response :headers] assoc "content-type" content-type)
                           %
                           ))))
+
+                  ;; Set last modified header
+                  (fn [ctx]
+                    (if-let [last-modified (when-let [hdr (:last-modified resource)]
+                                             (p/last-modified hdr ctx))]
+                      (assoc-in ctx [:response :headers "last-modified"] last-modified)
+                      ctx))
 
                   (fn [ctx]
                     (merge
@@ -253,7 +246,6 @@
                  :put
                  (d/chain
                   ctx
-                  check-cacheable
 
                   (fn [ctx]
                     (when-let [etag (get-in req [:headers "if-match"])]

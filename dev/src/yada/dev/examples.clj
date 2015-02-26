@@ -20,6 +20,7 @@
 
 (defprotocol Example
   (resource-map [_] "Return handler")
+  (make-handler [_] "Create handler")
   (request [_] "Return request sent to handler")
   (path [_] "Where a resource is mounted")
   (path-args [_] "Any path arguments to use in the URI")
@@ -29,6 +30,7 @@
 (defrecord BodyAsString []
   Example
   (resource-map [_] '{:body "Hello World!"})
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 
@@ -38,12 +40,14 @@
                       :headers {"content-type" "text/plain;charset=utf-8"
                                 "x-extra" "foo"}
                       :body "Look, headers ^^^"})
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 280}))
 
 (defrecord DynamicBody []
   Example
   (resource-map [_] '{:body (fn [ctx] "Hello World!")})
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 
@@ -52,6 +56,7 @@
   (resource-map [_] '{:body (fn [ctx]
                               (future (Thread/sleep 500)
                                       "Hello World!"))})
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 
@@ -97,6 +102,7 @@
 (defrecord BodyContentTypeNegotiation []
   Example
   (resource-map [_] simple-body-map)
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
   (request [_] {:method :get
                 :headers {"Accept" "text/html"}})
   (expected-response [_] {:status 200}))
@@ -104,6 +110,7 @@
 (defrecord BodyContentTypeNegotiation2 []
   Example
   (resource-map [_] simple-body-map)
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
   (request [_] {:method :get
                 :headers {"Accept" "text/plain"}})
   (expected-response [_] {:status 200}))
@@ -113,30 +120,35 @@
 (defrecord ResourceExists []
   Example
   (resource-map [_] '{:resource true})
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 
 (defrecord ResourceFunction []
   Example
   (resource-map [_] '{:resource (fn [req] true)})
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 
 (defrecord ResourceExistsAsync []
   Example
   (resource-map [_] '{:resource (fn [req] (future (Thread/sleep 500) true))})
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 
 (defrecord ResourceDoesNotExist []
   Example
   (resource-map [_] '{:resource false})
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 404}))
 
 (defrecord ResourceDoesNotExistAsync []
   Example
   (resource-map [_] '{:resource (fn [opts] (future (Thread/sleep 500) false))})
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 404}))
 
@@ -145,6 +157,7 @@
 (defrecord PathParameter []
   Example
   (resource-map [_] '{:body (fn [ctx] (format "Account number is %s" (-> ctx :request :route-params :account)))})
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
   (path [r] [(basename r) "/" [long :account]])
   (path-args [_] [:account 17382343])
   (request [_] {:method :get})
@@ -155,6 +168,7 @@
   (resource-map [_] '{:resource (fn [{{account :account} :route-params}]
                                   (when (== account 17382343)
                                     {:state {:balance 1300}}))})
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
   (path [r] [(basename r) "/" [long :account]])
   (path-args [_] [:account 17382343])
   (request [_] {:method :get})
@@ -167,6 +181,7 @@
                                     {:state {:balance 1300}}))
                       :body {"text/plain" (fn [ctx] (format "Your balance is ฿%s " (-> ctx :resource :state :balance)))}
                       })
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
   (path [r] [(basename r) "/" [long :account]])
   (path-args [_] [:account 17382343])
   (request [_] {:method :get})
@@ -175,6 +190,7 @@
 (defrecord ResourceStateTopLevel []
   Example
   (resource-map [_] '{:state (fn [ctx] {:accno (-> ctx :request :route-params :account)})})
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
   (path [r] [(basename r) "/" [long :account]])
   (path-args [_] [:account 17382343])
   (request [_] {:method :get})
@@ -182,13 +198,33 @@
 
 ;; Conditional GETs
 
-(defrecord ConditionalGet [start-time]
+(defrecord LastModifiedHeader [start-time]
   Example
   (resource-map [_] {:body "Hello World!"
                      :resource {:last-modified start-time}
                      })
-  (request [_] {:method :get
-                :headers {"Accept" "text/plain"}})
+  (make-handler [ex] (make-async-handler (resource-map ex)))
+  (request [_] {:method :get})
+  (expected-response [_] {:status 200}))
+
+(defrecord LastModifiedHeaderAsLong [start-time]
+  Example
+  (resource-map [_] {:body "Hello World!"
+                     :resource {:last-modified (.getTime start-time)}
+                     })
+  (make-handler [ex] (make-async-handler (resource-map ex)))
+  (request [_] {:method :get})
+  (expected-response [_] {:status 200}))
+
+(defrecord LastModifiedHeaderAsDeferred [start-time]
+  Example
+  (resource-map [_]
+    (let [s start-time]
+      `{:body "Hello World!"
+        :resource {:last-modified (fn [ctx#] (delay (.getTime ~s)))}
+        }))
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
+  (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 
 ;; POSTS
@@ -196,6 +232,7 @@
 #_(defrecord PostNewResource []
   Example
   (resource-map [_] '{})
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
   (request [_] {:method :get
                 :headers {"Accept" "text/plain"}})
   (expected-response [_] {:status 200}))
@@ -206,6 +243,7 @@
   Example
   (resource-map [_] '{:resource {:etag "58614618"}
                       :put true})
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
   (request [_] {:method :put
                 :headers {"If-Match" "58614618"}})
   (expected-response [_] {:status 204})
@@ -215,6 +253,7 @@
   Example
   (resource-map [_] '{:resource {:etag "58614618"}
                       :put true})
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
   (request [_] {:method :put
                 :headers {"If-Match" "c668ab6b"}})
   (expected-response [_] {:status 412})
@@ -225,6 +264,7 @@
 (defrecord ServiceUnavailable []
   Example
   (resource-map [_] '{:service-available? false})
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 503})
   (http-spec [_] ["7231" "6.6.4"]))
@@ -232,12 +272,14 @@
 (defrecord ServiceUnavailableAsync []
   Example
   (resource-map [_] '{:service-available? #(future (Thread/sleep 500) false)})
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 503}))
 
 (defrecord ServiceUnavailableRetryAfter []
   Example
   (resource-map [_] '{:service-available? 120})
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 503})
   (http-spec [_] ["7231" "6.6.4"]))
@@ -245,6 +287,7 @@
 (defrecord ServiceUnavailableRetryAfter2 []
   Example
   (resource-map [_] '{:service-available? (constantly 120)})
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 503})
   (http-spec [_] ["7231" "6.6.4"]))
@@ -252,6 +295,7 @@
 (defrecord ServiceUnavailableRetryAfter3 []
   Example
   (resource-map [_] '{:service-available? #(future (Thread/sleep 500) 120)})
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 503})
   (http-spec [_] ["7231" "6.6.4"]))
@@ -259,24 +303,28 @@
 (defrecord DisallowedPost []
   Example
   (resource-map [_] '{:body "Hello World!"})
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
   (request [_] {:method :post})
   (expected-response [_] {:status 405}))
 
 (defrecord DisallowedGet []
   Example
   (resource-map [_] '{:post true})
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 405}))
 
 (defrecord DisallowedPut []
   Example
   (resource-map [_] '{:body "Hello World!"})
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
   (request [_] {:method :put})
   (expected-response [_] {:status 405}))
 
 (defrecord DisallowedDelete []
   Example
   (resource-map [_] '{:post true})
+  (make-handler [ex] (make-async-handler (eval (resource-map ex))))
   (request [_] {:method :delete})
   (expected-response [_] {:status 405}))
 
@@ -510,7 +558,9 @@
                     (->ResourceStateWithBody)
                     (->ResourceStateTopLevel)
 
-                    (->ConditionalGet (:start-time component))
+                    (->LastModifiedHeader (:start-time component))
+                    (->LastModifiedHeaderAsLong (:start-time component))
+                    (->LastModifiedHeaderAsDeferred (:start-time component))
 
                     (->PutResourceMatchedEtag)
                     (->PutResourceUnmatchedEtag)
@@ -531,7 +581,8 @@
           (concat
            (for [h handlers]
              [(get-path h) (handler (keyword (basename h))
-                                    (make-async-handler (eval (resource-map h))))])
+                                    (make-handler h)
+                                    )])
            [["index.html"
              (handler
               ::index
