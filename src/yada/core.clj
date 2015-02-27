@@ -8,6 +8,7 @@
    [yada.protocols :as p]
    [yada.conneg :refer (best-allowed-content-type)]
    [yada.representation :as rep]
+   [yada.util :refer (parse-http-date)]
    [clojure.tools.logging :refer :all]
    ))
 
@@ -183,7 +184,29 @@
                   ctx
 
                   ;; Conditional request
-                  ;; TODO
+                  (fn [ctx]
+                    (if-let [last-modified
+                             (when-let [hdr (:last-modified resource)]
+                               (p/last-modified hdr ctx))]
+
+                      (if-let [if-modified-since (parse-http-date (get-in req [:headers "if-modified-since"]))]
+                        (let [last-modified (if (d/deferrable? last-modified) @last-modified last-modified)]
+                          (if (<
+                               (.getTime last-modified)
+                               (.getTime if-modified-since))
+
+                            ;; exit with 304
+                            (d/error-deferred (ex-info "" (merge {:status 304
+                                                                  ::http-response true}
+                                                                 ctx)))
+
+                            (assoc-in ctx [:response :headers "last-modified"] last-modified)
+
+                            ))
+
+                        (assoc-in ctx [:response :headers "last-modified"] (if (d/deferrable? last-modified) @last-modified last-modified))
+                        )
+                      ctx))
 
                   ;; OK, let's pick the resource's state
                   (fn [ctx]
@@ -225,12 +248,7 @@
                           %
                           ))))
 
-                  ;; Set last modified header
-                  (fn [ctx]
-                    (if-let [last-modified (when-let [hdr (:last-modified resource)]
-                                             (p/last-modified hdr ctx))]
-                      (assoc-in ctx [:response :headers "last-modified"] last-modified)
-                      ctx))
+
 
                   (fn [ctx]
                     (merge

@@ -9,6 +9,7 @@
    [clojure.string :as string]
    [cheshire.core :as json]
    [yada.core :refer (make-async-handler)]
+   [yada.util :refer (format-http-date)]
    [hiccup.core :refer (html h) :rename {h escape-html}]
    [markdown.core :as markdown]
    [com.stuartsierra.component :refer (using Lifecycle)]
@@ -226,6 +227,16 @@
   (make-handler [ex] (make-async-handler (eval (resource-map ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
+
+(defrecord IfModifiedSince [start-time]
+  Example
+  (resource-map [_] {:body "Hello World!"
+                     :resource {:last-modified start-time}
+                     })
+  (make-handler [ex] (make-async-handler (resource-map ex)))
+  (request [_] {:method :get
+                :headers {"If-Modified-Since" (format-http-date (new java.util.Date (+ (.getTime start-time) (* 60 1000))))}})
+  (expected-response [_] {:status 304}))
 
 ;; POSTS
 
@@ -561,6 +572,7 @@
                     (->LastModifiedHeader (:start-time component))
                     (->LastModifiedHeaderAsLong (:start-time component))
                     (->LastModifiedHeaderAsDeferred (:start-time component))
+                    (->IfModifiedSince (:start-time component))
 
                     (->PutResourceMatchedEtag)
                     (->PutResourceUnmatchedEtag)
