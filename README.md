@@ -8,12 +8,22 @@ from experiences using it on commercial projects. Its feature-set and
 rationale is very similar to [Ratpack](http://www.ratpack.io/), but
 designed for Clojure.
 
-This is still in an experimental phase and not yet ready for use. When
-it is released, leiningen dependency details will be posted here.
+## Installation
+
+Add the following dependency to your `project.clj` file :-
+
+```clojure
+[yada "0.1.0"]
+```
+
+Please note that being a 0.x.y version indicates the provisional status
+of this library, and that features are subject to change.
 
 ## Getting started
 
-Although yada is a library, if you clone this repo you can run some examples from the repl. This is a good way of seeing how far yada is progressing.
+Although yada is a library, if you clone this repo you can run some
+examples from the repl. This is a good way of seeing how far yada is
+progressing.
 
 ```
 cd yada
