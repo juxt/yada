@@ -1,3 +1,7 @@
 /target/
 /.nrepl-port
 /.lein-failures
+/pom.xml
+/pom.xml.asc
+/.lein-repl-history
+/todo.org
