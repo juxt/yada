@@ -1,6 +1,3 @@
-REST is about resources which have state, and representations that are
-negotiated between the user agent and the server to transfer that state.
-
 While it is possible to explicitly specify the body of a response, doing
 so assumes you are prepared to format the content according to the
 negotiated content-type.

@@ -19,6 +19,10 @@
 (defn basename [r]
   (last (string/split (.getName (type r)) #"\.")))
 
+(defrecord Chapter [title intro-text])
+
+(defn chapter? [h] (instance? Chapter h))
+
 (defprotocol Example
   (resource-map [_] "Return handler")
   (make-handler [_] "Create handler")
@@ -27,6 +31,8 @@
   (path-args [_] "Any path arguments to use in the URI")
   (expected-response [_] "What the response should be")
   (http-spec [_] "Which section of an RFC does this relate to"))
+
+(defn example? [h] (satisfies? Example h))
 
 (defrecord BodyAsString []
   Example
@@ -371,6 +377,9 @@
 (defn spaced [t]
   (string/join " " (re-seq #"[A-Z2-9][a-z]*" t)))
 
+(defn unspaced [t]
+  (string/lower-case (string/replace t " " "")))
+
 (defn bootstrap-head [{:keys [title extra]}]
   [:head
    (concat
@@ -455,82 +464,92 @@
      (sidebar-menu
       (map
        (fn [h]
-         [:li.small [:a {:href (str "#" (title h))} (spaced (title h))]])
+         (condp apply [h]
+           chapter? [:li [:a {:href (str "#" (unspaced (:title h)))} (:title h)]]
+           example? [:li.small [:a {:href (str "#" (title h))} (spaced (title h))]]))
        handlers))
 
      [:div.col-md-9 {:role "main"}
       [:a {:name "top"}]
       [:div#intro
-       (markdown/md-to-html-string (slurp (io/resource "intro.md")))]
+       (markdown/md-to-html-string (slurp (io/resource "examples/intro.md")))]
 
       (map
        (fn [h]
-         (let [url (apply path-for routes (keyword (basename h)) (get-path-args h))]
-           [:div
-            [:p [:a {:name (str (title h))}] "&nbsp;"]
-            [:div
-             [:div.example
-              [:h3 (spaced (title h))]
-              [:p (description h)]
-
+         (condp apply [h]
+           example?
+           (let [url (apply path-for routes (keyword (basename h)) (get-path-args h))]
+             [:div
+              [:p [:a {:name (str (title h))}] "&nbsp;"]
               [:div
-               [:h4 "Resource Map"]
-               [:pre (escape-html (with-out-str (clojure.pprint/pprint (resource-map h))))]]
+               [:div.example
+                [:h3 (spaced (title h))]
+                [:p (description h)]
 
-              #_[:div
-               [:h4 "Bidi route"]
-               [:pre (str ["/" [[(get-path h) 'handler]]])]
-               ]
-
-              (let [{:keys [method headers]} (request h)]
                 [:div
-                 [:h4 "Request"]
-                 [:pre
-                  (->meth method) (format " %s HTTP/1.1" url)
-                  (for [[k v] headers] (format "\n%s: %s" k v))]
-                 [:p
-                  [:button.btn.btn-primary
-                   {:type "button"
-                    :onClick (format "tryIt('%s','%s','%s',%s)"
-                                     (->meth method)
-                                     url
-                                     (title h)
-                                     (json/encode headers))}
-                   "Try it"]
-                  " "
-                  [:button.btn
-                   {:type "button"
-                    :onClick (format "clearIt('%s')" (title h))}
-                   "Reset"]]])
+                 [:h4 "Resource Map"]
+                 [:pre (escape-html (with-out-str (clojure.pprint/pprint (resource-map h))))]]
 
-              [:div {:id (str "response-" (title h))}
-               [:h4 "Response"]
+                #_[:div
+                   [:h4 "Bidi route"]
+                   [:pre (str ["/" [[(get-path h) 'handler]]])]
+                   ]
 
-               [:table.table
-                [:tbody
-                 [:tr
-                  [:td "Status"]
-                  [:td.status ""]]
-                 [:tr
-                  [:td "Headers"]
-                  [:td.headers ""]]
-                 [:tr
-                  [:td "Body"]
-                  [:td [:textarea.body ""]]]
-                 ]]]
+                (let [{:keys [method headers]} (request h)]
+                  [:div
+                   [:h4 "Request"]
+                   [:pre
+                    (->meth method) (format " %s HTTP/1.1" url)
+                    (for [[k v] headers] (format "\n%s: %s" k v))]
+                   [:p
+                    [:button.btn.btn-primary
+                     {:type "button"
+                      :onClick (format "tryIt('%s','%s','%s',%s)"
+                                       (->meth method)
+                                       url
+                                       (title h)
+                                       (json/encode headers))}
+                     "Try it"]
+                    " "
+                    [:button.btn
+                     {:type "button"
+                      :onClick (format "clearIt('%s')" (title h))}
+                     "Reset"]]])
 
-              (when-let [text (post-description h)]
-                [:p text])
+                [:div {:id (str "response-" (title h))}
+                 [:h4 "Response"]
 
-              (when-let [[spec sect]
-                         (try (http-spec h)
-                              (catch AbstractMethodError e))]
-                [:div
-                 [:p [:a {:href (format "/static/spec/rfc%s.html#section-%s"
-                                        spec sect)
-                          :target "_spec"}
-                      (format "Section %s in RFC %s" sect spec)]]])
-              ]]]))
+                 [:table.table
+                  [:tbody
+                   [:tr
+                    [:td "Status"]
+                    [:td.status ""]]
+                   [:tr
+                    [:td "Headers"]
+                    [:td.headers ""]]
+                   [:tr
+                    [:td "Body"]
+                    [:td [:textarea.body ""]]]
+                   ]]]
+
+                (when-let [text (post-description h)]
+                  [:p text])
+
+                (when-let [[spec sect]
+                           (try (http-spec h)
+                                (catch AbstractMethodError e))]
+                  [:div
+                   [:p [:a {:href (format "/static/spec/rfc%s.html#section-%s"
+                                          spec sect)
+                            :target "_spec"}
+                        (format "Section %s in RFC %s" sect spec)]]])
+                ]]])
+           chapter?
+           [:div
+            [:a {:name (unspaced (:title h))} "&nbsp;"]
+            [:h1 (:title h)]
+            (when-let [txt (:intro-text h)] [:p txt])]
+           ))
        handlers)
 
       (row
@@ -565,6 +584,9 @@
                     (->ResourceDoesNotExist)
                     (->ResourceDoesNotExistAsync)
                     (->PathParameter)
+
+                    (map->Chapter {:title "State"
+                                   :intro-text (markdown/md-to-html-string (slurp (io/resource "examples/state-intro.md")))})
                     (->ResourceState)
                     (->ResourceStateWithBody)
                     (->ResourceStateTopLevel)
@@ -586,12 +608,13 @@
                     (->DisallowedPut)
                     (->DisallowedDelete)
                     ]]
-      (s/validate [(s/protocol Example)] handlers)
+      (s/validate [(s/either (s/protocol Example) (s/pred (partial instance? Chapter)))] handlers)
       ["/examples"
        [["/"
          (vec
           (concat
-           (for [h handlers]
+           (for [h handlers
+                 :when (satisfies? Example h)]
              [(get-path h) (handler (keyword (basename h))
                                     (make-handler h)
                                     )])
