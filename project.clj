@@ -30,14 +30,18 @@
           [com.stuartsierra/component "0.2.2"]
           [malcolmsparks/co-dependency "0.1.5"]
           [org.clojure/tools.namespace "0.2.5"]
+          [org.clojure/data.zip "0.1.1"]
 
           [markdown-clj "0.9.62"]
           [ring-mock "0.1.5"]
 
           [juxt.modular/aleph "0.0.3"]
-          [juxt.modular/bidi "0.8.0"]
+          [juxt.modular/bidi "0.9.1"]
+          [juxt.modular/clostache "0.6.1"]
+          [juxt.modular/co-dependency "0.2.0"]
           [juxt.modular/maker "0.5.0"]
           [juxt.modular/test "0.1.0"]
+          [juxt.modular/template "0.6.2"]
 
           [org.webjars/swagger-ui "2.1.0-alpha.6"]
           [org.webjars/jquery "2.1.3"]
