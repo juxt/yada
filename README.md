@@ -16,6 +16,8 @@ Add the following dependency to your `project.clj` file :-
 [yada "0.1.0"]
 ```
 
+## Status
+
 Please note that being a 0.x.y version indicates the provisional status
 of this library, and that features are subject to change.
 

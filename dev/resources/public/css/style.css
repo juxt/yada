@@ -181,3 +181,20 @@ blockquote {
 .juxt-logo-small {
     width: 52px;
 }
+
+div.warning {
+    border: 3px solid #600;
+    background: #a00;
+    margin-bottom: 1em;
+    padding: 10px;
+}
+
+div.warning p {
+    color: white;
+    font-weight: bold;
+    margin: 0;
+}
+
+div.warning p:before {
+    content: "WARNING: ";
+}
