@@ -8,7 +8,7 @@
    [clojure.tools.namespace.repl :refer (refresh refresh-all)]
    [clojure.java.io :as io]
    [com.stuartsierra.component :as component]
-   [tangrammer.component.co-dependency :as co-dependency]
+   [modular.component.co-dependency :as co-dependency]
    [yada.dev.system :refer (config new-system-map new-dependency-map new-co-dependency-map)]
    [modular.maker :refer (make)]
    [bidi.bidi :as bidi]))

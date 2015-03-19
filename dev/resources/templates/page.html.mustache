@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+-->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>yada</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap theme -->
+    <link href="/bootstrap/css/bootstrap-theme.min.css" rel="stylesheet">
+
+    <!-- Syntax highlighting -->
+    <link rel="stylesheet" href="/hljs/styles/sunburst.css">
+
+    <link href="/static/css/fonts.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+        <script src="/js/html5shiv.min.js"></script>
+        <![endif]-->
+  </head>
+
+  <body role="document">
+
+    <div class="row" style="margin-top: 2em">
+      <div class="col-md-2">
+      </div>
+      <div class="col-md-6">
+        <a href="https://juxt.pro">
+          <img class="juxt-logo" src="/static/img/juxt-logo.svg"></img>
+        </a>
+      </div>
+    </div>
+
+    <!-- There should be content here -->
+    <div class="row">
+      <div class="col-md-2">
+        {{{sidebar}}}
+      </div>
+      <div class="col-md-6">
+        {{{content}}}
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-2">
+        {{{sidebar}}}
+      </div>
+      <div class="col-md-6">
+        <div class="mastfoot">
+          <hr>
+          <div class="inner">
+            <p><span class="yada">yada</span><br/>Copyright © 2015, <a href="https://juxt.pro"><img class="juxt-logo-small" src="/static/img/juxt-logo.svg"/></a> LTD.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="/jquery/jquery.min.js"></script>
+
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="/bootstrap/js/bootstrap.min.js"></script>
+
+    <!-- Syntax highlighting -->
+    <script src="/hljs/highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+
+    <!-- Scripts -->
+    {{#scripts}}
+    <script src="{{.}}"></script>
+    {{/scripts}}
+
+  </body>
+</html>

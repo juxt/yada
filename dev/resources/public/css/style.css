@@ -1,5 +1,49 @@
 /* Styles */
 
+html,body {
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 1.1em;
+    background: #f8f8f8;
+    line-height: 1.1em;
+}
+
+a {
+    text-decoration: underline;
+}
+
+li {
+    margin: 0.5em 0;
+}
+
+h2 {
+    font-weight: bold;
+}
+
+h1 {
+    font-size: 5em;
+    padding: 0.5em 0;
+}
+
+h2 {
+    margin-top: 1.7em;
+    padding: 0.7em 0;
+    border-top: 2px solid #888;
+}
+
+h3 {
+    margin-top: 1.7em;
+    margin-bottom: 1em;
+}
+
+h4 {
+    font-weight: bold;
+}
+
+p {
+    margin: 1.5em 0;
+    text-align: justify;
+}
+
 .status {
     font-family: monospace;
 }
@@ -9,22 +53,85 @@
     white-space: pre;
 }
 
+pre {
+    padding: 0;
+}
+
+pre code {
+    font-size: 12pt;
+}
+
+code {
+    font-size: 12pt;
+    font-family: monospace;
+}
+
 .body {
     font-family: monospace;
     width: 100%;
 }
 
-.example {
-    border: 1px solid #888;
-    padding: 0px 10px;
-    margin: 20px 0px 0px 0px;
+div.example {
+    border: 5px solid #99f;
+    background: #aaf;
 }
 
-.example h3 {
-    margin-top: 10px;
-    margin-bottom: 20px;
-    font-style: italic;
+div.example table {
+    background: black;
+    color: #65b042;
 }
+
+div.example textarea {
+    border: 0px solid black;
+    background: black;
+}
+
+div.note {
+    border: 5px solid #cc5;
+    background: #dd6;
+}
+
+div.example {
+    padding: 10px 10px;
+    margin: 40px 5%;
+}
+
+div.note {
+    padding: 10px 10px;
+    margin: 40px 30% 0 0;
+}
+
+.example h3, .note h3 {
+    font-family: 'Source Sans Pro', sans-serif;
+    margin-top: 0px;
+    margin-bottom: 10px;
+}
+
+.note p, .example p {
+    margin: 0.5em 0;
+}
+
+.note a {
+    color: #a00;
+    text-decoration: underline;
+}
+
+
+code.shell {
+    color: #0f0;
+    font-weight: normal;
+}
+
+code.shell span {
+    color: #0f0;
+}
+
+code.shell:before {
+    color: green;
+    font-weight: normal;
+    content: "$ ";
+}
+
 
 .green {
     color: #3a3;
@@ -36,6 +143,41 @@
 }
 
 code {
-    color: black;
-    background: white;
+    color: inherit;
+    font-weight: bold;
+    background: inherit;
+}
+
+/* The yada logo */
+span.yada {
+    font-family: RochesterYada, sans-serif;
+    font-size: 1.25em;
+    /* Pad ever so slightly on the left */
+    padding-left: 0.08em;
+}
+
+code span.yada, b span.yada {
+    font-family: inherit;
+    font-size: inherit;
+}
+
+blockquote {
+    border-left: 5px solid #aaa;
+}
+
+.mastfoot {
+    line-height: 1.5em;
+}
+
+.juxt-logo {
+    width: 80px;
+}
+
+.mastfoot hr {
+    border-color: #888;
+    border-width: 2px;
+}
+
+.juxt-logo-small {
+    width: 52px;
 }

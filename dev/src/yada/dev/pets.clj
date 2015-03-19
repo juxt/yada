@@ -6,8 +6,7 @@
    [bidi.bidi :refer (RouteProvider)]
    [schema.core :as s]
    [pets :as pets]
-   [yada.swagger :refer (Handler ->DefaultAsyncHandler)]
-   [yada.core :refer (make-async-handler)]))
+   [yada.swagger :refer (Handler ->DefaultAsyncHandler)]))
 
 (defrecord PetsApiService [database]
   Lifecycle
