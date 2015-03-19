@@ -282,6 +282,8 @@ There are multiple ways to indicate which content-types can be provided by an im
 REST is about resources which have state, and representations that are
 negotiated between the user agent and the server to transfer that state.
 
+### Retrieving state
+
 Until now, when we have constructed bodies we have done so explicitly.
 While it is possible to explicitly specify the body of a response, doing
 so assumes you are prepared to format the content according to the
@@ -316,6 +318,61 @@ entry, unless you wish to communicate a resource's meta-data.
 
 <example ref="ResourceStateTopLevel"/>
 
+### Changing state
+
+HTTP specifies a number of methods which mutate a resource's state.
+
+#### POSTs
+
+Let's start with the POST method and review the spec :-
+
+> The POST method requests that the target resource process the
+representation enclosed in the request according to the resource's own
+specific semantics.
+
+This means that we can decide to define whatever semantics we want, or
+in other words, do anything we like when processing the request.
+
+Let's see this with an example :-
+
+<example ref="PostCounter"/>
+
+As we have seen, processing of POST requests is achieved by adding an __:post__ entry to the resource map. If the value is a function, it will be called with the request context as an argument, and return a value. We can also specify the value as a constant. Whichever we choose, the table below shows how the return value is interpretted.
+
+<table class="table">
+<thead>
+<tr>
+<th>Return value</th>
+<th>Interpretation</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>true</td><td>Processing succeeded</td></tr>
+<tr><td>false</td><td>Processing failed</td></tr>
+<tr><td>String</td><td>The path of a newly created resource</td></tr>
+<tr><td>Map</td><td>A modified request context</td></tr>
+<tr><td></td><td></td></tr>
+</tbody>
+</table>
+
+When returning a modified request context, a __:location__ entry will be
+interpretted as the location of the newly created resource (or location
+of the primary resource if multiple resources are created). This
+location will be returned as the value of the __Location__ header of the
+HTTP response.
+
+#### PUTs
+
+PUT a resource. The resource-map returns a resource with an etag which
+matches the value of the 'If-Match' header in the request. This means
+the PUT can proceed.
+
+> If-Match is most often used with state-changing methods (e.g., POST, PUT, DELETE) to prevent accidental overwrites when multiple user agents might be acting in parallel on the same resource (i.e., to the \"lost update\" problem).
+
+<example ref="PutResourceMatchedEtag"/>
+
+<example ref="PutResourceUnmatchedEtag"/>
+
 ## Conditional Requests
 
 The Last-Modified header indicates to the user agent the time that the resource was last modified.
@@ -334,18 +391,6 @@ The number will be interpretted as the number of milliseconds since the epoch (J
 <example ref="LastModifiedHeaderAsDeferred"/>
 
 <example ref="IfModifiedSince"/>
-
-## Puts
-
-PUT a resource. The resource-map returns a resource with an etag which
-matches the value of the 'If-Match' header in the request. This means
-the PUT can proceed.
-
-> If-Match is most often used with state-changing methods (e.g., POST, PUT, DELETE) to prevent accidental overwrites when multiple user agents might be acting in parallel on the same resource (i.e., to the \"lost update\" problem).
-
-<example ref="PutResourceMatchedEtag"/>
-
-<example ref="PutResourceUnmatchedEtag"/>
 
 ## Service Availability
 

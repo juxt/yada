@@ -284,7 +284,8 @@
   Lifecycle
   (start [component]
     (assoc component
-           :start-time (java.util.Date.)))
+           :start-time (java.util.Date.)
+           :*post-counter (atom 0)))
   (stop [component] component)
   RouteProvider
   (routes [component]

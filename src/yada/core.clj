@@ -126,6 +126,7 @@
                    (case method
                      :get (or (some? resource) state body)
                      :put put
+                     :post post
                      nil)
                  (d/error-deferred (ex-info ""
                                             {:status 405
@@ -138,7 +139,7 @@
                  (if (set/subset? required-params (set (keys params)))
                    (assoc ctx :params params)
                    (d/error-deferred (ex-info "" {:status 400
-                                                   ::http-response true})))))
+                                                  ::http-response true})))))
 
              ;; TODO Unauthorized
              ;; TODO Forbidden
@@ -184,7 +185,7 @@
              ;; Split the flow based on the existence of the resource
              (fn [{:keys [resource] :as ctx}]
 
-               (if (and (not (false? resource)) (or resource state body))
+               (if (and (not (false? resource)) (or resource state body (#{:post :put} method)))
 
                  ;; 'Exists' flow
                  (case method
@@ -269,6 +270,33 @@
                                   (p/headers headers))
                         ;; TODO :status and :headers should be implemented like this in all cases
                         :body (get-in ctx [:response :body])})))
+
+                   :post
+                   (d/chain
+                    ctx
+
+                    (fn [ctx]
+                      (when-let [etag (get-in req [:headers "if-match"])]
+                        (when (not= etag (get-in ctx [:resource :etag]))
+                          (throw
+                           (ex-info "Precondition failed"
+                                    {:status 412
+                                     ::http-response true})))
+
+                        )
+                      ctx
+                      )
+
+                    (fn [ctx]
+                      ;; TODO: what if error?
+                      (p/interpret-post-result (p/post post ctx) ctx))
+
+                    (fn [ctx]
+                      {:status 200
+                       :headers (get-in ctx [:response :headers])
+                       :body (get-in ctx [:response :body])
+                       }
+                      ))
 
                    :put
                    (d/chain

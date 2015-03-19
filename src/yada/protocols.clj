@@ -16,7 +16,9 @@
   (produces [_] "Return the content-types, as a set, that the resource can produce")
   (produces-from-body [_] "If produces yields nil, try to extract from body")
   (status [_] "Override the response status")
-  (headers [_] "Override the response headers"))
+  (headers [_] "Override the response headers")
+  (post [_ ctx] "POST to the resource")
+  (interpret-post-result [_ ctx] "Return the request context, according to the result of post"))
 
 (extend-protocol Callbacks
   Boolean
@@ -24,6 +26,8 @@
   (known-method? [b method] [b {}])
   (request-uri-too-long? [b _] [b {}])
   (resource [b req] (if b {} false))
+  (interpret-post-result [b ctx]
+    (if b ctx (throw (ex-info "Failed to process POST" {}))))
 
   clojure.lang.Fn
   (service-available? [f]
@@ -60,9 +64,14 @@
   (produces [f] (f))
   (produces-from-body [f] nil)
 
+  (post [f ctx]
+    (f ctx))
+
   String
   (body [s _] s)
   (produces-from-body [s] nil)
+  (interpret-post-result [s ctx]
+    (assoc ctx :location s))
 
   Number
   (service-available? [n] [false {:headers {"retry-after" n}}])
@@ -90,6 +99,7 @@
       (body delegate ctx)))
   (produces-from-body [m] (keys m))
   (headers [m] m)
+  (interpret-post-result [m _] m)
 
   clojure.lang.PersistentVector
   (produces [v] (produces (set v)))
