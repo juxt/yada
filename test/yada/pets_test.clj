@@ -4,7 +4,6 @@
   (:require
    [com.stuartsierra.component :refer (system-using system-map)]
    [bidi.bidi :refer (match-route)]
-   [clojure.core.match :refer (match)]
    [clojure.test :refer :all]
    [yada.core :refer :all]
    [manifold.deferred :as d]
