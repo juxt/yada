@@ -205,7 +205,7 @@
 
 (defn extract-examples [user-guide xml]
   (let [xf (comp (filter #(= (:tag %) :example)) (map :attrs) (map :ref))]
-    (into {} (map (juxt identity (partial example-instance user-guide)) (sequence xf (xml-seq xml))))))
+    (map (juxt identity (partial example-instance user-guide)) (sequence xf (xml-seq xml)))))
 
 (defn post-process-body
   "Some whitespace reduction"
@@ -296,7 +296,7 @@
        [[".html"
          (->
           (yada :body {"text/html" (fn [ctx]
-                                     (body component (post-process-doc component xbody examples)))})
+                                     (body component (post-process-doc component xbody (into {} examples))))})
           (tag ::user-guide))]
         ["/examples"
          [["/"
