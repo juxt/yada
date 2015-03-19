@@ -37,14 +37,13 @@
            [:div.container
             [:h1 "Welcome to " [:span.yada "yada"] "!"]
             [:ol
-             [:li [:a {:href (path-for @*router :yada.dev.user-guide/user-guide)} "User guide"]]
+             [:li [:a {:href (path-for @*router :yada.dev.user-guide/user-guide)} "User guide"] " (and " [:a {:href (path-for @*router :yada.dev.user-guide/tests)} "tests"] ")"]
              [:li "HTTP and related specifications"
               [:ul
                [:li [:a {:href "/static/spec/rfc2616.html"} "RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1"]]
                (for [i (range 7230 (inc 7240))]
                  [:li [:a {:href (format "/static/spec/rfc%d.html" i)}
                        (format "RFC %d: %s" i (or (get titles i) ""))]])]]
-             [:li [:a {:href (path-for @*router :yada.dev.user-guide/tests)} "Tests"]]
              [:li [:a {:href
                        (format "%s/index.html?url=%s/swagger.json"
                                (path-for @*router :swagger-ui)
