@@ -1,6 +1,6 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(defproject yada "0.1.0"
+(defproject yada "0.2.0-SNAPSHOT"
   :description "A library for Clojure web APIs"
   :url "http://github.com/juxt/yada"
 
@@ -40,7 +40,7 @@
           [ring-mock "0.1.5"]
 
           [juxt.modular/aleph "0.0.3"]
-          [juxt.modular/bidi "0.9.1"]
+          [juxt.modular/bidi "0.9.2"]
           [juxt.modular/clostache "0.6.1"]
           [juxt.modular/co-dependency "0.2.0"]
           [juxt.modular/maker "0.5.0"]
