@@ -35,7 +35,7 @@
         (let [header [:button.btn.btn-primary {:onClick "testAll()"} "Repeat tests"]]
           (html
            [:div.container
-            [:h1 "Welcome to " [:span.yada "yada"] "!"]
+            [:h2 "Welcome to " [:span.yada "yada"] "!"]
             [:ol
              [:li [:a {:href (path-for @*router :yada.dev.user-guide/user-guide)} "User guide"] " (and " [:a {:href (path-for @*router :yada.dev.user-guide/tests)} "tests"] ")"]
              [:li "HTTP and related specifications"
