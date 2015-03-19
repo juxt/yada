@@ -67,7 +67,7 @@
   (debugf "Context is %s" ctx)
   ctx)
 
-(defn yada
+(defn yada*
   [{:keys
     [service-available?                 ; async-supported
      known-method?
@@ -370,3 +370,9 @@
 ;; Return deferreds, if necessary, if the computation is length to compute (e.g. for exists? checks)
 
 ;; CORS support: build this in, make allow-origin first-class, which headers should be allowed should be a hook (with default)
+
+
+(defn yada [& args]
+  (if (keyword? (first args))
+    (yada* (into {} args))
+    (yada* (first args))))
