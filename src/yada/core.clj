@@ -62,13 +62,11 @@
 (defmacro exit-when-not [expr status]
   `(exit-when (not* ~expr) ~status))
 
-
-
 (defn spyctx [ctx]
   (debugf "Context is %s" ctx)
   ctx)
 
-(defn make-async-handler
+(defn handler
   [{:keys
     [service-available?                 ; async-supported
      known-method?

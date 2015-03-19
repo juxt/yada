@@ -14,7 +14,7 @@
    [cheshire.core :as json]
    [cheshire.generate :refer (JSONable write-string)]
    [camel-snake-kebab :as csk]
-   [yada.core :refer (make-async-handler)]
+   [yada.core :refer (handler)]
    [clojure.walk :refer (postwalk)])
   (:import (clojure.lang Keyword)))
 
@@ -121,7 +121,7 @@
     ;; responses, (e.g. 503, 403), that override the 405 (e.g.  if
     ;; revealing a 405 leaks information about the API to an untrusted
     ;; party).
-    ((make-async-handler
+    ((handler
       (merge
        {:allowed-method?
         (set/intersection #{:get :put :post :delete :options :head :patch}

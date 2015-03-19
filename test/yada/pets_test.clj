@@ -30,9 +30,9 @@
   ["" (-> *system* :api :api)])
 
 (defn get-op-response [spec req & {:as opts}]
-  (let [handler (make-async-handler opts)
+  (let [h (handler opts)
         {rp :route-params} (match-route spec (:uri req))]
-    (let [res (handler (assoc req :route-params rp))]
+    (let [res (h (assoc req :route-params rp))]
       (if (d/deferrable? res) @res res))))
 
 (deftest handlers
