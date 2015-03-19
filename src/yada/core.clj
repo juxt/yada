@@ -245,9 +245,7 @@
 
                          ;; serialize to representation (an existing string will be left intact)
                          (fn [state]
-                           (debugf "calling content with state = %s, content-type = %s" state content-type)
                            (rep/content state content-type))
-
 
                          ;; on nil, compose default result (if in dev)
                          #_(fn [x] (if x x (rep/content nil content-type)))
