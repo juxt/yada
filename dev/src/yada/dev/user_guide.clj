@@ -14,7 +14,8 @@
    [modular.bidi :refer (path-for)]
    [modular.template :as template :refer (render-template)]
    [modular.component.co-dependency :refer (co-using)]
-   [yada.dev.examples :refer (resource-map get-path get-path-args request make-handler expected-response)]))
+   [yada.dev.examples :refer (resource-map get-path get-path-args request make-handler expected-response)]
+   [yada.yada :refer (yada)]))
 
 (defn emit-element
   ;; An alternative emit-element that doesn't cause newlines to be
@@ -294,9 +295,8 @@
       ["/user-guide"
        [[".html"
          (->
-          (fn [req]
-            {:status 200
-             :body (body component (post-process-doc component xbody examples))})
+          (yada {:body {"text/html" (fn [ctx]
+                                      (body component (post-process-doc component xbody examples)))}})
           (tag ::user-guide))]
         ["/examples"
          [["/"
@@ -307,11 +307,10 @@
                              (keyword (basename h)))]))]
           ["" (redirect ::index)]]]
         ["/tests.html"
-         (-> (fn [_]
-               {:status 200
-                :headers {"content-type" "text/html;charset=utf-8"}
-                :body (tests component examples)}
-               )
+         (-> (yada {:body {"text/html"
+                           (fn [ctx]
+                             (tests component examples)
+                             )}})
              (tag ::tests))]]])))
 
 (defn new-user-guide [& {:as opts}]
