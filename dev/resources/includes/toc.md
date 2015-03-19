@@ -1,4 +1,5 @@
 * [Introduction](#Introduction)
+* [Installation](#Installation)
 * [Parameters](#Parameters)
 * [Resource Metadata](#ResourceMetadata)
 * [Content Negotiation](#ContentNegotiation)

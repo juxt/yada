@@ -170,6 +170,14 @@ That's the end of the introduction. The following chapters explain yada in more 
 
 <include ref="toc"/>
 
+## Installation
+
+Add the following dependency to your `project.clj` file :-
+
+```clojure
+[yada "0.1.0"]
+```
+
 ## Parameters
 
 Parameters are an integral part of many requests. Since APIs form
