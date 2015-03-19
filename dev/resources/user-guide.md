@@ -16,7 +16,7 @@ and take on the subsequent chapters one at a time.
 
 ### Table of Contents
 
-<include ref="toc"/>
+<toc drop="0"/>
 
 ## Introduction
 
@@ -25,7 +25,9 @@ _user agents_, using the HTTP protocol. Typically, a developer will
 build a web API to expose the functionality of a software system to
 users and other agents across the web.
 
-HTTP is a large and powerful protocol — yada is a library that helps reduce the amount of coding required for meeting its requirements, while leaving you as the developer in full control.
+HTTP is a large and powerful protocol — yada is a library that helps
+reduce the amount of coding required for meeting its requirements, while
+leaving you as the developer in full control.
 
 ### Where yada fits
 
@@ -33,14 +35,15 @@ There is a great number of libraries available to Clojure programmers to
 help develop web applications. Let's explain where yada fits into a
 Clojure web application and why you might want to use it in yours.
 
-During a web request, a browser (or other user agent) establishes a connection with a web
-server and sends a request encoded according to the HTTP standard. The
-server decodes the request and builds a ordinary Clojure map, called a
-_request map_, which it passes as an argument to a Clojure function, called a
-_handler_. The [Ring](https://github.com/ring) project establishes
-a standard set of keywords so that numerous compatible web servers can
-fulfill this rôle, either natively (e.g. aleph, http-kit) or via a
-bridge (e.g. Jetty, or any Java servlet container).
+During a web request, a browser (or other user agent) establishes a
+connection with a web server and sends a request encoded according to
+the HTTP standard. The server decodes the request and builds a ordinary
+Clojure map, called a _request map_, which it passes as an argument to a
+Clojure function, called a _handler_. The
+[Ring](https://github.com/ring) project establishes a standard set of
+keywords so that numerous compatible web servers can fulfill this rôle,
+either natively (e.g. aleph, http-kit) or via a bridge (e.g. Jetty, or
+any Java servlet container).
 
 #### First we route to the target handler...
 
@@ -166,16 +169,18 @@ Here is a list of yada's features :-
 
 With yada, many things you would expect to have to code yourself and taken care of automatically, leaving you to focus on other aspects of your application.
 
-That's the end of the introduction. The following chapters explain yada in more depth.
+That's the end of the introduction. The following chapters explain yada in more depth :-
 
-<include ref="toc"/>
+<toc drop="1"/>
 
 ## Installation
 
-Add the following dependency to your `project.clj` file :-
+yada is a Clojure library and if you are using it directly from a
+Clojure application with a Leiningen `project.clj` file, include the
+following in the file's __:dependencies__ section.
 
 ```clojure
-[yada "0.1.0"]
+[yada "{{yada.version}}"]
 ```
 
 ## Parameters

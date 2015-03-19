@@ -156,6 +156,24 @@
            :otherwise el))
        xml))))
 
+(defn extract-chapters [xml]
+  (let [xf (comp (filter #(= (:tag %) :h2)) (mapcat :content))]
+    (map str (sequence xf (xml-seq xml)))))
+
+(defn link [r]
+  (last (str/split (.getName (type r)) #"\.")))
+
+(defn toc [xml dropno]
+  {:tag :ul
+   :attrs nil
+   :content (vec
+             (for [ch (drop dropno (extract-chapters xml))]
+               {:tag :li
+                :attrs nil
+                :content [{:tag :a
+                           :attrs {:href (str "#" (chapter ch))}
+                           :content [ch]}]}))})
+
 (defn post-process-doc [user-guide xml examples]
   (postwalk
    (fn [{:keys [tag attrs content] :as el}]
@@ -193,6 +211,9 @@
                   (some-> (format "includes/%s.md" (:ref attrs))
                           io/resource slurp md-to-html-string enclose xml-parse)]}
 
+       (= tag :toc)
+       (toc xml (Integer/parseInt (:drop attrs)))
+
        (and (= tag :p) (= (count content) 1) (= (:tag (first content)) :div))
        ;; Raise divs in paragraphs.
        (first content)
@@ -211,8 +232,10 @@
   "Some whitespace reduction"
   [s]
   (-> s
+      (str/replace #"\{\{(.+)\}\}" #(System/getProperty (last %)))
       (str/replace #"<p>\s*</p>" "")
-      (str/replace #"(yada)" "<span class='yada'>yada</span>")))
+      (str/replace #"(yada)" "<span class='yada'>yada</span>")
+      ))
 
 (defn body [{:keys [*router templater] :as user-guide} doc]
   (render-template
@@ -223,9 +246,6 @@
         post-process-body
         )
     :scripts ["/static/js/examples.js"]}))
-
-(defn link [r]
-  (last (str/split (.getName (type r)) #"\.")))
 
 (defn tests [{:keys [*router templater]} examples]
   (render-template
