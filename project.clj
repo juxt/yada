@@ -19,6 +19,9 @@
   :repl-options {:init-ns user
                  :welcome (println "Type (dev) to start")}
 
+  ;; needs dev profile: lein with-profile dev trampoline run
+  :main yada.dev.main
+
   :profiles
   {:dev {:dependencies
          [[org.clojure/tools.logging "0.2.6"]

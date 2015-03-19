@@ -7,21 +7,19 @@
 
 (defn -main [& args]
   ;; We eval so that we don't AOT anything beyond this class
-  (eval '(do (require 'yada.system)
-             (require 'yada.main)
+  (eval '(do
+             (require 'yada.dev.main)
+             (require 'dev)
              (require 'com.stuartsierra.component)
-
-             (require 'clojure.java.browse)
+             (require '[modular.component.co-dependency :as co-dependency])
 
              (println "Starting yada")
 
              (let [system (->
-                           (yada.system/new-production-system)
-                           com.stuartsierra.component/start)]
+                           (dev/new-dev-system)
+                           co-dependency/start-system)]
 
                (println "System started")
                (println "Ready...")
 
-               (let [url (format "http://localhost:%d/" (-> system :http-listener-listener :port))]
-                 (println (format "Browsing at %s" url))
-                 (clojure.java.browse/browse-url url))))))
+               ))))
