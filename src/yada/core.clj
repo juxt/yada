@@ -374,5 +374,5 @@
 
 (defn yada [& args]
   (if (keyword? (first args))
-    (yada* (into {} args))
+    (yada* (into {} (map vec (partition 2 args))))
     (yada* (first args))))

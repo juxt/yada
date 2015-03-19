@@ -295,8 +295,8 @@
       ["/user-guide"
        [[".html"
          (->
-          (yada {:body {"text/html" (fn [ctx]
-                                      (body component (post-process-doc component xbody examples)))}})
+          (yada :body {"text/html" (fn [ctx]
+                                     (body component (post-process-doc component xbody examples)))})
           (tag ::user-guide))]
         ["/examples"
          [["/"
@@ -307,10 +307,10 @@
                              (keyword (basename h)))]))]
           ["" (redirect ::index)]]]
         ["/tests.html"
-         (-> (yada {:body {"text/html"
-                           (fn [ctx]
-                             (tests component examples)
-                             )}})
+         (-> (yada :body {"text/html"
+                          (fn [ctx]
+                            (tests component examples)
+                            )})
              (tag ::tests))]]])))
 
 (defn new-user-guide [& {:as opts}]
