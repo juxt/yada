@@ -5,7 +5,7 @@
    [com.stuartsierra.component :refer (system-using system-map)]
    [bidi.bidi :refer (match-route)]
    [clojure.test :refer :all]
-   [yada.core :refer :all]
+   [yada.yada :refer :all]
    [manifold.deferred :as d]
    [modular.test :refer (with-system-fixture *system*)]
    [ring.mock.request :as mock]
@@ -29,7 +29,7 @@
   ["" (-> *system* :api :api)])
 
 (defn get-op-response [spec req & {:as opts}]
-  (let [h (handler opts)
+  (let [h (yada opts)
         {rp :route-params} (match-route spec (:uri req))]
     (let [res (h (assoc req :route-params rp))]
       (if (d/deferrable? res) @res res))))

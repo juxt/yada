@@ -56,7 +56,7 @@ called a _response map_. The Ring standard states that such responses should con
 
 #### Then we code the response...
 
-Usually, the target handler is developed by the application developer. But with yada, the application developer passes a ordinary Clojure map, called a _resource map_ to a special yada function, `yada.core/handler`, which returns the target handler.
+Usually, the target handler is developed by the application developer. But with yada, the application developer passes a ordinary Clojure map, called a _resource map_ to a special yada function, `yada/handler`, which returns the target handler.
 
 If you are unfamiliar with web development in Clojure, let's explain
 that again using some basic Clojure code. Here is a simple Ring-compatible handler function :-
@@ -71,14 +71,14 @@ This declares a function (in the var `hello`) that accepts a single argument (`r
 Compare this with using yada to create a handler :-
 
 ```clojure
-(require '[yada.core :refer (handler)])
+(require '[yada.yada :refer (yada)])
 
 (def ^{:doc "A handler to greet the world!"}
   hello
-  (handler {:body "Hello World!"}))
+  (yada {:body "Hello World!"}))
 ```
 
-The code above calls a function built-in to yada called `handler`, with
+The code above calls a function built-in to yada called `yada`, with
 a single argument known as a _resource map_. In this case, the
 resource map looks strikingly similar to a Ring response map but don't
 be deceived — there is a lot more going on under the hood as we shall
@@ -88,7 +88,7 @@ soon see.
 
 ### Resource maps
 
-Let's look in more detail at the _resource map_ you pass to yada's `handler` function to create a Ring handler. This map is an ordinary Clojure map. Let's demonstrate using the example we have already seen.
+Let's look in more detail at the _resource map_ you pass to yada's `yada` function to create a Ring handler. This map is an ordinary Clojure map. Let's demonstrate using the example we have already seen.
 
 <example ref="HelloWorld"/>
 

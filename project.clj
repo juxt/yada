@@ -14,7 +14,8 @@
    [potemkin "0.3.11"]
    [hiccup "1.0.5"]
    [cheshire "5.4.0"]
-   [camel-snake-kebab "0.1.4"]]
+   [camel-snake-kebab "0.1.4"]
+   [potemkin "0.3.11"]]
 
   :repl-options {:init-ns user
                  :welcome (println "Type (dev) to start")}

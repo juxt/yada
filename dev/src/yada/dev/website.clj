@@ -7,7 +7,8 @@
    [hiccup.core :refer (html)]
    [com.stuartsierra.component :refer (using)]
    [modular.template :as template :refer (render-template)]
-   [modular.component.co-dependency :refer (co-using)]))
+   [modular.component.co-dependency :refer (co-using)]
+   [yada.yada :refer (yada)]))
 
 (def titles
   {7230 "Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing"

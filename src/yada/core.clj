@@ -67,7 +67,7 @@
   (debugf "Context is %s" ctx)
   ctx)
 
-(defn handler
+(defn yada
   [{:keys
     [service-available?                 ; async-supported
      known-method?
