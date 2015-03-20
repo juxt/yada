@@ -13,7 +13,7 @@ designed for Clojure.
 Add the following dependency to your `project.clj` file :-
 
 ```clojure
-[yada "0.1.0"]
+[yada "0.2.0"]
 ```
 
 ## Status
