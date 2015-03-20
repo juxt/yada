@@ -20,11 +20,12 @@
   :repl-options {:init-ns user
                  :welcome (println "Type (dev) to start")}
 
-  ;; needs dev profile: lein with-profile dev trampoline run
-  :main yada.dev.main
 
   :profiles
-  {:dev {:dependencies
+  {:dev {:main yada.dev.main ; needs dev profile: lein with-profile dev
+                             ; trampoline run
+
+         :dependencies
          [[org.clojure/tools.logging "0.2.6"]
           [ch.qos.logback/logback-classic "1.0.7" :exclusions [org.slf4j/slf4j-api]]
           [org.slf4j/jul-to-slf4j "1.7.2"]
