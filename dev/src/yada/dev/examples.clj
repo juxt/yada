@@ -399,6 +399,58 @@
   (request [_] {:method :post})
   (expected-response [_] {:status 200}))
 
+(defrecord AccessForbiddenToAll []
+  Example
+  (resource-map [_] '{:authorization false
+                      :body "Secret message!"})
+  (make-handler [ex] (yada (eval (resource-map ex))))
+  (request [_] {:method :get})
+  (expected-response [_] {:status 403}))
+
+(defrecord AccessForbiddenToSomeRequests []
+  Example
+  (resource-map [_] '{:params {:secret {:in :path}}
+                      :authorization (fn [ctx] (= (-> ctx :params :secret) "oak"))
+                      :body "Secret message!"})
+  (make-handler [ex] (yada (eval (resource-map ex))))
+  (path [r] [(basename r) "/" :secret])
+  (path-args [_] [:secret "ash"])
+  (request [_] {:method :get})
+  (expected-response [_] {:status 403}))
+
+(defrecord AccessAllowedToOtherRequests []
+  Example
+  (resource-map [_] '{:params {:secret {:in :path}}
+                      :authorization (fn [ctx] (= (-> ctx :params :secret) "oak"))
+                      :body "Secret message!"})
+  (make-handler [ex] (yada (eval (resource-map ex))))
+  (path [r] [(basename r) "/" :secret])
+  (path-args [_] [:secret "oak"])
+  (request [_] {:method :get})
+  (expected-response [_] {:status 200}))
+
+(defrecord NotAuthorized []
+  Example
+  (resource-map [_] '{:authorization (fn [ctx] :not-authorized)
+                      :body "Secret message!"})
+  (make-handler [ex] (yada (eval (resource-map ex))))
+  (request [_] {:method :get})
+  (expected-response [_] {:status 200}))
+
+(defrecord BasicAccessAuthentication []
+  Example
+  (resource-map [_] '{:security {:type :basic :realm "Gondor"}
+                      :authorization (fn [ctx]
+                                       (or
+                                        (when-let [auth (:authentication ctx)]
+                                          (= ((juxt :user :password) auth)
+                                             ["Denethor" "palantir"]))
+                                        :not-authorized))
+                      :body "All is lost. Yours, Sauron (Servant of Morgoth, yada yada yada)"})
+  (make-handler [ex] (yada (eval (resource-map ex))))
+  (request [_] {:method :get})
+  (expected-response [_] {:status 200}))
+
 (defn title [r]
   (last (string/split (.getName (type r)) #"\.")))
 

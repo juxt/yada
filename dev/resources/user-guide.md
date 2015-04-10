@@ -421,6 +421,32 @@ The number will be interpretted as the number of milliseconds since the epoch (J
 <example ref="DisallowedPut"/>
 <example ref="DisallowedDelete"/>
 
+## Access control
+
+Sometimes we want to protect resources from unauthorized access.
+
+Access to a resource is determined by the __:authorization__ entry.
+
+<example ref="AccessForbiddenToAll"/>
+
+It is more common to determine access based on the incoming request. For example, we may want to forbid unencrypted access to a resource.
+
+<example ref="AccessForbiddenToSomeRequests"/>
+<example ref="AccessAllowedToOtherRequests"/>
+
+Sometimes there it is useful to signal to the user-agent that authorization could not be attempted because the user-agent has not supplied authentication details. This allows the user-agent to retry the request with those details added.
+
+To do this, simply return __:not-authorized__ in the __:authorization__ entry.
+
+<example ref="NotAuthorized"/>
+
+The meaning of a 401 depends on the authorization schemes in use. HTTP includes [Basic Access Authentication](http://en.wikipedia.org/wiki/Basic_access_authenticationBasic) to achieve authentication using standard HTTP headers.
+
+To enable this on your resource, you should add a __:security__ entry which declares the type (or types) of security scheme that you want to use to protect your resource. Security schemes are maps which must contain a __:type__ entry. If you use a value of __:basic__, yada will do the rest.
+
+<example ref="BasicAccessAuthentication"/>
+
+Of course, as you should now be expecting from yada, the __:authorization__ function can return a deferred value, such as a future or promise, should you need to check the credentials against a remote database.
 
 ## Misc
 

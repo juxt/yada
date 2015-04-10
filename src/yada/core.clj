@@ -10,6 +10,7 @@
    [yada.conneg :refer (best-allowed-content-type)]
    [yada.representation :as rep]
    [yada.util :refer (parse-http-date)]
+   [ring.middleware.basic-authentication :as ba]
    [clojure.tools.logging :refer :all]
    [clojure.set :as set]))
 
@@ -67,6 +68,19 @@
   (debugf "Context is %s" ctx)
   ctx)
 
+(defrecord NoAuthorizationSpecified []
+  p/Callbacks
+  (authorize [b ctx] true)
+  (authorization [_] nil))
+
+(def realms-xf
+  (comp
+   (filter (comp (partial = :basic) :type))
+   (map :realm)))
+
+(defn as-sequential [s]
+  (if (sequential? s) s [s]))
+
 (defn yada*
   [{:keys
     [service-available?                 ; async-supported
@@ -87,6 +101,10 @@
      state                              ; async-supported
      body                               ; async-supported
 
+     ;; Security
+     authorization                      ; async-supported
+     security
+
      ;; Actions
      put                                ; async-supported
      post                               ; async-supported
@@ -96,7 +114,11 @@
      produces
      params
      ] ;; :or {resource {}}
+
     :as resource-map
+
+    :or {#_authentication #_(NoAuthenticationSpecified.)
+         authorization (NoAuthorizationSpecified.)}
     } ]
 
   ;; We use this let binding to deduce the values of resource-map
@@ -108,7 +130,8 @@
         params-coercer (coercer
                         (into {} (for [[k v] params] [k (or (:type v) s/Str)]))
                         string-coercion-matcher)
-        required-params (set (for [[k v] params :when (:required v)] k))]
+        required-params (set (for [[k v] params :when (:required v)] k))
+        security (as-sequential security)]
 
     (fn [req]
       (let [method (:request-method req)]
@@ -121,6 +144,7 @@
              (exit-when-not (p/known-method? known-method? method) 501)
              (exit-when (p/request-uri-too-long? request-uri-too-long? (:uri req)) 414)
 
+             ;; Method Not Allowed
              (fn [ctx]
                (if-not
                    (case method
@@ -141,8 +165,28 @@
                    (d/error-deferred (ex-info "" {:status 400
                                                   ::http-response true})))))
 
-             ;; TODO Unauthorized
-             ;; TODO Forbidden
+             ;; Authentication
+             (fn [ctx]
+               (cond-> ctx
+                 (not-empty (filter (comp (partial = :basic) :type) security))
+                 (assoc :authentication (:basic-authentication (ba/basic-authentication-request req (fn [user password] {:user user :password password}))))))
+
+             ;; Authorization
+             (fn [ctx]
+               (if-let [res (p/authorize authorization ctx)]
+                 (if (= res :not-authorized)
+                   (d/error-deferred
+                    (ex-info ""
+                             (merge
+                              {:status 401 ::http-response true}
+                              (when-let [basic-realm (first (sequence realms-xf security))]
+                                {:headers {"www-authenticate" (format "Basic realm=\"%s\"" basic-realm)}}))
+                             ))
+                   (if-let [auth (p/authorization res)]
+                     (assoc ctx :authorization auth)
+                     ctx))
+                 (d/error-deferred (ex-info "" {:status 403
+                                                ::http-response true}))))
 
              ;; TODO Not implemented (if unknown Content-* header)
 

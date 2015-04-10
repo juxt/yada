@@ -18,7 +18,12 @@
   (status [_] "Override the response status")
   (headers [_] "Override the response headers")
   (post [_ ctx] "POST to the resource")
-  (interpret-post-result [_ ctx] "Return the request context, according to the result of post"))
+  (interpret-post-result [_ ctx] "Return the request context, according to the result of post")
+
+  (authorize [_ ctx] "Authorize the request. When truthy, authorization is called with the value and used as the :authorization entry of the context, otherwise assumed unauthorized.")
+  (authorization [o] "Given the result of an authorize call, a truthy value will be added to the context.")
+
+  )
 
 (extend-protocol Callbacks
   Boolean
@@ -28,6 +33,8 @@
   (resource [b req] (if b {} false))
   (interpret-post-result [b ctx]
     (if b ctx (throw (ex-info "Failed to process POST" {}))))
+  (authorize [b ctx] b)
+  (authorization [b] nil)
 
   clojure.lang.Fn
   (service-available? [f]
@@ -66,6 +73,8 @@
 
   (post [f ctx]
     (f ctx))
+
+  (authorize [f ctx] (f ctx))
 
   String
   (body [s _] s)
@@ -121,4 +130,9 @@
   (produces [_] nil)
   (produces-from-body [_] nil)
   (status [_] nil)
-  (headers [_] nil))
+  (headers [_] nil)
+
+  Object
+  (authorization [o] o)
+
+  )
