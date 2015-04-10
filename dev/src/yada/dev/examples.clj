@@ -435,7 +435,7 @@
                       :body "Secret message!"})
   (make-handler [ex] (yada (eval (resource-map ex))))
   (request [_] {:method :get})
-  (expected-response [_] {:status 200}))
+  (expected-response [_] {:status 401}))
 
 (defrecord BasicAccessAuthentication []
   Example
@@ -449,7 +449,7 @@
                       :body "All is lost. Yours, Sauron (Servant of Morgoth, yada yada yada)"})
   (make-handler [ex] (yada (eval (resource-map ex))))
   (request [_] {:method :get})
-  (expected-response [_] {:status 200}))
+  (expected-response [_] {:status 401}))
 
 (defn title [r]
   (last (string/split (.getName (type r)) #"\.")))
