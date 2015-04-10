@@ -12,6 +12,11 @@ feeling a little overwhelmed at how much there is to learn, don't worry,
 yada really is easy! Start by going through the introduction at a gentle pace
 and take on the subsequent chapters one at a time.
 
+If you are a more experienced Clojure or REST developer and would like
+to get more involved, please join our
+[yada-discuss](https://groups.google.com/forum/#!forum/yada-discuss)
+discussion group. All welcome!
+
 [Back to index](/)
 
 ### Table of Contents

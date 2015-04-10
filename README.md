@@ -8,6 +8,8 @@ from experiences using it on commercial projects. Its feature-set and
 rationale is very similar to [Ratpack](http://www.ratpack.io/), but
 designed for Clojure.
 
+If you want to help, please join the discussion group [yada-discuss](https://groups.google.com/forum/#!forum/yada-discuss)
+
 ## Installation
 
 Add the following dependency to your `project.clj` file :-
