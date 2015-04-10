@@ -20,7 +20,6 @@
   :repl-options {:init-ns user
                  :welcome (println "Type (dev) to start")}
 
-
   :profiles
   {:dev {:main yada.dev.main ; needs dev profile: lein with-profile dev
                              ; trampoline run
@@ -33,7 +32,6 @@
           [org.slf4j/log4j-over-slf4j "1.7.2"]
 
           [com.stuartsierra/component "0.2.2"]
-          [malcolmsparks/co-dependency "0.1.5"]
           [org.clojure/tools.namespace "0.2.5"]
           [org.clojure/data.zip "0.1.1"]
 
