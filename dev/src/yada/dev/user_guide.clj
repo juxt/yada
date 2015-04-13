@@ -14,7 +14,7 @@
    [modular.bidi :refer (path-for)]
    [modular.template :as template :refer (render-template)]
    [modular.component.co-dependency :refer (co-using)]
-   [yada.dev.examples :refer (resource-map get-path get-path-args request make-handler expected-response)]
+   [yada.dev.examples :refer (resource-map get-path get-path-args request make-handler expected-response get-test-function)]
    [yada.yada :refer (yada)]))
 
 (defn emit-element
@@ -119,7 +119,8 @@
                        :content [{:tag :button
                                   :attrs {:class "btn btn-primary"
                                           :type "button"
-                                          :onClick (format "tryIt(\"%s\",\"%s\",\"%s\",%s)"
+                                          :onClick (format "%s(\"%s\",\"%s\",\"%s\",%s)"
+                                                           (or (get-test-function ex) "tryIt")
                                                            (->meth method)
                                                            url
                                                            (basename ex)

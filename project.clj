@@ -10,7 +10,7 @@
   :dependencies
   [[org.clojure/clojure "1.7.0-alpha4"]
    [prismatic/schema "0.3.5" :exclusions [potemkin]]
-   [manifold "0.1.0-beta8"]
+   [manifold "0.1.0-beta12"]
    [potemkin "0.3.11"]
    [hiccup "1.0.5"]
    [cheshire "5.4.0"]
@@ -39,7 +39,7 @@
           [markdown-clj "0.9.62"]
           [ring-mock "0.1.5"]
 
-          [juxt.modular/aleph "0.0.3"]
+          [juxt.modular/aleph "0.0.7" :exclusions [manifold]]
           [juxt.modular/bidi "0.9.2"]
           [juxt.modular/clostache "0.6.1"]
           [juxt.modular/co-dependency "0.2.0"]
@@ -50,6 +50,9 @@
           [org.webjars/swagger-ui "2.1.0-alpha.6"]
           [org.webjars/jquery "2.1.3"]
           [org.webjars/bootstrap "3.3.2"]
+
+          ;; For server sent events demo
+          [org.clojure/core.async "0.1.346.0-17112a-alpha"]
           ]
 
          :source-paths ["dev/src" "examples"]

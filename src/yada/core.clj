@@ -3,6 +3,7 @@
 (ns yada.core
   (:require
    [manifold.deferred :as d]
+   [manifold.stream :refer (->source transform)]
    [hiccup.core :refer (html h)]
    [schema.core :as s]
    [schema.coerce :refer (coercer string-coercion-matcher)]
@@ -81,6 +82,10 @@
 (defn as-sequential [s]
   (if (sequential? s) s [s]))
 
+;; Turn something into a SSE event
+(def server-sent-event-xf
+  )
+
 (defn yada*
   [{:keys
     [service-available?                 ; async-supported
@@ -100,6 +105,7 @@
      resource                           ; async-supported
      state                              ; async-supported
      body                               ; async-supported
+     events                             ; async-supported
 
      ;; Security
      authorization                      ; async-supported
@@ -117,8 +123,7 @@
 
     :as resource-map
 
-    :or {#_authentication #_(NoAuthenticationSpecified.)
-         authorization (NoAuthorizationSpecified.)}
+    :or {authorization (NoAuthorizationSpecified.)}
     } ]
 
   ;; We use this let binding to deduce the values of resource-map
@@ -148,7 +153,7 @@
              (fn [ctx]
                (if-not
                    (case method
-                     :get (or (some? resource) state body)
+                     :get (or (some? resource) state body events)
                      :put put
                      :post post
                      nil)
@@ -229,9 +234,9 @@
              ;; Split the flow based on the existence of the resource
              (fn [{:keys [resource] :as ctx}]
 
-               (if (and (not (false? resource)) (or resource state body (#{:post :put} method)))
-
+               (cond
                  ;; 'Exists' flow
+                 (and (not (false? resource)) (or resource state body (#{:post :put} method)))
                  (case method
                    (:get :head)
                    (d/chain
@@ -300,8 +305,6 @@
                             %
                             ))))
 
-
-
                     (fn [ctx]
                       (merge
                        {:status (or (get-in ctx [:response :status])
@@ -366,7 +369,21 @@
                    (throw (ex-info "TODO!" {}))
                    )
 
+                 ;; event-stream
+                 events
+                 {:status (or (get-in ctx [:response :status])
+                              (p/status status)
+                              200)
+                  :headers (merge
+                            {"content-type" "text/event-stream"}
+                            (get-in ctx [:response :headers])
+                            (p/headers headers)
+                            )
+                  :body (transform (map (partial format "data: %s\n\n"))
+                                   (->source (p/events events ctx)))}
+
                  ;; 'Not exists' flow
+                 :otherwise
                  (d/chain ctx (constantly {:status 404})))))
 
             ;; Handle exits

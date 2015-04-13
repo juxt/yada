@@ -13,7 +13,11 @@
    [markdown.core :as markdown]
    [com.stuartsierra.component :refer (using Lifecycle)]
    [modular.component.co-dependency :refer (co-using)]
-   [ring.mock.request :refer (request) :rename {request mock-request}]))
+   [ring.mock.request :refer (request) :rename {request mock-request}]
+   [clojure.core.async :refer (go go-loop timeout <! >! chan)]
+   )
+  (:import
+   (java.util Date Calendar)))
 
 (defn basename [r]
   (last (string/split (.getName (type r)) #"\.")))
@@ -29,7 +33,9 @@
   (path [_] "Where a resource is mounted")
   (path-args [_] "Any path arguments to use in the URI")
   (expected-response [_] "What the response should be")
-  (http-spec [_] "Which section of an RFC does this relate to"))
+  (test-function [_] "Which JS function to call to test the example")
+  (http-spec [_] "Which section of an RFC does this relate to")
+  )
 
 (defn example? [h] (satisfies? Example h))
 
@@ -353,7 +359,8 @@
 
 (defrecord ServiceUnavailableRetryAfter3 []
   Example
-  (resource-map [_] '{:service-available? #(future (Thread/sleep 500) 120)})
+  (resource-map [_]
+    '{:service-available? #(future (Thread/sleep 500) 120)})
   (make-handler [ex] (yada (eval (resource-map ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 503})
@@ -392,26 +399,31 @@
 (defrecord PostCounter []
   Example
   (resource-map [_]
-    '{:post (let [counter (:*post-counter yada.dev.examples/*state*)]
-              (fn [ctx]
-                (assoc-in ctx [:response :headers "X-Counter"] (swap! counter inc))))})
+    '{:post
+      (let [counter (:*post-counter yada.dev.examples/*state*)]
+        (fn [ctx]
+          (assoc-in ctx
+                    [:response :headers "X-Counter"]
+                    (swap! counter inc))))})
   (make-handler [ex] (yada (binding [*state* ex] (eval (resource-map ex)))))
   (request [_] {:method :post})
   (expected-response [_] {:status 200}))
 
 (defrecord AccessForbiddenToAll []
   Example
-  (resource-map [_] '{:authorization false
-                      :body "Secret message!"})
+  (resource-map [_]
+    '{:authorization false
+      :body "Secret message!"})
   (make-handler [ex] (yada (eval (resource-map ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 403}))
 
 (defrecord AccessForbiddenToSomeRequests []
   Example
-  (resource-map [_] '{:params {:secret {:in :path}}
-                      :authorization (fn [ctx] (= (-> ctx :params :secret) "oak"))
-                      :body "Secret message!"})
+  (resource-map [_]
+    '{:params {:secret {:in :path}}
+      :authorization (fn [ctx] (= (-> ctx :params :secret) "oak"))
+      :body "Secret message!"})
   (make-handler [ex] (yada (eval (resource-map ex))))
   (path [r] [(basename r) "/" :secret])
   (path-args [_] [:secret "ash"])
@@ -431,25 +443,49 @@
 
 (defrecord NotAuthorized []
   Example
-  (resource-map [_] '{:authorization (fn [ctx] :not-authorized)
-                      :body "Secret message!"})
+  (resource-map [_]
+    '{:authorization (fn [ctx] :not-authorized)
+      :body "Secret message!"})
   (make-handler [ex] (yada (eval (resource-map ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 401}))
 
 (defrecord BasicAccessAuthentication []
   Example
-  (resource-map [_] '{:security {:type :basic :realm "Gondor"}
-                      :authorization (fn [ctx]
-                                       (or
-                                        (when-let [auth (:authentication ctx)]
-                                          (= ((juxt :user :password) auth)
-                                             ["Denethor" "palantir"]))
-                                        :not-authorized))
-                      :body "All is lost. Yours, Sauron (Servant of Morgoth, yada yada yada)"})
+  (resource-map [_]
+    '{:security {:type :basic :realm "Gondor"}
+      :authorization
+      (fn [ctx]
+        (or
+         (when-let [auth (:authentication ctx)]
+           (= ((juxt :user :password) auth)
+              ["Denethor" "palantir"]))
+         :not-authorized))
+      :body "All is lost. Yours, Sauron (Servant of Morgoth, yada yada yada)"})
   (make-handler [ex] (yada (eval (resource-map ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 401}))
+
+(defrecord ServerSentEvents []
+  Example
+  (resource-map [_]
+    '(do
+       (require '[clojure.core.async :refer (chan go-loop <! >! timeout)])
+       (require '[manifold.stream :refer (->source)])
+       {:events
+        (fn [ctx]
+          (let [ch (chan 10)]
+            (go-loop []
+              (>! ch (format "The time on the yada server is now %s" (java.util.Date.)))
+              (<! (timeout 1000))
+              (recur)
+              )
+            ch)
+          )}))
+  (make-handler [ex] (yada (eval (resource-map ex))))
+  (request [_] {:method :get})
+  (expected-response [_] {:status 401})
+  (test-function [_] "tryItEvents"))
 
 (defn title [r]
   (last (string/split (.getName (type r)) #"\.")))
@@ -463,6 +499,9 @@
   (or
    (try (path-args r) (catch AbstractMethodError e))
    []))
+
+(defn get-test-function [ex]
+  (try (test-function ex) (catch AbstractMethodError e)))
 
 (defn description [r]
   (when-let [s (io/resource (str "examples/pre/" (title r) ".md"))]

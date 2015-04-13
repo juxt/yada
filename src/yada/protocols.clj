@@ -23,6 +23,8 @@
   (authorize [_ ctx] "Authorize the request. When truthy, authorization is called with the value and used as the :authorization entry of the context, otherwise assumed unauthorized.")
   (authorization [o] "Given the result of an authorize call, a truthy value will be added to the context.")
 
+  (events [e ctx] "Provide server-sent events")
+
   )
 
 (extend-protocol Callbacks
@@ -75,6 +77,8 @@
     (f ctx))
 
   (authorize [f ctx] (f ctx))
+
+  (events [f ctx] (f ctx))
 
   String
   (body [s _] s)

@@ -453,10 +453,35 @@ To enable this on your resource, you should add a __:security__ entry which decl
 
 Of course, as you should now be expecting from yada, the __:authorization__ function can return a deferred value, such as a future or promise, should you need to check the credentials against a remote database.
 
+## Streaming
+
+<example ref="ServerSentEvents"/>
+
+This chapter is a stub. More documentation will be forthcoming.
+
+## Cross-Origin Resource Sharing
+
+If you are planning to serve your API resources from on server, and have
+them consumed from a web application coming from another server, you
+will hit a security restriction built in to modern browsers known
+[CORS](http://www.w3.org/TR/cors/). CORS requires your API resources to
+explicitly state which other origins (other web applications) are
+allowed to access your API. This is to ensure your API cannot be
+exploited using scripting attacks that use a user's credentials with her
+knowledge.
+
+This chapter is a stub. More documentation will be forthcoming.
+
+## Swagger
+
+If bidi is used as the routing library, yada and bidi data can be combined to form enough meta-data about a resource for create a [Swagger](http://swagger.io/) resource.
+
+This [is demonstrated](/swagger-ui/index.html?url=/api/1.0.0/swagger.json) and further details can be found in the demo code.
+
+This chapter is a stub. More documentation will be forthcoming.
+
 ## Misc
 
 <example ref="StatusAndHeaders"/>
 
 <include type="note" ref="kv-args"/>
-
-## Swagger

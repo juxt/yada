@@ -16,8 +16,10 @@
    [yada.dev.pets :refer (new-pets-api-service)]
    [yada.dev.user-guide :refer (new-user-guide)]
    [yada.dev.database :refer (new-database)]
-   [modular.aleph :refer (new-http-server)]
-   [modular.component.co-dependency :refer (co-using system-co-using)]))
+   [modular.aleph :refer (new-webserver)]
+   [modular.component.co-dependency :refer (co-using system-co-using)]
+
+   [yada.dev.async :refer (new-handler)]))
 
 (defn ^:private read-file
   [f]
@@ -101,7 +103,11 @@
 (defn http-server-components [system config]
   (assoc system
     :http-server
-    (make new-http-server config)))
+    (make new-webserver config
+          :port 8080)
+    :test-server
+    (new-webserver :port 8082
+                   :handler (new-handler))))
 
 (defn new-system-map
   [config]

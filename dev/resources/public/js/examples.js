@@ -29,3 +29,17 @@ tryIt = function(meth, u, title, headers) {
             $("div#"+id+" .body").val(jqXHR.responseText);
         })
 }
+
+
+tryItEvents = function(meth, u, title, headers) {
+
+    clearIt(title);
+
+    var id = "response-"+title;
+    $("div#"+id+" .status").html("See console&#8230;");
+
+    var es = new EventSource(u);
+    es.onmessage = function(ev) {
+        console.log(ev);
+    };
+}
