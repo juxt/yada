@@ -317,7 +317,7 @@
            examples)]]]))
     :scripts ["/static/js/tests.js"]}))
 
-(defrecord UserGuide [*router templater]
+(defrecord UserGuide [*router templater prefix ext-prefix]
   Lifecycle
   (start [component]
     (infof "Starting user-guide")
@@ -341,11 +341,7 @@
        [[".html"
          (->
           (yada :body {"text/html" (fn [ctx]
-                                     (let [prefix (str/replace (apply format "%s://%s:%s" ((juxt (comp name :scheme) :server-name :server-port) (-> ctx :request)))
-                                                               ".localdomain" "")
-                                           ext-prefix (str/replace (apply format "%s://%s:%s" ((juxt (comp name :scheme) :server-name (constantly "8081")) (-> ctx :request)))
-                                                                   ".localdomain" "")
-                                           config {:prefix prefix :ext-prefix ext-prefix}]
+                                     (let [config {:prefix prefix :ext-prefix ext-prefix}]
                                        (body component (post-process-doc component xbody (into {} examples) config) config)))})
           (tag ::user-guide))]
         ["/examples/"
@@ -363,7 +359,8 @@
 
 (defn new-user-guide [& {:as opts}]
   (-> (->> opts
-           (merge {})
+           (merge {:prefix "localhost:8080"
+                   :ext-prefix "localhost:8081"})
            map->UserGuide)
       (using [:templater])
       (co-using [:router])))
