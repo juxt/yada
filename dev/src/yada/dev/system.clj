@@ -19,7 +19,8 @@
    [modular.aleph :refer (new-webserver)]
    [modular.component.co-dependency :refer (co-using system-co-using)]
 
-   [yada.dev.async :refer (new-handler)]))
+   [yada.dev.async :refer (new-handler)]
+   [yada.dev.external :refer (new-external-resources)]))
 
 (defn ^:private read-file
   [f]
@@ -105,9 +106,19 @@
     :http-server
     (make new-webserver config
           :port 8080)
-    :test-server
-    (new-webserver :port 8082
-                   :handler (new-handler))))
+    ))
+
+(defn external-server-components [system config]
+  (assoc
+   system
+   :external-resources (new-external-resources)
+   :external-router (using
+                     (make new-router config)
+                     [:external-resources])
+   :external-server (using
+                     (new-webserver :port 8081)
+                     {:request-handler :external-router
+                      :user-guide :user-guide})))
 
 (defn new-system-map
   [config]
@@ -120,12 +131,14 @@
         (swagger-ui-components config)
         (router-components config)
         (http-server-components config)
+        (external-server-components config)
         (assoc :redirect (new-redirect :from "/" :to :yada.dev.website/index))
         ))))
 
 (defn new-dependency-map
   []
   {:http-server {:request-handler :router}
+   :external-server {:request-handler :external-router}
    :user-guide {:templater :clostache-templater}
    :router [:pets-api
             :user-guide

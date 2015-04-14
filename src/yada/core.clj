@@ -82,8 +82,142 @@
 (defn as-sequential [s]
   (if (sequential? s) s [s]))
 
-;; Turn something into a SSE event
-(def server-sent-event-xf
+(defn cors [allow-origin]
+  (fn [ctx]
+    (if-let [origin (p/allow-origin allow-origin ctx)]
+      (do
+        (infof "origin is %s" origin)
+        (assoc-in ctx [:response :headers "access-control-allow-origin"] origin))
+      (do
+        (infof "no origin!")
+        ctx))))
+
+(defn return-response [status headers]
+  (fn [ctx]
+    (println (get-in ctx [:response :headers]))
+    (merge
+     {:status (or (get-in ctx [:response :status])
+                  (p/status status)
+                  200)
+      :headers (merge
+                (get-in ctx [:response :headers])
+                (p/headers headers))
+      ;; TODO :status and :headers should be implemented like this in all cases
+      :body (get-in ctx [:response :body])})))
+
+(defn exists-flow [method resource state req status headers body post]
+  (fn [ctx]
+    (case method
+      (:get :head)
+      (d/chain
+       ctx
+
+       ;; Conditional request
+       (fn [ctx]
+         (if-let [last-modified
+                  (when-let [hdr (:last-modified resource)]
+                    (p/last-modified hdr ctx))]
+
+           (if-let [if-modified-since (parse-http-date (get-in req [:headers "if-modified-since"]))]
+             (let [last-modified (if (d/deferrable? last-modified) @last-modified last-modified)]
+               (if (<
+                    (.getTime last-modified)
+                    (.getTime if-modified-since))
+
+                 ;; exit with 304
+                 (d/error-deferred
+                  (ex-info "" (merge {:status 304
+                                      ::http-response true}
+                                     ctx)))
+
+                 (assoc-in ctx [:response :headers "last-modified"] last-modified)
+
+                 ))
+
+             (assoc-in ctx [:response :headers "last-modified"] (if (d/deferrable? last-modified) @last-modified last-modified))
+             )
+           ctx))
+
+       ;; OK, let's pick the resource's state
+       (fn [ctx]
+         (d/chain
+          ;; note the priorities:
+          (or (:state resource) state)  ; could be nil
+          #(p/state % ctx)
+          #(assoc-in ctx [:resource :state] %)))
+
+       ;; Create body
+       (fn [ctx]
+         (let [state (get-in ctx [:resource :state])
+               content-type
+               (or (get-in ctx [:response :content-type])
+                   ;; It's possible another callback has set the content-type header
+                   (get-in headers ["content-type"])
+                   (when-not body (rep/content-type-default state)))]
+
+           (d/chain
+
+            ;; Determine body
+            (cond
+              body (p/body body ctx)
+              state state         ; the state here can still be deferred
+              )
+
+            ;; serialize to representation (an existing string will be left intact)
+            (fn [state]
+              (rep/content state content-type))
+
+            ;; on nil, compose default result (if in dev)
+            #_(fn [x] (if x x (rep/content nil content-type)))
+
+            #(assoc-in ctx [:response :body] %)
+            #(if content-type
+               (update-in % [:response :headers] assoc "content-type" content-type)
+               %
+               )))))
+
+      :post
+      (d/chain
+       ctx
+
+       (fn [ctx]
+         (when-let [etag (get-in req [:headers "if-match"])]
+           (when (not= etag (get-in ctx [:resource :etag]))
+             (throw
+              (ex-info "Precondition failed"
+                       {:status 412
+                        ::http-response true})))
+
+           )
+         ctx
+         )
+
+       (fn [ctx]
+         ;; TODO: what if error?
+         (p/interpret-post-result (p/post post ctx) ctx))
+
+       (fn [ctx]
+         (assoc-in ctx [:response :status] 200)))
+
+      :put
+      (d/chain
+       ctx
+
+       (fn [ctx]
+         (when-let [etag (get-in req [:headers "if-match"])]
+           (when (not= etag (get-in ctx [:resource :etag]))
+             (throw
+              (ex-info "Precondition failed"
+                       {:status 412
+                        ::http-response true}))))
+         ctx)
+
+       (fn [ctx]
+         (assoc-in ctx [:response :status] 204)))
+
+      (throw (ex-info "TODO!" {})))
+
+    )
   )
 
 (defn yada*
@@ -119,6 +253,10 @@
 
      produces
      params
+
+     ;; CORS
+     allow-origin
+
      ] ;; :or {resource {}}
 
     :as resource-map
@@ -237,146 +375,22 @@
                (cond
                  ;; 'Exists' flow
                  (and (not (false? resource)) (or resource state body (#{:post :put} method)))
-                 (case method
-                   (:get :head)
-                   (d/chain
-                    ctx
-
-                    ;; Conditional request
-                    (fn [ctx]
-                      (if-let [last-modified
-                               (when-let [hdr (:last-modified resource)]
-                                 (p/last-modified hdr ctx))]
-
-                        (if-let [if-modified-since (parse-http-date (get-in req [:headers "if-modified-since"]))]
-                          (let [last-modified (if (d/deferrable? last-modified) @last-modified last-modified)]
-                            (if (<
-                                 (.getTime last-modified)
-                                 (.getTime if-modified-since))
-
-                              ;; exit with 304
-                              (d/error-deferred (ex-info "" (merge {:status 304
-                                                                    ::http-response true}
-                                                                   ctx)))
-
-                              (assoc-in ctx [:response :headers "last-modified"] last-modified)
-
-                              ))
-
-                          (assoc-in ctx [:response :headers "last-modified"] (if (d/deferrable? last-modified) @last-modified last-modified))
-                          )
-                        ctx))
-
-                    ;; OK, let's pick the resource's state
-                    (fn [ctx]
-                      (d/chain
-                       ;; note the priorities:
-                       (or (:state resource) state) ; could be nil
-                       #(p/state % ctx)
-                       #(assoc-in ctx [:resource :state] %)))
-
-                    ;; Create body
-                    (fn [ctx]
-                      (let [state (get-in ctx [:resource :state])
-                            content-type
-                            (or (get-in ctx [:response :content-type])
-                                ;; It's possible another callback has set the content-type header
-                                (get-in headers ["content-type"])
-                                (when-not body (rep/content-type-default state)))]
-
-                        (d/chain
-
-                         ;; Determine body
-                         (cond
-                           body (p/body body ctx)
-                           state state ; the state here can still be deferred
-                           )
-
-                         ;; serialize to representation (an existing string will be left intact)
-                         (fn [state]
-                           (rep/content state content-type))
-
-                         ;; on nil, compose default result (if in dev)
-                         #_(fn [x] (if x x (rep/content nil content-type)))
-
-                         #(assoc-in ctx [:response :body] %)
-                         #(if content-type
-                            (update-in % [:response :headers] assoc "content-type" content-type)
-                            %
-                            ))))
-
-                    (fn [ctx]
-                      (merge
-                       {:status (or (get-in ctx [:response :status])
-                                    (p/status status)
-                                    200)
-                        :headers (merge
-                                  (get-in ctx [:response :headers])
-                                  (p/headers headers))
-                        ;; TODO :status and :headers should be implemented like this in all cases
-                        :body (get-in ctx [:response :body])})))
-
-                   :post
-                   (d/chain
-                    ctx
-
-                    (fn [ctx]
-                      (when-let [etag (get-in req [:headers "if-match"])]
-                        (when (not= etag (get-in ctx [:resource :etag]))
-                          (throw
-                           (ex-info "Precondition failed"
-                                    {:status 412
-                                     ::http-response true})))
-
-                        )
-                      ctx
-                      )
-
-                    (fn [ctx]
-                      ;; TODO: what if error?
-                      (p/interpret-post-result (p/post post ctx) ctx))
-
-                    (fn [ctx]
-                      {:status 200
-                       :headers (get-in ctx [:response :headers])
-                       :body (get-in ctx [:response :body])
-                       }
-                      ))
-
-                   :put
-                   (d/chain
-                    ctx
-
-                    (fn [ctx]
-                      (when-let [etag (get-in req [:headers "if-match"])]
-                        (when (not= etag (get-in ctx [:resource :etag]))
-                          (throw
-                           (ex-info "Precondition failed"
-                                    {:status 412
-                                     ::http-response true}))))
-                      ctx)
-
-                    (fn [ctx]
-                      {:status 204
-                       :headers (get-in ctx [:response :headers])
-                       :body (get-in ctx [:response :body])
-                       }))
-
-
-                   (throw (ex-info "TODO!" {})))
+                 (d/chain
+                  ctx
+                  (exists-flow method resource state req status headers body post)
+                  (cors allow-origin)
+                  (return-response status headers))
 
                  ;; Event-stream
                  events
-                 {:status (or (get-in ctx [:response :status])
-                              (p/status status)
-                              200)
-                  :headers (merge
-                            {"content-type" "text/event-stream"}
-                            (get-in ctx [:response :headers])
-                            (p/headers headers)
-                            )
-                  :body (transform (map (partial format "data: %s\n\n"))
-                                   (->source (p/events events ctx)))}
+                 (d/chain
+                  ctx
+                  (fn [ctx] (-> ctx
+                                (assoc-in [:response :headers "content-type"] "text/event-stream")
+                                (assoc-in [:response :body] (transform (map (partial format "data: %s\n\n"))
+                                                                       (->source (p/events events ctx))))))
+                  (cors allow-origin)
+                  (return-response status headers))
 
                  ;; 'Not exists' flow
                  :otherwise
@@ -433,7 +447,7 @@
     (yada* (first args))))
 
 ;; TODO: This xf doesn't work for SSE, need to let Zach know
-(sequence
+#_(sequence
  (comp
   (mapcat (fn [x] [x "abc\n"]))
   (map (partial format "data: %s\n\n")))

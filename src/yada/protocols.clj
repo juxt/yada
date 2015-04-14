@@ -23,8 +23,10 @@
   (authorize [_ ctx] "Authorize the request. When truthy, authorization is called with the value and used as the :authorization entry of the context, otherwise assumed unauthorized.")
   (authorization [o] "Given the result of an authorize call, a truthy value will be added to the context.")
 
-  (events [e ctx] "Provide server-sent events")
-  (format-event [e] "Format an individual event")
+  (events [_ ctx] "Provide server-sent events")
+  (format-event [_] "Format an individual event")
+
+  (allow-origin [_ ctx] "If another origin (other than the resource's origin) is allowed, return the the value of the Access-Control-Allow-Origin header to be set on the response")
   )
 
 (extend-protocol Callbacks
@@ -37,6 +39,7 @@
     (if b ctx (throw (ex-info "Failed to process POST" {}))))
   (authorize [b ctx] b)
   (authorization [b] nil)
+  (allow-origin [b _] (when b "*"))
 
   clojure.lang.Fn
   (service-available? [f]
@@ -79,6 +82,8 @@
   (authorize [f ctx] (f ctx))
 
   (events [f ctx] (f ctx))
+
+  (allow-origin [f ctx] (f ctx))
 
   String
   (body [s _] s)
@@ -138,6 +143,7 @@
   (produces-from-body [_] nil)
   (status [_] nil)
   (headers [_] nil)
+  (allow-origin [_ _] nil)
 
   Object
   (authorization [o] o)

@@ -3,19 +3,26 @@
 Welcome to the yada user guide!
 
 This guide is ideal if you are new to yada and is suitable for anyone
-who is interested in building RESTful web APIs with Clojure. Previous experience
-of web development in Clojure may be helpful but is not mandatory.
+who is interested in building robust RESTful web APIs quickly and
+easily. Previous experience of web development in Clojure may be helpful
+but is not mandatory.
+
+### yada is simple, but also easy!
 
 If you follow this guide carefully you will learn how to take advantage
-of the many features yada has to offer. This is a big guide. If you are
-feeling a little overwhelmed at how much there is to learn, don't worry,
-yada really is easy! Start by going through the introduction at a gentle pace
-and take on the subsequent chapters one at a time.
+of the many features yada has to offer.
+
+This is a BIG guide. If you are feeling a little overwhelmed at how much
+there is to learn, don't worry, yada really is easy! Start by going
+through the introduction at a gentle pace and take on the subsequent
+chapters one at a time.
 
 If you are a more experienced Clojure or REST developer and would like
-to get more involved, please join our
+to get involved in influencing yada's future, please join our
 [yada-discuss](https://groups.google.com/forum/#!forum/yada-discuss)
-discussion group. All welcome!
+discussion group. Regardless of your experience, everyone is more than
+welcome to join the list. List members will do their best to answer any
+questions you might have.
 
 [Back to index](/)
 
@@ -190,7 +197,7 @@ following in the file's __:dependencies__ section.
 
 ## Parameters
 
-Parameters are an integral part of many requests. Since APIs form
+Parameters are an integral part of many web requests. Since APIs form
 the basis of integration between software, it is useful to be able to
 declare parameter expectations.
 
@@ -464,7 +471,18 @@ allowed to access your API. This is to ensure your API cannot be
 exploited using scripting attacks that use a user's credentials with her
 knowledge.
 
-This chapter is a stub. More documentation will be forthcoming.
+yada supports has built-in support for CORS.
+
+Some resources, such as Google Web Fonts, are designed to be fully public and available to scripts from any origin. For these types of resources, set the __:allow-origin__ entry to true.
+
+<example ref="CorsAll"/>
+
+If you're going to open your resource to all scripts, browsers will not send on any cookies, credentials or anything that would identify the user, since that would be open to abuse by any script on any website.
+
+However, if you want to receive cookies or user credentials, you'll need check the origin provided in the request is from a website you're willing to accept requests from.
+
+<example ref="CorsCheckOrigin"/>
+
 
 ## Server sent events
 

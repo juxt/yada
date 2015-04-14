@@ -4,6 +4,7 @@
    [bidi.ring :refer (redirect)]
    [cheshire.core :as json]
    [clojure.java.io :as io]
+   [clojure.tools.logging :refer :all]
    [clojure.pprint :refer (pprint *print-right-margin*)]
    [clojure.string :as str]
    [clojure.walk :refer (postwalk)]
@@ -14,7 +15,7 @@
    [modular.bidi :refer (path-for)]
    [modular.template :as template :refer (render-template)]
    [modular.component.co-dependency :refer (co-using)]
-   [yada.dev.examples :refer (resource-map get-path get-path-args request make-handler expected-response get-test-function)]
+   [yada.dev.examples :refer (resource-map get-path get-path-args request make-handler expected-response get-test-function external?)]
    [yada.yada :refer (yada)]))
 
 (defn emit-element
@@ -74,19 +75,17 @@
 
 (defn ->meth
   [m]
-  (case m
-    :get "GET"
-    :put "PUT"
-    :delete "DELETE"
-    :post "POST"))
+  (str/upper-case (name m)))
 
 (defn example-instance [user-guide example]
   (when-let [v (find-var (symbol "yada.dev.examples" (str "map->" (namespace-munge example))))]
     (v user-guide)))
 
-(defn post-process-example [user-guide ex xml prefix]
+(defn post-process-example [user-guide ex xml {:keys [prefix ext-prefix]}]
   (when xml
-    (let [url (apply path-for @(:*router user-guide) (keyword (basename ex)) (get-path-args ex))
+    (let [url (str
+               (when (external? ex) ext-prefix)
+               (apply path-for @(:*router user-guide) (keyword (basename ex)) (get-path-args ex)))
           {:keys [method headers]} (request ex)
           ]
 
@@ -160,8 +159,8 @@
                 :attrs {:class "http"}
                 :content
                 [(format "curl -i %s%s%s"
-                         prefix
                          (apply str (map #(str % " ") (for [[k v] headers] (format "-H '%s: %s'" k v))))
+                         (if-not (external? ex) prefix "")
                          url)
                  ]}]}]}
 
@@ -190,7 +189,7 @@
                            :attrs {:href (str "#" (chapter ch))}
                            :content [ch]}]}))})
 
-(defn post-process-doc [user-guide xml examples prefix]
+(defn post-process-doc [user-guide xml examples config]
   (postwalk
    (fn [{:keys [tag attrs content] :as el}]
      (cond
@@ -217,7 +216,7 @@
                             ex
                             (some-> (format "examples/%s.md" exname)
                                     io/resource slurp md-to-html-string enclose xml-parse)
-                            prefix)]))}
+                            config)]))}
            {:tag :p :content [(str "MISSING EXAMPLE: " exname)]}))
 
        (= tag :include)
@@ -252,10 +251,10 @@
       (str/replace #"\{\{prefix\}\}" prefix)
       (str/replace #"\{\{(.+)\}\}" #(System/getProperty (last %)))
       (str/replace #"<p>\s*</p>" "")
-      (str/replace #"(yada)" "<span class='yada'>yada</span>")
+      (str/replace #"(yada)(?!-discuss)" "<span class='yada'>yada</span>")
       ))
 
-(defn body [{:keys [*router templater] :as user-guide} doc prefix]
+(defn body [{:keys [*router templater] :as user-guide} doc {:keys [prefix]}]
   (render-template
    templater
    "templates/page.html.mustache"
@@ -318,34 +317,43 @@
            examples)]]]))
     :scripts ["/static/js/tests.js"]}))
 
-
 (defrecord UserGuide [*router templater]
   Lifecycle
   (start [component]
-    (assoc component
-           :start-time (java.util.Date.)
-           :*post-counter (atom 0)))
+    (infof "Starting user-guide")
+    (let [xbody (get-source)
+          component (assoc
+                     component
+                     :start-time (java.util.Date.)
+                     :*post-counter (atom 0)
+                     :xbody xbody)
+          examples (extract-examples component xbody)]
+      (assoc component
+             :examples (extract-examples component xbody))))
   (stop [component] component)
+
   RouteProvider
   (routes [component]
-    (let [xbody (get-source)
-          examples (extract-examples component xbody)]
+    (infof "Providing routes from user-guide, examples are" )
+    (let [xbody (:xbody component)
+          examples (:examples component)]
       ["/user-guide"
        [[".html"
          (->
           (yada :body {"text/html" (fn [ctx]
                                      (let [prefix (str/replace (apply format "%s://%s:%s" ((juxt (comp name :scheme) :server-name :server-port) (-> ctx :request)))
-                                                               ".localdomain" "")]
-                                       (body component (post-process-doc component xbody (into {} examples) prefix) prefix)))})
+                                                               ".localdomain" "")
+                                           ext-prefix (str/replace (apply format "%s://%s:%s" ((juxt (comp name :scheme) :server-name (constantly "8081")) (-> ctx :request)))
+                                                                   ".localdomain" "")
+                                           config {:prefix prefix :ext-prefix ext-prefix}]
+                                       (body component (post-process-doc component xbody (into {} examples) config) config)))})
           (tag ::user-guide))]
-        ["/examples"
-         [["/"
-           (vec
-            (for [[_ h] examples]
-              [(get-path h) (tag
-                             (make-handler h)
-                             (keyword (basename h)))]))]
-          ["" (redirect ::index)]]]
+        ["/examples/"
+         (vec
+          (for [[_ h] examples]
+            [(get-path h) (tag
+                           (make-handler h)
+                           (keyword (basename h)))]))]
         ["/tests.html"
          (-> (yada :body {"text/html"
                           (fn [ctx]

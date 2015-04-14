@@ -35,6 +35,7 @@
   (expected-response [_] "What the response should be")
   (test-function [_] "Which JS function to call to test the example")
   (http-spec [_] "Which section of an RFC does this relate to")
+  (different-origin? [_] "Whether the example tests against a server of a different origin")
   )
 
 (defn example? [h] (satisfies? Example h))
@@ -466,6 +467,28 @@
   (request [_] {:method :get})
   (expected-response [_] {:status 401}))
 
+(defrecord CorsAll []
+  Example
+  (resource-map [_]
+    '{:allow-origin true
+      :body "Hello everyone!"})
+  (make-handler [ex] (yada (eval (resource-map ex))))
+  (request [_] {:method :get})
+  (expected-response [_] {:status 200}))
+
+(defrecord CorsCheckOrigin []
+  Example
+  (resource-map [_]
+    '{:allow-origin
+      (fn [ctx]
+        (println (get-in ctx [:request :headers "origin"]))
+        (get-in ctx [:request :headers "origin"]))
+      :body "Hello friend!"})
+  (make-handler [ex] (yada (eval (resource-map ex))))
+  (request [_] {:method :get})
+  (expected-response [_] {:status 200})
+  (different-origin? [_] true))
+
 (defrecord ServerSentEvents []
   Example
   (resource-map [_]
@@ -473,7 +496,7 @@
       })
   (make-handler [ex] (yada (eval (resource-map ex))))
   (request [_] {:method :get})
-  (expected-response [_] {:status 401}))
+  (expected-response [_] {:status 200}))
 
 (defrecord ServerSentEventsWithCoreAsyncChannel []
   Example
@@ -495,7 +518,7 @@
           )}))
   (make-handler [ex] (yada (eval (resource-map ex))))
   (request [_] {:method :get})
-  (expected-response [_] {:status 401})
+  (expected-response [_] {:status 200})
   (test-function [_] "tryItEvents"))
 
 (defn title [r]
@@ -521,3 +544,6 @@
 (defn post-description [r]
   (when-let [s (io/resource (str "examples/post/" (title r) ".md"))]
     (markdown/md-to-html-string (slurp s))))
+
+(defn external? [r]
+  (try (different-origin? r) (catch AbstractMethodError e false)))
