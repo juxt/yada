@@ -453,12 +453,6 @@ To enable this on your resource, you should add a __:security__ entry which decl
 
 Of course, as you should now be expecting from yada, the __:authorization__ function can return a deferred value, such as a future or promise, should you need to check the credentials against a remote database.
 
-## Streaming
-
-<example ref="ServerSentEvents"/>
-
-This chapter is a stub. More documentation will be forthcoming.
-
 ## Cross-Origin Resource Sharing
 
 If you are planning to serve your API resources from on server, and have
@@ -471,6 +465,46 @@ exploited using scripting attacks that use a user's credentials with her
 knowledge.
 
 This chapter is a stub. More documentation will be forthcoming.
+
+## Server sent events
+
+[Server sent events](http://en.wikipedia.org/Server_sent_events) are a useful way of providing real-time notications to clients. Although notifications are one-way, there are numerous benefits if you don't need fully bi-directional socket communication between the user-agent and server. For instance, server sent events are layered over HTTP, so importantly inherit the security aspects of your system, including cookie propagation and CORS protection, as well as content negotiation and error handling.
+
+Server sent events are built into all modern browsers. Server-sent event sources are created in JavaScript like this:-
+
+```javascript
+var es =
+  new EventSource("{{prefix}}/examples/ServerSentEvents");
+```
+
+Once you have access to an event source, you can add listeners to it in exactly the same way you would add listeners to keyboard, mouse and other events in JavaScript.
+
+```javascript
+es.onmessage = function(ev) {
+  console.log(ev);
+};
+```
+
+Creating the resource to provide the events to the user-agent is super-easy with yada.
+
+Instead of specifying a __:body__ entry, we use an __:events__ entry.
+
+<example ref="ServerSentEvents"/>
+
+The example above showed a contrived example where the events are static. More usually, you will specify a function returning a _stream_ of events.
+
+A stream can be anything that can produce events, such as a lazy sequence, core.async channel or reactive stream. In fact, you can use anything that is supported by the underlying manifold library, so check [manifold](https://github.com/ztellman/manifold) for full details.
+
+Let's demonstrate this with another example.
+
+<example ref="ServerSentEventsWithCoreAsyncChannel"/>
+
+Of course, all the parts of yada you've learned up until now, such as
+access control, can be added to the resource map. Contrast that with
+web-sockets, where you'd have to design and implement your own bespoke
+security system.
+
+The only difference between a resource providing a stream of events and a resource providing content is that we specify __:events__ instead of __:body__.
 
 ## Swagger
 

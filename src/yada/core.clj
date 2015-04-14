@@ -353,23 +353,19 @@
                           (throw
                            (ex-info "Precondition failed"
                                     {:status 412
-                                     ::http-response true})))
-
-                        )
-                      ctx
-                      )
+                                     ::http-response true}))))
+                      ctx)
 
                     (fn [ctx]
                       {:status 204
                        :headers (get-in ctx [:response :headers])
                        :body (get-in ctx [:response :body])
-                       }
-                      ))
+                       }))
 
-                   (throw (ex-info "TODO!" {}))
-                   )
 
-                 ;; event-stream
+                   (throw (ex-info "TODO!" {})))
+
+                 ;; Event-stream
                  events
                  {:status (or (get-in ctx [:response :status])
                               (p/status status)
@@ -435,3 +431,10 @@
   (if (keyword? (first args))
     (yada* (into {} (map vec (partition 2 args))))
     (yada* (first args))))
+
+;; TODO: This xf doesn't work for SSE, need to let Zach know
+(sequence
+ (comp
+  (mapcat (fn [x] [x "abc\n"]))
+  (map (partial format "data: %s\n\n")))
+ ["a" "b"])

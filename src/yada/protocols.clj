@@ -24,7 +24,7 @@
   (authorization [o] "Given the result of an authorize call, a truthy value will be added to the context.")
 
   (events [e ctx] "Provide server-sent events")
-
+  (format-event [e] "Format an individual event")
   )
 
 (extend-protocol Callbacks
@@ -85,6 +85,7 @@
   (produces-from-body [s] nil)
   (interpret-post-result [s ctx]
     (assoc ctx :location s))
+  (format-event [ev] [(format "data: %s\n" ev)])
 
   Number
   (service-available? [n] [false {:headers {"retry-after" n}}])
@@ -113,9 +114,11 @@
   (produces-from-body [m] (keys m))
   (headers [m] m)
   (interpret-post-result [m _] m)
+  (format-event [ev] )
 
   clojure.lang.PersistentVector
   (produces [v] (produces (set v)))
+  (events [v ctx] v)
 
   java.util.Date
   (last-modified [d _] d)

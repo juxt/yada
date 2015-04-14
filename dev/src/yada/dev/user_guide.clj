@@ -84,10 +84,11 @@
   (when-let [v (find-var (symbol "yada.dev.examples" (str "map->" (namespace-munge example))))]
     (v user-guide)))
 
-(defn post-process-example [user-guide ex xml]
+(defn post-process-example [user-guide ex xml prefix]
   (when xml
     (let [url (apply path-for @(:*router user-guide) (keyword (basename ex)) (get-path-args ex))
-          {:keys [method headers]} (request ex)]
+          {:keys [method headers]} (request ex)
+          ]
 
       (postwalk
        (fn [{:keys [tag attrs content] :as el}]
@@ -150,6 +151,20 @@
                                                                             :attrs {:class "body"}
                                                                             :content [""]}]}]}]}]}]}
 
+           (= tag :curl)
+           {:tag :div
+            :content
+            [{:tag :pre
+              :content
+              [{:tag :code
+                :attrs {:class "http"}
+                :content
+                [(format "curl -i %s%s%s"
+                         prefix
+                         (apply str (map #(str % " ") (for [[k v] headers] (format "-H '%s: %s'" k v))))
+                         url)
+                 ]}]}]}
+
            ;; Raise divs in paragraphs.
            (and (= tag :p) (= (count content) 1) (= (:tag (first content)) :div))
            (first content)
@@ -175,7 +190,7 @@
                            :attrs {:href (str "#" (chapter ch))}
                            :content [ch]}]}))})
 
-(defn post-process-doc [user-guide xml examples]
+(defn post-process-doc [user-guide xml examples prefix]
   (postwalk
    (fn [{:keys [tag attrs content] :as el}]
      (cond
@@ -201,7 +216,8 @@
                             user-guide
                             ex
                             (some-> (format "examples/%s.md" exname)
-                                    io/resource slurp md-to-html-string enclose xml-parse))]))}
+                                    io/resource slurp md-to-html-string enclose xml-parse)
+                            prefix)]))}
            {:tag :p :content [(str "MISSING EXAMPLE: " exname)]}))
 
        (= tag :include)
@@ -231,20 +247,21 @@
 
 (defn post-process-body
   "Some whitespace reduction"
-  [s]
+  [s prefix]
   (-> s
+      (str/replace #"\{\{prefix\}\}" prefix)
       (str/replace #"\{\{(.+)\}\}" #(System/getProperty (last %)))
       (str/replace #"<p>\s*</p>" "")
       (str/replace #"(yada)" "<span class='yada'>yada</span>")
       ))
 
-(defn body [{:keys [*router templater] :as user-guide} doc]
+(defn body [{:keys [*router templater] :as user-guide} doc prefix]
   (render-template
    templater
    "templates/page.html.mustache"
    {:content
     (-> (with-out-str (emit-element doc))
-        post-process-body
+        (post-process-body prefix)
         )
     :scripts ["/static/js/examples.js"]}))
 
@@ -317,7 +334,9 @@
        [[".html"
          (->
           (yada :body {"text/html" (fn [ctx]
-                                     (body component (post-process-doc component xbody (into {} examples))))})
+                                     (let [prefix (str/replace (apply format "%s://%s:%s" ((juxt (comp name :scheme) :server-name :server-port) (-> ctx :request)))
+                                                               ".localdomain" "")]
+                                       (body component (post-process-doc component xbody (into {} examples) prefix) prefix)))})
           (tag ::user-guide))]
         ["/examples"
          [["/"
