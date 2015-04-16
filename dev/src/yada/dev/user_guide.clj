@@ -251,7 +251,7 @@
       (str/replace #"\{\{prefix\}\}" prefix)
       (str/replace #"\{\{(.+)\}\}" #(System/getProperty (last %)))
       (str/replace #"<p>\s*</p>" "")
-      (str/replace #"(yada)(?!-discuss)" "<span class='yada'>yada</span>")
+      (str/replace #"(yada)(?![-/])" "<span class='yada'>yada</span>")
       ))
 
 (defn body [{:keys [*router templater] :as user-guide} doc {:keys [prefix]}]

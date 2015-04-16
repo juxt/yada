@@ -29,8 +29,9 @@ questions you might have.
 If you spot a typo, misspelling, grammar problem, confusing text, or
 anything you feel you could improve, please go-ahead and
 [edit the source](https://github.com/juxt/yada/edit/master/dev/resources/user-guide.md). If
-your contribution is accepted (and possibly even if it isn't) you will
-have our eternal gratitude, help future readers and be forever acknowledged in the yada documentation as a contributor!
+your contribution is accepted you will have our eternal gratitude, help
+future readers and be forever acknowledged in the yada documentation as
+a contributor!
 
 [Back to index](/)
 
