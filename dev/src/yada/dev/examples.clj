@@ -500,7 +500,7 @@
       :body "Hello friend!"})
   (make-handler [ex] (yada (eval (resource-map ex))))
   (request [_] {:method :put})
-  (expected-response [_] {:status 200})
+  (expected-response [_] {:status 204})
   (different-origin? [_] true))
 
 (defrecord ServerSentEvents []
