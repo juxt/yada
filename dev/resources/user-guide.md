@@ -24,6 +24,14 @@ discussion group. Regardless of your experience, everyone is more than
 welcome to join the list. List members will do their best to answer any
 questions you might have.
 
+### Spot an error?
+
+If you spot a typo, misspelling, grammar problem, confusing text, or
+anything you feel you could improve, please go-ahead and
+[edit the source](https://github.com/juxt/yada/edit/master/dev/resources/user-guide.md). If
+your contribution is accepted (and possibly even if it isn't) you will
+have our eternal gratitude, help future readers and be forever acknowledged in the yada documentation as a contributor!
+
 [Back to index](/)
 
 ### Table of Contents
