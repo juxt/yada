@@ -87,7 +87,12 @@
     (if-let [origin (p/allow-origin allow-origin ctx)]
       (do
         (infof "origin is %s" origin)
-        (assoc-in ctx [:response :headers "access-control-allow-origin"] origin))
+        (update-in ctx [:response :headers]
+                   merge {"access-control-allow-origin"
+                          origin
+                          "access-control-expose-headers"
+                          (apply str
+                                 (interpose ", " ["Server" "Date" "Content-Length" "Access-Control-Allow-Origin"]))}))
       (do
         (infof "no origin!")
         ctx))))
@@ -105,7 +110,7 @@
       ;; TODO :status and :headers should be implemented like this in all cases
       :body (get-in ctx [:response :body])})))
 
-(defn exists-flow [method resource state req status headers body post]
+(defn exists-flow [method resource state req status headers body post allow-origin]
   (fn [ctx]
     (case method
       (:get :head)
@@ -215,10 +220,25 @@
        (fn [ctx]
          (assoc-in ctx [:response :status] 204)))
 
-      (throw (ex-info "TODO!" {})))
+      :options
+      (d/chain
+       ctx
 
-    )
-  )
+       (fn [ctx]
+         (if-let [origin (p/allow-origin allow-origin ctx)]
+           (update-in ctx [:response :headers]
+                   merge {"access-control-allow-origin"
+                          origin
+                          "access-control-allow-methods"
+                          (apply str
+                                 (interpose ", " ["GET" "POST" "PUT" "DELETE"]))})
+           ctx)))
+
+
+      (throw (ex-info "Unknown method"
+                      {:status 501
+                       :http-response true})))))
+
 
 (defn yada*
   [{:keys
@@ -294,10 +314,13 @@
                      :get (or (some? resource) state body events)
                      :put put
                      :post post
+                     :options (or allow-origin)
                      nil)
-                 (d/error-deferred (ex-info ""
-                                            {:status 405
-                                             ::http-response true}))
+                 (do
+                   (warnf "Method not allowed %s" method)
+                   (d/error-deferred (ex-info (format "Method: %s" method)
+                                              {:status 405
+                                               ::http-response true})))
                  ctx))
 
              ;; Malformed
@@ -377,7 +400,8 @@
                  (and (not (false? resource)) (or resource state body (#{:post :put} method)))
                  (d/chain
                   ctx
-                  (exists-flow method resource state req status headers body post)
+                  ;; Not sure we should use exists-flow for CORS pre-flight requests, should handle further above
+                  (exists-flow method resource state req status headers body post allow-origin)
                   (cors allow-origin)
                   (return-response status headers))
 

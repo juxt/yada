@@ -492,6 +492,11 @@ However, if you want to receive cookies or user credentials, you'll need check t
 
 <example ref="CorsCheckOrigin"/>
 
+### Preflight requests
+
+If you try to do a mutable action, such as a PUT, on server of different origin than your website, then the browser will 'pre-flight' the request.
+
+<example ref="CorsPreflight"/>
 
 ## Server sent events
 

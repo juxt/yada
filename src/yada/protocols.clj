@@ -143,7 +143,9 @@
   (produces-from-body [_] nil)
   (status [_] nil)
   (headers [_] nil)
+  (interpret-post-result [_ ctx] nil)
   (allow-origin [_ _] nil)
+
 
   Object
   (authorization [o] o)

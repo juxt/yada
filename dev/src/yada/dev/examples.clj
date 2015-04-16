@@ -489,6 +489,20 @@
   (expected-response [_] {:status 200})
   (different-origin? [_] true))
 
+(defrecord CorsPreflight []
+  Example
+  (resource-map [_]
+    '{:allow-origin
+      (fn [ctx]
+        (println (get-in ctx [:request :headers "origin"]))
+        (get-in ctx [:request :headers "origin"]))
+      :put (fn [_] "Resource changed!")
+      :body "Hello friend!"})
+  (make-handler [ex] (yada (eval (resource-map ex))))
+  (request [_] {:method :put})
+  (expected-response [_] {:status 200})
+  (different-origin? [_] true))
+
 (defrecord ServerSentEvents []
   Example
   (resource-map [_]
