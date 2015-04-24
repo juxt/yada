@@ -71,7 +71,9 @@
   (assoc
    system
    :clostache-templater (make new-clostache-templater config)
-   :user-guide (make new-user-guide config :prefix nil :ext-prefix nil)
+   :user-guide (make new-user-guide config
+                     :prefix "http://localhost:8080"
+                     :ext-prefix "http://localhost:8081")
    :website (make new-website config)
    :jquery (make new-web-resources config
                  :key :jquery

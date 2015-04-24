@@ -247,6 +247,7 @@
 (defn post-process-body
   "Some whitespace reduction"
   [s prefix]
+  (assert prefix)
   (-> s
       (str/replace #"\{\{prefix\}\}" prefix)
       (str/replace #"\{\{(.+)\}\}" #(System/getProperty (last %)))
@@ -321,6 +322,7 @@
   Lifecycle
   (start [component]
     (infof "Starting user-guide")
+    (assert prefix)
     (let [xbody (get-source)
           component (assoc
                      component
@@ -359,8 +361,7 @@
 
 (defn new-user-guide [& {:as opts}]
   (-> (->> opts
-           (merge {:prefix "localhost:8080"
-                   :ext-prefix "localhost:8081"})
+           (merge {})
            map->UserGuide)
       (using [:templater])
       (co-using [:router])))
