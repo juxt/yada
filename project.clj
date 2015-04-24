@@ -1,6 +1,6 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(defproject yada "0.2.3"
+(defproject yada "0.2.4"
   :description "A library for Clojure web APIs"
   :url "http://github.com/juxt/yada"
 
