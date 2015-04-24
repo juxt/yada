@@ -1,4 +1,4 @@
-The path in the URI is `/PathParameter/1234`. Let's assume that our routing library has extracted the account number (`1234`) and provided it in the Ring request's `:route-params` entry :-
+Let's assume the path in the request URI is `/PathParameter/1234`. Let's also assume that our routing library has extracted the account number (`1234`) and provided it in the Ring request's `:route-params` entry :-
 
 ```clojure
 {

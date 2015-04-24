@@ -215,6 +215,11 @@ server. If a user-agent does not meet the contract set by the API, the
 server can respond with a 400 status code, indicating to the user-agent
 that the request was malformed.
 
+### Path parameters
+
+Let's start with path parameters, which are values that are extracted
+from the URI's path.
+
 <example ref="PathParameter"/>
 
 We can also declare the parameter in the resource map by adding a __:params__ entry whose value is a map between keys and parameter definitions.
@@ -263,6 +268,24 @@ Let's show how these types work with another example :-
 If we try to coerce a parameter into a type that it cannot be coerced into, the parameter will be given a null value. If the parameter is specified as required, this will represent an error and produce a 400 response. Let's see this happen with an example :-
 
 <example ref="PathParameterCoercedError"/>
+
+### Query parameters
+
+Query parameters can be defined in much the same way as path parameters.
+The difference is that while path parameters distinguish between
+resources, query parameters are used to influence the representation
+produced from the same resource.
+
+Query parameters are encoding in the URI's _query string_ (the
+part after the `?` character).
+
+<example ref="QueryParameter"/>
+
+<include type="note" ref="ring-middleware"/>
+
+<example ref="QueryParameterDeclared"/>
+
+<example ref="QueryParameterCoerced"/>
 
 Parameter validation is one of a number of strategies to defend against
 user agents sending malformed requests. Using yada's parameter coercion,

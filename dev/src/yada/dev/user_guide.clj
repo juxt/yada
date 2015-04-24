@@ -15,7 +15,7 @@
    [modular.bidi :refer (path-for)]
    [modular.template :as template :refer (render-template)]
    [modular.component.co-dependency :refer (co-using)]
-   [yada.dev.examples :refer (resource-map get-path get-path-args request make-handler expected-response get-test-function external?)]
+   [yada.dev.examples :refer (resource-map get-path get-path-args get-query-string request make-handler expected-response get-test-function external?)]
    [yada.yada :refer (yada)]))
 
 (defn emit-element
@@ -85,7 +85,8 @@
   (when xml
     (let [url (str
                (when (external? ex) ext-prefix)
-               (apply path-for @(:*router user-guide) (keyword (basename ex)) (get-path-args ex)))
+               (apply path-for @(:*router user-guide) (keyword (basename ex)) (get-path-args ex))
+               (when-let [qs (get-query-string ex)] (str "?" qs)))
           {:keys [method headers]} (request ex)
           ]
 

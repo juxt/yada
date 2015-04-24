@@ -12,6 +12,7 @@
    [yada.representation :as rep]
    [yada.util :refer (parse-http-date)]
    [ring.middleware.basic-authentication :as ba]
+   [ring.middleware.params :refer (params-request)]
    [clojure.tools.logging :refer :all]
    [clojure.set :as set]))
 
@@ -289,8 +290,7 @@
   ;; that have. This approach makes it possible for developers to leave
   ;; out entries that are implied by the other entries. For example, if a body has been specified, we resource
 
-  (let [declared-path-params (for [[k v] params :when (= (:in v) :path)] k)
-        params-coercer (coercer
+  (let [params-coercer (coercer
                         (into {} (for [[k v] params] [k (or (:type v) s/Str)]))
                         string-coercion-matcher)
         required-params (set (for [[k v] params :when (:required v)] k))
@@ -325,7 +325,18 @@
 
              ;; Malformed
              (fn [ctx]
-               (let [params (params-coercer (select-keys (:route-params req) declared-path-params))]
+               (let [keywordize (fn [m] (into {} (for [[k v] m] [(keyword k) v])))
+                     params
+                     (params-coercer
+                      (merge
+                       ;; Path parms
+                       (select-keys (:route-params req)
+                                    (for [[k v] params :when (= (:in v) :path)] k))
+                       ;; Query params
+                       (let [query-param-keys (for [[k v] params :when (= (:in v) :query)] k)]
+                         (when query-param-keys
+                           (select-keys (-> req params-request :query-params keywordize) query-param-keys)))))]
+
                  (if (set/subset? required-params (set (keys params)))
                    (assoc ctx :params params)
                    (d/error-deferred (ex-info "" {:status 400

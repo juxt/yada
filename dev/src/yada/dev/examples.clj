@@ -13,6 +13,7 @@
    [markdown.core :as markdown]
    [com.stuartsierra.component :refer (using Lifecycle)]
    [modular.component.co-dependency :refer (co-using)]
+   [ring.middleware.params :refer (wrap-params)]
    [ring.mock.request :refer (request) :rename {request mock-request}]
    [clojure.core.async :refer (go go-loop timeout <! >! chan)]
    )
@@ -32,6 +33,7 @@
   (request [_] "Return request sent to handler")
   (path [_] "Where a resource is mounted")
   (path-args [_] "Any path arguments to use in the URI")
+  (query-string [_] "Query string to add to the request")
   (expected-response [_] "What the response should be")
   (test-function [_] "Which JS function to call to test the example")
   (http-spec [_] "Which section of an RFC does this relate to")
@@ -169,7 +171,10 @@
 
 (defrecord PathParameter []
   Example
-  (resource-map [_] '{:body (fn [ctx] (str "Account number is " (-> ctx :request :route-params :account)))})
+  (resource-map [_]
+    '{:body (fn [ctx]
+              (str "Account number is "
+                   (-> ctx :request :route-params :account)))})
   (make-handler [ex] (yada (eval (resource-map ex))))
   (path [r] [(basename r) "/" :account])
   (path-args [_] [:account 1234])
@@ -178,9 +183,10 @@
 
 (defrecord PathParameterDeclared []
   Example
-  (resource-map [_] '{:params
-                      {:account {:in :path}}
-                      :body (fn [ctx] (str "Account number is " (-> ctx :params :account)))})
+  (resource-map [_]
+    '{:params
+      {:account {:in :path}}
+      :body (fn [ctx] (str "Account number is " (-> ctx :params :account)))})
   (make-handler [ex] (yada (eval (resource-map ex))))
   (path [r] [(basename r) "/" :account])
   (path-args [_] [:account 1234])
@@ -189,19 +195,21 @@
 
 (defrecord PathParameterRequired []
   Example
-  (resource-map [_] '{:params
-                      {:account {:in :path :required true}}
-                      :body (fn [ctx] (str "Account number is " (-> ctx :params :account)))})
+  (resource-map [_]
+    '{:params
+      {:account {:in :path :required true}}
+      :body (fn [ctx] (str "Account number is " (-> ctx :params :account)))})
   (make-handler [ex] (yada (eval (resource-map ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 400}))
 
 (defrecord PathParameterCoerced []
   Example
-  (resource-map [_] '{:params
-                      {:account {:in :path :type Long}
-                       :account-type {:in :path :type schema.core/Keyword}}
-                      :body (fn [ctx] (format "Type of account parameter is %s, account type is %s" (-> ctx :params :account type) (-> ctx :params :account-type)))})
+  (resource-map [_]
+    '{:params
+      {:account {:in :path :type Long}
+       :account-type {:in :path :type schema.core/Keyword}}
+      :body (fn [ctx] (format "Type of account parameter is %s, account type is %s" (-> ctx :params :account type) (-> ctx :params :account-type)))})
   (make-handler [ex] (yada (eval (resource-map ex))))
   (path [r] [(basename r) "/" :account-type "/" :account])
   (path-args [_] [:account 1234 :account-type "savings"])
@@ -210,14 +218,55 @@
 
 (defrecord PathParameterCoercedError []
   Example
-  (resource-map [_] '{:params
-                      {:account {:in :path :type Long :required true}}
-                      :body (fn [ctx] (format "Account is %s" (-> ctx :params :account)))})
+  (resource-map [_]
+    '{:params
+      {:account {:in :path :type Long :required true}}
+      :body (fn [ctx] (format "Account is %s" (-> ctx :params :account)))})
   (make-handler [ex] (yada (eval (resource-map ex))))
   (path [r] [(basename r) "/" :account])
   (path-args [_] [:account "wrong"])
   (request [_] {:method :get})
   (expected-response [_] {:status 400}))
+
+(defrecord QueryParameter []
+  Example
+  (resource-map [_]
+    '{:body (fn [ctx]
+              (str "Account number is "
+                   (-> ctx :request :query-params (get "account"))))})
+  (make-handler [ex] (-> (yada (eval (resource-map ex)))
+                         (wrap-params)))
+  (query-string [_] "account=1234")
+  (request [_] {:method :get})
+  (expected-response [_] {:status 200}))
+
+(defrecord QueryParameterDeclared []
+  Example
+  (resource-map [_]
+    '{:params
+      {:account {:in :query}}
+      :body (fn [ctx] (str "Account number is " (-> ctx :params :account)))})
+  (make-handler [ex] (yada (eval (resource-map ex))))
+  (query-string [_] "account=1234")
+  (request [_] {:method :get})
+  (expected-response [_] {:status 200}))
+
+(defrecord QueryParameterCoerced []
+  Example
+  (resource-map [_]
+    '{:params
+      {:account {:in :query :type Long}
+       :account-type {:in :query :type schema.core/Keyword}}
+      :body (fn [ctx] (format "Type of account parameter is %s, account type is %s" (-> ctx :params :account type) (-> ctx :params :account-type)))})
+  (make-handler [ex] (yada (eval (resource-map ex))))
+  (query-string [_] "account=1234&account-type=savings")
+  (request [_] {:method :get})
+  (expected-response [_] {:status 200}))
+
+;; TODO: Add other parameter types (header, formData and body)
+;;
+;; > Possible values are "query", "header", "path", "formData" or "body".
+;; -- https://github.com/swagger-api/swagger-spec/blob/master/versions/2.0.md#parameterObject
 
 (defrecord ResourceState []
   Example
@@ -547,6 +596,9 @@
   (or
    (try (path-args r) (catch AbstractMethodError e))
    []))
+
+(defn get-query-string [r]
+  (try (query-string r) (catch AbstractMethodError e)))
 
 (defn get-test-function [ex]
   (try (test-function ex) (catch AbstractMethodError e)))
