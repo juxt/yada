@@ -251,6 +251,31 @@
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 
+(defrecord QueryParameterRequired []
+  Example
+  (resource-map [_]
+    '{:params
+      {:account {:in :query :required true}
+       :account-type {:in :query :required true}}
+      :body (fn [ctx] (str "Account number is " (-> ctx :params :account)))})
+  (make-handler [ex] (yada (eval (resource-map ex))))
+  (query-string [_] "account=1234")
+  (request [_] {:method :get})
+  (expected-response [_] {:status 400}))
+
+(defrecord QueryParameterNotRequired []
+  Example
+  (resource-map [_]
+    '{:params
+      {:account {:in :query :required true}
+       :account-type {:in :query}}
+      ;; TODO: When we try to return the map, we get this instead: Caused by: java.lang.IllegalArgumentException: No method in multimethod 'render-map' for dispatch value: null
+      :body (fn [ctx] (str "Params is " (-> ctx :params)))})
+  (make-handler [ex] (yada (eval (resource-map ex))))
+  (query-string [_] "account=1234")
+  (request [_] {:method :get})
+  (expected-response [_] {:status 400}))
+
 (defrecord QueryParameterCoerced []
   Example
   (resource-map [_]

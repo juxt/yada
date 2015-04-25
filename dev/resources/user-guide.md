@@ -285,6 +285,12 @@ part after the `?` character).
 
 <example ref="QueryParameterDeclared"/>
 
+We can declare a query that query parameter is required, or otherwise accept when it isn't given (which is the default case).
+
+<example ref="QueryParameterRequired"/>
+
+<example ref="QueryParameterNotRequired"/>
+
 <example ref="QueryParameterCoerced"/>
 
 Parameter validation is one of a number of strategies to defend against

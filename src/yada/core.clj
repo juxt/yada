@@ -290,8 +290,9 @@
   ;; that have. This approach makes it possible for developers to leave
   ;; out entries that are implied by the other entries. For example, if a body has been specified, we resource
 
-  (let [params-coercer (coercer
-                        (into {} (for [[k v] params] [k (or (:type v) s/Str)]))
+  (let [schema (into {} (for [[k v] params] [(if (:required v) k (s/optional-key k)) (or (:type v) s/Str)]))
+        params-coercer (coercer
+                        schema
                         string-coercion-matcher)
         required-params (set (for [[k v] params :when (:required v)] k))
         security (as-sequential security)]
@@ -480,10 +481,3 @@
   (if (keyword? (first args))
     (yada* (into {} (map vec (partition 2 args))))
     (yada* (first args))))
-
-;; TODO: This xf doesn't work for SSE, need to let Zach know
-#_(sequence
- (comp
-  (mapcat (fn [x] [x "abc\n"]))
-  (map (partial format "data: %s\n\n")))
- ["a" "b"])
