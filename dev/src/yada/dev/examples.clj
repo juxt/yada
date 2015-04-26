@@ -232,11 +232,11 @@
   Example
   (resource-map [_]
     '{:body (fn [ctx]
-              (str "Account number is "
-                   (-> ctx :request :query-params (get "account"))))})
+              (str "Showing transaction in month "
+                   (-> ctx :request :query-params (get "month"))))})
   (make-handler [ex] (-> (yada (eval (resource-map ex)))
                          (wrap-params)))
-  (query-string [_] "account=1234")
+  (query-string [_] "month=2014-09")
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 
@@ -244,10 +244,12 @@
   Example
   (resource-map [_]
     '{:params
-      {:account {:in :query}}
-      :body (fn [ctx] (str "Account number is " (-> ctx :params :account)))})
+      {:month {:in :query}}
+      :body (fn [ctx]
+              (str "Showing transactions in month "
+                   (-> ctx :params :month)))})
   (make-handler [ex] (yada (eval (resource-map ex))))
-  (query-string [_] "account=1234")
+  (query-string [_] "month=2014-09")
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 
@@ -255,11 +257,14 @@
   Example
   (resource-map [_]
     '{:params
-      {:account {:in :query :required true}
-       :account-type {:in :query :required true}}
-      :body (fn [ctx] (str "Account number is " (-> ctx :params :account)))})
+      {:month {:in :query :required true}
+       :order {:in :query :required true}}
+      :body (fn [ctx]
+              (format "Showing transactions in month %s ordered by %s"
+                      (-> ctx :params :month)
+                      (-> ctx :params :order)))})
   (make-handler [ex] (yada (eval (resource-map ex))))
-  (query-string [_] "account=1234")
+  (query-string [_] "month=2014-09")
   (request [_] {:method :get})
   (expected-response [_] {:status 400}))
 
@@ -267,12 +272,12 @@
   Example
   (resource-map [_]
     '{:params
-      {:account {:in :query :required true}
-       :account-type {:in :query}}
+      {:month {:in :query :required true}
+       :order {:in :query}}
       ;; TODO: When we try to return the map, we get this instead: Caused by: java.lang.IllegalArgumentException: No method in multimethod 'render-map' for dispatch value: null
-      :body (fn [ctx] (str "Params is " (-> ctx :params)))})
+      :body (fn [ctx] (str "Parameters: " (-> ctx :params)))})
   (make-handler [ex] (yada (eval (resource-map ex))))
-  (query-string [_] "account=1234")
+  (query-string [_] "month=2014-09")
   (request [_] {:method :get})
   (expected-response [_] {:status 400}))
 
@@ -280,11 +285,14 @@
   Example
   (resource-map [_]
     '{:params
-      {:account {:in :query :type Long}
-       :account-type {:in :query :type schema.core/Keyword}}
-      :body (fn [ctx] (format "Type of account parameter is %s, account type is %s" (-> ctx :params :account type) (-> ctx :params :account-type)))})
+      {:month {:in :query :type schema.core/Inst}
+       :order {:in :query :type schema.core/Keyword}}
+      :body (fn [ctx]
+              (format "Month type is %s, ordered by %s"
+                      (-> ctx :params :month type)
+                      (-> ctx :params :order)))})
   (make-handler [ex] (yada (eval (resource-map ex))))
-  (query-string [_] "account=1234&account-type=savings")
+  (query-string [_] "month=2014-09&order=most-recent")
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 

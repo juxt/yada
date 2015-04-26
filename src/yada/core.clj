@@ -9,6 +9,7 @@
    [schema.coerce :refer (coercer string-coercion-matcher)]
    [yada.protocols :as p]
    [yada.conneg :refer (best-allowed-content-type)]
+   [yada.coerce :refer (coercion-matcher)]
    [yada.representation :as rep]
    [yada.util :refer (parse-http-date)]
    [ring.middleware.basic-authentication :as ba]
@@ -239,7 +240,6 @@
                       {:status 501
                        :http-response true})))))
 
-
 (defn yada*
   [{:keys
     [service-available?                 ; async-supported
@@ -291,7 +291,7 @@
   (let [schema (into {} (for [[k v] params] [(if (:required v) k (s/optional-key k)) (or (:type v) s/Str)]))
         params-coercer (coercer
                         schema
-                        string-coercion-matcher)
+                        coercion-matcher)
         required-params (set (for [[k v] params :when (:required v)] k))
         security (as-sequential security)]
 
@@ -335,6 +335,8 @@
                        (let [query-param-keys (for [[k v] params :when (= (:in v) :query)] k)]
                          (when query-param-keys
                            (select-keys (-> req params-request :query-params keywordize) query-param-keys)))))]
+
+                 ;; TODO: Check for params being errorcontainer
 
                  (if (set/subset? required-params (set (keys params)))
                    (assoc ctx :params params)

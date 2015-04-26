@@ -19,7 +19,8 @@
    [ring-basic-authentication "1.0.5"]
    [camel-snake-kebab "0.1.4"]
    [potemkin "0.3.11"]
-   [org.clojure/core.async "0.1.346.0-17112a-alpha"]]
+   [org.clojure/core.async "0.1.346.0-17112a-alpha"]
+   [clj-time "0.9.0"]]
 
   :repl-options {:init-ns user
                  :welcome (println "Type (dev) to start")}
