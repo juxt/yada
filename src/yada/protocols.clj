@@ -61,8 +61,15 @@
 
   (state [f ctx]
     (let [res (f ctx)]
-      (if (d/deferrable? res)
+      (cond
+        (satisfies? aip/ReadPort res)
+        (state res ctx)
+
+        ;; Deferrable
+        (d/deferrable? res)
         (d/chain res #(state % ctx))
+
+        :otherwise
         (state res ctx))))
 
   (last-modified [f ctx]
@@ -160,6 +167,7 @@
   (allow-origin [_ _] nil)
 
   ReadPort
+  (state [port ctx] (->source port))
   (body [port ctx] (->source port))
 
   Object

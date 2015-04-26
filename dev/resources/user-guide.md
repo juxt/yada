@@ -560,6 +560,10 @@ Let's demonstrate this with another example.
 
 <example ref="ServerSentEventsWithCoreAsyncChannel"/>
 
+It's also possible to use the __:state__ entry instead of __:body__. This has the advantage of defaulting to a content-type of __text/event-stream__ without has having to specify it explicitly.
+
+<example ref="ServerSentEventsDefaultContentType"/>
+
 Of course, all the parts of yada you've learned up until now, such as
 access control, can be added to the resource map. (Contrast that with
 web-sockets, where you'd have to design and implement your own bespoke

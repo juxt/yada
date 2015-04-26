@@ -610,6 +610,29 @@
   (expected-response [_] {:status 200})
   (test-function [_] "tryItEvents"))
 
+(defrecord ServerSentEventsDefaultContentType []
+  Example
+  (resource-map [_]
+    '(do
+       (require '[clojure.core.async :refer (chan go-loop <! >! timeout close!)])
+       (require '[manifold.stream :refer (->source)])
+       {:state
+        (fn [ctx]
+          (let [ch (chan)]
+            (go-loop [n 10]
+              (if (pos? n)
+                (do
+                  (>! ch (format "The time on the yada server is now %s, messages after this one: %d" (java.util.Date.) (dec n)))
+                  (<! (timeout 1000))
+                  (recur (dec n)))
+                (close! ch)))
+            ch)
+          )}))
+  (make-handler [ex] (yada (eval (resource-map ex))))
+  (request [_] {:method :get})
+  (expected-response [_] {:status 200})
+  (test-function [_] "tryItEvents"))
+
 (defn title [r]
   (last (string/split (.getName (type r)) #"\.")))
 

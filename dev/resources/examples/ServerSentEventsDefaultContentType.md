@@ -1,0 +1,5 @@
+<resource-map/>
+
+<curl/>
+
+<response/>
