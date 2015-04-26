@@ -14,7 +14,11 @@
    [ring.middleware.basic-authentication :as ba]
    [ring.middleware.params :refer (params-request)]
    [clojure.tools.logging :refer :all]
-   [clojure.set :as set]))
+   [clojure.set :as set]
+   [clojure.core.async :as a])
+  (import (manifold.deferred IDeferred Deferrable)
+          (clojure.lang IPending)
+          (java.util.concurrent Future)))
 
 ;; API specs. are created like this
 
@@ -86,21 +90,16 @@
 (defn cors [allow-origin]
   (fn [ctx]
     (if-let [origin (p/allow-origin allow-origin ctx)]
-      (do
-        (infof "origin is %s" origin)
-        (update-in ctx [:response :headers]
-                   merge {"access-control-allow-origin"
-                          origin
-                          "access-control-expose-headers"
-                          (apply str
-                                 (interpose ", " ["Server" "Date" "Content-Length" "Access-Control-Allow-Origin"]))}))
-      (do
-        (infof "no origin!")
-        ctx))))
+      (update-in ctx [:response :headers]
+                 merge {"access-control-allow-origin"
+                        origin
+                        "access-control-expose-headers"
+                        (apply str
+                               (interpose ", " ["Server" "Date" "Content-Length" "Access-Control-Allow-Origin"]))})
+      ctx)))
 
 (defn return-response [status headers]
   (fn [ctx]
-    (println (get-in ctx [:response :headers]))
     (merge
      {:status (or (get-in ctx [:response :status])
                   (p/status status)
@@ -166,7 +165,7 @@
             ;; Determine body
             (cond
               body (p/body body ctx)
-              state state         ; the state here can still be deferred
+              state state ; the state here can still be deferred
               )
 
             ;; serialize to representation (an existing string will be left intact)
@@ -260,7 +259,6 @@
      resource                           ; async-supported
      state                              ; async-supported
      body                               ; async-supported
-     events                             ; async-supported
 
      ;; Security
      authorization                      ; async-supported
@@ -312,7 +310,7 @@
              (fn [ctx]
                (if-not
                    (case method
-                     :get (or (some? resource) state body events)
+                     :get (or (some? resource) state body)
                      :put put
                      :post post
                      :options (or allow-origin)
@@ -414,17 +412,6 @@
                   ctx
                   ;; Not sure we should use exists-flow for CORS pre-flight requests, should handle further above
                   (exists-flow method resource state req status headers body post allow-origin)
-                  (cors allow-origin)
-                  (return-response status headers))
-
-                 ;; Event-stream
-                 events
-                 (d/chain
-                  ctx
-                  (fn [ctx] (-> ctx
-                                (assoc-in [:response :headers "content-type"] "text/event-stream")
-                                (assoc-in [:response :body] (transform (map (partial format "data: %s\n\n"))
-                                                                       (->source (p/events events ctx))))))
                   (cors allow-origin)
                   (return-response status headers))
 

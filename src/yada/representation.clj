@@ -3,7 +3,12 @@
 (ns yada.representation
   (:require
    [hiccup.core :refer (html)]
-   [cheshire.core :as json]))
+   [cheshire.core :as json]
+   [manifold.stream :refer (->source transform)]
+   [yada.protocols :refer (unwrap)])
+  (:import
+   (yada.protocols ReadPortWrapper)
+   (clojure.core.async.impl.channels ManyToManyChannel)))
 
 (defprotocol Content
   (content [_ content-type] "Get resource's content, given the content-type")
@@ -13,6 +18,11 @@
 (defmulti render-seq (fn [state content-type] content-type))
 
 (extend-protocol Content
+  ReadPortWrapper
+  (content [state content-type] (content (unwrap state) content-type))
+  ManyToManyChannel
+  (content [state content-type] (render-seq state content-type))
+  (content-type-default [_] "text/event-stream")
   java.util.Map
   (content [state content-type] (render-map state content-type))
   (content-type-default [_] "application/json")
@@ -22,10 +32,10 @@
   String
   (content [state _] state)
   (content-type-default [_] "text/plain")
-  Object
+  #_Object
   ;; Default is to return object unmarshalled
-  (content [state _] state)
-  (content-type-default [_] nil)
+  #_(content [state _] state)
+  #_(content-type-default [_] nil)
   nil
   (content [_ content-type] nil)
   (content-type-default [_] nil))
@@ -37,6 +47,11 @@
 (defmethod render-seq "application/json"
   [s _]
   (json/encode s))
+
+(defmethod render-seq "text/event-stream"
+  [s _]
+  ;; Transduce the body to server-sent-events
+  (transform (map (partial format "data: %s\n\n")) (->source s)))
 
 (defmethod render-map "text/html"
   [m _]

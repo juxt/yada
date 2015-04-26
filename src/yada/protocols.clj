@@ -3,7 +3,10 @@
 (ns yada.protocols
   (:require
    [manifold.deferred :as d]
-   [clojure.tools.logging :refer :all]))
+   [manifold.stream :refer (->source transform)]
+   [clojure.tools.logging :refer :all]
+   [clojure.core.async.impl.protocols :as aip])
+  (import (clojure.core.async.impl.protocols ReadPort)))
 
 (defprotocol Callbacks
   (service-available? [_] "Return whether the service is available")
@@ -23,11 +26,19 @@
   (authorize [_ ctx] "Authorize the request. When truthy, authorization is called with the value and used as the :authorization entry of the context, otherwise assumed unauthorized.")
   (authorization [o] "Given the result of an authorize call, a truthy value will be added to the context.")
 
-  (events [_ ctx] "Provide server-sent events")
   (format-event [_] "Format an individual event")
 
   (allow-origin [_ ctx] "If another origin (other than the resource's origin) is allowed, return the the value of the Access-Control-Allow-Origin header to be set on the response")
   )
+
+;; core.async ReadPort is a deferrable, so gets
+;; manifold.deferred makes ReadPort satisfy a Deferrable protocol, which means that when used in a manifold.deferred/chain, a core.async channel gets
+(defprotocol Wrapper
+  (unwrap [_]))
+
+(defrecord ReadPortWrapper [port]
+  Wrapper
+  (unwrap [_] port))
 
 (extend-protocol Callbacks
   Boolean
@@ -70,8 +81,21 @@
         (last-modified res ctx))))
 
   (body [f ctx]
-    ;; body is not called recursively
-    (f ctx))
+    (let [res (f ctx)]
+      (cond
+        ;; If this is something we can take from, in the core.async
+        ;; sense, then call body again. We need this clause here
+        ;; because: (satisfies? d/Deferrable (a/chan)) => true, so
+        ;; (deferrable?  (a/chan) is (consequently) true too.
+        (satisfies? aip/ReadPort res)
+        (body res ctx)
+
+        ;; Deferrable
+        (d/deferrable? res)
+        (d/chain res #(body % ctx))
+
+        :otherwise
+        (body res ctx))))
 
   (produces [f] (f))
   (produces-from-body [f] nil)
@@ -80,8 +104,6 @@
     (f ctx))
 
   (authorize [f ctx] (f ctx))
-
-  (events [f ctx] (f ctx))
 
   (allow-origin [f ctx] (f ctx))
 
@@ -123,7 +145,7 @@
 
   clojure.lang.PersistentVector
   (produces [v] (produces (set v)))
-  (events [v ctx] v)
+  (body [v ctx] v)
 
   java.util.Date
   (last-modified [d _] d)
@@ -146,6 +168,8 @@
   (interpret-post-result [_ ctx] nil)
   (allow-origin [_ _] nil)
 
+  ReadPort
+  (body [port ctx] (->ReadPortWrapper port))
 
   Object
   (authorization [o] o)
