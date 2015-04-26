@@ -3,6 +3,8 @@
 (defproject yada "0.3.0"
   :description "A library for Clojure web APIs"
   :url "http://github.com/juxt/yada"
+  :license {:name "The MIT License"
+            :url "http://opensource.org/licenses/MIT"}
 
   :exclusions [com.stuartsierra/component
                org.clojure/clojure]
