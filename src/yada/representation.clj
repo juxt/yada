@@ -6,7 +6,6 @@
    [cheshire.core :as json]
    [manifold.stream :refer (->source transform)])
   (:import
-   (yada.protocols ReadPortWrapper)
    (clojure.core.async.impl.channels ManyToManyChannel)
    (manifold.stream.async CoreAsyncSource)))
 
