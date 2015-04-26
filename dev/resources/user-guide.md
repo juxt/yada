@@ -548,24 +548,22 @@ es.onmessage = function(ev) {
 
 Creating the resource to provide the events to the user-agent is super-easy with yada.
 
-Instead of specifying a __:body__ entry, we use an __:events__ entry.
+The only thing to do is set the content-type to __text/event-stream__
 
 <example ref="ServerSentEvents"/>
 
 The example above showed a contrived example where the events are static. More usually, you will specify a function returning a _stream_ of events.
 
-A stream can be anything that can produce events, such as a lazy sequence, core.async channel or reactive stream. In fact, you can use anything that is supported by the underlying manifold library, so check [manifold](https://github.com/ztellman/manifold) for full details.
+A stream can be anything that can produce events, such as a lazy sequence or (usefully) a core.async channel.
 
 Let's demonstrate this with another example.
 
 <example ref="ServerSentEventsWithCoreAsyncChannel"/>
 
 Of course, all the parts of yada you've learned up until now, such as
-access control, can be added to the resource map. Contrast that with
+access control, can be added to the resource map. (Contrast that with
 web-sockets, where you'd have to design and implement your own bespoke
-security system.
-
-The only difference between a resource providing a stream of events and a resource providing content is that we specify __:events__ instead of __:body__.
+security system.)
 
 ## Swagger
 
