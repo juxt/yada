@@ -4,11 +4,11 @@
   (:require
    [hiccup.core :refer (html)]
    [cheshire.core :as json]
-   [manifold.stream :refer (->source transform)]
-   [yada.protocols :refer (unwrap)])
+   [manifold.stream :refer (->source transform)])
   (:import
    (yada.protocols ReadPortWrapper)
-   (clojure.core.async.impl.channels ManyToManyChannel)))
+   (clojure.core.async.impl.channels ManyToManyChannel)
+   (manifold.stream.async CoreAsyncSource)))
 
 (defprotocol Content
   (content [_ content-type] "Get resource's content, given the content-type")
@@ -18,11 +18,6 @@
 (defmulti render-seq (fn [state content-type] content-type))
 
 (extend-protocol Content
-  ReadPortWrapper
-  (content [state content-type] (content (unwrap state) content-type))
-  ManyToManyChannel
-  (content [state content-type] (render-seq state content-type))
-  (content-type-default [_] "text/event-stream")
   java.util.Map
   (content [state content-type] (render-map state content-type))
   (content-type-default [_] "application/json")
@@ -32,6 +27,9 @@
   String
   (content [state _] state)
   (content-type-default [_] "text/plain")
+  CoreAsyncSource
+  (content [state content-type] (render-seq state content-type))
+  (content-type-default [_] "text/event-stream")
   #_Object
   ;; Default is to return object unmarshalled
   #_(content [state _] state)

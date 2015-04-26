@@ -31,15 +31,6 @@
   (allow-origin [_ ctx] "If another origin (other than the resource's origin) is allowed, return the the value of the Access-Control-Allow-Origin header to be set on the response")
   )
 
-;; core.async ReadPort is a deferrable, so gets
-;; manifold.deferred makes ReadPort satisfy a Deferrable protocol, which means that when used in a manifold.deferred/chain, a core.async channel gets
-(defprotocol Wrapper
-  (unwrap [_]))
-
-(defrecord ReadPortWrapper [port]
-  Wrapper
-  (unwrap [_] port))
-
 (extend-protocol Callbacks
   Boolean
   (service-available? [b] [b {}])
@@ -169,7 +160,7 @@
   (allow-origin [_ _] nil)
 
   ReadPort
-  (body [port ctx] (->ReadPortWrapper port))
+  (body [port ctx] (->source port))
 
   Object
   (authorization [o] o)
