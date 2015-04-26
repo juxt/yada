@@ -18,7 +18,8 @@
    [cheshire "5.4.0"]
    [ring-basic-authentication "1.0.5"]
    [camel-snake-kebab "0.1.4"]
-   [potemkin "0.3.11"]]
+   [potemkin "0.3.11"]
+   [org.clojure/core.async "0.1.346.0-17112a-alpha"]]
 
   :repl-options {:init-ns user
                  :welcome (println "Type (dev) to start")}
@@ -52,9 +53,6 @@
           [org.webjars/swagger-ui "2.1.0-alpha.6"]
           [org.webjars/jquery "2.1.3"]
           [org.webjars/bootstrap "3.3.2"]
-
-          ;; For server sent events demo
-          [org.clojure/core.async "0.1.346.0-17112a-alpha"]
           ]
 
          :source-paths ["dev/src" "examples"]
