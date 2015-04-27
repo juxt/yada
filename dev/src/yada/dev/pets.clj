@@ -10,8 +10,8 @@
 
 (defrecord PetsApiService [database]
   Lifecycle
-  (start [this] (assoc this
-                       :api (pets/pets-api database (->DefaultAsyncHandler))))
+  (start [this]
+    (assoc this :api (pets/pets-api database (->DefaultAsyncHandler))))
   (stop [this] this)
 
   RouteProvider
