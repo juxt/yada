@@ -96,7 +96,7 @@
          (make new-web-resources config
                :key :swagger-ui
                :uri-context "/swagger-ui"
-               :resource-prefix "META-INF/resources/webjars/swagger-ui/2.1.0-alpha.6")))
+               :resource-prefix "META-INF/resources/webjars/swagger-ui/2.1.8-M1")))
 
 (defn router-components [system config]
   (assoc system

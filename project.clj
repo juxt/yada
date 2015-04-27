@@ -51,7 +51,7 @@
           [juxt.modular/test "0.1.0"]
           [juxt.modular/template "0.6.2"]
 
-          [org.webjars/swagger-ui "2.1.0-alpha.6"]
+          [org.webjars/swagger-ui "2.1.8-M1"]
           [org.webjars/jquery "2.1.3"]
           [org.webjars/bootstrap "3.3.2"]
           ]
