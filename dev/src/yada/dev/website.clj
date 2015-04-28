@@ -3,6 +3,7 @@
    [schema.core :as s]
    [bidi.bidi :refer (RouteProvider tag)]
    [modular.bidi :refer (path-for)]
+   yada.bidi
    [clojure.java.io :as io]
    [hiccup.core :refer (html)]
    [com.stuartsierra.component :refer (using)]

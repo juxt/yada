@@ -2,6 +2,8 @@
 
 (ns yada.core
   (:require
+   [bidi.bidi :refer (Matched succeed)]
+   [bidi.ring :refer (Ring)]
    [manifold.deferred :as d]
    [manifold.stream :refer (->source transform)]
    [hiccup.core :refer (html h)]
@@ -21,18 +23,30 @@
           (clojure.lang IPending)
           (java.util.concurrent Future)))
 
-;; API specs. are created like this
+(def k-bidi-match-context :bidi/match-context)
 
-;; This is kind of like a bidi route structure
+(defprotocol YadaInvokeable
+  (invoke-with-initial-context [_ req ctx]
+    "Invoke the yada handler with some initial context entries"))
 
-;; But we shouldn't limit ourselves to only that which is declared, because so much more can be generated, like 404s, etc.
+;; Yada returns instances of YadaHandler, which allows yada to integrate
+;; with bidi's matching-context.
+(defrecord YadaHandler [delegate]
+  clojure.lang.IFn
+  (invoke [_ req] (delegate req {}))
+  YadaInvokeable
+  (invoke-with-initial-context [this req ctx] (delegate req ctx))
+  Matched
+  (resolve-handler [this m]
+    (succeed this m))
+  (unresolve-handler [this m]
+    (when (= this (:handler m)) ""))
+  Ring
+  (request [this req m]
+    (delegate req {k-bidi-match-context m})))
 
-;; "It is better to have 100 functions operate on one data structure than 10 functions on 10 data structures." —Alan Perlis
-
-
-;; TODO For authentication, implementation is out-of-band, in Ring
-;; middleware or another mechanism for assoc'ing evidence of credentials
-;; to the Ring request.
+;; "It is better to have 100 functions operate on one data structure
+;; than 10 functions on 10 data structures." — Alan Perlis
 
 (defn- not* [[result m]]
   [(not result) m])
@@ -295,150 +309,154 @@
         required-params (set (for [[k v] params :when (:required v)] k))
         security (as-sequential security)]
 
-    (fn [req]
-      (let [method (:request-method req)]
+    (->YadaHandler
+     (fn [req ctx]
+       (let [method (:request-method req)]
 
-        (-> {:request req
-             :resource-map resource-map}
+         (-> ctx
 
-            (d/chain
-             (nonblocking-exit-when-not service-available? (p/service-available? service-available?) 503)
-             (exit-when-not (p/known-method? known-method? method) 501)
-             (exit-when (p/request-uri-too-long? request-uri-too-long? (:uri req)) 414)
+             (merge
+              {:request req
+               :resource-map resource-map})
 
-             ;; Method Not Allowed
-             (fn [ctx]
-               (if-not
-                   (case method
-                     :get (or (some? resource) state body)
-                     :put put
-                     :post post
-                     :options (or allow-origin)
-                     nil)
-                 (do
-                   (warnf "Method not allowed %s" method)
-                   (d/error-deferred (ex-info (format "Method: %s" method)
-                                              {:status 405
-                                               ::http-response true})))
-                 ctx))
+             (d/chain
+              (nonblocking-exit-when-not service-available? (p/service-available? service-available?) 503)
+              (exit-when-not (p/known-method? known-method? method) 501)
+              (exit-when (p/request-uri-too-long? request-uri-too-long? (:uri req)) 414)
 
-             ;; Malformed
-             (fn [ctx]
-               (let [keywordize (fn [m] (into {} (for [[k v] m] [(keyword k) v])))
-                     params
-                     (params-coercer
-                      (merge
-                       ;; Path parms
-                       (select-keys (:route-params req)
-                                    (for [[k v] params :when (= (:in v) :path)] k))
-                       ;; Query params
-                       (let [query-param-keys (for [[k v] params :when (= (:in v) :query)] k)]
-                         (when query-param-keys
-                           (select-keys (-> req params-request :query-params keywordize) query-param-keys)))))]
+              ;; Method Not Allowed
+              (fn [ctx]
+                (if-not
+                    (case method
+                      :get (or (some? resource) state body)
+                      :put put
+                      :post post
+                      :options (or allow-origin)
+                      nil)
+                  (do
+                    (warnf "Method not allowed %s" method)
+                    (d/error-deferred (ex-info (format "Method: %s" method)
+                                               {:status 405
+                                                ::http-response true})))
+                  ctx))
 
-                 ;; TODO: Check for params being errorcontainer
+              ;; Malformed
+              (fn [ctx]
+                (let [keywordize (fn [m] (into {} (for [[k v] m] [(keyword k) v])))
+                      params
+                      (params-coercer
+                       (merge
+                        ;; Path parms
+                        (select-keys (:route-params req)
+                                     (for [[k v] params :when (= (:in v) :path)] k))
+                        ;; Query params
+                        (let [query-param-keys (for [[k v] params :when (= (:in v) :query)] k)]
+                          (when query-param-keys
+                            (select-keys (-> req params-request :query-params keywordize) query-param-keys)))))]
 
-                 (if (set/subset? required-params (set (keys params)))
-                   (assoc ctx :params params)
-                   (d/error-deferred (ex-info "" {:status 400
-                                                  ::http-response true})))))
+                  ;; TODO: Check for params being errorcontainer
 
-             ;; Authentication
-             (fn [ctx]
-               (cond-> ctx
-                 (not-empty (filter (comp (partial = :basic) :type) security))
-                 (assoc :authentication (:basic-authentication (ba/basic-authentication-request req (fn [user password] {:user user :password password}))))))
+                  (if (set/subset? required-params (set (keys params)))
+                    (assoc ctx :params params)
+                    (d/error-deferred (ex-info "" {:status 400
+                                                   ::http-response true})))))
 
-             ;; Authorization
-             (fn [ctx]
-               (if-let [res (p/authorize authorization ctx)]
-                 (if (= res :not-authorized)
-                   (d/error-deferred
-                    (ex-info ""
-                             (merge
-                              {:status 401 ::http-response true}
-                              (when-let [basic-realm (first (sequence realms-xf security))]
-                                {:headers {"www-authenticate" (format "Basic realm=\"%s\"" basic-realm)}}))
-                             ))
-                   (if-let [auth (p/authorization res)]
-                     (assoc ctx :authorization auth)
-                     ctx))
-                 (d/error-deferred (ex-info "" {:status 403
-                                                ::http-response true}))))
+              ;; Authentication
+              (fn [ctx]
+                (cond-> ctx
+                  (not-empty (filter (comp (partial = :basic) :type) security))
+                  (assoc :authentication (:basic-authentication (ba/basic-authentication-request req (fn [user password] {:user user :password password}))))))
 
-             ;; TODO Not implemented (if unknown Content-* header)
+              ;; Authorization
+              (fn [ctx]
+                (if-let [res (p/authorize authorization ctx)]
+                  (if (= res :not-authorized)
+                    (d/error-deferred
+                     (ex-info ""
+                              (merge
+                               {:status 401 ::http-response true}
+                               (when-let [basic-realm (first (sequence realms-xf security))]
+                                 {:headers {"www-authenticate" (format "Basic realm=\"%s\"" basic-realm)}}))
+                              ))
+                    (if-let [auth (p/authorization res)]
+                      (assoc ctx :authorization auth)
+                      ctx))
+                  (d/error-deferred (ex-info "" {:status 403
+                                                 ::http-response true}))))
 
-             ;; TODO Unsupported media type
+              ;; TODO Not implemented (if unknown Content-* header)
 
-             ;; TODO Request entity too large - shouldn't we do this later,
-             ;; when we determine we actually need to read the request body?
+              ;; TODO Unsupported media type
 
-             ;; TODO OPTIONS
+              ;; TODO Request entity too large - shouldn't we do this later,
+              ;; when we determine we actually need to read the request body?
 
-             ;; Content-negotiation - partly done here to throw back to the client any errors
-             #(let [produces (or (p/produces produces)
-                                 (p/produces-from-body body))]
-                (if-let [content-type
-                         (best-allowed-content-type
-                          (or (get-in req [:headers "accept"]) "*/*")
-                          produces
-                          )]
-                  (assoc-in % [:response :content-type] content-type)
-                  (if produces
-                    ;; If there is a produces specification, but not
-                    ;; matched content-type, it's a 406.
-                    (d/error-deferred (ex-info "" {:status 406
-                                                   ::http-response true}))
-                    ;; Otherwise return the context unchanged
-                    %)))
+              ;; TODO OPTIONS
+
+              ;; Content-negotiation - partly done here to throw back to the client any errors
+              #(let [produces (or (p/produces produces)
+                                  (p/produces-from-body body))]
+                 (if-let [content-type
+                          (best-allowed-content-type
+                           (or (get-in req [:headers "accept"]) "*/*")
+                           produces
+                           )]
+                   (assoc-in % [:response :content-type] content-type)
+                   (if produces
+                     ;; If there is a produces specification, but not
+                     ;; matched content-type, it's a 406.
+                     (d/error-deferred (ex-info "" {:status 406
+                                                    ::http-response true}))
+                     ;; Otherwise return the context unchanged
+                     %)))
 
 
-             ;; Does the resource exist? Call resource, which returns
-             ;; the resource, containing the resource's metadata (optionally
-             ;; deferred to prevent blocking this thread). It does not (yet)
-             ;; contain the resource's data. The reason for this is that it
-             ;; would be wasteful to load the resource's data if we can
-             ;; determine that the client already has a copy and return a 304 (Not Modified).
-             (fn [ctx]
-               (d/chain
-                (p/resource resource req)
-                #(assoc ctx :resource %)))
+              ;; Does the resource exist? Call resource, which returns
+              ;; the resource, containing the resource's metadata (optionally
+              ;; deferred to prevent blocking this thread). It does not (yet)
+              ;; contain the resource's data. The reason for this is that it
+              ;; would be wasteful to load the resource's data if we can
+              ;; determine that the client already has a copy and return a 304 (Not Modified).
+              (fn [ctx]
+                (d/chain
+                 (p/resource resource req)
+                 #(assoc ctx :resource %)))
 
-             ;; Split the flow based on the existence of the resource
-             (fn [{:keys [resource] :as ctx}]
+              ;; Split the flow based on the existence of the resource
+              (fn [{:keys [resource] :as ctx}]
 
-               (cond
-                 ;; 'Exists' flow
-                 (and (not (false? resource)) (or resource state body (#{:post :put} method)))
-                 (d/chain
-                  ctx
-                  ;; Not sure we should use exists-flow for CORS pre-flight requests, should handle further above
-                  (exists-flow method resource state req status headers body post allow-origin)
-                  (cors allow-origin)
-                  (return-response status headers))
+                (cond
+                  ;; 'Exists' flow
+                  (and (not (false? resource)) (or resource state body (#{:post :put} method)))
+                  (d/chain
+                   ctx
+                   ;; Not sure we should use exists-flow for CORS pre-flight requests, should handle further above
+                   (exists-flow method resource state req status headers body post allow-origin)
+                   (cors allow-origin)
+                   (return-response status headers))
 
-                 ;; 'Not exists' flow
-                 :otherwise
-                 (d/chain ctx (constantly {:status 404})))))
+                  ;; 'Not exists' flow
+                  :otherwise
+                  (d/chain ctx (constantly {:status 404})))))
 
-            ;; Handle exits
-            (d/catch clojure.lang.ExceptionInfo
-                #(let [data (ex-data %)]
-                   (if (::http-response data)
-                     data
-                     (throw (ex-info "Internal Server Error (ex-info)" {} %))
-                     #_{:status 500
-                        :body (format "Internal Server Error: %s" (pr-str data))})))
+             ;; Handle exits
+             (d/catch clojure.lang.ExceptionInfo
+                 #(let [data (ex-data %)]
+                    (if (::http-response data)
+                      data
+                      (throw (ex-info "Internal Server Error (ex-info)" {} %))
+                      #_{:status 500
+                         :body (format "Internal Server Error: %s" (pr-str data))})))
 
-            (d/catch #(identity
-                       (throw (ex-info "Internal Server Error" {} %))
-                       #_{:status 500 :body
-                          (html
-                           [:body
-                            [:h1 "Internal Server Error"]
-                            [:p (str %)]
-                            [:pre (with-out-str (apply str (interpose "\n" (seq (.getStackTrace %)))))]
-                            ])})))))))
+             (d/catch #(identity
+                        (throw (ex-info "Internal Server Error" {} %))
+                        #_{:status 500 :body
+                           (html
+                            [:body
+                             [:h1 "Internal Server Error"]
+                             [:p (str %)]
+                             [:pre (with-out-str (apply str (interpose "\n" (seq (.getStackTrace %)))))]
+                             ])}))))))))
 
 
 ;; TODO: pets should return resource-metadata with a (possibly deferred) model

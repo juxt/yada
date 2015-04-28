@@ -5,7 +5,7 @@
    [com.stuartsierra.component :refer (system-using system-map)]
    [bidi.bidi :refer (match-route)]
    [clojure.test :refer :all]
-   [yada.yada :refer :all]
+   [yada.yada :refer (yada) :as yada]
    [manifold.deferred :as d]
    [modular.test :refer (with-system-fixture *system*)]
    [ring.mock.request :as mock]

@@ -560,7 +560,9 @@ Let's demonstrate this with another example.
 
 <example ref="ServerSentEventsWithCoreAsyncChannel"/>
 
-It's also possible to use the __:state__ entry instead of __:body__. This has the advantage of defaulting to a content-type of __text/event-stream__ without has having to specify it explicitly.
+It's also possible to use the __:state__ entry instead of
+__:body__. This has the advantage of defaulting to a content-type of
+__text/event-stream__ without has having to specify it explicitly.
 
 <example ref="ServerSentEventsDefaultContentType"/>
 
@@ -569,16 +571,132 @@ access control, can be added to the resource map. (Contrast that with
 web-sockets, where you'd have to design and implement your own bespoke
 security system.)
 
-## Swagger
-
-If bidi is used as the routing library, yada and bidi data can be combined to form enough meta-data about a resource for create a [Swagger](http://swagger.io/) resource.
-
-This [is demonstrated](/swagger-ui/index.html?url=/api/1.0.0/swagger.json) and further details can be found in the demo code.
-
-This chapter is a stub. More documentation will be forthcoming.
-
 ## Misc
 
 <example ref="StatusAndHeaders"/>
 
 <include type="note" ref="kv-args"/>
+
+## Integration with bidi
+
+Web applications combine multiple resources to form a website or API
+service (or both).
+
+When a web application accepts an HTTP request it extracts the
+URI. While part of the URI has been used to locate the application
+itself, usually the application will use the rest of the URI to
+determine which resource should handle the request. This process is
+often referred to as _routing_ or URI _dispatch_.
+
+It is useful to model your service as a hierarchical _route structure_,
+where individual resources representing the leaves and the routes to
+those resources representing the branches.
+
+Given that yada resources are declared as maps, it is useful to compose
+multiple yada resources together as part of a larger data structure, one
+that also declares the route structure.
+
+Until now, we have made no assumption about the routing library used to route requests to yada handlers. In fact, everything described in previous chapters can be used with any routing library.
+
+However, there are a number of extra features that surface when
+[bidi](https://github.com/juxt/bidi) is selected as the routing
+component, which we will describe here.
+
+Bidi describes a syntax for a route structure which has certain
+advantages, the most obvious being that the logic already exists, in a
+tried-and-tested form, to process the route structure and use it to
+dispatch to handlers.
+
+Let's show how to integrate yada's resource maps into a route structure.
+
+Imagine we have yada-created handler that responds to every request with
+a constant body.
+
+```clojure
+(yada {:body "API working!"})
+```
+
+Suppose we want this yada handler to respond only to requests with the URI `/api/1.0/status`. We can combine this inside a bidi route structure like this:
+
+```clojure
+(require 'bidi.bidi 'bidi.ring '[yada.yada :as yada])
+
+;; Define our route structure
+(def api
+  ["/api/1.0"
+    {"/status" (yada/resource {:body "API working!"})
+     "/show-ctx" (yada/resource {:body (fn [ctx] (str ctx))})}
+])
+
+;; Turn the route structure into a Ring handler
+(defn handler (bidi.ring/make-handler api))
+```
+
+The `handler` we have created can be used as an argument to various
+choices of Ring-compatible web server.
+
+Now, when we send a request to `/api/1.0/status`, the handler will dispatch the request to our handler.
+
+To see this code in action, create a new project based on the modular lein template
+
+```
+lein new modular yada-demo yada
+cd yada-demo
+lein run
+```
+
+### Declaring common resource-map entries
+
+Sometimes, you would like all your resources to share a set of
+resource-map entries and it can be tedious and error-prone to declare
+the common entries for every resource in the service.
+
+At other times, a sub-tree of resources in the hierarchical routing
+structure can be determined which share a common set of resource-map
+entries, so you'd like to declare these entries for the group as a
+whole, at one of the branches of the routing tree.
+
+Let's suppose we have a couple of entries we want to add to every handler fixed below a certain point in our route structure. In this example, we'll pretend we want to secure part of a website, so we might define these partial resource-map entries here.
+
+```clojure
+(def security
+  {:security {:type :basic :realm "Protected"}
+   :authorization (fn [ctx]
+                    (or
+                     (when-let [auth (:authentication ctx)]
+                       (= ((juxt :user :password) auth)
+                          ["alice" "password"]))
+                     :not-authorized))})
+```
+
+Now when we create our resource structure, we declare these partial entries using the `yada/partial` wrapper.
+
+```clojure
+(require '[yada.yada :as yada])
+
+(def secure (partial yada/partial security))
+
+(def api
+  ["/api"
+   {"/status" (yada/resource {:body "API working!"})
+    "/hello" (fn [req] {:body "hello"})
+    "/protected" (secure ; this is all we need to secure
+                   {"/a" (yada/resource :body "Secret area A")
+                   "/b" (yada/resource :body "Secret area B")})}])
+```
+
+Note that we have also replace our usual call to `yada` with its
+bidi-compatible version `yada/resource`. We only need to do this if we
+are wanting to make use of these extra features. The main reason is so
+that our `yada/partial` route-map declarations higher up in the route
+structure are merged to form the complete resource-map. Another reason
+is that when yada/resource is used, yada resources get compiled along
+with the route structure when it is compiled with bidi's
+`compile-routes` function, offering a performance boost.
+
+
+## Swagger
+
+If [bidi](https://github.com/juxt/bidi) is used as the routing library, yada and bidi data can be combined to form enough meta-data about a resource for create a [Swagger](http://swagger.io/) resource.
+
+This [is demonstrated](/swagger-ui/index.html?url=/api/1.0.0/swagger.json) and further details can be found in the demo code.

@@ -13,6 +13,7 @@
   [[org.clojure/clojure "1.7.0-alpha4"]
    [prismatic/schema "0.3.5" :exclusions [potemkin]]
    [manifold "0.1.0-beta12"]
+   [bidi "1.18.10"]
    [potemkin "0.3.11"]
    [hiccup "1.0.5"]
    [cheshire "5.4.0"]
@@ -44,7 +45,7 @@
           [ring-mock "0.1.5"]
 
           [juxt.modular/aleph "0.0.8" :exclusions [manifold]]
-          [juxt.modular/bidi "0.9.2"]
+          [juxt.modular/bidi "0.9.2" :exclusions [bidi]]
           [juxt.modular/clostache "0.6.1"]
           [juxt.modular/co-dependency "0.2.0"]
           [juxt.modular/maker "0.5.0"]
