@@ -15,7 +15,7 @@ If you want to help, please join the discussion group [yada-discuss](https://gro
 Add the following dependency to your `project.clj` file :-
 
 ```clojure
-[yada "0.3.2"]
+[yada "0.3.3"]
 ```
 
 ## Status
