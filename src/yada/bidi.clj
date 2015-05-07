@@ -70,7 +70,10 @@
     (when (= this (:handler m)) ""))
   Compilable
   (compile-matched [m]
-    (->CompiledResource (yada* resource-map))))
+    (->CompiledResource (yada* resource-map)))
+  clojure.lang.IFn
+  (invoke [this req]
+    ((yada* resource-map) req)))
 
 (defn resource* [{:as resource-map}]
   (->Resource resource-map))
