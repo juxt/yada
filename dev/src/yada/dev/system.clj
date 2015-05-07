@@ -72,8 +72,8 @@
    system
    :clostache-templater (make new-clostache-templater config)
    :user-guide (make new-user-guide config
-                     :prefix "http://localhost:8080"
-                     :ext-prefix "http://localhost:8081")
+                     :prefix "http://localhost:8090"
+                     :ext-prefix "http://localhost:8091")
    :website (make new-website config)
    :jquery (make new-web-resources config
                  :key :jquery
@@ -107,7 +107,7 @@
   (assoc system
     :http-server
     (make new-webserver config
-          :port 8080)
+          :port 8090)
     ))
 
 (defn external-server-components [system config]
@@ -118,7 +118,7 @@
                      (make new-router config)
                      [:external-resources])
    :external-server (using
-                     (new-webserver :port 8081)
+                     (new-webserver :port 8091)
                      {:request-handler :external-router
                       :user-guide :user-guide})))
 
