@@ -12,7 +12,7 @@
   :dependencies
   [[prismatic/schema "0.3.5" :exclusions [potemkin]] ; TODO 0.4.2
    [manifold "0.1.0-beta12"]
-   [bidi "1.19.0-SNAPSHOT"]
+   [bidi "1.19.0"]
    [potemkin "0.3.11"]
    [hiccup "1.0.5"]
    [cheshire "5.4.0"]
