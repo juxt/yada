@@ -10,10 +10,9 @@
                org.clojure/clojure]
 
   :dependencies
-  [[org.clojure/clojure "1.7.0-alpha4"]
-   [prismatic/schema "0.3.5" :exclusions [potemkin]]
+  [[prismatic/schema "0.3.5" :exclusions [potemkin]] ; TODO 0.4.2
    [manifold "0.1.0-beta12"]
-   [bidi "1.18.10"]
+   [bidi "1.19.0-SNAPSHOT"]
    [potemkin "0.3.11"]
    [hiccup "1.0.5"]
    [cheshire "5.4.0"]
@@ -31,8 +30,11 @@
                              ; trampoline run
 
          :dependencies
-         [[org.clojure/tools.logging "0.2.6"]
-          [ch.qos.logback/logback-classic "1.0.7" :exclusions [org.slf4j/slf4j-api]]
+         [[org.clojure/clojure "1.7.0-beta2"]
+
+          [org.clojure/tools.logging "0.2.6"]
+          [ch.qos.logback/logback-classic "1.0.7"
+           :exclusions [org.slf4j/slf4j-api]]
           [org.slf4j/jul-to-slf4j "1.7.2"]
           [org.slf4j/jcl-over-slf4j "1.7.2"]
           [org.slf4j/log4j-over-slf4j "1.7.2"]

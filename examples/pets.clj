@@ -1,6 +1,6 @@
 (ns pets
   (:require
-   [yada.swagger :refer (swagger)]))
+   [yada.swagger.swagger :refer (swagger)]))
 
 (def VERSION "1.0.0")
 

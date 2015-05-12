@@ -2,13 +2,13 @@
 
 (ns pets-v1
   (:require
-   [yada.swagger-v1 :refer (->ResourceListing
-                            ->Resource
-                            map->Operation)
+   [yada.swagger.swagger-v1 :refer (->ResourceListing
+                                    ->Resource
+                                    map->Operation)
     :rename {->ResourceListing rl
              ->Resource r
              map->Operation op}]
-   [yada.swagger :refer (swagger)]
+   [yada.swagger.swagger :refer (swagger)]
    [manifold.deferred :as d]
    [bidi.bidi :as bidi]))
 

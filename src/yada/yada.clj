@@ -10,5 +10,4 @@
 
 (import-vars
  [yada.core yada]
- [yada.bidi partial resource]
  [yada.util format-http-date])

@@ -1,6 +1,6 @@
 ;; Copyright © 2014 JUXT LTD.
 
-(ns yada.swagger-v1
+(ns yada.swagger.swagger-v1
   (:require
    [bidi.bidi :as bidi :refer (Matched resolve-handler unresolve-handler)]
    [bidi.ring :refer (Ring)]

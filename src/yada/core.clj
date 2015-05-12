@@ -249,7 +249,6 @@
                                  (interpose ", " ["GET" "POST" "PUT" "DELETE"]))})
            ctx)))
 
-
       (throw (ex-info "Unknown method"
                       {:status 501
                        :http-response true})))))

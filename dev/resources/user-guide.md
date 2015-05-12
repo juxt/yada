@@ -577,7 +577,7 @@ security system.)
 
 <include type="note" ref="kv-args"/>
 
-## Integration with bidi
+## Routing
 
 Web applications combine multiple resources to form a website or API
 service (or both).
@@ -592,15 +592,26 @@ It is useful to model your service as a hierarchical _route structure_,
 where individual resources representing the leaves and the routes to
 those resources representing the branches.
 
-Given that yada resources are declared as maps, it is useful to compose
-multiple yada resources together as part of a larger data structure, one
-that also declares the route structure.
-
 Until now, we have made no assumption about the routing library used to route requests to yada handlers. In fact, everything described in previous chapters can be used with any routing library.
 
-However, there are a number of extra features that surface when
-[bidi](https://github.com/juxt/bidi) is selected as the routing
-component, which we will describe here.
+<include type="note" ref="web-frameworks"/>
+
+### Integration with Compojure
+
+Here is how you might use yada with Compojure :-
+
+```clojure
+(require
+  '[compojure.core :refer (GET)]
+  '[yada.yada :refer (yada)])
+
+(GET "/users/:userid" [userid]
+  (yada
+    :body (fn [_]
+            (print-str "This is the user id:" userid))))
+```
+
+### Integration with bidi
 
 Bidi describes a syntax for a route structure which has certain
 advantages, the most obvious being that the logic already exists, in a
@@ -645,7 +656,7 @@ cd yada-demo
 lein run
 ```
 
-### Declaring common resource-map entries
+#### Declaring common resource-map entries
 
 Sometimes, you would like all your resources to share a set of
 resource-map entries and it can be tedious and error-prone to declare
@@ -697,6 +708,12 @@ with the route structure when it is compiled with bidi's
 
 ## Swagger
 
+Given that yada resources are declared as maps, it is useful to compose
+multiple yada resources together as part of a larger data structure, one
+that also declares the route structure.
+
 If [bidi](https://github.com/juxt/bidi) is used as the routing library, yada and bidi data can be combined to form enough meta-data about a resource for create a [Swagger](http://swagger.io/) resource.
 
-This [is demonstrated](/swagger-ui/index.html?url=/api/1.0.0/swagger.json) and further details can be found in the demo code.
+A Swagger UI
+[demonstrates](/swagger-ui/index.html?url=/api/1.0.0/swagger.json) this
+and further details can be found in the demo code.

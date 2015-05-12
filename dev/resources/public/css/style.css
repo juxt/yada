@@ -39,7 +39,9 @@ h3 {
 }
 
 h4 {
+    margin-top: 1.7em;
     font-weight: bold;
+    font-size: 1.2em;
 }
 
 p {
@@ -96,12 +98,14 @@ div.note {
 
 div.example {
     padding: 10px 10px;
-    margin: 40px 5%;
+    clear: right; /* We clear any side-notes */
 }
 
 div.note {
     padding: 10px 10px;
-    margin: 40px 30% 0 0;
+    width: 50%;
+    margin: 1em 1em;
+    float: right;
 }
 
 .example h3, .note h3 {

@@ -14,7 +14,7 @@
    [clojure.pprint :refer (pprint)]
    [pets :refer (pets-api)]
    [pets-v1 :as pets-v1])
-  (:import (yada.swagger_v1 ResourceListing)))
+  (:import (yada.swagger.swagger_v1 ResourceListing)))
 
 (deftest spec
   (testing "Spec publish"
@@ -22,7 +22,7 @@
           (match-route
            (pets-v1/pets-api nil) "/api/api-docs")]
       (is handler)
-      (is (instance? yada.swagger_v1.ResourceListing handler))
+      (is (instance? yada.swagger.swagger_v1.ResourceListing handler))
       (is (satisfies? br/Ring handler))
       (is (= (set (keys mc)) #{:yada.swagger/apis
                                :yada.swagger/base-path

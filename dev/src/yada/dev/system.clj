@@ -16,6 +16,7 @@
    [yada.dev.pets :refer (new-pets-api-service)]
    [yada.dev.user-guide :refer (new-user-guide)]
    [yada.dev.database :refer (new-database)]
+   [yada.dev.swagger :refer (new-user-api)]
    [modular.aleph :refer (new-webserver)]
    [modular.component.co-dependency :refer (co-using system-co-using)]
 
@@ -65,7 +66,9 @@
     :pets-api
     (->
       (make new-pets-api-service config)
-      (using {:database :database}))))
+      (using {:database :database}))
+    :user-api
+    (make new-user-api config)))
 
 (defn website-components [system config]
   (assoc
@@ -87,7 +90,7 @@
                         :uri-context "/static"
                         :resource-prefix "public")
    :highlight-js-resources
-    (make new-archived-web-resources config :archive (io/resource "highlight.zip") :uri-context "/hljs/")
+   (make new-archived-web-resources config :archive (io/resource "highlight.zip") :uri-context "/hljs/")
    ))
 
 (defn swagger-ui-components [system config]
@@ -143,6 +146,7 @@
    :external-server {:request-handler :external-router}
    :user-guide {:templater :clostache-templater}
    :router [:pets-api
+            :user-api
             :user-guide
             :swagger-ui
             :website

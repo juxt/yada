@@ -13,7 +13,7 @@
              (require 'com.stuartsierra.component)
              (require '[modular.component.co-dependency :as co-dependency])
 
-             (println "Starting yada")
+             (println "Starting yada website")
 
              (let [system (->
                            (dev/new-dev-system)
