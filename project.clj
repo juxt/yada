@@ -59,5 +59,5 @@
           [org.webjars/bootstrap "3.3.2"]
           ]
 
-         :source-paths ["dev/src" "examples"]
+         :source-paths ["dev/src"]
          :resource-paths ["dev/resources"]}})

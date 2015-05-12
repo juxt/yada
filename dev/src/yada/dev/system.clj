@@ -13,7 +13,6 @@
    [modular.bidi :refer (new-router new-web-resources new-archived-web-resources new-redirect)]
    [modular.clostache :refer (new-clostache-templater)]
    [yada.dev.website :refer (new-website)]
-   [yada.dev.pets :refer (new-pets-api-service)]
    [yada.dev.user-guide :refer (new-user-guide)]
    [yada.dev.database :refer (new-database)]
    [yada.dev.swagger :refer (new-user-api)]
@@ -63,10 +62,6 @@
 
 (defn api-components [system config]
   (assoc system
-    :pets-api
-    (->
-      (make new-pets-api-service config)
-      (using {:database :database}))
     :user-api
     (make new-user-api config)))
 
@@ -145,8 +140,7 @@
   {:http-server {:request-handler :router}
    :external-server {:request-handler :external-router}
    :user-guide {:templater :clostache-templater}
-   :router [:pets-api
-            :user-api
+   :router [:user-api
             :user-guide
             :swagger-ui
             :website
@@ -154,8 +148,7 @@
             :web-resources
             :highlight-js-resources
             :redirect]
-   :website {:pets-api :pets-api
-             :templater :clostache-templater}})
+   :website {:templater :clostache-templater}})
 
 (defn new-co-dependency-map
   []

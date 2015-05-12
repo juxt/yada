@@ -24,7 +24,7 @@
    7239 "Forwarded HTTP Extension"
    7240 "Prefer Header for HTTP"})
 
-(defn index [{:keys [*router templater]} pets-api]
+(defn index [{:keys [*router templater]}]
   (yada
    :body
    {"text/html"
@@ -48,15 +48,15 @@
              [:li [:a {:href
                        (format "%s/index.html?url=%s/swagger.json"
                                (path-for @*router :swagger-ui)
-                               (path-for @*router pets-api)
+                               (path-for @*router :yada.dev.swagger/user-api)
                                )}
                    "Swagger UI"]
               " - to demonstrate Swagger integration"]]]))}))}))
 
-(defrecord Website [*router templater pets-api]
+(defrecord Website [*router templater]
   RouteProvider
   (routes [component]
-    ["/index.html" (-> (index component (:api pets-api))
+    ["/index.html" (-> (index component)
                        (tag ::index))]))
 
 (defn new-website [& {:as opts}]
@@ -64,5 +64,5 @@
            (merge {})
            (s/validate {})
            map->Website)
-      (using [:templater :pets-api])
+      (using [:templater])
       (co-using [:router])))

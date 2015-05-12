@@ -1,6 +1,6 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(ns yada.pets-test
+(ns yada.api-test
   (:require
    [com.stuartsierra.component :refer (system-using system-map)]
    [bidi.bidi :refer (match-route)]
@@ -9,9 +9,9 @@
    [manifold.deferred :as d]
    [modular.test :refer (with-system-fixture *system*)]
    [ring.mock.request :as mock]
-   [yada.dev.pets :refer (new-pets-api-service)]
+   [yada.dev.swagger :refer (new-user-api)]
    [yada.dev.database :refer (new-database)]
-   [pets :refer (pets-api)]))
+   ))
 
 (defn new-system
   "Define a minimal system which is just enough for the tests in this
@@ -19,14 +19,13 @@
   []
   (system-using
    (system-map
-    :database (new-database)
-    :api (new-pets-api-service))
+    :api (new-user-api))
     {}))
 
 (use-fixtures :each (with-system-fixture new-system))
 
 (defn get-api []
-  ["" (-> *system* :api :api)])
+  ["" (-> *system* :api)])
 
 (defn get-op-response [spec req & {:as opts}]
   (let [h (yada opts)

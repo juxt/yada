@@ -2,7 +2,7 @@
   (:require
    [yada.yada :refer (yada) :as yada]
    [yada.bidi :refer (resource)]
-   [bidi.bidi :refer (RouteProvider)]
+   [bidi.bidi :refer (RouteProvider tag)]
    [bidi.ring :refer (make-handler)]
    [ring.mock.request :refer (request)]
    [yada.swagger :refer (swaggered)]
@@ -13,29 +13,31 @@
 (defrecord UserApi []
   RouteProvider
   (routes [_]
-    ["/api2"
-     (swaggered
-      {:info {:title "User API"
-              :version "0.0.1"
-              :description "Example user API"
-              }
-       :basePath "/api2"}
-      {"/users" {"" (resource
-                     :body "Hello"
-                     :allowed-methods
-                     {:post "Register user"
-                      :get "List users"})
+    ["/api"
+     (->
+      (swaggered
+       {:info {:title "User API"
+               :version "0.0.1"
+               :description "Example user API"
+               }
+        :basePath "/api"}
+       {"/users" {"" (resource
+                      :body "Hello"
+                      :allowed-methods
+                      {:post "Register user"
+                       :get "List users"})
 
-                 ["/" :username]
-                 {"" (resource :state {:user "bob"})
-                  "/posts" (resource
-                            :state "Posts"
-                            :allowed-methods
-                            {:get "List posts"
-                             :post "Create new post"
-                             :put "Update post"
-                             :delete "Delete post"}
-                            )}}})]))
+                  ["/" :username]
+                  {"" (resource :state {:user "bob"})
+                   "/posts" (resource
+                             :state "Posts"
+                             :allowed-methods
+                             {:get "List posts"
+                              :post "Create new post"
+                              :put "Update post"
+                              :delete "Delete post"}
+                             )}}})
+      (tag ::user-api))]))
 
 (defn new-user-api []
   (->UserApi))
