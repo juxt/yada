@@ -18,8 +18,7 @@
       (swaggered
        {:info {:title "User API"
                :version "0.0.1"
-               :description "Example user API"
-               }
+               :description "Example user API"}
         :basePath "/api"}
        {"/users" {"" (resource
                       :body "Hello"

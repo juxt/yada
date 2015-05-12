@@ -204,6 +204,24 @@ following in the file's __:dependencies__ section.
 [yada "{{yada.version}}"]
 ```
 
+If you want to use yada to create a web API, this is all you need to
+do. But you can also clone the yada repository with `git`.
+
+```
+git clone https://github.com/juxt/yada
+```
+
+You can then 'run' yada on your local machine to provide off-line access the documentation and demos.
+
+```
+cd yada
+lein run
+
+```
+
+(`lein` is available from [http://leiningen.org](http://leiningen.org))
+
+
 ## Parameters
 
 Parameters are an integral part of many web requests. Since APIs form
@@ -683,13 +701,15 @@ Let's suppose we have a couple of entries we want to add to every handler fixed 
 Now when we create our resource structure, we declare these partial entries using the `yada/partial` wrapper.
 
 ```clojure
-(require '[yada.yada :as yada])
+(require '[yada.bidi :refer (resource)]
+)
 
-(def secure (partial yada/partial security))
+(defn secure [routes]
+  (yada.bidi/partial security routes))
 
 (def api
   ["/api"
-   {"/status" (yada/resource {:body "API working!"})
+   {"/status" (resource {:body "API working!"})
     "/hello" (fn [req] {:body "hello"})
     "/protected" (secure ; this is all we need to secure
                    {"/a" (yada/resource :body "Secret area A")
@@ -697,14 +717,16 @@ Now when we create our resource structure, we declare these partial entries usin
 ```
 
 Note that we have also replace our usual call to `yada` with its
-bidi-compatible version `yada/resource`. We only need to do this if we
-are wanting to make use of these extra features. The main reason is so
-that our `yada/partial` route-map declarations higher up in the route
-structure are merged to form the complete resource-map. Another reason
-is that when yada/resource is used, yada resources get compiled along
-with the route structure when it is compiled with bidi's
-`compile-routes` function, offering a performance boost.
+bidi-compatible version `yada.bidi/resource`. The reason for this is so that
+any `yada.bidi/partial` route-map declarations higher up in the route
+structure are merged to form the complete resource-map.
 
+`yada.bidi/resource` has another property which makes it useful to use
+as part of larger data structure. Rather than returning a function as
+`yada` would do, it returns a record instance. This can still be
+invoked, just like a function, but the resource-map remains accessible
+if the resource is part of a the larger data-structure, as we will see
+in the next section.
 
 ## Swagger
 
@@ -712,8 +734,65 @@ Given that yada resources are declared as maps, it is useful to compose
 multiple yada resources together as part of a larger data structure, one
 that also declares the route structure.
 
-If [bidi](https://github.com/juxt/bidi) is used as the routing library, yada and bidi data can be combined to form enough meta-data about a resource for create a [Swagger](http://swagger.io/) resource.
+If [bidi](https://github.com/juxt/bidi) is used as the routing library,
+yada and bidi data can be combined to form enough meta-data about a
+resource for create a [Swagger](http://swagger.io/) resource. This is
+achieved by wrapper the routes that make up an API with a
+`yada.swagger/Swagger` record (or by using the convenience function,
+`swaggered`).
 
-A Swagger UI
+Below is a bidi route structure which demonstrates how bidi and yada fit
+together.
+
+```clojure
+(require '[yada.swagger :refer (swaggered)])
+
+["/api"
+    (swaggered
+     {:info {:title "User API"
+             :version "0.0.1"
+             :description "Example user API"}
+      :basePath "/api"}
+      {"/users"
+        {"" (resource :body "A list of users"
+                      :allowed-methods
+                        {:post "Register user"
+                         :get "List users"})
+
+         ["/" :username]
+         {"" (resource :state {:user "bob"})
+          "/posts" (resource
+                     :state "Posts"
+                     :allowed-methods
+                       {:get "List posts"
+                        :post "Create new post"
+                        :put "Update post"
+                        :delete "Delete post"})}}})]
+```
+
+<include type="note" ref="swagger-implementation"/>
+
+Swagger requires that we annotate each method that we can use to access
+the resource, (which Swagger refers to as _operations_). We do this in
+the __:allowed-methods__, which then serves a dual purpose: annotatation
+for the Swagger specification and telling yada which methods are allowed
+(accessing the resource via a disallowed method will result in a 405
+response status).
+
+A built-in swagger UI tool
 [demonstrates](/swagger-ui/index.html?url=/api/1.0.0/swagger.json) this
-and further details can be found in the demo code.
+further details.
+
+
+## Concluding remarks
+
+In this user-guide we have seen how yada can help create powerful
+RESTful APIs with a declarative data-centric syntax, and how the
+adoption of a declarative data format (rather than functional
+composition) allows us to easily extend yada's functionality in various
+ways.
+
+Although yada is flexible, it is also powerful. Asynchronous operation
+can be enabled wherever required, with fine-grained control residing
+with the user, using futures and promises, avoiding the need for
+deeply-nested code full of callback functions.

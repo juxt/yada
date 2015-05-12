@@ -9,7 +9,7 @@
   (:import (clojure.lang PersistentVector Keyword)))
 
 (defprotocol SwaggerPath
-  (encode [_] "Encode path as a swagger path"))
+  (encode [_] "Format route as a swagger path"))
 
 (extend-protocol SwaggerPath
   String

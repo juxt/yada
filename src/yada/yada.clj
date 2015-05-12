@@ -4,7 +4,6 @@
   (:refer-clojure :exclude [partial])
   (:require
    yada.core
-   yada.bidi
    yada.util
    [potemkin :refer (import-vars)]))
 

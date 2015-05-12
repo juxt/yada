@@ -35,8 +35,7 @@
   Ring
   (request [_ req match-context]
     (let [h (yada* (merge (get match-context k-resource-map) resource-map))]
-      (h req))
-    ))
+      (h req))))
 
 (defn- resource* [{:as resource-map}]
   (->Resource resource-map))
