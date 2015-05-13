@@ -30,7 +30,7 @@
                              ; trampoline run
 
          :dependencies
-         [[org.clojure/clojure "1.7.0-beta2"]
+         [[org.clojure/clojure "1.7.0-beta3"]
 
           [org.clojure/tools.logging "0.2.6"]
           [ch.qos.logback/logback-classic "1.0.7"
