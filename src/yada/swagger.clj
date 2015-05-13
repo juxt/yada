@@ -19,16 +19,39 @@
   Keyword
   (encode [k] (str "{" (name k) "}")))
 
-(defn- to-path [x]
+#_(defn squash [m]
+  (let [m (into {} (filter second m))]
+    (when (not-empty m) m)))
+
+#_(defn extract-ops [resource-map]
+  (squash
+   {:get (squash
+          (let [o (some-> resource-map :body)]
+            {:summary (or (some-> o meta :summary) "")
+             :description (or (some-> o meta :description) "")}))
+    :post nil}))
+
+#_(extract-ops {:body ^{:summary "hi"} (fn [ctx] "Hello")})
+
+#_(defn- to-path [x]
   [(apply str (map encode (:path x)))
    (let [resource-map (-> x :handler :resource-map)]
      (into {}
-           (for [[k v] (or (:allowed-methods resource-map)
-                           ;; TODO: Is this really needed? can yada do the inferences?
-                           {:get "GET"})]
-             [k {:summary v
-                 :description "A description"
+           (for [[k v] (or
+                        ;; allowed-methods is deprecated
+                        #_(:allowed-methods resource-map)
+                        (extract-ops resource-map))]
+             [k {:summary (:summary v)
+                 :description (:description v)
                  :parameters []}])))])
+
+;; TODO: Now extract the parameters declarations!
+
+(defn- to-path [x]
+  (let [swagger (-> x :handler meta :swagger)]
+    [(apply str (map encode (:path x)))
+     swagger
+     ]))
 
 (defrecord Swagger [spec routes]
   Matched
@@ -59,3 +82,15 @@
 
 (defn swaggered [spec routes]
   (->Swagger spec routes))
+
+
+
+(defrecord Thing [])
+
+(defn thing [m]
+  m
+  (with-meta (map->Thing m) (meta m)))
+
+(let [f (thing ^{:summary "a thing"} {})]
+  (meta f)
+  )

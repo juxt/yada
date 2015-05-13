@@ -15,7 +15,7 @@
    [yada.dev.website :refer (new-website)]
    [yada.dev.user-guide :refer (new-user-guide)]
    [yada.dev.database :refer (new-database)]
-   [yada.dev.swagger :refer (new-user-api)]
+   [yada.dev.user-api :refer (new-user-api)]
    [modular.aleph :refer (new-webserver)]
    [modular.component.co-dependency :refer (co-using system-co-using)]
 

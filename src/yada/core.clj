@@ -259,7 +259,7 @@
      known-method?
      request-uri-too-long?
 
-     #_allowed-method?
+     allowed-methods
 
      ;; The allowed? callback will contain the entire resource, the callback must
      ;; therefore extract the OAuth2 scopes, or whatever is needed to
@@ -326,17 +326,20 @@
               ;; Method Not Allowed
               (fn [ctx]
                 (if-not
-                    (case method
-                      :get (or (some? resource) state body)
-                      :put put
-                      :post post
-                      :options (or allow-origin)
-                      nil)
+                    (or
+                     (case method
+                       :get (or (some? resource) state body)
+                       :put put
+                       :post post
+                       :options (or allow-origin)
+                       nil)
+                     #_(contains? (p/allowed-methods allowed-methods ctx) method))
                   (do
                     (warnf "Method not allowed %s" method)
-                    (d/error-deferred (ex-info (format "Method: %s" method)
-                                               {:status 405
-                                                ::http-response true})))
+                    (d/error-deferred
+                     (ex-info (format "Method: %s" method)
+                              {:status 405
+                               ::http-response true})))
                   ctx))
 
               ;; Malformed

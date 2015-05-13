@@ -11,7 +11,10 @@
 (defprotocol Callbacks
   (service-available? [_] "Return whether the service is available")
   (known-method? [_ method])
+
   (request-uri-too-long? [_ uri])
+
+  (allowed-methods [_ ctx] "Return a set of allowed methods")
   (resource [_ req] "Return the resource. Typically this is just the resources's meta-data and does not include the body.")
   (state [_ ctx] "Return the state, if not available in the resource.")
   (last-modified [_ ctx] "Return the date that the resource was last modified.")
@@ -129,6 +132,7 @@
     (known-method? #{k} method))
 
   java.util.Map
+  (allowed-methods [m _] (set (keys m)))
   (resource [m _] m)
   (state [m _] m)
   (body [m ctx]
@@ -159,6 +163,7 @@
   (resource [_ _] nil)
   (state [_ _] nil)
   (body [_ _] nil)
+  (post [_ _] nil)
   (produces [_] nil)
   (produces-from-body [_] nil)
   (status [_] nil)

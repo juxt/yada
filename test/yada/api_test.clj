@@ -9,7 +9,7 @@
    [manifold.deferred :as d]
    [modular.test :refer (with-system-fixture *system*)]
    [ring.mock.request :as mock]
-   [yada.dev.swagger :refer (new-user-api)]
+   [yada.dev.user-api :refer (new-user-api)]
    [yada.dev.database :refer (new-database)]
    ))
 

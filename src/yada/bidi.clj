@@ -38,7 +38,9 @@
       (h req))))
 
 (defn- resource* [{:as resource-map}]
-  (->Resource resource-map))
+  (-> (->Resource resource-map)
+      ;; Inherit metadata, exploited for swagger spec gen
+      (with-meta (meta resource-map))))
 
 (defn resource [& args]
   (if (keyword? (first args))
