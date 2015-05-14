@@ -180,7 +180,7 @@
   (last (str/split (.getName (type r)) #"\.")))
 
 (defn toc [xml dropno]
-  {:tag :ul
+  {:tag :ol
    :attrs nil
    :content (vec
              (for [ch (drop dropno (extract-chapters xml))]
