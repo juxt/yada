@@ -5,7 +5,8 @@
    [bidi.ring :refer (Ring)]
    [yada.bidi :refer (resource)]
    [camel-snake-kebab :as csk]
-   [cheshire.core :as json])
+   [cheshire.core :as json]
+   [ring.swagger.swagger2 :as rs])
   (:import (clojure.lang PersistentVector Keyword)))
 
 (defprotocol SwaggerPath
@@ -47,11 +48,14 @@
 
 ;; TODO: Now extract the parameters declarations!
 
+;; TODO: Now extract the produces section
+
 (defn- to-path [x]
-  (let [swagger (-> x :handler meta :swagger)]
+  (let [swagger (-> x :handler meta :swagger)
+        resource-map (-> x :handler :resource-map)
+        common (select-keys resource-map [:parameters])]
     [(apply str (map encode (:path x)))
-     swagger
-     ]))
+     (merge-with merge swagger (zipmap (keys swagger) (repeat common)))]))
 
 (defrecord Swagger [spec routes]
   Matched
@@ -73,9 +77,11 @@
   (request [_ req match-context]
     ;; This yada resource has match-context in its lexical scope,
     ;; containing any yada/partial (or bidi/partial) entries.
+    (clojure.pprint/pprint (merge spec {:paths (into {} (map to-path (route-seq ["" routes])))}))
     ((resource
       :body (json/encode
-             (merge {:swagger "2.0"} spec {:paths (into {} (map to-path (route-seq ["" routes])))})
+             (rs/swagger-json
+              (merge spec {:paths (into {} (map to-path (route-seq ["" routes])))}))
              {:pretty true
               :key-fn (fn [x] (csk/->camelCase (name x)))}))
      req)))

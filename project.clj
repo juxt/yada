@@ -20,7 +20,8 @@
    [camel-snake-kebab "0.1.4"]
    [potemkin "0.3.11"]
    [org.clojure/core.async "0.1.346.0-17112a-alpha"]
-   [clj-time "0.9.0"]]
+   [clj-time "0.9.0"]
+   [metosin/ring-swagger "0.20.2"]]
 
   :repl-options {:init-ns user
                  :welcome (println "Type (dev) to start")}
