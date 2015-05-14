@@ -481,13 +481,16 @@ The number will be interpretted as the number of milliseconds since the epoch (J
 <example ref="ServiceUnavailableRetryAfter2"/>
 <example ref="ServiceUnavailableRetryAfter3"/>
 
-
 ## Validation
 
 <example ref="DisallowedPost"/>
 <example ref="DisallowedGet"/>
 <example ref="DisallowedPut"/>
 <example ref="DisallowedDelete"/>
+
+## Range requests
+
+[This section is a stub, more to follow.]
 
 ## Access control
 
