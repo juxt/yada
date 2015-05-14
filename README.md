@@ -41,7 +41,7 @@ user> (dev)
 dev> (go)
 ```
 
-Now browse to http://localhost:8080
+Now browse to http://localhost:8090.
 
 ## Design goals
 
