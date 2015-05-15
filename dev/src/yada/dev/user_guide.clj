@@ -87,7 +87,7 @@
                (when (external? ex) ext-prefix)
                (apply path-for @(:*router user-guide) (keyword (basename ex)) (get-path-args ex))
                (when-let [qs (get-query-string ex)] (str "?" qs)))
-          {:keys [method headers]} (request ex)
+          {:keys [method headers data]} (request ex)
           ]
 
       (postwalk
@@ -110,8 +110,7 @@
                        :content [{:tag :code
                                   :attrs {:class "http"}
                                   :content [(str (->meth method) (format " %s HTTP/1.1" url)
-                                                 (apply str (for [[k v] headers] (format "\n%s: %s" k v))))]}]}
-                      ]}
+                                                 (apply str (for [[k v] headers] (format "\n%s: %s" k v))))]}]}]}
 
            (= tag :response)
            {:tag :div
@@ -120,12 +119,13 @@
                        :content [{:tag :button
                                   :attrs {:class "btn btn-primary"
                                           :type "button"
-                                          :onClick (format "%s(\"%s\",\"%s\",\"%s\",%s)"
+                                          :onClick (format "%s(\"%s\",\"%s\",\"%s\",%s,%s)"
                                                            (or (get-test-function ex) "tryIt")
                                                            (->meth method)
                                                            url
                                                            (basename ex)
-                                                           (json/encode headers))}
+                                                           (json/encode headers)
+                                                           (when data (json/encode data)))}
                                   :content ["Try it"]}
                                  " "
                                  {:tag :button

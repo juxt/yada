@@ -7,7 +7,7 @@ clearIt = function(title) {
     $("div#"+id+" .body").val("");
 }
 
-tryIt = function(meth, u, title, headers) {
+tryIt = function(meth, u, title, headers, data) {
     clearIt(title);
 
     var id = "response-"+title;
@@ -15,7 +15,9 @@ tryIt = function(meth, u, title, headers) {
 
     $.ajax({type: meth,
             url: u,
-            headers: headers})
+            headers: headers,
+            data: JSON.stringify(data),
+            processData: false})
         .done(function(msg, textStatus, jqXHR) {
             $("div#"+id+" .status").text(jqXHR.status + " " + jqXHR.statusText);
             // $("div#"+id+" .headers").text(jqXHR.getAllResponseHeaders());

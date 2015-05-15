@@ -280,6 +280,10 @@ Let's show this with an example.
 
 <!-- <example ref="PathParameterRequired"/> -->
 
+Now let's show how this same resource responds to a POST request.
+
+<example ref="ParameterDeclaredPathQueryWithPost"/>
+
 ### old
 
 Let's show how these types work with another example :-

@@ -81,17 +81,19 @@
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 
+(def common-params
+        {:get {:path {:account Long}
+               :query {:since String}}
+         :post {:path {:account Long}
+                :body {:payee String
+                       :description String
+                       :amount Double}}})
+
 (defrecord ParameterDeclaredPathQueryWithGet []
   Example
   (resource-map [_]
-    '{:parameters
-      {:get {:path {:account Long}
-             :query {:since String}}
-       :post {:path {:account Long}
-              :body {:payee String
-                     :description String
-                     :amount Double}}}
-      :body (fn [ctx]
+    {:parameters common-params
+     :body '(fn [ctx]
               (let [{:keys [since account]} (:parameters ctx)]
                 (format "List transactions since %s from account number %s"
                         since account)))})
@@ -102,31 +104,25 @@
   (query-string [_] "since=tuesday")
   (expected-response [_] {:status 200}))
 
-#_(defrecord ServerSentEventsWithCoreAsyncChannel []
+(defrecord ParameterDeclaredPathQueryWithPost []
   Example
   (resource-map [_]
-    '(do
-       (require '[clojure.core.async :refer (chan go-loop <! >! timeout close!)])
-       (require '[manifold.stream :refer (->source)])
-       {:body
-        {"text/event-stream"
-         (fn [ctx]
-           (let [ch (chan)]
-             (go-loop [n 10]
-               (if (pos? n)
-                 (do
-                   (>! ch (format "The time on the yada server is now %s, messages after this one: %d" (java.util.Date.) (dec n)))
-                   (<! (timeout 1000))
-                   (recur (dec n)))
-                 (close! ch)))
-             ch)
-           )}}))
+    {:parameters
+     common-params
+     :body '(fn [ctx]
+              (let [{:keys [since account]} (:parameters ctx)]
+                (format "List transactions since %s from account number %s"
+                        since account)))
+     :post '(fn [ctx] (format "Body is %s" (:body ctx)))})
   (make-handler [ex] (yada (eval (resource-map ex))))
-  (request [_] {:method :get})
-  (expected-response [_] {:status 200})
-  (test-function [_] "tryItEvents"))
-
-
+  (path [r] [(basename r) "/" :account])
+  (path-args [_] [:account 1234])
+  (request [_] {:method :post
+                :data {:payee "The gas board"
+                       :description "Gas for last year"
+                       :amount 20.99}})
+  (query-string [_] "since=tuesday")
+  (expected-response [_] {:status 200}))
 
 #_(defrecord PathParameterRequired []
   Example

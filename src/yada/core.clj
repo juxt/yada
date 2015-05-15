@@ -21,6 +21,8 @@
    [clojure.tools.logging :refer :all]
    [clojure.set :as set]
    [clojure.core.async :as a]
+   [clojure.pprint :refer (pprint)]
+   [cheshire.core :as json]
    )
   (:import (manifold.deferred IDeferred Deferrable)
            (clojure.lang IPending)
@@ -48,6 +50,16 @@
   Ring
   (request [this req m]
     (delegate req {k-bidi-match-context m})))
+
+(defprotocol Body
+  (read-body [_ charset] "Read the body and return as a string"))
+
+(extend-protocol Body
+  String
+  (read-body [s _] s)
+  java.io.InputStream
+  (read-body [s _] (slurp s))
+  )
 
 ;; "It is better to have 100 functions operate on one data structure
 ;; than 10 functions on 10 data structures." — Alan Perlis
@@ -210,18 +222,16 @@
              (throw
               (ex-info "Precondition failed"
                        {:status 412
-                        ::http-response true})))
-
-           )
-         ctx
-         )
+                        ::http-response true}))))
+         ctx)
 
        (fn [ctx]
          ;; TODO: what if error?
          (p/interpret-post-result (p/post post ctx) ctx))
 
        (fn [ctx]
-         (assoc-in ctx [:response :status] 200)))
+         (-> ctx
+             (assoc-in [:response :status] 200))))
 
       :put
       (d/chain
@@ -286,7 +296,6 @@
      patch                              ; async-supported
 
      produces
-     ;;params                             ; deprecated
      parameters
 
      ;; CORS
@@ -304,8 +313,7 @@
   ;; that have. This approach makes it possible for developers to leave
   ;; out entries that are implied by the other entries. For example, if a body has been specified, we resource
 
-  (let [
-        security (as-sequential security)]
+  (let [security (as-sequential security)]
 
     (->YadaHandler
 
@@ -350,16 +358,24 @@
                          (rs/coerce schema (:route-params req) :query))
                        :query
                        (when-let [schema (get-in parameters [method :query])]
-                         (rs/coerce schema (-> req params-request :query-params keywordize) :query))}]
+                         (rs/coerce schema (-> req params-request :query-params keywordize) :query))
+                       :body
+                       (when-let [schema (get-in parameters [method :body])]
+                         (let [s (read-body (-> req :body) "")]
+                           (rs/coerce schema (json/decode s keyword) :json)))}]
 
                   (let [errors (filter (comp error? second) parameters)]
+
                     (if (not-empty errors)
                       (d/error-deferred (ex-info "" {:status 400
                                                      :body errors
                                                      ::http-response true}))
-                      (assoc ctx :parameters (apply merge (vals parameters)))))
-
-                  ))
+                      (let [body (:body parameters)
+                            params (merge (apply merge (vals (dissoc parameters :body)))
+                                          (when body {:body body}))]
+                        (cond-> ctx
+                          (not-empty params) (assoc :parameters parameters)
+                          body (assoc :body (:body parameters))))))))
 
               ;; Authentication
               (fn [ctx]

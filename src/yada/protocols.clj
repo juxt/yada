@@ -112,7 +112,7 @@
   (body [s _] s)
   (produces-from-body [s] nil)
   (interpret-post-result [s ctx]
-    (assoc ctx :location s))
+    (assoc-in ctx [:response :body] s))
   (format-event [ev] [(format "data: %s\n" ev)])
 
   Number
