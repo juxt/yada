@@ -42,6 +42,8 @@
 
 (defn example? [h] (satisfies? Example h))
 
+;; Introduction
+
 (defrecord HelloWorld []
   Example
   (resource-map [_] '{:body "Hello World!"})
@@ -64,6 +66,172 @@
   (make-handler [ex] (yada (eval (resource-map ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
+
+;; Parameters
+
+(defrecord PathParameterUndeclared []
+  Example
+  (resource-map [_]
+    '{:body (fn [ctx]
+              (str "Account number is "
+                   (-> ctx :request :route-params :account)))})
+  (make-handler [ex] (yada (eval (resource-map ex))))
+  (path [r] [(basename r) "/" :account])
+  (path-args [_] [:account 1234])
+  (request [_] {:method :get})
+  (expected-response [_] {:status 200}))
+
+(defrecord ParameterDeclaredPathQueryWithGet []
+  Example
+  (resource-map [_]
+    '{:parameters
+      {:get {:path {:account Long}
+             :query {:since String}}
+       :post {:path {:account Long}
+              :body {:payee String
+                     :description String
+                     :amount Double}}}
+      :body (fn [ctx]
+              (let [{:keys [since account]} (:parameters ctx)]
+                (format "List transactions since %s from account number %s"
+                        since account)))})
+  (make-handler [ex] (yada (eval (resource-map ex))))
+  (path [r] [(basename r) "/" :account])
+  (path-args [_] [:account 1234])
+  (request [_] {:method :get})
+  (query-string [_] "since=tuesday")
+  (expected-response [_] {:status 200}))
+
+#_(defrecord ServerSentEventsWithCoreAsyncChannel []
+  Example
+  (resource-map [_]
+    '(do
+       (require '[clojure.core.async :refer (chan go-loop <! >! timeout close!)])
+       (require '[manifold.stream :refer (->source)])
+       {:body
+        {"text/event-stream"
+         (fn [ctx]
+           (let [ch (chan)]
+             (go-loop [n 10]
+               (if (pos? n)
+                 (do
+                   (>! ch (format "The time on the yada server is now %s, messages after this one: %d" (java.util.Date.) (dec n)))
+                   (<! (timeout 1000))
+                   (recur (dec n)))
+                 (close! ch)))
+             ch)
+           )}}))
+  (make-handler [ex] (yada (eval (resource-map ex))))
+  (request [_] {:method :get})
+  (expected-response [_] {:status 200})
+  (test-function [_] "tryItEvents"))
+
+
+
+#_(defrecord PathParameterRequired []
+  Example
+  (resource-map [_]
+    '{:parameters
+      {:path {:account schema.core/Num}}
+      :body (fn [ctx] (str "Account number is " (-> ctx :parameters :account)))})
+  (make-handler [ex] (yada (eval (resource-map ex))))
+  (request [_] {:method :get})
+  (expected-response [_] {:status 400}))
+
+#_(defrecord PathParameterCoerced []
+  Example
+  (resource-map [_]
+    '{:params
+      {:account {:in :path :type Long}
+       :account-type {:in :path :type schema.core/Keyword}}
+      :body (fn [ctx] (format "Type of account parameter is %s, account type is %s" (-> ctx :params :account type) (-> ctx :params :account-type)))})
+  (make-handler [ex] (yada (eval (resource-map ex))))
+  (path [r] [(basename r) "/" :account-type "/" :account])
+  (path-args [_] [:account 1234 :account-type "savings"])
+  (request [_] {:method :get})
+  (expected-response [_] {:status 200}))
+
+#_(defrecord PathParameterCoercedError []
+  Example
+  (resource-map [_]
+    '{:params
+      {:account {:in :path :type Long :required true}}
+      :body (fn [ctx] (format "Account is %s" (-> ctx :params :account)))})
+  (make-handler [ex] (yada (eval (resource-map ex))))
+  (path [r] [(basename r) "/" :account])
+  (path-args [_] [:account "wrong"])
+  (request [_] {:method :get})
+  (expected-response [_] {:status 400}))
+
+#_(defrecord QueryParameter []
+  Example
+  (resource-map [_]
+    '{:body (fn [ctx]
+              (str "Showing transaction in month "
+                   (-> ctx :request :query-params (get "month"))))})
+  (make-handler [ex] (-> (yada (eval (resource-map ex)))
+                         (wrap-params)))
+  (query-string [_] "month=2014-09")
+  (request [_] {:method :get})
+  (expected-response [_] {:status 200}))
+
+#_(defrecord QueryParameterDeclared []
+  Example
+  (resource-map [_]
+    '{:parameters
+      {:get {:query {:month s/Str}}}
+      :body (fn [ctx]
+              (str "Showing transactions in month "
+                   (-> ctx :parameters :month)))})
+  (make-handler [ex] (yada (eval (resource-map ex))))
+  (query-string [_] "month=2014-09")
+  (request [_] {:method :get})
+  (expected-response [_] {:status 200}))
+
+#_(defrecord QueryParameterRequired []
+  Example
+  (resource-map [_]
+    '{:parameters
+      {:month {:in :query :required true}
+       :order {:in :query :required true}}
+      :body (fn [ctx]
+              (format "Showing transactions in month %s ordered by %s"
+                      (-> ctx :params :month)
+                      (-> ctx :params :order)))})
+  (make-handler [ex] (yada (eval (resource-map ex))))
+  (query-string [_] "month=2014-09")
+  (request [_] {:method :get})
+  (expected-response [_] {:status 400}))
+
+#_(defrecord QueryParameterNotRequired []
+  Example
+  (resource-map [_]
+    '{:params
+      {:month {:in :query :required true}
+       :order {:in :query}}
+      ;; TODO: When we try to return the map, we get this instead: Caused by: java.lang.IllegalArgumentException: No method in multimethod 'render-map' for dispatch value: null
+      :body (fn [ctx] (str "Parameters: " (-> ctx :params)))})
+  (make-handler [ex] (yada (eval (resource-map ex))))
+  (query-string [_] "month=2014-09")
+  (request [_] {:method :get})
+  (expected-response [_] {:status 400}))
+
+#_(defrecord QueryParameterCoerced []
+  Example
+  (resource-map [_]
+    '{:params
+      {:month {:in :query :type schema.core/Inst}
+       :order {:in :query :type schema.core/Keyword}}
+      :body (fn [ctx]
+              (format "Month type is %s, ordered by %s"
+                      (-> ctx :params :month type)
+                      (-> ctx :params :order)))})
+  (make-handler [ex] (yada (eval (resource-map ex))))
+  (query-string [_] "month=2014-09&order=most-recent")
+  (request [_] {:method :get})
+  (expected-response [_] {:status 200}))
+
+;; Misc
 
 (defrecord StatusAndHeaders []
   Example
@@ -169,132 +337,6 @@
 
 ;; Resource State
 
-(defrecord PathParameter []
-  Example
-  (resource-map [_]
-    '{:body (fn [ctx]
-              (str "Account number is "
-                   (-> ctx :request :route-params :account)))})
-  (make-handler [ex] (yada (eval (resource-map ex))))
-  (path [r] [(basename r) "/" :account])
-  (path-args [_] [:account 1234])
-  (request [_] {:method :get})
-  (expected-response [_] {:status 200}))
-
-(defrecord PathParameterDeclared []
-  Example
-  (resource-map [_]
-    '{:params
-      {:account {:in :path}}
-      :body (fn [ctx] (str "Account number is " (-> ctx :params :account)))})
-  (make-handler [ex] (yada (eval (resource-map ex))))
-  (path [r] [(basename r) "/" :account])
-  (path-args [_] [:account 1234])
-  (request [_] {:method :get})
-  (expected-response [_] {:status 200}))
-
-(defrecord PathParameterRequired []
-  Example
-  (resource-map [_]
-    '{:params
-      {:account {:in :path :required true}}
-      :body (fn [ctx] (str "Account number is " (-> ctx :params :account)))})
-  (make-handler [ex] (yada (eval (resource-map ex))))
-  (request [_] {:method :get})
-  (expected-response [_] {:status 400}))
-
-(defrecord PathParameterCoerced []
-  Example
-  (resource-map [_]
-    '{:params
-      {:account {:in :path :type Long}
-       :account-type {:in :path :type schema.core/Keyword}}
-      :body (fn [ctx] (format "Type of account parameter is %s, account type is %s" (-> ctx :params :account type) (-> ctx :params :account-type)))})
-  (make-handler [ex] (yada (eval (resource-map ex))))
-  (path [r] [(basename r) "/" :account-type "/" :account])
-  (path-args [_] [:account 1234 :account-type "savings"])
-  (request [_] {:method :get})
-  (expected-response [_] {:status 200}))
-
-(defrecord PathParameterCoercedError []
-  Example
-  (resource-map [_]
-    '{:params
-      {:account {:in :path :type Long :required true}}
-      :body (fn [ctx] (format "Account is %s" (-> ctx :params :account)))})
-  (make-handler [ex] (yada (eval (resource-map ex))))
-  (path [r] [(basename r) "/" :account])
-  (path-args [_] [:account "wrong"])
-  (request [_] {:method :get})
-  (expected-response [_] {:status 400}))
-
-(defrecord QueryParameter []
-  Example
-  (resource-map [_]
-    '{:body (fn [ctx]
-              (str "Showing transaction in month "
-                   (-> ctx :request :query-params (get "month"))))})
-  (make-handler [ex] (-> (yada (eval (resource-map ex)))
-                         (wrap-params)))
-  (query-string [_] "month=2014-09")
-  (request [_] {:method :get})
-  (expected-response [_] {:status 200}))
-
-(defrecord QueryParameterDeclared []
-  Example
-  (resource-map [_]
-    '{:params
-      {:month {:in :query}}
-      :body (fn [ctx]
-              (str "Showing transactions in month "
-                   (-> ctx :params :month)))})
-  (make-handler [ex] (yada (eval (resource-map ex))))
-  (query-string [_] "month=2014-09")
-  (request [_] {:method :get})
-  (expected-response [_] {:status 200}))
-
-(defrecord QueryParameterRequired []
-  Example
-  (resource-map [_]
-    '{:params
-      {:month {:in :query :required true}
-       :order {:in :query :required true}}
-      :body (fn [ctx]
-              (format "Showing transactions in month %s ordered by %s"
-                      (-> ctx :params :month)
-                      (-> ctx :params :order)))})
-  (make-handler [ex] (yada (eval (resource-map ex))))
-  (query-string [_] "month=2014-09")
-  (request [_] {:method :get})
-  (expected-response [_] {:status 400}))
-
-(defrecord QueryParameterNotRequired []
-  Example
-  (resource-map [_]
-    '{:params
-      {:month {:in :query :required true}
-       :order {:in :query}}
-      ;; TODO: When we try to return the map, we get this instead: Caused by: java.lang.IllegalArgumentException: No method in multimethod 'render-map' for dispatch value: null
-      :body (fn [ctx] (str "Parameters: " (-> ctx :params)))})
-  (make-handler [ex] (yada (eval (resource-map ex))))
-  (query-string [_] "month=2014-09")
-  (request [_] {:method :get})
-  (expected-response [_] {:status 400}))
-
-(defrecord QueryParameterCoerced []
-  Example
-  (resource-map [_]
-    '{:params
-      {:month {:in :query :type schema.core/Inst}
-       :order {:in :query :type schema.core/Keyword}}
-      :body (fn [ctx]
-              (format "Month type is %s, ordered by %s"
-                      (-> ctx :params :month type)
-                      (-> ctx :params :order)))})
-  (make-handler [ex] (yada (eval (resource-map ex))))
-  (query-string [_] "month=2014-09&order=most-recent")
-  (request [_] {:method :get})
-  (expected-response [_] {:status 200}))
 
 ;; TODO: Add other parameter types (header, formData and body)
 ;;
@@ -504,23 +546,24 @@
 (defrecord AccessForbiddenToSomeRequests []
   Example
   (resource-map [_]
-    '{:params {:secret {:in :path}}
-      :authorization (fn [ctx] (= (-> ctx :params :secret) "oak"))
+    '{:parameters {:get {:query {:secret String}}}
+      :authorization (fn [ctx] (= (-> ctx :parameters :secret) "oak"))
       :body "Secret message!"})
   (make-handler [ex] (yada (eval (resource-map ex))))
-  (path [r] [(basename r) "/" :secret])
-  (path-args [_] [:secret "ash"])
+  (path [r] [(basename r)])
+  (query-string [_] "secret=ash")
   (request [_] {:method :get})
   (expected-response [_] {:status 403}))
 
 (defrecord AccessAllowedToOtherRequests []
   Example
-  (resource-map [_] '{:params {:secret {:in :path}}
-                      :authorization (fn [ctx] (= (-> ctx :params :secret) "oak"))
-                      :body "Secret message!"})
+  (resource-map [_]
+    '{:parameters {:get {:query {:secret String}}}
+      :authorization (fn [ctx] (= (-> ctx :parameters :secret) "oak"))
+      :body "Secret message!"})
   (make-handler [ex] (yada (eval (resource-map ex))))
-  (path [r] [(basename r) "/" :secret])
-  (path-args [_] [:secret "oak"])
+  (path [r] [(basename r)])
+  (query-string [_] "secret=oak")
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 

@@ -173,6 +173,13 @@ code span.yada, b span.yada {
     font-size: inherit;
 }
 
+code.nohighlight {
+    background: black;
+    color: #65b042;
+    display: block;
+    padding: 10px;
+}
+
 blockquote {
     border-left: 5px solid #aaa;
 }

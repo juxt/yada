@@ -101,7 +101,7 @@
                                   :content [(escape-html
                                              (str/trim
                                               (with-out-str
-                                                (binding [*print-right-margin* 52]
+                                                (binding [*print-right-margin* 80]
                                                   (pprint (resource-map ex))))))]}]}]}
 
            (= tag :request)
@@ -290,7 +290,13 @@
          [:tbody
           (map-indexed
            (fn [ix [exname ex]]
-             (let [url (apply path-for @*router (keyword (basename ex)) (get-path-args ex))
+             (let [url
+
+                   (str
+                    (apply path-for @*router (keyword (basename ex)) (get-path-args ex))
+                    (when-let [qs (get-query-string ex)] (str "?" qs)))
+
+                   #_(apply path-for @*router (keyword (basename ex)) (get-path-args ex))
                    {:keys [method headers]} (request ex)]
                [:tr {:id (str "test-" (link ex))}
                 [:td (inc ix)]

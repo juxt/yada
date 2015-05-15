@@ -9,6 +9,7 @@
    [hiccup.core :refer (html h)]
    [schema.core :as s]
    [schema.coerce :refer (coercer string-coercion-matcher)]
+   [schema.utils :refer (error? error-val)]
    [yada.protocols :as p]
    [yada.conneg :refer (best-allowed-content-type)]
    [yada.coerce :refer (coercion-matcher)]
@@ -16,12 +17,15 @@
    [yada.util :refer (parse-http-date)]
    [ring.middleware.basic-authentication :as ba]
    [ring.middleware.params :refer (params-request)]
+   [ring.swagger.schema :as rs]
    [clojure.tools.logging :refer :all]
    [clojure.set :as set]
-   [clojure.core.async :as a])
-  (import (manifold.deferred IDeferred Deferrable)
-          (clojure.lang IPending)
-          (java.util.concurrent Future)))
+   [clojure.core.async :as a]
+   )
+  (:import (manifold.deferred IDeferred Deferrable)
+           (clojure.lang IPending)
+           (java.util.concurrent Future)
+           (schema.utils ValidationError ErrorContainer)))
 
 (def k-bidi-match-context :bidi/match-context)
 
@@ -259,8 +263,6 @@
      known-method?
      request-uri-too-long?
 
-     allowed-methods
-
      ;; The allowed? callback will contain the entire resource, the callback must
      ;; therefore extract the OAuth2 scopes, or whatever is needed to
      ;; authorize the request.
@@ -284,7 +286,8 @@
      patch                              ; async-supported
 
      produces
-     params
+     ;;params                             ; deprecated
+     parameters
 
      ;; CORS
      allow-origin
@@ -301,19 +304,15 @@
   ;; that have. This approach makes it possible for developers to leave
   ;; out entries that are implied by the other entries. For example, if a body has been specified, we resource
 
-  (let [schema (into {} (for [[k v] params] [(if (:required v) k (s/optional-key k)) (or (:type v) s/Str)]))
-        params-coercer (coercer
-                        schema
-                        coercion-matcher)
-        required-params (set (for [[k v] params :when (:required v)] k))
+  (let [
         security (as-sequential security)]
 
     (->YadaHandler
+
      (fn [req ctx]
+
        (let [method (:request-method req)]
-
          (-> ctx
-
              (merge
               {:request req
                :resource-map resource-map})
@@ -333,7 +332,7 @@
                        :post post
                        :options (or allow-origin)
                        nil)
-                     #_(contains? (p/allowed-methods allowed-methods ctx) method))
+                     )
                   (do
                     (warnf "Method not allowed %s" method)
                     (d/error-deferred
@@ -345,23 +344,22 @@
               ;; Malformed
               (fn [ctx]
                 (let [keywordize (fn [m] (into {} (for [[k v] m] [(keyword k) v])))
-                      params
-                      (params-coercer
-                       (merge
-                        ;; Path parms
-                        (select-keys (:route-params req)
-                                     (for [[k v] params :when (= (:in v) :path)] k))
-                        ;; Query params
-                        (let [query-param-keys (for [[k v] params :when (= (:in v) :query)] k)]
-                          (when query-param-keys
-                            (select-keys (-> req params-request :query-params keywordize) query-param-keys)))))]
+                      parameters
+                      {:path
+                       (when-let [schema (get-in parameters [method :path])]
+                         (rs/coerce schema (:route-params req) :query))
+                       :query
+                       (when-let [schema (get-in parameters [method :query])]
+                         (rs/coerce schema (-> req params-request :query-params keywordize) :query))}]
 
-                  ;; TODO: Check for params being errorcontainer
+                  (let [errors (filter (comp error? second) parameters)]
+                    (if (not-empty errors)
+                      (d/error-deferred (ex-info "" {:status 400
+                                                     :body errors
+                                                     ::http-response true}))
+                      (assoc ctx :parameters (apply merge (vals parameters)))))
 
-                  (if (set/subset? required-params (set (keys params)))
-                    (assoc ctx :params params)
-                    (d/error-deferred (ex-info "" {:status 400
-                                                   ::http-response true})))))
+                  ))
 
               ;; Authentication
               (fn [ctx]

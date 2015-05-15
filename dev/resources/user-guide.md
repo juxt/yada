@@ -12,11 +12,6 @@ but is not mandatory.
 If you follow this guide carefully you will learn how to take advantage
 of the many features yada has to offer.
 
-This is a BIG guide. If you are feeling a little overwhelmed at how much
-there is to learn, don't worry, yada really is easy! Start by going
-through the introduction at a gentle pace and take on the subsequent
-chapters one at a time.
-
 If you are a more experienced Clojure or REST developer and would like
 to get involved in influencing yada's future, please join our
 [yada-discuss](https://groups.google.com/forum/#!forum/yada-discuss)
@@ -38,6 +33,19 @@ a contributor!
 ### Table of Contents
 
 <toc drop="0"/>
+
+## Forward
+
+With the emergence and dominance of HTTP, and the increasing importance
+to the world's economy of APIs built on it, creating high-quality APIs
+rapidly and reliably has become crucially important.
+
+Clojure makes an ideal choice for writing solid software, but most
+existing web libraries and frameworks for Clojure are bound to the
+synchronous, 'one thread per request' model. This is now becoming a
+limitation, and in the future, with HTTP/2 around the corner, this
+constraint will need to be relaxed in order to achieve the scale and
+throughput required for some applications.
 
 ## Introduction
 
@@ -207,13 +215,13 @@ following in the file's __:dependencies__ section.
 If you want to use yada to create a web API, this is all you need to
 do. But you can also clone the yada repository with `git`.
 
-```
+```nohighlight
 git clone https://github.com/juxt/yada
 ```
 
 You can then 'run' yada on your local machine to provide off-line access the documentation and demos.
 
-```
+```nohighlight
 cd yada
 lein run
 
@@ -224,71 +232,63 @@ lein run
 
 ## Parameters
 
-Parameters are an integral part of many web requests. Since APIs form
-the basis of integration between software, it is useful to be able to
-declare parameter expectations.
+Many web requests contain parameters, which affect how a resource behaves. Often parameters are specified at the end of a URI, in the query string. But parameters can also be inferred from the path.
 
-These expectations form the basis of a contract between a user-agent and
-server. If a user-agent does not meet the contract set by the API, the
-server can respond with a 400 status code, indicating to the user-agent
-that the request was malformed.
+For example, let's imagine we have a fictional URI to access the transactions of a bank account.
 
-### Path parameters
+```nohighlight
+https://bigbank.com/accounts/1234/transactions?since=tuesday
+```
 
-Let's start with path parameters, which are values that are extracted
-from the URI's path.
+There are 2 parameters here. The first, `1234`, is contained in the
+path `/accounts/1234/transactions`. We call this a _path parameter_.
 
-<example ref="PathParameter"/>
+The second, `tuesday`, is embedded in the URI's query string (after
+the `?` symbol). We call this a _query parameter_.
 
-We can also declare the parameter in the resource map by adding a __:params__ entry whose value is a map between keys and parameter definitions.
+yada allows you to declare both these and other types of parameter via the __:parameters__ entry in the resource map.
 
-Each value in the map of parameter definitions is a map which must declare where a parameter is found, under a __:in__ entry. Valid values are __:path__, __:query__ and __:form__.
+Parameters must be specified for each method that the resource supports. The reason for this is because parameters can, and often do, differ depending on the method used.
 
-When types are declared, they are extracted from the request and made
-available via the __:params__ entry in the _request context_.
+For example, below we have a resource map that defines the parameters for requests to a resource representing a bank account. For GET requests, there is both a path parameter and query parameter, for POST requests there is the same path parameter and a body.
 
-<example ref="PathParameterDeclared"/>
+We define parameter types in the style of [Prismatic](https://prismatic.com)'s
+excellent [schema](https://github.com/prismatic/schema) library.
 
-If we declare that parameter is required, yada will check that the
-parameter exists and return a 400 (Malformed Request) status if it does
-not.
+```clojure
+(require [schema.core :refer (defschema)]
 
-We specify that a parameter is required by setting __:required__ to `true` in the parameter's definition map.
+(defschema Transaction
+  {:payee String
+   :description String
+   :amount Double}
 
-<example ref="PathParameterRequired"/>
+{:parameters
+  {:get {:path {:account Long}
+         :query {:since String}}
+   :post {:path {:account Long}
+          :body Transaction}}}
+```
 
-By default, parameters are extracted as strings. However, it is often useful to declare the type of a parameter by including a __:type__ entry in the parameter's definition map.
+But for POST requests, there is a body parameter, which defines the entity body that must be sent with the request. This might be used, for example, to post a new transaction to a bank account.
 
-The value of __:type__ is interpreted by Prismatic's Schema library. Below is a table listing examples.
+We can declare the parameter in the resource map's __:parameters__ entry. At runtime, these parameters are extracted from a request and  added as the __:parameters__ entry of the _request context_.
 
-<table class="table">
-<thead>
-<tr>
-<th>:type</th>
-<th>Java type</th>
-</tr>
-</thead>
-<tbody>
-<tr><td>schema.core/Str</td><td>java.lang.String (the default)</td></tr>
-<tr><td>schema.core/Int</td><td>java.lang.Integer</td></tr>
-<tr><td>schema.core/Keyword</td><td>clojure.lang.Keyword</td></tr>
-<tr><td>Long</td><td>java.lang.Long</td></tr>
-<tr><td>schema.core/Inst</td><td>java.util.Date</td></tr>
-</tbody>
-</table>
+Let's show this with an example.
 
-Remember, Clojure automatically boxes and unboxes Java primitives, so you can treat a `java.lang.Integer` value as a Java `int` primitive.
+<example ref="ParameterDeclaredPathQueryWithGet"/>
+
+<!-- <example ref="PathParameterRequired"/> -->
+
+### old
 
 Let's show how these types work with another example :-
 
-<example ref="PathParameterCoerced"/>
+<!-- <example ref="PathParameterCoerced"/> -->
 
 If we try to coerce a parameter into a type that it cannot be coerced into, the parameter will be given a null value. If the parameter is specified as required, this will represent an error and produce a 400 response. Let's see this happen with an example :-
 
-<example ref="PathParameterCoercedError"/>
-
-### Query parameters
-
+<!-- <example ref="PathParameterCoercedError"/> -->
 Query parameters can be defined in much the same way as path parameters.
 The difference is that while path parameters distinguish between
 resources, query parameters are used to influence the representation
@@ -297,30 +297,42 @@ produced from the same resource.
 Query parameters are encoding in the URI's _query string_ (the
 part after the `?` character).
 
-<example ref="QueryParameter"/>
+<!-- <example ref="QueryParameter"/> -->
 
 <include type="note" ref="ring-middleware"/>
 
-<example ref="QueryParameterDeclared"/>
+<!-- <example ref="QueryParameterDeclared"/> -->
 
 We can declare a query that query parameter is required, or otherwise accept when it isn't given (which is the default case).
 
-<example ref="QueryParameterRequired"/>
+<!-- <example ref="QueryParameterRequired"/> -->
 
-<example ref="QueryParameterNotRequired"/>
+<!-- <example ref="QueryParameterNotRequired"/> -->
 
-<example ref="QueryParameterCoerced"/>
+<!-- <example ref="QueryParameterCoerced"/> -->
 
 Parameter validation is one of a number of strategies to defend against
 user agents sending malformed requests. Using yada's parameter coercion,
 validation can actually reduce the amount of code in your implementation
 since you don't have to code type transformations.
 
-In summary, there are a number of excellent reasons to declare parameters :-
+### Bypassing
 
-- the parameter will undergo a validity check, to ensure the client is sending something that can be turned into the declared type.
-- the parameter value will be automatically coerced to the given type. This means less code to write.
-- the parameter declaration can be used in the publication of API documentation — this will be covered later in the chapter on [Swagger](#Swagger).
+Finally, let's see how we could extract a path parameter without declaring it.
+
+<example ref="PathParameterUndeclared"/>
+
+### Benefits to declarative parameter declaration
+
+Declaring your parameters in resource maps comes with numerous advantages.
+
+- Parameters are declared with types, which are automatically coerced thereby eliminating error-prone conversion code.
+
+- The parameter value will be automatically coerced to the given type. This eliminates the need to write error-prone code to parse and convert parameters into their desired type.
+
+- Parameters are pre-validated on every request, providing some defence against injection attacks. If the request if found to be invalid, a 400 response is returned.
+
+- Parameter declarations can help to document the API — this will be covered later in the chapter on [Swagger](#Swagger).
 
 ## Resource Metadata
 
@@ -756,36 +768,81 @@ together.
              :version "0.0.1"
              :description "Example user API"}
       :basePath "/api"}
-      {"/users"
-        {"" (resource :body "A list of users"
-                      :allowed-methods
-                        {:post "Register user"
-                         :get "List users"})
+     {"/users"
+      {""
+       (resource
+        ^{:swagger {:get {:summary "Get users"
+                          :description "Get a list of all known users"}}}
+        {:state (:users db)})
 
-         ["/" :username]
-         {"" (resource :state {:user "bob"})
-          "/posts" (resource
-                     :state "Posts"
-                     :allowed-methods
-                       {:get "List posts"
-                        :post "Create new post"
-                        :put "Update post"
-                        :delete "Delete post"})}}})]
+       ["/" :username]
+       {"" (resource
+            ^{:swagger {:get {:summary "Get user"
+                              :description "Get the details of a known user"
+                              }}}
+            {:state (fn [ctx]
+                      (when-let [user (get {"bob" {:name "Bob"}}
+                                           (-> ctx :parameters :username))]
+                        {:user user}))
+             :parameters {:get {:path {:username s/Str}}}})
+
+        "/posts" (resource
+                  ^{:swagger {:post {:summary "Create a new post"}}}
+                  {:state "Posts"
+                   :post (fn [ctx] nil)}
+
+                  )}}})]
 ```
+
+Clojure metadata is used to annotate yada resources with additional
+metadata required by the Swagger spec.
+
+Note how relatively uncluttered the overall data structure is,
+considering how it fully defines both routing information and resource
+behavior. Note also that there are no clever macros or other magic here,
+(except for the record wrappers which just introduce Clojure records
+which can be treated as maps).
+
+The entire data structure can be printed, walked, sequenced, navigated
+with zippers, and otherwise manipulated by a Clojure's wide array of
+functions.
 
 <include type="note" ref="swagger-implementation"/>
 
-Swagger requires that we annotate each method that we can use to access
-the resource, (which Swagger refers to as _operations_). We do this in
-the __:allowed-methods__, which then serves a dual purpose: annotatation
-for the Swagger specification and telling yada which methods are allowed
-(accessing the resource via a disallowed method will result in a 405
-response status).
+The `swaggered` wrapper introduces a record, `yada.swagger.Swagger`,
+which takes part in bidi's route resolution process (thanks to bidi's protocol-based extensibility).
 
-A built-in swagger UI tool
-[demonstrates](/swagger-ui/index.html?url=/api/1.0.0/swagger.json) this
-further details.
+When `/swagger.json` is appending to the path, the record handlers the
+request itself, returning a Swagger 2.0 specification, generated by
+Tommi Reiman's wonderful
+[ring-swagger](https://github.com/metosin/ring-swagger) library.
 
+The specification meets a standard defined by the folks at
+[Swagger](http:/swagger.io) which encourages interoperability between
+RESTful web APIs and tools.
+
+The
+[built-in Swagger UI tool](/swagger-ui/index.html?url=/api/swagger.json)
+demonstrates this.
+
+## Alternatives
+
+[this is a stub, to discuss how yada differs from other alternative libraries and approaches]
+
+### Differences with Ring
+
+Most Clojure web applications are composed of 'plain old' Ring handlers with 'plain old' Ring middleware.
+
+Ring middleware is remarkably simple and powerful.
+
+[history: webrick, etc.]
+
+[ring middleware]
+
+### Differences with Liberator
+### Differences with compojure-api
+### Differences with Pedestal
+### Differences with fn-house
 
 ## Concluding remarks
 
