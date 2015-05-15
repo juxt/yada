@@ -110,7 +110,9 @@
                        :content [{:tag :code
                                   :attrs {:class "http"}
                                   :content [(str (->meth method) (format " %s HTTP/1.1" url)
-                                                 (apply str (for [[k v] headers] (format "\n%s: %s" k v))))]}]}]}
+                                                 (apply str (for [[k v] headers] (format "\n%s: %s" k v))))
+                                            (str (when data
+                                                   (str "\n\n" (json/encode data))))]}]}]}
 
            (= tag :response)
            {:tag :div

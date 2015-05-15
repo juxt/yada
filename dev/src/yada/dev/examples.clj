@@ -118,6 +118,7 @@
   (path [r] [(basename r) "/" :account])
   (path-args [_] [:account 1234])
   (request [_] {:method :post
+                :headers {"Content-Type" "application/json"}
                 :data {:payee "The gas board"
                        :description "Gas for last year"
                        :amount 20.99}})
