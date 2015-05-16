@@ -159,7 +159,7 @@ programming model and when to use an asynchronous one.
 
 #### Deferred values
 
-A deferred value is a simply value that may not yet be known. Examples
+A deferred value is simply a value that may not yet be known. Examples
 include Clojure's futures, delays and promises. Deferred values are
 built into yada. For further details, see Zach Tellman's
 [manifold](https://github.com/ztellman/manifold) library.
