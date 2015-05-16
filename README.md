@@ -2,7 +2,7 @@
 
 (<b>y</b>et <b>a</b>nother <b>d</b>ependency! <b>a</b>rrrrrgh!!!)
 
-yada is an experimental REST library for Clojure, building on the ideas
+yada is a experimental REST library for Clojure, building on the ideas
 within [Liberator](http://clojure-liberator.github.io/liberator/), and
 from experiences using it on commercial projects. Its feature-set and
 rationale is very similar to [Ratpack](http://www.ratpack.io/), but
@@ -10,12 +10,14 @@ designed for Clojure.
 
 If you want to help, please join the discussion group [yada-discuss](https://groups.google.com/forum/#!forum/yada-discuss)
 
+The full documentation is available at [http://yada.juxt.pro](http://yada.juxt.pro) or offline (see below).
+
 ## Installation
 
 Add the following dependency to your `project.clj` file :-
 
 ```clojure
-[yada "0.4.0"]
+[yada "0.4.1"]
 ```
 
 ## Status
@@ -23,7 +25,7 @@ Add the following dependency to your `project.clj` file :-
 Please note that being a 0.x.y version indicates the provisional status
 of this library, and that features are subject to change.
 
-## Getting started
+## Running documentation and examples offline
 
 Although yada is a library, if you clone this repo you can run some
 examples from the repl. This is a good way of seeing how far yada is
