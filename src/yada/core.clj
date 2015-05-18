@@ -358,6 +358,12 @@
                          (rs/coerce schema (:route-params req) :query))
                        :query
                        (when-let [schema (get-in parameters [method :query])]
+
+                         (pprint req)
+                         (infof "query: schema is %s, input is %s, result is %s"
+                                schema
+                                (-> req params-request :query-params keywordize)
+                                (rs/coerce schema (-> req params-request :query-params keywordize) :query))
                          (rs/coerce schema (-> req params-request :query-params keywordize) :query))
                        :body
                        (when-let [schema (get-in parameters [method :body])]

@@ -122,7 +122,6 @@
                 :data {:payee "The gas board"
                        :description "Gas for last year"
                        :amount 20.99}})
-  (query-string [_] "since=tuesday")
   (expected-response [_] {:status 200}))
 
 #_(defrecord PathParameterRequired []
