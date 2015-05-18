@@ -380,7 +380,9 @@
                             params (merge (apply merge (vals (dissoc parameters :body)))
                                           (when body {:body body}))]
                         (cond-> ctx
-                          (not-empty params) (assoc :parameters parameters)
+                          (not-empty params) (assoc :parameters params)
+                          ;; Although body is included in params (above)
+                          ;; we also include it in the context directly.
                           body (assoc :body (:body parameters))))))))
 
               ;; Authentication

@@ -13,11 +13,17 @@ tryIt = function(meth, u, title, headers, data) {
     var id = "response-"+title;
     $("div#"+id+" .status").html("Waiting&#8230;");
 
-    $.ajax({type: meth,
-            url: u,
-            headers: headers,
-            data: JSON.stringify(data),
-            processData: false})
+    var args = {type: meth,
+                url: u,
+                headers: headers,
+                }
+
+    if (meth == "POST") {
+        args.data = JSON.stringify(data);
+        args.processData = false;
+    }
+
+    $.ajax(args)
         .done(function(msg, textStatus, jqXHR) {
             $("div#"+id+" .status").text(jqXHR.status + " " + jqXHR.statusText);
             // $("div#"+id+" .headers").text(jqXHR.getAllResponseHeaders());

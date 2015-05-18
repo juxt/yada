@@ -96,7 +96,7 @@
      :body '(fn [ctx]
               (let [{:keys [since account]} (:parameters ctx)]
                 (format "List transactions since %s from account number %s"
-                        since account)))})
+                          since account)))})
   (make-handler [ex] (yada (eval (resource-map ex))))
   (path [r] [(basename r) "/" :account])
   (path-args [_] [:account 1234])
@@ -109,11 +109,8 @@
   (resource-map [_]
     {:parameters
      common-params
-     :body '(fn [ctx]
-              (let [{:keys [since account]} (:parameters ctx)]
-                (format "List transactions since %s from account number %s"
-                        since account)))
-     :post '(fn [ctx] (format "Body is %s" (:body ctx)))})
+     :post '(fn [ctx]
+              (format "Thank you for posting %s" (:body ctx)))})
   (make-handler [ex] (yada (eval (resource-map ex))))
   (path [r] [(basename r) "/" :account])
   (path-args [_] [:account 1234])
