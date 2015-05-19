@@ -134,6 +134,18 @@
                 :data "email=alice%40example.org"})
   (expected-response [_] {:status 200}))
 
+(defrecord HeaderParameter []
+  Example
+  (resource-map [_]
+    {:parameters
+     {:get {:header {:x-tag String}}}
+     :body '(fn [ctx] (format "x-tag is %s" (-> ctx :parameters :x-tag)))
+     })
+  (make-handler [ex] (yada (eval (resource-map ex))))
+  (request [_] {:method :get
+                :headers {"X-Tag" "foobar"}})
+  (expected-response [_] {:status 200}))
+
 #_(defrecord PathParameterRequired []
   Example
   (resource-map [_]

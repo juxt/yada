@@ -288,6 +288,10 @@ Now let's show how this same resource responds to a POST request.
 
 <example ref="FormParameter"/>
 
+### Header parameters
+
+<example ref="HeaderParameter"/>
+
 ### old
 
 Let's show how these types work with another example :-

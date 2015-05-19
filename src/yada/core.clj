@@ -375,6 +375,12 @@
                            (let [fp (keywordize-keys (form-decode (-> ctx :request :body deref) (character-encoding req)))]
                              (rs/coerce schema fp :json))
                            )
+                         )
+
+                       :header
+                       (when-let [schema (get-in parameters [method :header])]
+                         (let [params (select-keys (-> req :headers keywordize-keys) (keys schema))]
+                           (rs/coerce schema params :query))
                          )}]
 
                   (let [errors (filter (comp error? second) parameters)]
