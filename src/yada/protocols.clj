@@ -40,6 +40,7 @@
   (known-method? [b method] [b {}])
   (request-uri-too-long? [b _] [b {}])
   (resource [b req] (if b {} false))
+  (post [b ctx] b)
   (interpret-post-result [b ctx]
     (if b ctx (throw (ex-info "Failed to process POST" {}))))
   (authorize [b ctx] b)

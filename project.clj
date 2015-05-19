@@ -7,10 +7,12 @@
             :url "http://opensource.org/licenses/MIT"}
 
   :exclusions [com.stuartsierra/component
-               org.clojure/clojure]
+               org.clojure/clojure
+               ring/ring-core
+               prismatic/schema]
 
   :dependencies
-  [[prismatic/schema "0.3.5" :exclusions [potemkin]] ; TODO 0.4.2
+  [[prismatic/schema "0.4.2" :exclusions [potemkin]] ; TODO 0.4.2
    [manifold "0.1.0-beta12"]
    [bidi "1.19.0"]
    [potemkin "0.3.11"]
@@ -21,7 +23,8 @@
    [potemkin "0.3.11"]
    [org.clojure/core.async "0.1.346.0-17112a-alpha"]
    [clj-time "0.9.0"]
-   [metosin/ring-swagger "0.20.2"]]
+   [metosin/ring-swagger "0.20.2"]
+   [ring/ring-core "1.3.2"]]
 
   :repl-options {:init-ns user
                  :welcome (println "Type (dev) to start")}

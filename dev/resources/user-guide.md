@@ -284,6 +284,10 @@ Now let's show how this same resource responds to a POST request.
 
 <example ref="ParameterDeclaredPathQueryWithPost"/>
 
+### Form parameters
+
+<example ref="FormParameter"/>
+
 ### old
 
 Let's show how these types work with another example :-

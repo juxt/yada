@@ -18,8 +18,14 @@ tryIt = function(meth, u, title, headers, data) {
                 headers: headers,
                 }
 
+    // This is all because I can't figure out how to escape a JSON
+    // parameter string in tryIt()
+    if (headers && headers["Content-Type"] == "application/json") {
+        data = JSON.stringify(data);
+    }
+
     if (meth == "POST") {
-        args.data = JSON.stringify(data);
+        args.data = data;
         args.processData = false;
     }
 

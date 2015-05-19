@@ -15,7 +15,7 @@
    [modular.bidi :refer (path-for)]
    [modular.template :as template :refer (render-template)]
    [modular.component.co-dependency :refer (co-using)]
-   [yada.dev.examples :refer (resource-map get-path get-path-args get-query-string request make-handler expected-response get-test-function external?)]
+   [yada.dev.examples :refer (resource-map get-path get-path-args get-query-string get-request request make-handler expected-response get-test-function external?)]
    [yada.yada :refer (yada)]))
 
 (defn emit-element
@@ -81,13 +81,18 @@
   (when-let [v (find-var (symbol "yada.dev.examples" (str "map->" (namespace-munge example))))]
     (v user-guide)))
 
+(defn encode-data [data content-type]
+  (case content-type
+    "application/json" (json/encode data)
+    (str "\"" data "\"")))
+
 (defn post-process-example [user-guide ex xml {:keys [prefix ext-prefix]}]
   (when xml
     (let [url (str
                (when (external? ex) ext-prefix)
                (apply path-for @(:*router user-guide) (keyword (basename ex)) (get-path-args ex))
                (when-let [qs (get-query-string ex)] (str "?" qs)))
-          {:keys [method headers data]} (request ex)
+          {:keys [method headers data] :as req} (get-request ex)
           ]
 
       (postwalk
@@ -112,7 +117,7 @@
                                   :content [(str (->meth method) (format " %s HTTP/1.1" url)
                                                  (apply str (for [[k v] headers] (format "\n%s: %s" k v))))
                                             (str (when data
-                                                   (str "\n\n" (json/encode data))))]}]}]}
+                                                   (str "\n\n" (encode-data data (get headers "Content-Type")) )))]}]}]}
 
            (= tag :response)
            {:tag :div
@@ -127,7 +132,7 @@
                                                            url
                                                            (basename ex)
                                                            (json/encode headers)
-                                                           (when data (json/encode data)))}
+                                                           (when data (encode-data data (get headers "Content-Type"))))}
                                   :content ["Try it"]}
                                  " "
                                  {:tag :button
@@ -293,13 +298,11 @@
           (map-indexed
            (fn [ix [exname ex]]
              (let [url
-
                    (str
                     (apply path-for @*router (keyword (basename ex)) (get-path-args ex))
                     (when-let [qs (get-query-string ex)] (str "?" qs)))
 
-                   #_(apply path-for @*router (keyword (basename ex)) (get-path-args ex))
-                   {:keys [method headers]} (request ex)]
+                   {:keys [method headers]} (get-request ex)]
                [:tr {:id (str "test-" (link ex))}
                 [:td (inc ix)]
                 [:td [:a {:href (format "%s#example-%s"

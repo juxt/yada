@@ -121,6 +121,19 @@
                        :amount 20.99}})
   (expected-response [_] {:status 200}))
 
+(defrecord FormParameter []
+  Example
+  (resource-map [_]
+    {:parameters
+     {:post {:form {:email String}}}
+     :post '(fn [ctx] (format "Saving email: %s" (-> ctx :parameters :email)))
+     })
+  (make-handler [ex] (yada (eval (resource-map ex))))
+  (request [_] {:method :post
+                :headers {"Content-Type" "application/x-www-form-urlencoded;charset=US-ASCII"}
+                :data "email=alice%40example.org"})
+  (expected-response [_] {:status 200}))
+
 #_(defrecord PathParameterRequired []
   Example
   (resource-map [_]
@@ -692,6 +705,9 @@
 
 (defn get-query-string [r]
   (try (query-string r) (catch AbstractMethodError e)))
+
+(defn get-request [r]
+  (try (request r) (catch AbstractMethodError e)))
 
 (defn get-test-function [ex]
   (try (test-function ex) (catch AbstractMethodError e)))

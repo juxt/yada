@@ -8,7 +8,7 @@
    [manifold.stream :refer (->source transform)]
    [hiccup.core :refer (html h)]
    [schema.core :as s]
-   [schema.coerce :refer (coercer string-coercion-matcher)]
+   [schema.coerce :refer (coercer string-coercion-matcher) :as sc]
    [schema.utils :refer (error? error-val)]
    [yada.protocols :as p]
    [yada.conneg :refer (best-allowed-content-type)]
@@ -18,10 +18,14 @@
    [ring.middleware.basic-authentication :as ba]
    [ring.middleware.params :refer (params-request)]
    [ring.swagger.schema :as rs]
+   [ring.swagger.coerce :as rc]
+   [ring.util.codec :refer (form-decode)]
+   [ring.util.request :refer (character-encoding urlencoded-form?)]
    [clojure.tools.logging :refer :all]
    [clojure.set :as set]
    [clojure.core.async :as a]
    [clojure.pprint :refer (pprint)]
+   [clojure.walk :refer (keywordize-keys)]
    [cheshire.core :as json]
    )
   (:import (manifold.deferred IDeferred Deferrable)
@@ -50,16 +54,6 @@
   Ring
   (request [this req m]
     (delegate req {k-bidi-match-context m})))
-
-(defprotocol Body
-  (read-body [_ charset] "Read the body and return as a string"))
-
-(extend-protocol Body
-  String
-  (read-body [s _] s)
-  java.io.InputStream
-  (read-body [s _] (slurp s))
-  )
 
 ;; "It is better to have 100 functions operate on one data structure
 ;; than 10 functions on 10 data structures." — Alan Perlis
@@ -319,10 +313,16 @@
 
      (fn [req ctx]
 
+       (infof "Raw request is %s" req)
+
        (let [method (:request-method req)]
+
          (-> ctx
              (merge
-              {:request req
+              {:request (assoc req :body (delay
+                                          (let [encoding (character-encoding req)]
+                                            (infof "body encoding is %s" encoding)
+                                            (slurp (:body req) :encoding (or encoding "UTF-8")))))
                :resource-map resource-map})
 
              (d/chain
@@ -367,8 +367,15 @@
                          (rs/coerce schema (-> req params-request :query-params keywordize) :query))
                        :body
                        (when-let [schema (get-in parameters [method :body])]
-                         (let [s (read-body (-> req :body) "")]
-                           (rs/coerce schema (json/decode s keyword) :json)))}]
+                         (rs/coerce schema (json/decode (-> req :body deref) keyword) :json))
+
+                       :form
+                       (when-let [schema (get-in parameters [method :form])]
+                         (when (urlencoded-form? req)
+                           (let [fp (keywordize-keys (form-decode (-> ctx :request :body deref) (character-encoding req)))]
+                             (rs/coerce schema fp :json))
+                           )
+                         )}]
 
                   (let [errors (filter (comp error? second) parameters)]
 
@@ -382,8 +389,9 @@
                         (cond-> ctx
                           (not-empty params) (assoc :parameters params)
                           ;; Although body is included in params (above)
-                          ;; we also include it in the context directly.
-                          body (assoc :body (:body parameters))))))))
+                          ;; we might also include it in the context directly.
+                          ;; body (assoc :body (:body parameters))
+                          ))))))
 
               ;; Authentication
               (fn [ctx]
