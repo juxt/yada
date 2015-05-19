@@ -356,15 +356,11 @@
                       {:path
                        (when-let [schema (get-in parameters [method :path])]
                          (rs/coerce schema (:route-params req) :query))
+
                        :query
                        (when-let [schema (get-in parameters [method :query])]
-
-                         (pprint req)
-                         (infof "query: schema is %s, input is %s, result is %s"
-                                schema
-                                (-> req params-request :query-params keywordize)
-                                (rs/coerce schema (-> req params-request :query-params keywordize) :query))
                          (rs/coerce schema (-> req params-request :query-params keywordize) :query))
+
                        :body
                        (when-let [schema (get-in parameters [method :body])]
                          (rs/coerce schema (json/decode (-> req :body deref) keyword) :json))
@@ -372,16 +368,15 @@
                        :form
                        (when-let [schema (get-in parameters [method :form])]
                          (when (urlencoded-form? req)
-                           (let [fp (keywordize-keys (form-decode (-> ctx :request :body deref) (character-encoding req)))]
-                             (rs/coerce schema fp :json))
-                           )
-                         )
+                           (let [fp (keywordize-keys
+                                     (form-decode (-> ctx :request :body deref)
+                                                  (character-encoding req)))]
+                             (rs/coerce schema fp :json))))
 
                        :header
                        (when-let [schema (get-in parameters [method :header])]
                          (let [params (select-keys (-> req :headers keywordize-keys) (keys schema))]
-                           (rs/coerce schema params :query))
-                         )}]
+                           (rs/coerce schema params :query)))}]
 
                   (let [errors (filter (comp error? second) parameters)]
 
