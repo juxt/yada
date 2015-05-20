@@ -157,6 +157,8 @@ original thread left off.
 As a developer, yada gives you fine-grained control over when to use a synchronous
 programming model and when to use an asynchronous one.
 
+<include type="note" ref="kv-args"/>
+
 #### Deferred values
 
 A deferred value is simply a value that may not yet be known. Examples
@@ -616,11 +618,17 @@ access control, can be added to the resource map. (Contrast that with
 web-sockets, where you'd have to design and implement your own bespoke
 security system.)
 
-## Misc
+## Custom responses
 
-<example ref="StatusAndHeaders"/>
+It's usually better to allow yada to set the status and headers automatically, but there are times when you need this control. Therefore, it's possible in a resource map to specify the status directly, with the __:status__ entry, which can be a constant or function.
 
-<include type="note" ref="kv-args"/>
+<example ref="CustomStatus"/>
+
+Setting headers is achieved in the same way, using the __:headers__ entry, and these are merged with the headers that yada automatically includes.
+
+<example ref="CustomHeader"/>
+
+<include type="note" ref="i-am-a-teapot"/>
 
 ## Routing
 

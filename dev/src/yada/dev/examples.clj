@@ -251,15 +251,24 @@
 
 ;; Misc
 
-(defrecord StatusAndHeaders []
+(defrecord CustomStatus []
   Example
-  (resource-map [_] '{:status 280
-                      :headers {"content-type" "text/plain;charset=utf-8"
-                                "x-extra" "foo"}
-                      :body "Look, headers ^^^"})
+  (resource-map [_] '{:status 418
+                      :headers {"content-type" "text/plain;charset=utf-8"}
+                      :body "I'm a teapot!"})
   (make-handler [ex] (yada (eval (resource-map ex))))
   (request [_] {:method :get})
-  (expected-response [_] {:status 280}))
+  (expected-response [_] {:status 418}))
+
+(defrecord CustomHeader []
+  Example
+  (resource-map [_] '{:status (fn [ctx] 418)
+                      :headers {"content-type" "text/plain;charset=utf-8"
+                                "x-blend" "dahjeeling"}
+                      :body "I'm a teapot, here's my custom header"})
+  (make-handler [ex] (yada (eval (resource-map ex))))
+  (request [_] {:method :get})
+  (expected-response [_] {:status 418}))
 
 ;; TODO Async body options (lots more options than just this one)
 

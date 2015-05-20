@@ -127,11 +127,11 @@
   (fn [ctx]
     (merge
      {:status (or (get-in ctx [:response :status])
-                  (p/status status)
+                  (p/status status ctx)
                   200)
       :headers (merge
                 (get-in ctx [:response :headers])
-                (p/headers headers))
+                (p/headers headers ctx))
       ;; TODO :status and :headers should be implemented like this in all cases
       :body (get-in ctx [:response :body])})))
 

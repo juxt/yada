@@ -21,8 +21,8 @@
   (body [_ ctx] "Return a representation of the resource. See yada documentation for the structure of the ctx argument.")
   (produces [_] "Return the content-types, as a set, that the resource can produce")
   (produces-from-body [_] "If produces yields nil, try to extract from body")
-  (status [_] "Override the response status")
-  (headers [_] "Override the response headers")
+  (status [_ ctx] "Override the response status")
+  (headers [_ ctx] "Override the response headers")
   (post [_ ctx] "POST to the resource")
   (interpret-post-result [_ ctx] "Return the request context, according to the result of post")
 
@@ -108,6 +108,7 @@
   (authorize [f ctx] (f ctx))
 
   (allow-origin [f ctx] (f ctx))
+  (status [f ctx] (f ctx))
 
   String
   (body [s _] s)
@@ -120,7 +121,7 @@
   (service-available? [n] [false {:headers {"retry-after" n}}])
   (request-uri-too-long? [n uri]
     (request-uri-too-long? (> (.length uri) n) uri))
-  (status [n] n)
+  (status [n ctx] n)
   (last-modified [l _] (java.util.Date. l))
 
   java.util.Set
@@ -142,7 +143,7 @@
     (when-let [delegate (get m (get-in ctx [:response :content-type]))]
       (body delegate ctx)))
   (produces-from-body [m] (keys m))
-  (headers [m] m)
+  (headers [m _] m)
   (interpret-post-result [m _] m)
   (format-event [ev] )
 
@@ -167,8 +168,8 @@
   (post [_ _] nil)
   (produces [_] nil)
   (produces-from-body [_] nil)
-  (status [_] nil)
-  (headers [_] nil)
+  (status [_ _] nil)
+  (headers [_ _] nil)
   (interpret-post-result [_ ctx] nil)
   (allow-origin [_ _] nil)
 
