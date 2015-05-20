@@ -110,7 +110,7 @@
     {:parameters
      common-params
      :post '(fn [ctx]
-              (format "Thank you for posting %s" (:body ctx)))})
+              (format "Thank you for posting %s" (-> ctx :parameters :body)))})
   (make-handler [ex] (yada (eval (resource-map ex))))
   (path [r] [(basename r) "/" :account])
   (path-args [_] [:account 1234])

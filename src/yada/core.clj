@@ -20,7 +20,7 @@
    [ring.swagger.schema :as rs]
    [ring.swagger.coerce :as rc]
    [ring.util.codec :refer (form-decode)]
-   [ring.util.request :refer (character-encoding urlencoded-form?)]
+   [ring.util.request :refer (character-encoding urlencoded-form? content-type)]
    [clojure.tools.logging :refer :all]
    [clojure.set :as set]
    [clojure.core.async :as a]
@@ -319,10 +319,14 @@
 
          (-> ctx
              (merge
-              {:request (assoc req :body (delay
-                                          (let [encoding (character-encoding req)]
-                                            (infof "body encoding is %s" encoding)
-                                            (slurp (:body req) :encoding (or encoding "UTF-8")))))
+              {:request
+               (assoc req
+                      ;; We assoc in a 'delayed' body to the context's
+                      ;; version of the request. The first caller to
+                      ;; deref causes the slurp (which to do ahead of
+                      ;; time might be unnecessarily wasteful).
+                      :body (delay
+                             (slurp (:body req) :encoding (or (character-encoding req) "UTF-8"))))
                :resource-map resource-map})
 
              (d/chain
@@ -363,7 +367,8 @@
 
                        :body
                        (when-let [schema (get-in parameters [method :body])]
-                         (rs/coerce schema (json/decode (-> req :body deref) keyword) :json))
+                         (let [body (-> ctx :request :body deref)]
+                           (rep/decode-representation body (content-type req) schema)))
 
                        :form
                        (when-let [schema (get-in parameters [method :form])]

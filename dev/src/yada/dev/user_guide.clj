@@ -302,7 +302,7 @@
                     (apply path-for @*router (keyword (basename ex)) (get-path-args ex))
                     (when-let [qs (get-query-string ex)] (str "?" qs)))
 
-                   {:keys [method headers]} (get-request ex)]
+                   {:keys [method headers data]} (get-request ex)]
                [:tr {:id (str "test-" (link ex))}
                 [:td (inc ix)]
                 [:td [:a {:href (format "%s#example-%s"
@@ -318,11 +318,12 @@
                 [:td.result ""]
                 [:td [:button.btn.test
                       {:onClick (format
-                                 "testIt('%s','%s','%s',%s,%s)"
+                                 "testIt('%s','%s','%s',%s,%s,%s)"
                                  (->meth method)
                                  url
                                  (link ex)
                                  (json/encode headers)
+                                 (when data (encode-data data (get headers "Content-Type")))
                                  (json/encode (or (try (expected-response ex)
                                                        (catch AbstractMethodError e))
                                                   {:status 200}))

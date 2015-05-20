@@ -15,15 +15,28 @@ testResult = function(jqXHR, expectation) {
     }
 }
 
-testIt = function(meth, u, ix, headers, expectation) {
+testIt = function(meth, u, ix, headers, data, expectation) {
     clearIt(ix);
 
     var id = "test-"+ix;
     $("#"+id+" .status").html("Waiting&#8230;");
 
-    $.ajax({type: meth,
-            url: u,
-            headers: headers})
+    var args = {type: meth,
+                url: u,
+                headers: headers}
+
+    // This is all because I can't figure out how to escape a JSON
+    // parameter string in tryIt()
+    if (headers && headers["Content-Type"] == "application/json") {
+        data = JSON.stringify(data);
+    }
+
+    if (meth == "POST") {
+        args.data = data;
+        args.processData = false;
+    }
+
+    $.ajax(args)
         .done(function(msg, textStatus, jqXHR) {
             $("#"+id+" .status").text(jqXHR.status + " " + jqXHR.statusText);
             $("#"+id+" .headers").html(jqXHR.getAllResponseHeaders());

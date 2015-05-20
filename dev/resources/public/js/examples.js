@@ -15,8 +15,7 @@ tryIt = function(meth, u, title, headers, data) {
 
     var args = {type: meth,
                 url: u,
-                headers: headers,
-                }
+                headers: headers}
 
     // This is all because I can't figure out how to escape a JSON
     // parameter string in tryIt()

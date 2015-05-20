@@ -4,13 +4,26 @@
   (:require
    [hiccup.core :refer (html)]
    [cheshire.core :as json]
-   [manifold.stream :refer (->source transform)])
+   [manifold.stream :refer (->source transform)]
+   [ring.swagger.schema :as rs])
   (:import
    (clojure.core.async.impl.channels ManyToManyChannel)
    (manifold.stream.async CoreAsyncSource)))
 
+;; From representation
+
+(defmulti decode-representation (fn [representation content-type & args] content-type))
+
+(defmethod decode-representation "application/json"
+  ([representation content-type schema]
+   (rs/coerce schema (decode-representation representation content-type) :json))
+  ([representation content-type]
+   (json/decode representation keyword)))
+
+;; To representation
+
 (defprotocol Content
-  (content [_ content-type] "Get resource's content, given the content-type")
+  (content [_ content-type] "Get resource's representation, given the content-type")
   (content-type-default [_] "Return the default content type of the object if not specified explicitly"))
 
 (defmulti render-map (fn [state content-type] content-type))
