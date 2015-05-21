@@ -51,8 +51,8 @@ throughput required for some applications.
 
 A web API is a set of web resources that are accessed by clients, called
 _user agents_, using the HTTP protocol. Typically, a developer will
-build a web API to expose the functionality of a software system to
-users and other agents across the web.
+build a web API to make information available to users and machines
+across the web.
 
 HTTP is a large and powerful protocol — yada is a library that helps
 reduce the amount of coding required for meeting its requirements, while
@@ -61,8 +61,7 @@ leaving you as the developer in full control.
 ### Where yada fits
 
 There is a great number of libraries available to Clojure programmers to
-help develop web applications. Let's explain where yada fits into a
-Clojure web application and why you might want to use it in yours.
+help develop web applications. Let's explain where yada fits.
 
 During a web request, a browser (or other user agent) establishes a
 connection with a web server and sends a request encoded according to
@@ -110,6 +109,8 @@ Compare this with using yada to create a handler :-
   (yada {:body "Hello World!"}))
 ```
 
+### Resource maps
+
 The code above calls a function built-in to yada called `yada`, with
 a single argument known as a _resource map_. In this case, the
 resource map looks strikingly similar to a Ring response map but don't
@@ -118,13 +119,7 @@ soon see.
 
 <include type="note" ref="modular-template-intro"/>
 
-### Resource maps
-
-Let's look in more detail at the _resource map_ you pass to yada's `yada` function to create a Ring handler. This map is an ordinary Clojure map. Let's demonstrate using the example we have already seen.
-
 <example ref="HelloWorld"/>
-
-We'll use more examples like that to show different resource maps that demonstrate all the features of yada. (If you want to experiment further, why not take a minute to [create](#modular-template-intro) your own test project?)
 
 <include type="note" ref="liberator"/>
 
@@ -133,59 +128,19 @@ define all the ways that a handler should respond to a web request.
 
 ### Dynamic responses
 
-In the previous example, the __:body__ entry was declared as a string value. But often the body will be created dynamically, depending on the current state of the resource and/or parameters passed in the request. We need some way to vary the body at runtime. We simply replace the string value in the resource map with a function.
+The values in resource maps can be constant values, as we have already seen. But typically the body of a response will be created dynamically, on a per-request basis, depending on the current state of the resource and/or parameters passed in the request. In this case, a Clojure function is used.
+
+```clojure
+(def ^{:doc "A handler to greet the world!"}
+  hello
+  (yada {:body (fn [ctx] "Hello World!")}))
+```
+
+The function takes a single argument known as the _request context_. It is an ordinary Clojure map containing various data relating to the request. Request contexts will be covered in more detail later on.
 
 <example ref="DynamicHelloWorld"/>
 
-The function in the example above takes a single argument known as the _request context_. It is an ordinary Clojure map containing various data relating to the request. Request contexts will be covered in more detail later on.
-
-### Asynchronous responses
-
-Under normal circumstances, with Clojure running on a JVM, each request can be processed by a separate thread.
-
-However, sometimes the production of the response body involves making requests
-to data-sources and other activities which may be _I/O-bound_. This means the thread handling the request has to block, waiting on the data to arrive from the IO system.
-
-For heavily loaded or high-throughput web APIs, this is an inefficient
-use of precious resources. In recent years, this problem has been
-addressed by using a asynchronous I/O. The request thread
-is able to make a request for data via I/O, and then is free to carry out
-further work (such as processing another web request). When the data
-requested arrives on the I/O channel, another thread carries on when the
-original thread left off.
-
-As a developer, yada gives you fine-grained control over when to use a synchronous
-programming model and when to use an asynchronous one.
-
-<include type="note" ref="kv-args"/>
-
-#### Deferred values
-
-A deferred value is simply a value that may not yet be known. Examples
-include Clojure's futures, delays and promises. Deferred values are
-built into yada. For further details, see Zach Tellman's
-[manifold](https://github.com/ztellman/manifold) library.
-
-In almost all cases, it is possible to specify _deferred values_ in a
-resource map.
-
-Let's see this in action with another example :-
-
-<example ref="AsyncHelloWorld"/>
-
-The sleep is exaggerated but the delay that the web client would
-experience is real. In a real-world application, however, the ability to
-use an asynchronous model is very useful for techniques to improve
-scalability. For example, in a heavily loaded server, I/O operations can
-be queued and batched together. Performance may be slightly worse for
-each individual request, but the overall throughput of the web server
-can be significantly improved.
-
-Normally, exploiting asynchronous operations in handling web requests is
-difficult and requires advanced knowledge of asynchronous programming
-techniques. In yada, however, it's easy.
-
-<include type="note" ref="ratpack"/>
+### Feature list
 
 Here is a list of yada's features :-
 
@@ -348,7 +303,55 @@ Declaring your parameters in resource maps comes with numerous advantages.
 
 - Parameter declarations can help to document the API — this will be covered later in the chapter on [Swagger](#Swagger).
 
-## Resource Metadata
+## Asynchronous responses
+
+Under normal circumstances, with Clojure running on a JVM, each request can be processed by a separate thread.
+
+However, sometimes the production of the response body involves making requests
+to data-sources and other activities which may be _I/O-bound_. This means the thread handling the request has to block, waiting on the data to arrive from the IO system.
+
+For heavily loaded or high-throughput web APIs, this is an inefficient
+use of precious resources. In recent years, this problem has been
+addressed by using a asynchronous I/O. The request thread
+is able to make a request for data via I/O, and then is free to carry out
+further work (such as processing another web request). When the data
+requested arrives on the I/O channel, another thread carries on when the
+original thread left off.
+
+As a developer, yada gives you fine-grained control over when to use a synchronous
+programming model and when to use an asynchronous one.
+
+<include type="note" ref="kv-args"/>
+
+#### Deferred values
+
+A deferred value is simply a value that may not yet be known. Examples
+include Clojure's futures, delays and promises. Deferred values are
+built into yada. For further details, see Zach Tellman's
+[manifold](https://github.com/ztellman/manifold) library.
+
+In almost all cases, it is possible to specify _deferred values_ in a
+resource map.
+
+Let's see this in action with another example :-
+
+<example ref="AsyncHelloWorld"/>
+
+The sleep is exaggerated but the delay that the web client would
+experience is real. In a real-world application, however, the ability to
+use an asynchronous model is very useful for techniques to improve
+scalability. For example, in a heavily loaded server, I/O operations can
+be queued and batched together. Performance may be slightly worse for
+each individual request, but the overall throughput of the web server
+can be significantly improved.
+
+Normally, exploiting asynchronous operations in handling web requests is
+difficult and requires advanced knowledge of asynchronous programming
+techniques. In yada, however, it's easy.
+
+<include type="note" ref="ratpack"/>
+
+## Resources
 
 The __:resource__ entry allows us to return meta-data about a resource.
 
@@ -388,6 +391,9 @@ There are multiple ways to indicate which content-types can be provided by an im
 
 REST is about resources which have state, and representations that are
 negotiated between the user agent and the server to transfer that state.
+
+In fact, we can think of the world-wide web as a being a solution to a
+single problem: the distribution of state.
 
 ### Retrieving state
 
