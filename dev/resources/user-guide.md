@@ -87,7 +87,7 @@ called a _response map_. The Ring standard states that such responses should con
 
 #### Then we code the response...
 
-Usually, the target handler is developed by the application developer. But with yada, the application developer passes a ordinary Clojure map, called a _resource map_ to a special yada function, `yada/handler`, which returns the target handler.
+Usually, the target handler is developed by the application developer. But with yada, the application developer passes a ordinary Clojure map, called a _resource description_ to a special yada function, `yada/handler`, which returns the target handler.
 
 If you are unfamiliar with web development in Clojure, let's explain
 that again using some basic Clojure code. Here is a simple Ring-compatible handler function :-
@@ -109,13 +109,13 @@ Compare this with using yada to create a handler :-
   (yada {:body "Hello World!"}))
 ```
 
-### Resource maps
+### Resource descriptions
 
-The code above calls a function built-in to yada called `yada`, with
-a single argument known as a _resource map_. In this case, the
-resource map looks strikingly similar to a Ring response map but don't
-be deceived — there is a lot more going on under the hood as we shall
-soon see.
+The code above calls a function built-in to yada called `yada`, with a
+single argument known as a _resource description_. In this case, the resource
+description looks strikingly similar to a Ring response but don't be
+deceived — there is a lot more going on under the hood as we shall soon
+see.
 
 <include type="note" ref="modular-template-intro"/>
 
@@ -123,12 +123,12 @@ soon see.
 
 <include type="note" ref="liberator"/>
 
-Resources maps are the key to understanding yada. They are used to
+Resources descriptions are the key to understanding yada. They are used to
 define all the ways that a handler should respond to a web request.
 
 ### Dynamic responses
 
-The values in resource maps can be constant values, as we have already seen. But typically the body of a response will be created dynamically, on a per-request basis, depending on the current state of the resource and/or parameters passed in the request. In this case, a Clojure function is used.
+The values in resource description can be constant values, as we have already seen. But typically the body of a response will be created dynamically, on a per-request basis, depending on the current state of the resource and/or parameters passed in the request. In this case, a Clojure function is used.
 
 ```clojure
 (def ^{:doc "A handler to greet the world!"}
@@ -203,11 +203,11 @@ path `/accounts/1234/transactions`. We call this a _path parameter_.
 The second, `tuesday`, is embedded in the URI's query string (after
 the `?` symbol). We call this a _query parameter_.
 
-yada allows you to declare both these and other types of parameter via the __:parameters__ entry in the resource map.
+yada allows you to declare both these and other types of parameter via the __:parameters__ entry in the resource description.
 
 Parameters must be specified for each method that the resource supports. The reason for this is because parameters can, and often do, differ depending on the method used.
 
-For example, below we have a resource map that defines the parameters for requests to a resource representing a bank account. For GET requests, there is both a path parameter and query parameter, for POST requests there is the same path parameter and a body.
+For example, below we have a resource description that defines the parameters for requests to a resource representing a bank account. For GET requests, there is both a path parameter and query parameter, for POST requests there is the same path parameter and a body.
 
 We define parameter types in the style of [Prismatic](https://prismatic.com)'s
 excellent [schema](https://github.com/prismatic/schema) library.
@@ -229,7 +229,7 @@ excellent [schema](https://github.com/prismatic/schema) library.
 
 But for POST requests, there is a body parameter, which defines the entity body that must be sent with the request. This might be used, for example, to post a new transaction to a bank account.
 
-We can declare the parameter in the resource map's __:parameters__ entry. At runtime, these parameters are extracted from a request and  added as the __:parameters__ entry of the _request context_.
+We can declare the parameter in the resource description's __:parameters__ entry. At runtime, these parameters are extracted from a request and  added as the __:parameters__ entry of the _request context_.
 
 Let's show this with an example.
 
@@ -293,7 +293,7 @@ Finally, let's see how we could extract a path parameter without declaring it.
 
 ### Benefits to declarative parameter declaration
 
-Declaring your parameters in resource maps comes with numerous advantages.
+Declaring your parameters in resource descriptions comes with numerous advantages.
 
 - Parameters are declared with types, which are automatically coerced thereby eliminating error-prone conversion code.
 
@@ -331,7 +331,7 @@ built into yada. For further details, see Zach Tellman's
 [manifold](https://github.com/ztellman/manifold) library.
 
 In almost all cases, it is possible to specify _deferred values_ in a
-resource map.
+resource description.
 
 Let's see this in action with another example :-
 
@@ -450,7 +450,7 @@ Let's see this with an example :-
 
 <example ref="PostCounter"/>
 
-As we have seen, processing of POST requests is achieved by adding an __:post__ entry to the resource map. If the value is a function, it will be called with the request context as an argument, and return a value. We can also specify the value as a constant. Whichever we choose, the table below shows how the return value is interpretted.
+As we have seen, processing of POST requests is achieved by adding an __:post__ entry to the resource description. If the value is a function, it will be called with the request context as an argument, and return a value. We can also specify the value as a constant. Whichever we choose, the table below shows how the return value is interpretted.
 
 <table class="table">
 <thead>
@@ -620,13 +620,13 @@ __text/event-stream__ without has having to specify it explicitly.
 <example ref="ServerSentEventsDefaultContentType"/>
 
 Of course, all the parts of yada you've learned up until now, such as
-access control, can be added to the resource map. (Contrast that with
+access control, can be added to the resource description. (Contrast that with
 web-sockets, where you'd have to design and implement your own bespoke
 security system.)
 
 ## Custom responses
 
-It's usually better to allow yada to set the status and headers automatically, but there are times when you need this control. Therefore, it's possible in a resource map to specify the status directly, with the __:status__ entry, which can be a constant or function.
+It's usually better to allow yada to set the status and headers automatically, but there are times when you need this control. Therefore, it's possible in a resource description to specify the status directly, with the __:status__ entry, which can be a constant or function.
 
 <example ref="CustomStatus"/>
 
@@ -677,7 +677,7 @@ advantages, the most obvious being that the logic already exists, in a
 tried-and-tested form, to process the route structure and use it to
 dispatch to handlers.
 
-Let's show how to integrate yada's resource maps into a route structure.
+Let's show how to integrate yada's resource descriptions into a route structure.
 
 Imagine we have yada-created handler that responds to every request with
 a constant body.
