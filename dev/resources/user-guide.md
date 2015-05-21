@@ -827,7 +827,7 @@ The entire data structure can be printed, walked, sequenced, navigated
 with zippers, and otherwise manipulated by a Clojure's wide array of
 functions.
 
-<include type="note" ref="swagger-implementation"/>
+n<include type="note" ref="swagger-implementation"/>
 
 The `swaggered` wrapper introduces a record, `yada.swagger.Swagger`,
 which takes part in bidi's route resolution process (thanks to bidi's protocol-based extensibility).
@@ -844,6 +844,42 @@ RESTful web APIs and tools.
 The
 [built-in Swagger UI tool](/swagger-ui/index.html?url=/api/swagger.json)
 demonstrates this.
+
+## Testing
+
+Once you have built your API you should want to test it to ensure it is working just as you expect, and there are no nasty surprises lurking in your code.
+
+<div class="warning"><p>Forward looking feature... Coming soon!</p></div>
+
+The data-oriented approach of yada makes it possible to generate traffic designed to exercise your code in ways that will try to cause it to error.
+
+To create tests, add the following dependency to the dependencies in your project's `project.clj` (ideally in the test scope)
+
+```clojure
+(defproject
+...
+  :profiles
+    {:test
+      {:dependencies
+        [
+          [yada/test "{{yada.version}}"]
+        ]}})
+```
+
+Here is an example of what to write in your project's test code.
+
+```clojure
+(def my-resource {:body "Hello World!"})
+
+(deftest api-test
+  (yada/test my-resource
+             {:trials 2000
+              :protocol :http
+              }))
+```
+
+
+
 
 ## Alternatives
 

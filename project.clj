@@ -64,4 +64,6 @@
           ]
 
          :source-paths ["dev/src"]
-         :resource-paths ["dev/resources"]}})
+         :resource-paths ["dev/resources"]}
+   :test
+   {:source-paths "yada.test/src"}})
