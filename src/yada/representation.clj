@@ -1,14 +1,15 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.representation
-  (:require
-   [hiccup.core :refer (html)]
-   [cheshire.core :as json]
-   [manifold.stream :refer (->source transform)]
-   [ring.swagger.schema :as rs])
-  (:import
-   (clojure.core.async.impl.channels ManyToManyChannel)
-   (manifold.stream.async CoreAsyncSource)))
+  (:require [cheshire.core :as json]
+            [clojure.java.io :as io]
+            [hiccup.core :refer [html]]
+            [manifold.stream :refer [->source transform]]
+            [ring.swagger.schema :as rs]
+            [ring.util.mime-type :as mime])
+  (:import [clojure.core.async.impl.channels ManyToManyChannel]
+           [java.io File]
+           [manifold.stream.async CoreAsyncSource]))
 
 ;; From representation
 
@@ -42,6 +43,11 @@
   CoreAsyncSource
   (content [state content-type] (render-seq state content-type))
   (content-type-default [_] "text/event-stream")
+
+  File
+  (content [f content-type] f)
+  (content-type-default [f] (or (mime/ext-mime-type (.getName f)) "application/octet-stream"))
+
   #_Object
   ;; Default is to return object unmarshalled
   #_(content [state _] state)

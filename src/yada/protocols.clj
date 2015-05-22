@@ -6,7 +6,9 @@
    [manifold.stream :refer (->source transform)]
    [clojure.tools.logging :refer :all]
    [clojure.core.async.impl.protocols :as aip])
-  (import (clojure.core.async.impl.protocols ReadPort)))
+  (import [clojure.core.async.impl.protocols ReadPort]
+          [java.io File]
+          [java.util Date]))
 
 (defprotocol Callbacks
   (service-available? [_] "Return whether the service is available")
@@ -15,9 +17,8 @@
   (request-uri-too-long? [_ uri])
 
   (allowed-methods [_ ctx] "Return a set of allowed methods")
-  (resource [_ req] "Return the resource. Typically this is just the resources's meta-data and does not include the body.")
-  (state [_ ctx] "Return the state, if not available in the resource.")
-  (last-modified [_ ctx] "Return the date that the resource was last modified.")
+  (state [_ ctx] "Return the resource's state")
+
   (body [_ ctx] "Return a representation of the resource. See yada documentation for the structure of the ctx argument.")
   (produces [_] "Return the content-types, as a set, that the resource can produce")
   (produces-from-body [_] "If produces yields nil, try to extract from body")
@@ -39,7 +40,6 @@
   (service-available? [b] [b {}])
   (known-method? [b method] [b {}])
   (request-uri-too-long? [b _] [b {}])
-  (resource [b req] (if b {} false))
   (post [b ctx] b)
   (interpret-post-result [b ctx]
     (if b ctx (throw (ex-info "Failed to process POST" {}))))
@@ -57,15 +57,10 @@
   (known-method? [f method] (known-method? (f method) method))
   (request-uri-too-long? [f uri] (request-uri-too-long? (f uri) uri))
 
-  (resource [f req]
-    (let [res (f req)]
-      (if (d/deferrable? res)
-        (d/chain res #(resource % req))
-        (resource res req))))
-
   (state [f ctx]
     (let [res (f ctx)]
       (cond
+        ;; ReadPort is deferrable, but we want the non-deferrable handling in this case
         (satisfies? aip/ReadPort res)
         (state res ctx)
 
@@ -76,11 +71,7 @@
         :otherwise
         (state res ctx))))
 
-  (last-modified [f ctx]
-    (let [res (f ctx)]
-      (if (d/deferrable? res)
-        (d/chain res #(last-modified % ctx))
-        (last-modified res ctx))))
+
 
   (body [f ctx]
     (let [res (f ctx)]
@@ -122,7 +113,7 @@
   (request-uri-too-long? [n uri]
     (request-uri-too-long? (> (.length uri) n) uri))
   (status [n ctx] n)
-  (last-modified [l _] (java.util.Date. l))
+
 
   java.util.Set
   (known-method? [set method]
@@ -135,8 +126,6 @@
 
   java.util.Map
   (allowed-methods [m _] (set (keys m)))
-  (resource [m _] m)
-  (state [m _] m)
   (body [m ctx]
     ;; Maps indicate keys are exact content-types
     ;; For matching on content-type, use a vector of vectors (TODO)
@@ -151,9 +140,6 @@
   (produces [v] (produces (set v)))
   (body [v ctx] v)
 
-  java.util.Date
-  (last-modified [d _] d)
-
   nil
   ;; These represent the handler defaults, all of which can be
   ;; overridden by providing non-nil arguments
@@ -162,7 +148,6 @@
     (known-method? #{:get :put :post :delete :options :head} method))
   (request-uri-too-long? [_ uri]
     (request-uri-too-long? 4096 uri))
-  (resource [_ _] nil)
   (state [_ _] nil)
   (body [_ _] nil)
   (post [_ _] nil)
@@ -179,5 +164,32 @@
 
   Object
   (authorization [o] o)
+  ;; Default is to return the value as-is and leave to subsequent
+  ;; processing to determine how to manage or represent it
+  (state [o ctx] o)
 
   )
+
+(defprotocol State
+  (last-modified [_ ctx] "Return the date that the state was last modified."))
+
+(extend-protocol State
+  clojure.lang.Fn
+  (last-modified [f ctx]
+    (let [res (f ctx)]
+      (if (d/deferrable? res)
+        (d/chain res #(last-modified % ctx))
+        (last-modified res ctx))))
+  Number
+  (last-modified [l _] (java.util.Date. l))
+
+  File
+  (last-modified [f _] (.lastModified f))
+
+  Date
+  (last-modified [d _] d)
+
+  nil
+  ;; last-modified of 'nil' means we don't consider last-modified
+  (last-modified [_ _] nil)
+)

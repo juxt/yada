@@ -135,7 +135,7 @@
       ;; TODO :status and :headers should be implemented like this in all cases
       :body (get-in ctx [:response :body])})))
 
-(defn exists-flow [method resource state req status headers body post allow-origin]
+(defn exists-flow [method state req status headers body post allow-origin]
   (fn [ctx]
     (case method
       (:get :head)
@@ -145,8 +145,7 @@
        ;; Conditional request
        (fn [ctx]
          (if-let [last-modified
-                  (when-let [hdr (:last-modified resource)]
-                    (p/last-modified hdr ctx))]
+                  (p/last-modified state ctx)]
 
            (if-let [if-modified-since (parse-http-date (get-in req [:headers "if-modified-since"]))]
              (let [last-modified (if (d/deferrable? last-modified) @last-modified last-modified)]
@@ -172,7 +171,7 @@
        (fn [ctx]
          (d/chain
           ;; note the priorities:
-          (or (:state resource) state)  ; could be nil
+          state  ; could be nil
           #(p/state % ctx)
           #(assoc-in ctx [:resource :state] %)))
 
@@ -275,7 +274,7 @@
      status                             ; async-supported
      headers                            ; async-supported
 
-     resource                           ; async-supported
+     ;;resource                           ; async-supported
      state                              ; async-supported
      body                               ; async-supported
 
@@ -339,7 +338,7 @@
                 (if-not
                     (or
                      (case method
-                       :get (or (some? resource) state body)
+                       :get (or state body)
                        :put put
                        :post post
                        :options (or allow-origin)
@@ -448,28 +447,16 @@
                      ;; Otherwise return the context unchanged
                      %)))
 
-
-              ;; Does the resource exist? Call resource, which returns
-              ;; the resource, containing the resource's metadata (optionally
-              ;; deferred to prevent blocking this thread). It does not (yet)
-              ;; contain the resource's data. The reason for this is that it
-              ;; would be wasteful to load the resource's data if we can
-              ;; determine that the client already has a copy and return a 304 (Not Modified).
-              (fn [ctx]
-                (d/chain
-                 (p/resource resource req)
-                 #(assoc ctx :resource %)))
-
               ;; Split the flow based on the existence of the resource
-              (fn [{:keys [resource] :as ctx}]
+              (fn [ctx]
 
                 (cond
                   ;; 'Exists' flow
-                  (and (not (false? resource)) (or resource state body (#{:post :put} method)))
+                  (or state body (#{:post :put} method))
                   (d/chain
                    ctx
                    ;; Not sure we should use exists-flow for CORS pre-flight requests, should handle further above
-                   (exists-flow method resource state req status headers body post allow-origin)
+                   (exists-flow method state req status headers body post allow-origin)
                    (cors allow-origin)
                    (return-response status headers))
 
