@@ -7,12 +7,12 @@
 
 
 (deftest file-test
-  (let [resource {:state (io/file "project.clj")}
+  (let [resource {:state (io/file "test/test.txt")}
         handler (yada resource)
         response @(handler (request :get "/"))]
     (is (.exists (:state resource)))
-    (is (= (.getName (:state resource)) "project.clj"))
+    (is (= (.getName (:state resource)) "test.txt"))
     (is (some? response))
     (is (= (:status response) 200))
-    (is (= (get-in response [:headers "content-type"]) "application/octet-stream"))
+    (is (= (get-in response [:headers "content-type"]) "text/plain"))
     (is (is (instance? java.io.File (:body response))))))
