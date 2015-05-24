@@ -21,6 +21,7 @@
    [ring.swagger.coerce :as rc]
    [ring.util.codec :refer (form-decode)]
    [ring.util.request :refer (character-encoding urlencoded-form? content-type)]
+   [ring.util.time :refer (format-date)]
    [clojure.tools.logging :refer :all]
    [clojure.set :as set]
    [clojure.core.async :as a]
@@ -28,10 +29,12 @@
    [clojure.walk :refer (keywordize-keys)]
    [cheshire.core :as json]
    )
-  (:import (manifold.deferred IDeferred Deferrable)
-           (clojure.lang IPending)
-           (java.util.concurrent Future)
-           (schema.utils ValidationError ErrorContainer)))
+  (:import
+   (java.util Date)
+   (manifold.deferred IDeferred Deferrable)
+   (clojure.lang IPending)
+   (java.util.concurrent Future)
+   (schema.utils ValidationError ErrorContainer)))
 
 (def k-bidi-match-context :bidi/match-context)
 
@@ -144,8 +147,7 @@
 
        ;; Conditional request
        (fn [ctx]
-         (if-let [last-modified
-                  (p/last-modified state ctx)]
+         (if-let [last-modified (p/last-modified state ctx)]
 
            (if-let [if-modified-since (parse-http-date (get-in req [:headers "if-modified-since"]))]
              (let [last-modified (if (d/deferrable? last-modified) @last-modified last-modified)]
@@ -159,19 +161,19 @@
                                       ::http-response true}
                                      ctx)))
 
-                 (assoc-in ctx [:response :headers "last-modified"] last-modified)
+                 (assoc-in ctx [:response :headers "last-modified"] (format-date (Date. last-modified)))
 
                  ))
 
-             (assoc-in ctx [:response :headers "last-modified"] (if (d/deferrable? last-modified) @last-modified last-modified))
-             )
+             (assoc-in ctx [:response :headers "last-modified"]
+                       (format-date (Date. (if (d/deferrable? last-modified) @last-modified last-modified)))))
            ctx))
 
        ;; OK, let's pick the resource's state
        (fn [ctx]
          (d/chain
           ;; note the priorities:
-          state  ; could be nil
+          state                         ; could be nil
           #(p/state % ctx)
           #(assoc-in ctx [:resource :state] %)))
 
@@ -189,7 +191,7 @@
             ;; Determine body
             (cond
               body (p/body body ctx)
-              state state ; the state here can still be deferred
+              state state         ; the state here can still be deferred
               )
 
             ;; serialize to representation (an existing string will be left intact)
@@ -249,11 +251,11 @@
        (fn [ctx]
          (if-let [origin (p/allow-origin allow-origin ctx)]
            (update-in ctx [:response :headers]
-                   merge {"access-control-allow-origin"
-                          origin
-                          "access-control-allow-methods"
-                          (apply str
-                                 (interpose ", " ["GET" "POST" "PUT" "DELETE"]))})
+                      merge {"access-control-allow-origin"
+                             origin
+                             "access-control-allow-methods"
+                             (apply str
+                                    (interpose ", " ["GET" "POST" "PUT" "DELETE"]))})
            ctx)))
 
       (throw (ex-info "Unknown method"
@@ -311,8 +313,6 @@
     (->YadaHandler
 
      (fn [req ctx]
-
-       (infof "Raw request is %s" req)
 
        (let [method (:request-method req)]
 
