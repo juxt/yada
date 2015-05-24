@@ -172,7 +172,6 @@
        ;; OK, let's pick the resource's state
        (fn [ctx]
          (d/chain
-          ;; note the priorities:
           state                         ; could be nil
           #(p/state % ctx)
           #(assoc-in ctx [:resource :state] %)))
@@ -184,7 +183,8 @@
                (or (get-in ctx [:response :content-type])
                    ;; It's possible another callback has set the content-type header
                    (get-in headers ["content-type"])
-                   (when-not body (rep/content-type-default state)))]
+                   (when-not body (rep/content-type-default state)))
+               content-length (p/content-length state ctx)]
 
            (d/chain
 
@@ -204,6 +204,11 @@
             #(assoc-in ctx [:response :body] %)
             #(if content-type
                (update-in % [:response :headers] assoc "content-type" content-type)
+               %
+               )
+
+            #(if content-length
+               (update-in % [:response :headers] assoc "content-length" content-length)
                %
                )))))
 

@@ -17,11 +17,6 @@
     (is (= (:status response) 200))
     (is (= (get-in response [:headers "content-type"]) "text/plain"))
     (is (instance? java.io.File (:body response)))
-    (is (= (get-in response [:headers "last-modified"])
-           "Fri, 22 May 2015 07:30:45 GMT"))
-
-
-    ;; TODO last-modified etc.
-
-    ;; TODO content-length
+    (is (= (get-in response [:headers "last-modified"]) "Fri, 22 May 2015 07:30:45 GMT"))
+    (is (= (get-in response [:headers "content-length"]) 26))
     ))

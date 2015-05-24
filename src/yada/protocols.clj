@@ -171,7 +171,8 @@
   )
 
 (defprotocol State
-  (last-modified [_ ctx] "Return the date that the state was last modified."))
+  (last-modified [_ ctx] "Return the date that the state was last modified.")
+  (content-length [_ ctx] "Return the size of the state's represenation, if this can possibly be known up-front (return nil if this is unknown)"))
 
 (extend-protocol State
   clojure.lang.Fn
@@ -185,6 +186,7 @@
 
   File
   (last-modified [f _] (.lastModified f))
+  (content-length [f _] (.length f))
 
   Date
   (last-modified [d _] d)
@@ -192,4 +194,9 @@
   nil
   ;; last-modified of 'nil' means we don't consider last-modified
   (last-modified [_ _] nil)
+  #_(content-length [f _] nil)
+
+  Object
+  (last-modified [_ _] nil)
+  #_(content-length [f _] nil)
 )
