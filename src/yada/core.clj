@@ -147,26 +147,36 @@
 
        ;; Conditional request
        (fn [ctx]
+         (infof "Checking for conditional request: %s" (:headers req))
          (if-let [last-modified (p/last-modified state ctx)]
 
            (if-let [if-modified-since (parse-http-date (get-in req [:headers "if-modified-since"]))]
-             (let [last-modified (if (d/deferrable? last-modified) @last-modified last-modified)]
-               (if (<
-                    (.getTime last-modified)
-                    (.getTime if-modified-since))
+             (do
+               (infof "HERE, last-modified is: %s" last-modified)
+               (let [last-modified (if (d/deferrable? last-modified) @last-modified last-modified)]
 
-                 ;; exit with 304
-                 (d/error-deferred
-                  (ex-info "" (merge {:status 304
-                                      ::http-response true}
-                                     ctx)))
+                 (infof "HERE2, last-modified is: %s" last-modified)
+                 (infof "last-modified %s" (.getTime last-modified))
+                 (infof "if-modified-since %s" (.getTime if-modified-since))
 
-                 (assoc-in ctx [:response :headers "last-modified"] (format-date (Date. last-modified)))
+                 (if (<=
+                      (.getTime last-modified)
+                      (.getTime if-modified-since))
 
-                 ))
+                   ;; exit with 304
+                   (d/error-deferred
+                    (ex-info "" (merge {:status 304
+                                        ::http-response true}
+                                       ctx)))
 
-             (assoc-in ctx [:response :headers "last-modified"]
-                       (format-date (Date. (if (d/deferrable? last-modified) @last-modified last-modified)))))
+                   (assoc-in ctx [:response :headers "last-modified"] (format-date last-modified))
+
+                   )))
+
+             (do
+               (infof "No if-modified-since header: %s" (:headers req))
+               (assoc-in ctx [:response :headers "last-modified"]
+                         (format-date (if (d/deferrable? last-modified) @last-modified last-modified)))))
            ctx))
 
        ;; OK, let's pick the resource's state
@@ -474,12 +484,12 @@
                  #(let [data (ex-data %)]
                     (if (::http-response data)
                       data
-                      (throw (ex-info "Internal Server Error (ex-info)" {} %))
+                      (throw (ex-info "Internal Server Error (ex-info)" data %))
                       #_{:status 500
                          :body (format "Internal Server Error: %s" (pr-str data))})))
 
              (d/catch #(identity
-                        (throw (ex-info "Internal Server Error" {} %))
+                        (throw (ex-info "Internal Server Error" {:request req} %))
                         #_{:status 500 :body
                            (html
                             [:body

@@ -9,6 +9,7 @@
             [ring.util.mime-type :as mime])
   (:import [clojure.core.async.impl.channels ManyToManyChannel]
            [java.io File]
+           [java.net URL]
            [manifold.stream.async CoreAsyncSource]))
 
 ;; From representation
@@ -48,10 +49,13 @@
   (content [f content-type] f)
   (content-type-default [f] (or (mime/ext-mime-type (.getName f)) "application/octet-stream"))
 
-  #_Object
-  ;; Default is to return object unmarshalled
-  #_(content [state _] state)
-  #_(content-type-default [_] nil)
+  URL
+  (content [url content-type] (.openStream url))
+  (content-type-default [f] (or (mime/ext-mime-type (.getPath f)) "application/octet-stream"))
+
+  Object
+  (content-type-default [_] nil)
+
   nil
   (content [_ content-type] nil)
   (content-type-default [_] nil))

@@ -182,10 +182,10 @@
         (d/chain res #(last-modified % ctx))
         (last-modified res ctx))))
   Number
-  (last-modified [l _] (java.util.Date. l))
+  (last-modified [l _] (Date. l))
 
   File
-  (last-modified [f _] (.lastModified f))
+  (last-modified [f _] (Date. (.lastModified f)))
   (content-length [f _] (.length f))
 
   Date
@@ -194,9 +194,9 @@
   nil
   ;; last-modified of 'nil' means we don't consider last-modified
   (last-modified [_ _] nil)
-  #_(content-length [f _] nil)
+  (content-length [_ _] nil)
 
   Object
   (last-modified [_ _] nil)
-  #_(content-length [f _] nil)
+  (content-length [_ _] nil)
 )
