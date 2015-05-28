@@ -1,3 +1,5 @@
+;; Copyright © 2015, JUXT LTD.
+
 (ns yada.head-test
   (:require
    [clojure.java.io :as io]

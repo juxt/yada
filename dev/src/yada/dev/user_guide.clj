@@ -1,3 +1,5 @@
+;; Copyright © 2015, JUXT LTD.
+
 (ns yada.dev.user-guide
   (:require
    [bidi.bidi :refer (tag RouteProvider alts)]

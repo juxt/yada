@@ -1,3 +1,5 @@
+;; Copyright © 2015, JUXT LTD.
+
 (ns yada.dev.async
   (:require
    [clojure.core.async :refer (go go-loop timeout <! >! chan)]

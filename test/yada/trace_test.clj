@@ -1,3 +1,5 @@
+;; Copyright © 2015, JUXT LTD.
+
 (ns yada.trace-test
   (:require
    [clojure.java.io :as io]
@@ -11,11 +13,11 @@
       (let [resource {}
             handler (yada resource)
             request (merge (request :trace "/")
-                           {:body "Hello World!"})
+                           {:body (java.io.ByteArrayInputStream. (.getBytes "Hello World!"))})
             response @(handler request)]
         (given response
           :status 200
-          [:body println] nil)))
+          [:body #(.endsWith % "Hello World!")] true)))
 
   (testing "TRACE disabled"
       (let [resource {:trace? false}

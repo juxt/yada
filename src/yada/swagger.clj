@@ -1,3 +1,5 @@
+;; Copyright © 2015, JUXT LTD.
+
 (ns yada.swagger
   (:require
    [clojure.pprint :refer (pprint)]

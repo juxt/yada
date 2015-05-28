@@ -1,3 +1,5 @@
+;; Copyright © 2015, JUXT LTD.
+
 (ns yada.test.util-test
   (:require
    [yada.test.util :refer :all]

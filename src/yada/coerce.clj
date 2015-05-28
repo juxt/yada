@@ -1,3 +1,5 @@
+;; Copyright © 2015, JUXT LTD.
+
 (ns yada.coerce
   (:require
    [schema.coerce :refer (string-coercion-matcher)]

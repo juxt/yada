@@ -1,3 +1,5 @@
+;; Copyright © 2015, JUXT LTD.
+
 (ns yada.dev.user-api
   (:require
    [yada.yada :refer (yada) :as yada]
