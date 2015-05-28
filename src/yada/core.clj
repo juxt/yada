@@ -10,7 +10,8 @@
    [schema.core :as s]
    [schema.coerce :refer (coercer string-coercion-matcher) :as sc]
    [schema.utils :refer (error? error-val)]
-   [yada.protocols :as p]
+   [yada.specification :as p]
+   [yada.state :as yst]
    [yada.conneg :refer (best-allowed-content-type)]
    [yada.coerce :refer (coercion-matcher)]
    [yada.representation :as rep]
@@ -21,7 +22,6 @@
    [ring.swagger.coerce :as rc]
    [ring.util.codec :refer (form-decode)]
    [ring.util.request :refer (character-encoding urlencoded-form? content-type)]
-   [ring.util.time :refer (format-date)]
    [clojure.tools.logging :refer :all]
    [clojure.set :as set]
    [clojure.core.async :as a]
@@ -103,7 +103,7 @@
   ctx)
 
 (defrecord NoAuthorizationSpecified []
-  p/Callbacks
+  p/Specification
   (authorize [b ctx] true)
   (authorization [_] nil))
 
@@ -148,17 +148,17 @@
        ;; Conditional request
        (fn [ctx]
          (infof "Checking for conditional request: %s" (:headers req))
-         (if-let [last-modified (p/last-modified state ctx)]
+         (infof "State is %s" state)
+         (if-let [last-modified (yst/last-modified state ctx)]
 
-           (if-let [if-modified-since (parse-http-date (get-in req [:headers "if-modified-since"]))]
-             (do
-               (infof "HERE, last-modified is: %s" last-modified)
+           (do
+             (infof "AAA: last-modified: %s" last-modified)
+             (if-let [if-modified-since (some-> req
+                                                (get-in [:headers "if-modified-since"])
+                                                parse-date)]
                (let [last-modified (if (d/deferrable? last-modified) @last-modified last-modified)]
 
-                 (infof "HERE2, last-modified is: %s" last-modified)
-                 (infof "last-modified %s" (.getTime last-modified))
-                 (infof "if-modified-since %s" (.getTime if-modified-since))
-
+                 (infof "last-mod: %s, if-mod-since: %s" last-modified if-modified-since)
                  (if (<=
                       (.getTime last-modified)
                       (.getTime if-modified-since))
@@ -171,13 +171,18 @@
 
                    (assoc-in ctx [:response :headers "last-modified"] (format-date last-modified))
 
-                   )))
+                   ))
 
-             (do
-               (infof "No if-modified-since header: %s" (:headers req))
-               (assoc-in ctx [:response :headers "last-modified"]
-                         (format-date (if (d/deferrable? last-modified) @last-modified last-modified)))))
-           ctx))
+               (do
+                 (infof "No if-modified-since header: %s" (:headers req))
+                 (or
+                  (some->> (if (d/deferrable? last-modified) @last-modified last-modified)
+                           format-date
+                           (assoc-in ctx [:response :headers "last-modified"]))
+                  ctx))))
+           (do
+             (infof "yst/last-modified is nil")
+             ctx)))
 
        ;; OK, let's pick the resource's state
        (fn [ctx]
@@ -193,8 +198,10 @@
                (or (get-in ctx [:response :content-type])
                    ;; It's possible another callback has set the content-type header
                    (get-in headers ["content-type"])
-                   (when-not body (rep/content-type-default state)))
-               content-length (p/content-length state ctx)]
+                   (when-not body
+                     ;; Hang on, we should have done content neg by now
+                     (rep/content-type-default state)))
+               content-length (yst/content-length state ctx)]
 
            (d/chain
 

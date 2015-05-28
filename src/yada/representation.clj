@@ -22,25 +22,33 @@
   ([representation content-type]
    (json/decode representation keyword)))
 
-;; To representation
+;; Representation means the representation of state, for the purposes of network communication.
 
-(defprotocol Content
-  (content [_ content-type] "Get resource's representation, given the content-type")
+(defprotocol Representation
+  (content [_ content-type] "Get representation data, given the content-type")
   (content-type-default [_] "Return the default content type of the object if not specified explicitly"))
 
 (defmulti render-map (fn [state content-type] content-type))
 (defmulti render-seq (fn [state content-type] content-type))
 
-(extend-protocol Content
+;; TODO: what does it mean to have a default content type? Perhaps, this
+;; should be a list of content types that the representation can adapt
+;; to
+
+(extend-protocol Representation
+
   java.util.Map
   (content [state content-type] (render-map state content-type))
   (content-type-default [_] "application/json")
+
   clojure.lang.Sequential
   (content [state content-type] (render-seq state content-type))
   (content-type-default [_] "application/json")
+
   String
   (content [state _] state)
   (content-type-default [_] "text/plain")
+
   CoreAsyncSource
   (content [state content-type] (render-seq state content-type))
   (content-type-default [_] "text/event-stream")
