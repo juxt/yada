@@ -201,7 +201,7 @@
                    (when-not body
                      ;; Hang on, we should have done content neg by now
                      (rep/content-type-default state)))
-               content-length (yst/content-length state ctx)]
+               content-length (rep/content-length state)]
 
            (d/chain
 

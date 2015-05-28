@@ -26,7 +26,8 @@
 
 (defprotocol Representation
   (content [_ content-type] "Get representation data, given the content-type")
-  (content-type-default [_] "Return the default content type of the object if not specified explicitly"))
+  (content-type-default [_] "Return the default content type of the object if not specified explicitly")
+  (content-length [_] "Return the size of the state's represenation, if this can possibly be known up-front (return nil if this is unknown)"))
 
 (defmulti render-map (fn [state content-type] content-type))
 (defmulti render-seq (fn [state content-type] content-type))
@@ -52,10 +53,12 @@
   CoreAsyncSource
   (content [state content-type] (render-seq state content-type))
   (content-type-default [_] "text/event-stream")
+  (content-length [_] nil)
 
   File
   (content [f content-type] f)
   (content-type-default [f] (or (mime/ext-mime-type (.getName f)) "application/octet-stream"))
+  (content-length [f] (.length f))
 
   URL
   (content [url content-type] (.openStream url))
@@ -66,7 +69,8 @@
 
   nil
   (content [_ content-type] nil)
-  (content-type-default [_] nil))
+  (content-type-default [_] nil)
+  (content-length [_] nil))
 
 (defmethod render-map "application/json"
   [m _]
