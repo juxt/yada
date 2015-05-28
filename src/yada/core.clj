@@ -149,7 +149,7 @@
        (fn [ctx]
          (infof "Checking for conditional request: %s" (:headers req))
          (infof "State is %s" state)
-         (if-let [last-modified (yst/last-modified state ctx)]
+         (if-let [last-modified (yst/last-modified state)]
 
            (do
              (infof "AAA: last-modified: %s" last-modified)

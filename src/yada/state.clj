@@ -9,30 +9,32 @@
    [java.util Date]))
 
 (defprotocol State
-  (last-modified [_ ctx] "Return the date that the state was last modified.")
+  (exists? [_] "Whether the state actually exists")
+  (last-modified [_] "Return the date that the state was last modified.")
   )
 
 (extend-protocol State
   clojure.lang.Fn
-  (last-modified [f ctx]
-    (let [res (f ctx)]
+  (last-modified [f]
+    (let [res (f)]
       (if (d/deferrable? res)
-        (d/chain res #(last-modified % ctx))
-        (last-modified res ctx))))
+        (d/chain res #(last-modified %))
+        (last-modified res))))
   Number
-  (last-modified [l _] (Date. l))
+  (last-modified [l] (Date. l))
 
   File
-  (last-modified [f _] (Date. (.lastModified f)))
+  (exists? [f] (.exists f))
+  (last-modified [f] (Date. (.lastModified f)))
 
   Date
-  (last-modified [d _] d)
+  (last-modified [d] d)
 
   nil
   ;; last-modified of 'nil' means we don't consider last-modified
-  (last-modified [_ _] nil)
+  (last-modified [_] nil)
 
   Object
-  (last-modified [_ _] nil)
+  (last-modified [_] nil)
 
-)
+  )
