@@ -14,7 +14,7 @@
    [yada.conneg :refer (best-allowed-content-type)]
    [yada.coerce :refer (coercion-matcher)]
    [yada.representation :as rep]
-   [yada.util :refer (parse-http-date)]
+   [ring.util.time :refer (parse-date format-date)]
    [ring.middleware.basic-authentication :as ba]
    [ring.middleware.params :refer (params-request)]
    [ring.swagger.schema :as rs]

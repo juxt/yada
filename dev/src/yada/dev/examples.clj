@@ -4,21 +4,21 @@
   (:require
    [bidi.bidi :refer (RouteProvider path-for alts tag)]
    [bidi.ring :refer (redirect)]
-   [schema.core :as s]
+   [cheshire.core :as json]
    [clojure.java.io :as io]
    [clojure.string :as string]
-   [cheshire.core :as json]
-   [yada.yada :refer (yada format-http-date)]
+   [com.stuartsierra.component :refer (using Lifecycle)]
    [hiccup.core :refer (html h) :rename {h escape-html}]
    [markdown.core :as markdown]
-   [com.stuartsierra.component :refer (using Lifecycle)]
    [modular.component.co-dependency :refer (co-using)]
    [ring.middleware.params :refer (wrap-params)]
    [ring.mock.request :refer (request) :rename {request mock-request}]
-   [clojure.core.async :refer (go go-loop timeout <! >! chan)]
-   )
+   [ring.util.time :refer (format-date)]
+   [schema.core :as s]
+   [yada.yada :refer (yada)]
+   [clojure.core.async :refer (go go-loop timeout <! >! chan)])
   (:import
-   (java.util Date Calendar)))
+   [java.util Date Calendar]))
 
 (defn basename [r]
   (last (string/split (.getName (type r)) #"\.")))
@@ -459,7 +459,7 @@
                      })
   (make-handler [ex] (yada (resource-map ex)))
   (request [_] {:method :get
-                :headers {"If-Modified-Since" (format-http-date (new java.util.Date (+ (.getTime start-time) (* 60 1000))))}})
+                :headers {"If-Modified-Since" (format-date (new java.util.Date (+ (.getTime start-time) (* 60 1000))))}})
   (expected-response [_] {:status 304}))
 
 ;; POSTS
