@@ -167,9 +167,7 @@
                                         ::http-response true}
                                        ctx)))
 
-                   (assoc-in ctx [:response :headers "last-modified"] (format-date last-modified))
-
-                   ))
+                   (assoc-in ctx [:response :headers "last-modified"] (format-date last-modified))))
 
                (do
                  (infof "No if-modified-since header: %s" (:headers req))
@@ -201,37 +199,45 @@
                      (rep/content-type-default state)))
                content-length (rep/content-length state)]
 
-           (d/chain
+           (case method
+             :head (if content-type
+                     ;; We don't need to add Content-Length,
+                     ;; Content-Range, Trailer or Tranfer-Encoding, as
+                     ;; per rfc7231.html#section-3.3
+                     (update-in ctx [:response :headers] assoc "content-type" content-type)
+                     ctx)
 
-            ;; Determine body
-            (cond
-              body (p/body body ctx)
-              state state         ; the state here can still be deferred
-              )
+             :get
+             (d/chain
 
-            ;; serialize to representation (an existing string will be left intact)
-            (fn [state]
-              (rep/content state content-type))
+              ;; Determine body
+              (cond
+                body (p/body body ctx)
+                state state       ; the state here can still be deferred
+                )
 
-            ;; on nil, compose default result (if in dev)
-            #_(fn [x] (if x x (rep/content nil content-type)))
+              ;; serialize to representation (an existing string will be left intact)
+              (fn [state]
+                (rep/content state content-type))
 
-            (fn [body]
-              (if (not= method :head)
-                (assoc-in ctx [:response :body] body)
-                ctx))
+              ;; on nil, compose default result (if in dev)
+              #_(fn [x] (if x x (rep/content nil content-type)))
 
-            (fn [ctx]
-              (if content-type
-                (update-in ctx [:response :headers] assoc "content-type" content-type)
-                ctx
-                ))
+              (fn [body]
+                (if (not= method :head)
+                  (assoc-in ctx [:response :body] body)
+                  ctx))
 
-            (fn [ctx]
-              (if content-length
-                (update-in ctx [:response :headers] assoc "content-length" content-length)
-                ctx
-                ))))))
+              (fn [ctx]
+                (if content-type
+                  (update-in ctx [:response :headers] assoc "content-type" content-type)
+                  ctx
+                  ))
+
+              (fn [ctx]
+                (if content-length
+                  (update-in ctx [:response :headers] assoc "content-length" content-length)
+                  ctx)))))))
 
       :post
       (d/chain
@@ -401,8 +407,7 @@
                        :path patch
                        :trace (p/trace? trace? ctx)
                        :options (or allow-origin)
-                       nil)
-                     )
+                       nil))
                   (do
                     (warnf "Method not allowed %s" method)
                     (d/error-deferred
@@ -568,34 +573,7 @@
                             [:body
                              [:h1 "Internal Server Error"]
                              [:p (str %)]
-                             [:pre (with-out-str (apply str (interpose "\n" (seq (.getStackTrace %)))))]
-                             ])}))))))))
-
-
-;; TODO: pets should return resource-metadata with a (possibly deferred) model
-
-;; handle-method-not-allowed 405 "Method not allowed."
-
-;; This is OK
-;; ((api-handler api) (mock/request :get "/persons"))
-
-;; This is should yield 405 "Method not allowed."
-;; ((api-handler api) (mock/request :get "/persons"))
-
-;; List of interesting things to do
-
-;; There should be a general handler that does the right thing
-;; wrt. available methods (Method Not Allowed) and calls out to
-;; callbacks accordingly. Perhaps there's no sense in EVERYTHING being
-;; overridable, as with Liberator. It should hard-code the things that
-;; don't make sense to override, and use hooks for the rest.
-
-;; Resource existence is most important - and not covered by swagger, so it's a key hook.
-
-;; Return deferreds, if necessary, if the computation is length to compute (e.g. for exists? checks)
-
-;; CORS support: build this in, make allow-origin first-class, which headers should be allowed should be a hook (with default)
-
+                             [:pre (with-out-str (apply str (interpose "\n" (seq (.getStackTrace %)))))]])}))))))))
 
 (defn yada [& args]
   (if (keyword? (first args))
