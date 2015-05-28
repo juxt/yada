@@ -4,7 +4,7 @@
    [clojure.test :refer :all]))
 
 (deftest myself
-  (from :foo
+  (given :foo
     keyword? true
     identity :foo
     [str count] 4

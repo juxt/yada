@@ -21,7 +21,7 @@
   String
   (as-test-function [s] #(get % s)))
 
-(defmacro from [v & body]
+(defmacro given [v & body]
   `(let [v# ~v] ; because we want to evaluate v just the once, not on every clause
      (are [x# y#] (= ((as-test-function x#) v#) y#)
        ~@body)))

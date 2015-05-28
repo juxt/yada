@@ -49,6 +49,7 @@
   String
   (content [state _] state)
   (content-type-default [_] "text/plain")
+  (content-length [s] (.length s))
 
   CoreAsyncSource
   (content [state content-type] (render-seq state content-type))

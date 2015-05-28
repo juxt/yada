@@ -6,9 +6,9 @@
    [yada.state :as yst]
    [ring.mock.request :refer [request]]
    [ring.util.time :refer (parse-date format-date)]
-   [yada.test.util :refer (from)])
+   [yada.test.util :refer (given)])
   (:import [java.util Date]
-           [java.io File BufferedInputStream]))
+           [java.io File BufferedInputStream ByteArrayInputStream]))
 
 (def exists? (memfn exists))
 
@@ -20,12 +20,12 @@
         response @(handler request)]
 
     (testing "expectations of set-up"
-      (from resource
+      (given resource
         [:state exists?] true
         [:state (memfn getName)] "test.txt"))
 
     (testing "response"
-      (from response
+      (given response
         some? true
         :status 200
         [:headers "content-type"] "text/plain"
@@ -33,33 +33,50 @@
         [:headers "content-length"] (.length (:state resource))))
 
     (testing "last-modified"
-      (from response
+      (given response
         [:headers "last-modified"] "Sun, 24 May 2015 16:44:47 GMT"
         [:headers "last-modified" parse-date (memfn getTime)] (.lastModified (:state resource))))
 
     (testing "conditional-response"
-      (from @(handler (assoc-in request [:headers "if-modified-since"]
+      (given @(handler (assoc-in request [:headers "if-modified-since"]
                                 (format-date (Date. (.lastModified (:state resource))))))
             :status 304))))
 
 (deftest temp-file-test
   (testing "creation of a new file"
-      (let [f (java.io.File/createTempFile "yada" nil nil)]
-        (try
+    (let [f (java.io.File/createTempFile "yada" nil nil)]
+      (try
 
-          (io/delete-file f)
-          (is (not (exists? f)))
+        (io/delete-file f)
+        (is (not (exists? f)))
 
-          (let [resource {:state f}
-                handler (yada resource)
-                request (request :get "/")
-                resource @(handler request)])
+        (let [resource {:state f}
+              handler (yada resource)]
 
-          (finally (when (exists? f) (io/delete-file f))))
-        )
-      )
+          (given resource
+                 [:state yst/exists?] false)
 
-    #_(let [resource-map {:state (io/file "/tmp/foo")}]
+          ;; A PUT request arrives on a new URL, containing a
+          ;; representation which is parsed into the following model :-
+
+          (given @(handler (request :options "/"))
+                 :status 200
+                 )
+
+          ;; TODO: TRACE
+
+          #_(given @(handler (merge (request :put "/")
+                                  {:body (ByteArrayInputStream. (.getBytes (pr-str {:username "alice" :name "Alice"})))}))
+                 :status 200
+                 )
+
+          ;; which is then stored
+          #_(store-state! (:state resource-map) state)
+          )
+
+        (finally (when (exists? f) (io/delete-file f))))))
+
+  #_(let [resource-map {:state (io/file "/tmp/foo")}]
 
       ;; A GET request arrives on a new URL, containing a representation which is parsed into the following model :-
       (let [state (:state resource-map)]
@@ -84,7 +101,6 @@
 ;; TODO: Serve up file images and other content required for the examples with yada - don't use bidi/resources
 ;; TODO: yada should replace bidi's resources, files, etc.  and do a far better job
 ;; TODO: Observation: wrap-not-modified works on the response only - i.e. it still causes the handler to handle the request (and do work) on the server.
-
 
 ;; A resource does not map directly onto a database table.
 ;; But it can, often, map onto a document in a NoSQL datastore
@@ -136,7 +152,7 @@
       {:state (StoredState.)}]
 
   ;; A PUT request arrives on a new URL, containing a representation which is parsed into the following model :-
-  (let [state {:username "alice" :name "Alice"}]
+    (let [state {:username "alice" :name "Alice"}]
     ;; which is then stored
     (store-state! (:state resource-map) state)))
 

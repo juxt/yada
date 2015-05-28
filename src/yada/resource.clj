@@ -4,7 +4,7 @@
   (:require
    [manifold.deferred :as d]
    [manifold.stream :refer (->source transform)]
-   [clojure.tools.logging :refer :all]
+   [clojure.tools.logging :refer :all :exclude [trace]]
    [clojure.core.async.impl.protocols :as aip])
   (import [clojure.core.async.impl.protocols ReadPort]
           [java.io File]
@@ -27,13 +27,15 @@
   (post [_ ctx] "POST to the resource")
   (interpret-post-result [_ ctx] "Return the request context, according to the result of post")
 
+  (trace? [_ ctx] "Return a boolean indicating whether TRACE should be supported or not. Defaults to true.")
+  (trace [_ req ctx] "Intercept tracing, providing an alternative implementation, return a Ring response map.")
+
   (authorize [_ ctx] "Authorize the request. When truthy, authorization is called with the value and used as the :authorization entry of the context, otherwise assumed unauthorized.")
   (authorization [o] "Given the result of an authorize call, a truthy value will be added to the context.")
 
   (format-event [_] "Format an individual event")
 
-  (allow-origin [_ ctx] "If another origin (other than the resource's origin) is allowed, return the the value of the Access-Control-Allow-Origin header to be set on the response")
-  )
+  (allow-origin [_ ctx] "If another origin (other than the resource's origin) is allowed, return the the value of the Access-Control-Allow-Origin header to be set on the response"))
 
 (extend-protocol Resource
   Boolean
@@ -43,6 +45,7 @@
   (post [b ctx] b)
   (interpret-post-result [b ctx]
     (if b ctx (throw (ex-info "Failed to process POST" {}))))
+  (trace? [b ctx] b)
   (authorize [b ctx] b)
   (authorization [b] nil)
   (allow-origin [b _] (when b "*"))
@@ -70,8 +73,6 @@
 
         :otherwise
         (state res ctx))))
-
-
 
   (body [f ctx]
     (let [res (f ctx)]
@@ -103,6 +104,7 @@
 
   String
   (body [s _] s)
+  (state [s ctx] s)
   (produces-from-body [s] nil)
   (interpret-post-result [s ctx]
     (assoc-in ctx [:response :body] s))
@@ -145,12 +147,13 @@
   ;; overridden by providing non-nil arguments
   (service-available? [_] true)
   (known-method? [_ method]
-    (known-method? #{:get :put :post :delete :options :head} method))
+    (known-method? #{:get :head :put :post :delete :options :connect :trace} method))
   (request-uri-too-long? [_ uri]
     (request-uri-too-long? 4096 uri))
   (state [_ _] nil)
   (body [_ _] nil)
   (post [_ _] nil)
+  (trace? [_ _] true) ; TRACE enabled by default
   (produces [_] nil)
   (produces-from-body [_] nil)
   (status [_ _] nil)

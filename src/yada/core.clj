@@ -1,40 +1,38 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.core
-  (:require
-   [bidi.bidi :refer (Matched succeed)]
-   [bidi.ring :refer (Ring)]
-   [manifold.deferred :as d]
-   [manifold.stream :refer (->source transform)]
-   [hiccup.core :refer (html h)]
-   [schema.core :as s]
-   [schema.coerce :refer (coercer string-coercion-matcher) :as sc]
-   [schema.utils :refer (error? error-val)]
-   [yada.resource :as p]
-   [yada.state :as yst]
-   [yada.conneg :refer (best-allowed-content-type)]
-   [yada.coerce :refer (coercion-matcher)]
-   [yada.representation :as rep]
-   [ring.util.time :refer (parse-date format-date)]
-   [ring.middleware.basic-authentication :as ba]
-   [ring.middleware.params :refer (params-request)]
-   [ring.swagger.schema :as rs]
-   [ring.swagger.coerce :as rc]
-   [ring.util.codec :refer (form-decode)]
-   [ring.util.request :refer (character-encoding urlencoded-form? content-type)]
-   [clojure.tools.logging :refer :all]
-   [clojure.set :as set]
-   [clojure.core.async :as a]
-   [clojure.pprint :refer (pprint)]
-   [clojure.walk :refer (keywordize-keys)]
-   [cheshire.core :as json]
-   )
-  (:import
-   (java.util Date)
-   (manifold.deferred IDeferred Deferrable)
-   (clojure.lang IPending)
-   (java.util.concurrent Future)
-   (schema.utils ValidationError ErrorContainer)))
+  (:require [bidi.bidi :refer (Matched succeed)]
+            [bidi.ring :refer (Ring)]
+            [cheshire.core :as json]
+            [clojure.core.async :as a]
+            [clojure.pprint :refer (pprint)]
+            [clojure.set :as set]
+            [clojure.string :as str]
+            [clojure.tools.logging :refer :all :exclude [trace]]
+            [clojure.walk :refer (keywordize-keys)]
+            [hiccup.core :refer (html h)]
+            [manifold.deferred :as d]
+            [manifold.stream :refer (->source transform)]
+            [ring.middleware.basic-authentication :as ba]
+            [ring.middleware.params :refer (params-request)]
+            [ring.swagger.coerce :as rc]
+            [ring.swagger.schema :as rs]
+            [ring.util.codec :refer (form-decode)]
+            [ring.util.request :refer (character-encoding urlencoded-form? content-type)]
+            [ring.util.time :refer (parse-date format-date)]
+            [schema.coerce :refer (coercer string-coercion-matcher) :as sc]
+            [schema.core :as s]
+            [schema.utils :refer (error? error-val)]
+            [yada.coerce :refer (coercion-matcher)]
+            [yada.conneg :refer (best-allowed-content-type)]
+            [yada.representation :as rep]
+            [yada.resource :as p]
+            [yada.state :as yst])
+  (:import (clojure.lang IPending)
+           (java.util Date)
+           (java.util.concurrent Future)
+           (manifold.deferred IDeferred Deferrable)
+           (schema.utils ValidationError ErrorContainer)))
 
 (def k-bidi-match-context :bidi/match-context)
 
@@ -218,16 +216,22 @@
             ;; on nil, compose default result (if in dev)
             #_(fn [x] (if x x (rep/content nil content-type)))
 
-            #(assoc-in ctx [:response :body] %)
-            #(if content-type
-               (update-in % [:response :headers] assoc "content-type" content-type)
-               %
-               )
+            (fn [body]
+              (if (not= method :head)
+                (assoc-in ctx [:response :body] body)
+                ctx))
 
-            #(if content-length
-               (update-in % [:response :headers] assoc "content-length" content-length)
-               %
-               )))))
+            (fn [ctx]
+              (if content-type
+                (update-in ctx [:response :headers] assoc "content-type" content-type)
+                ctx
+                ))
+
+            (fn [ctx]
+              (if content-length
+                (update-in ctx [:response :headers] assoc "content-length" content-length)
+                ctx
+                ))))))
 
       :post
       (d/chain
@@ -284,6 +288,31 @@
                       {:status 501
                        :http-response true})))))
 
+(defn to8bit [s]
+  (-> s
+      (.getBytes)
+      (java.io.ByteArrayInputStream.)
+      (slurp :encoding "utf8")))
+
+(defn to-title-case [s]
+  (when s
+    (str/replace s #"(\w+)" (comp str/capitalize second))))
+
+(defn print-request
+  "Print the request. Used for TRACE."
+  [req]
+  (letfn [(println [& x]
+            (apply print x)
+            (print "\r\n"))]
+    (println (format "%s %s %s"
+                     (str/upper-case (name (:request-method req)))
+                     (:uri req)
+                     "HTTP/1.1"))
+    (doseq [[h v] (:headers req)] (println (format "%s: %s" (to-title-case h) v)))
+    (println)
+    (when-let [body @(:body req)]
+      (print body))))
+
 (defn yada*
   [{:keys
     [service-available?                 ; async-supported
@@ -311,6 +340,10 @@
      post                               ; async-supported
      delete                             ; async-supported
      patch                              ; async-supported
+     trace                              ; async-supported
+
+     ;; A switch to enable/disable tracing
+     trace?
 
      produces
      parameters
@@ -323,7 +356,7 @@
     :as resource-map
 
     :or {authorization (NoAuthorizationSpecified.)}
-    } ]
+    }]
 
   ;; We use this let binding to deduce the values of resource-map
   ;; entries that have not been given, based on the values of entries
@@ -333,7 +366,6 @@
   (let [security (as-sequential security)]
 
     (->YadaHandler
-
      (fn [req ctx]
 
        (let [method (:request-method req)]
@@ -347,7 +379,9 @@
                       ;; deref causes the slurp (which to do ahead of
                       ;; time might be unnecessarily wasteful).
                       :body (delay
-                             (slurp (:body req) :encoding (or (character-encoding req) "UTF-8"))))
+                             (if-let [body (:body req)]
+                               (slurp body :encoding (or (character-encoding req) "utf8"))
+                               nil)))
                :resource-map resource-map})
 
              (d/chain
@@ -360,9 +394,12 @@
                 (if-not
                     (or
                      (case method
-                       :get (or state body)
+                       (:get :head) (or state body)
                        :put put
                        :post post
+                       :delete delete
+                       :path patch
+                       :trace (p/trace? trace? ctx)
                        :options (or allow-origin)
                        nil)
                      )
@@ -442,6 +479,35 @@
                       ctx))
                   (d/error-deferred (ex-info "" {:status 403
                                                  ::http-response true}))))
+
+              ;; TRACE
+              (fn [ctx]
+                (if (= method :trace)
+                  (d/error-deferred
+                   (ex-info "TRACE"
+                            (merge {::http-response true}
+                                   (if trace (-> (merge {:status 200}
+                                                        (merge-with merge
+                                                                    {:headers {"content-type" "message/http;charset=utf8"}}
+                                                                    ;; Custom code /can/ override (but really shouldn't)
+                                                                    (p/trace trace req ctx)))
+                                                 (update-in [:body] to8bit))
+
+                                       ;; else default implementation
+                                       (let [body (-> ctx
+                                                      :request
+                                                      (update-in [:headers] dissoc ["authorization"])
+                                                      print-request
+                                                      with-out-str
+                                                      ;; only "7bit", "8bit", or "binary" are permitted (RFC 7230 8.3.1)
+                                                      to8bit
+                                                      )]
+
+                                         {:status 200
+                                          :headers {"content-type" "message/http;charset=utf8"
+                                                    "content-length" (.length body)}
+                                          :body body
+                                          ::http-response true})))))))
 
               ;; TODO Not implemented (if unknown Content-* header)
 
