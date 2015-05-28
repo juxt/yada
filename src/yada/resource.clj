@@ -1,6 +1,6 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(ns yada.specification
+(ns yada.resource
   (:require
    [manifold.deferred :as d]
    [manifold.stream :refer (->source transform)]
@@ -10,7 +10,7 @@
           [java.io File]
           [java.util Date]))
 
-(defprotocol Specification
+(defprotocol Resource
   (service-available? [_] "Return whether the service is available")
   (known-method? [_ method])
 
@@ -35,7 +35,7 @@
   (allow-origin [_ ctx] "If another origin (other than the resource's origin) is allowed, return the the value of the Access-Control-Allow-Origin header to be set on the response")
   )
 
-(extend-protocol Specification
+(extend-protocol Resource
   Boolean
   (service-available? [b] [b {}])
   (known-method? [b method] [b {}])

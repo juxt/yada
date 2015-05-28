@@ -10,7 +10,7 @@
    [schema.core :as s]
    [schema.coerce :refer (coercer string-coercion-matcher) :as sc]
    [schema.utils :refer (error? error-val)]
-   [yada.specification :as p]
+   [yada.resource :as p]
    [yada.state :as yst]
    [yada.conneg :refer (best-allowed-content-type)]
    [yada.coerce :refer (coercion-matcher)]
@@ -103,7 +103,7 @@
   ctx)
 
 (defrecord NoAuthorizationSpecified []
-  p/Specification
+  p/Resource
   (authorize [b ctx] true)
   (authorization [_] nil))
 
