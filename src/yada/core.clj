@@ -294,11 +294,11 @@
                       {:status 501
                        :http-response true})))))
 
-(defn to8bit [s]
+(defn to-encoding [s encoding]
   (-> s
       (.getBytes)
       (java.io.ByteArrayInputStream.)
-      (slurp :encoding "utf8")))
+      (slurp :encoding encoding)))
 
 (defn to-title-case [s]
   (when s
@@ -319,7 +319,7 @@
     (when-let [body @(:body req)]
       (print body))))
 
-(defn yada*
+(defn make-handler
   [{:keys
     [service-available?                 ; async-supported
      known-method?
@@ -490,29 +490,38 @@
                 (if (= method :trace)
                   (d/error-deferred
                    (ex-info "TRACE"
-                            (merge {::http-response true}
-                                   (if trace (-> (merge {:status 200}
-                                                        (merge-with merge
-                                                                    {:headers {"content-type" "message/http;charset=utf8"}}
-                                                                    ;; Custom code /can/ override (but really shouldn't)
-                                                                    (p/trace trace req ctx)))
-                                                 (update-in [:body] to8bit))
+                            (merge
+                             {::http-response true}
+                             (if trace
+                               ;; custom user-supplied implementation
+                               (-> (merge
+                                    {:status 200}
+                                    (merge-with
+                                     merge
+                                     {:headers {"content-type" "message/http;charset=utf8"}}
+                                     ;; Custom code /can/ override (but really shouldn't)
+                                     (p/trace trace req ctx)))
+                                   (update-in [:body] to-encoding "utf8"))
 
-                                       ;; else default implementation
-                                       (let [body (-> ctx
-                                                      :request
-                                                      (update-in [:headers] dissoc ["authorization"])
-                                                      print-request
-                                                      with-out-str
-                                                      ;; only "7bit", "8bit", or "binary" are permitted (RFC 7230 8.3.1)
-                                                      to8bit
-                                                      )]
+                               ;; otherwise default implementation
+                               (let [body (-> ctx
+                                              :request
+                                              ;; A client MUST NOT generate header fields in a TRACE request containing sensitive
+                                              ;; data that might be disclosed by the response. For example, it would be foolish for
+                                              ;; a user agent to send stored user credentials [RFC7235] or cookies [RFC6265] in a
+                                              ;; TRACE request.
+                                              (update-in [:headers] dissoc "authorization" "cookie")
+                                              print-request
+                                              with-out-str
+                                              ;; only "7bit", "8bit", or "binary" are permitted (RFC 7230 8.3.1)
+                                              (to-encoding "utf8")
+                                              )]
 
-                                         {:status 200
-                                          :headers {"content-type" "message/http;charset=utf8"
-                                                    "content-length" (.length body)}
-                                          :body body
-                                          ::http-response true})))))))
+                                 {:status 200
+                                  :headers {"content-type" "message/http;charset=utf8"
+                                            "content-length" (.length body)}
+                                  :body body
+                                  ::http-response true})))))))
 
               ;; TODO Not implemented (if unknown Content-* header)
 
@@ -577,5 +586,17 @@
 
 (defn yada [& args]
   (if (keyword? (first args))
-    (yada* (into {} (map vec (partition 2 args))))
-    (yada* (first args))))
+    (make-handler (into {} (map vec (partition 2 args))))
+    (let [handler (make-handler (first args))]
+      (if (= (count args) 2)
+        ;; 2-arity function means the 2nd argument is a request. This
+        ;; means the yada handler is created just-in-time. This is
+        ;; useful when certain values are only known at runtime, for
+        ;; example, when using destructured args from Compojure routes
+        ;; in resource-maps.
+        (handler (second args))
+
+        ;; Otherwise the handler is returned. TODO: Replace this
+        ;; implementation with one using clojure.core/partial, because
+        ;; that is essentially the model.
+        handler))))

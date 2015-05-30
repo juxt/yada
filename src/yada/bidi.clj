@@ -6,7 +6,7 @@
   yada.bidi
   (:refer-clojure :exclude [partial])
   (:require
-   [yada.core :refer (yada* invoke-with-initial-context k-bidi-match-context)]
+   [yada.core :refer (yada invoke-with-initial-context k-bidi-match-context)]
    [bidi.bidi :refer (Matched resolve-handler unresolve-handler context succeed)]
    [bidi.ring :refer (Ring request)]))
 
@@ -30,11 +30,11 @@
   ;; as if it were a normal Ring handler function.
   clojure.lang.IFn
   (invoke [this req]
-    ((yada* resource-map) req))
+    ((yada resource-map) req))
 
   Ring
   (request [_ req match-context]
-    (let [h (yada* (merge (get match-context k-resource-map) resource-map))]
+    (let [h (yada (merge (get match-context k-resource-map) resource-map))]
       (h req))))
 
 (defn- resource* [{:as resource-map}]
