@@ -27,6 +27,7 @@
             [yada.conneg :refer (best-allowed-content-type)]
             [yada.representation :as rep]
             [yada.resource :as p]
+            [yada.util :refer (with-maybe)]
             [yada.state :as yst])
   (:import (clojure.lang IPending)
            (java.util Date)
@@ -488,7 +489,7 @@
                                                  ::http-response true}))))
 
               ;; TRACE
-              (fn [ctx]
+              (with-maybe ctx
                 (if (= method :trace)
                   (d/error-deferred
                    (ex-info "TRACE"
