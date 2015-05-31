@@ -96,9 +96,11 @@
 (defmacro exit-when-not [expr status]
   `(exit-when (not* ~expr) ~status))
 
-(defn spyctx [ctx]
-  (debugf "Context is %s" ctx)
-  ctx)
+(defn spyctx [label & [korks]]
+  (fn [ctx]
+    (debugf "SPYCTX %s: Context is %s" label
+            (if korks (get-in ctx (if (sequential? korks) korks [korks])) ctx))
+    ctx))
 
 (defrecord NoAuthorizationSpecified []
   p/Resource
