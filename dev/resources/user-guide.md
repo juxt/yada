@@ -351,28 +351,6 @@ techniques. In yada, however, it's easy.
 
 <include type="note" ref="ratpack"/>
 
-## Resources
-
-The __:resource__ entry allows us to return meta-data about a resource.
-
-The most basic meta-data we can indicate about a resource is whether it exists. We can do this by returning a simple boolean.
-
-<example ref="ResourceExists"/>
-
-In some cases it is possible to say whether a given resource exists. This is especially true for _singleton_ resources.
-
-There are many cases, however, where the existence of a resource can only be determined with reference to some parameters in the request.
-
-<example ref="ResourceFunction"/>
-
-<example ref="ResourceExistsAsync"/>
-<example ref="ResourceDoesNotExist"/>
-<example ref="ResourceDoesNotExistAsync"/>
-
-We can also return other resource meta-data to let yada construct the
-proper HTTP response headers in order to exploit opportunities for
-caching and other HTTP features.
-
 ## Content Negotiation
 
 <div class="warning"><p>Deprecated, see State section below</p></div>
@@ -415,7 +393,7 @@ If there is no __:body__ entry, the state is automatically serialized
 into a suitable format (according to the usual rules for determining
 the content's type).
 
-<example ref="ResourceState"/>
+<example ref="State"/>
 
 Of course, if you want full control over the rendering of the body, you
 can add a __body__ entry. If you do, you can access the state of the resource returned by the __state__ entry which is available from the `ctx` argument.
@@ -425,13 +403,13 @@ content-type that it produces, since it can't inferred automatically (as
 you may choose to override it), and no __Content-Type__ header will be set
 otherwise.
 
-<example ref="ResourceStateWithBody"/>
+<example ref="StateWithBody"/>
 
 A resource which has a non-nil `:state` entry is naturally assumed to
 exist. It is therefore unnecessary to provide a non-nil `:resource`
 entry, unless you wish to communicate a resource's meta-data.
 
-<example ref="ResourceStateTopLevel"/>
+<example ref="StateWithFile"/>
 
 ### Declaring available content-types
 

@@ -27,7 +27,7 @@
             [yada.conneg :refer (best-allowed-content-type)]
             [yada.representation :as rep]
             [yada.resource :as p]
-            [yada.util :refer (with-maybe)]
+            [yada.util :refer (link)]
             [yada.state :as yst])
   (:import (clojure.lang IPending)
            (java.util Date)
@@ -127,18 +127,6 @@
                                (interpose ", " ["Server" "Date" "Content-Length" "Access-Control-Allow-Origin"]))})
       ctx)))
 
-(defn return-response [status headers]
-  (fn [ctx]
-    (merge
-     {:status (or (get-in ctx [:response :status])
-                  (p/status status ctx)
-                  200)
-      :headers (merge
-                (get-in ctx [:response :headers])
-                (p/headers headers ctx))
-      ;; TODO :status and :headers should be implemented like this in all cases
-      :body (get-in ctx [:response :body])})))
-
 (defn exists-flow [method state req status headers body post allow-origin]
   (fn [ctx]
     (case method
@@ -146,20 +134,23 @@
       (d/chain
        ctx
 
+       ;; OK, let's pick the resource's state
+       (fn [ctx]
+         (d/chain
+          state                         ; could be nil
+          #(p/state % ctx)
+          (fn [state] (if state (assoc-in ctx [:resource :state] state) ctx))))
+
        ;; Conditional request
        (fn [ctx]
-         (infof "Checking for conditional request: %s" (:headers req))
-         (infof "State is %s" state)
-         (if-let [last-modified (yst/last-modified state)]
+         (let [state (get-in ctx [:resource :state])]
+           (if-let [last-modified (yst/last-modified state)]
 
-           (do
-             (infof "AAA: last-modified: %s" last-modified)
              (if-let [if-modified-since (some-> req
                                                 (get-in [:headers "if-modified-since"])
                                                 parse-date)]
                (let [last-modified (if (d/deferrable? last-modified) @last-modified last-modified)]
 
-                 (infof "last-mod: %s, if-mod-since: %s" last-modified if-modified-since)
                  (if (<=
                       (.getTime last-modified)
                       (.getTime if-modified-since))
@@ -178,17 +169,9 @@
                   (some->> (if (d/deferrable? last-modified) @last-modified last-modified)
                            format-date
                            (assoc-in ctx [:response :headers "last-modified"]))
-                  ctx))))
-           (do
-             (infof "yst/last-modified is nil")
-             ctx)))
+                  ctx)))
 
-       ;; OK, let's pick the resource's state
-       (fn [ctx]
-         (d/chain
-          state                         ; could be nil
-          #(p/state % ctx)
-          #(assoc-in ctx [:resource :state] %)))
+             ctx)))
 
        ;; Create body
        (fn [ctx]
@@ -242,6 +225,31 @@
                   (update-in ctx [:response :headers] assoc "content-length" content-length)
                   ctx)))))))
 
+      :put
+      (d/chain
+         ctx
+         (link ctx
+           (when-let [etag (get-in req [:headers "if-match"])]
+             (when (not= etag (get-in ctx [:resource :etag]))
+               (throw
+                (ex-info "Precondition failed"
+                         {:status 412
+                          ::http-response true})))))
+
+         ;; Do the put!
+         (fn [ctx]
+           (let [exists? (yst/exists? state)]
+             (if-let [put (some-> ctx :resource-map :put)]
+               ;; Custom put function
+               ;; TODO Rename put to put!
+               (p/put put ctx)
+               ;; Default behaviour
+               (if state
+                 (yst/write! state ctx)
+                 (throw (ex-info "No implementation of put" {}))))
+             (assoc-in ctx [:response :status]
+                       (if exists? 204 201)))))
+
       :post
       (d/chain
        ctx
@@ -257,27 +265,15 @@
 
        (fn [ctx]
          ;; TODO: what if error?
+
+         ;; TODO: Should separate p/post from p/interpret-post-result
+         ;; because p/post could return a deferred, so we need to chain
+         ;; them together rather than complicate logic in resource.clj
          (p/interpret-post-result (p/post post ctx) ctx))
 
        (fn [ctx]
          (-> ctx
              (assoc-in [:response :status] 200))))
-
-      :put
-      (d/chain
-       ctx
-
-       (fn [ctx]
-         (when-let [etag (get-in req [:headers "if-match"])]
-           (when (not= etag (get-in ctx [:resource :etag]))
-             (throw
-              (ex-info "Precondition failed"
-                       {:status 412
-                        ::http-response true}))))
-         ctx)
-
-       (fn [ctx]
-         (assoc-in ctx [:response :status] 204)))
 
       :options
       (d/chain
@@ -322,21 +318,53 @@
     (when-let [body @(:body req)]
       (print body))))
 
+;; Allowed methods
+
+;; RFC 7231 - 8.1.3.  Registrations
+
+;; | Method  | Safe | Idempotent | Reference     |
+;; +---------+------+------------+---------------+
+;; | CONNECT | no   | no         | Section 4.3.6 |
+;; | DELETE  | no   | yes        | Section 4.3.5 |
+;; | GET     | yes  | yes        | Section 4.3.1 |
+;; | HEAD    | yes  | yes        | Section 4.3.2 |
+;; | OPTIONS | yes  | yes        | Section 4.3.7 |
+;; | POST    | no   | no         | Section 4.3.3 |
+;; | PUT     | no   | yes        | Section 4.3.4 |
+;; | TRACE   | yes  | yes        | Section 4.3.8 |
+
+
+(def known-methods #{:connect :delete :get :head :options :post :put :trace})
+
+(defn safe? [method]
+  (contains? #{:get :head :options :trace} method))
+
+(defn idempotent? [method]
+  (contains? #{:delete :get :head :options :put :trace} method))
+
+(defn allowed-methods [ctx]
+  (let [rmap (:resource-map ctx)]
+    (if-let [methods (:methods rmap)]
+      (set (p/allowed-methods methods))
+      (set
+       (remove nil?
+               (conj
+                (filter safe? known-methods)
+                (when (:put rmap) :put)
+                (when (:post rmap) :post)
+                (when (:delete rmap) :delete)))))))
+
 (defn make-handler
   [{:keys
     [service-available?                 ; async-supported
-     known-method?
+     known-method?                      ; async-supported
      request-uri-too-long?
 
-     ;; The allowed? callback will contain the entire resource, the callback must
-     ;; therefore extract the OAuth2 scopes, or whatever is needed to
-     ;; authorize the request.
-     ;; allowed?
+     methods
 
      status                             ; async-supported
      headers                            ; async-supported
 
-     ;;resource                           ; async-supported
      state                              ; async-supported
      body                               ; async-supported
 
@@ -382,42 +410,62 @@
          (-> ctx
              (merge
               {:request
-               (assoc req
+               req
+               ;; The next form is commented because we want to provide
+               ;; access from individual State protocol implementations
+               ;; to raw ByteBufers. You can only read the body stream
+               ;; once, when it is required. Subsequent calls to :body
+               ;; will yield nil. There's no way round this short to
+               ;; temporarily storing the whole (potentially huge) body
+               ;; somewhere.
+               #_(assoc req
                       ;; We assoc in a 'delayed' body to the context's
                       ;; version of the request. The first caller to
                       ;; deref causes the slurp (which to do ahead of
                       ;; time might be unnecessarily wasteful).
                       :body (delay
                              (if-let [body (:body req)]
+                               ;; TODO Don't slurp, read into a byte array
+                               ;; Does aleph provide access to the underlying javax.nio.ByteBuffer(s)?
+                               ;; (yes - provided option raw-stream? is true)
                                (slurp body :encoding (or (character-encoding req) "utf8"))
                                nil)))
                :resource-map resource-map})
 
              (d/chain
-              (nonblocking-exit-when-not service-available? (p/service-available? service-available?) 503)
-              (exit-when-not (p/known-method? known-method? method) 501)
-              (exit-when (p/request-uri-too-long? request-uri-too-long? (:uri req)) 414)
+              ;; TODO Inline these macros, they don't buy much for their complexity
+
+              (link ctx
+                (let [res (p/service-available? service-available? ctx)]
+                  (if-not (p/interpret-service-available res)
+                    (d/error-deferred
+                     (ex-info "" (merge {:status 503
+                                         ::http-response true}
+                                        (when-let [retry-after (p/retry-after res)] {:headers {"retry-after" retry-after}})))))))
+
+              (link ctx
+                (when-not
+                    (if known-method?
+                      (p/known-method? known-method? method)
+                      (contains? known-methods method)
+                      )
+                  (d/error-deferred (ex-info "" {:status 501
+                                                 ::http-response true}))))
+
+              (link ctx
+                (when (p/request-uri-too-long? request-uri-too-long? (:uri req))
+                  (d/error-deferred (ex-info "" {:status 414
+                                                 ::http-response true}))))
 
               ;; Method Not Allowed
-              (fn [ctx]
-                (if-not
-                    (or
-                     (case method
-                       (:get :head) (or state body)
-                       :put put
-                       :post post
-                       :delete delete
-                       :path patch
-                       :trace (p/trace? trace? ctx)
-                       :options (or allow-origin)
-                       nil))
-                  (do
-                    (warnf "Method not allowed %s" method)
+              (link ctx
+                (let [am (allowed-methods ctx)]
+                  (infof "am is %s" (seq am) )
+                  (when-not (contains? (allowed-methods ctx) method)
                     (d/error-deferred
-                     (ex-info (format "Method: %s" method)
+                     (ex-info (format "Method not allowed: %s" method)
                               {:status 405
-                               ::http-response true})))
-                  ctx))
+                               ::http-response true})))))
 
               ;; Malformed
               (fn [ctx]
@@ -456,14 +504,11 @@
                                                      :body errors
                                                      ::http-response true}))
                       (let [body (:body parameters)
-                            params (merge (apply merge (vals (dissoc parameters :body)))
-                                          (when body {:body body}))]
+                            merged-params (merge (apply merge (vals (dissoc parameters :body)))
+                                                 (when body {:body body}))]
                         (cond-> ctx
-                          (not-empty params) (assoc :parameters params)
-                          ;; Although body is included in params (above)
-                          ;; we might also include it in the context directly.
-                          ;; body (assoc :body (:body parameters))
-                          ))))))
+                          (not-empty merged-params) (assoc :parameters merged-params)))))))
+
 
               ;; Authentication
               (fn [ctx]
@@ -489,7 +534,7 @@
                                                  ::http-response true}))))
 
               ;; TRACE
-              (with-maybe ctx
+              (link ctx
                 (if (= method :trace)
                   (d/error-deferred
                    (ex-info "TRACE"
@@ -557,13 +602,25 @@
 
                 (cond
                   ;; 'Exists' flow
+                  ;; TODO: Not sure that exists-flow is what we're doing here - exists-flow has all kinds of things complected in it. Break up into individual cases, perhaps based on method. We are only using this to avoid the 404 of the 'not exists' flow. Perhaps check for existence and throw the 404 now if necessary.
                   (or state body (#{:post :put} method))
                   (d/chain
                    ctx
                    ;; Not sure we should use exists-flow for CORS pre-flight requests, should handle further above
                    (exists-flow method state req status headers body post allow-origin)
                    (cors allow-origin)
-                   (return-response status headers))
+
+                   (fn [ctx]
+                     (merge
+                      {:status (or (get-in ctx [:response :status])
+                                   (p/status status ctx)
+                                   200)
+                       :headers (merge
+                                 (get-in ctx [:response :headers])
+                                 (p/headers headers ctx))
+                       ;; TODO :status and :headers should be implemented like this in all cases
+                       :body (get-in ctx [:response :body])}))
+                   )
 
                   ;; 'Not exists' flow
                   :otherwise

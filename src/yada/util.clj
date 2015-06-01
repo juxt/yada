@@ -2,5 +2,5 @@
   (:require
    [manifold.deferred :as d]))
 
-(defmacro with-maybe [ctx body]
+(defmacro link [ctx body]
   `(fn [~ctx] (or ~body ~ctx)))

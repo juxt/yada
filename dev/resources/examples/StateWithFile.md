@@ -2,4 +2,6 @@
 
 <request/>
 
+<curl/>
+
 <response/>

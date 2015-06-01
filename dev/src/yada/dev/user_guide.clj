@@ -374,6 +374,10 @@
                             )})
              (tag ::tests))]]])))
 
+(defmethod clojure.core/print-method UserGuide
+  [o ^java.io.Writer writer]
+  (.write writer "<userguide>"))
+
 (defn new-user-guide [& {:as opts}]
   (-> (->> opts
            (merge {})

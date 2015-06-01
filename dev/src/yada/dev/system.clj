@@ -105,7 +105,11 @@
   (assoc system
     :http-server
     (make new-webserver config
-          :port 8090)
+          :port 8090
+          ;; raw-stream? = true gives us a manifold stream of io.netty.buffer.ByteBuf instances
+          ;; Use to convert to a stream bs/to-input-stream
+          :raw-stream? true
+          )
     ))
 
 (defn external-server-components [system config]

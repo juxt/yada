@@ -1,5 +1,0 @@
-<resource-map/>
-
-<request/>
-
-<response/>

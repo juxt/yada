@@ -345,50 +345,18 @@
 
 ;; Resource metadata (conditional requests)
 
-(defrecord ResourceExists []
+;; State
+
+#_(defrecord StateFile []
   Example
-  (resource-map [_] '{:resource true})
+  (resource-map [_] '{:state "README.md"})
   (make-handler [ex] (yada (eval (resource-map ex))))
+  #_(path [r] [(basename r) "/" [long :account]])
+  #_(path-args [_] [:account 17382343])
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 
-(defrecord ResourceFunction []
-  Example
-  (resource-map [_] '{:resource (fn [req] true)})
-  (make-handler [ex] (yada (eval (resource-map ex))))
-  (request [_] {:method :get})
-  (expected-response [_] {:status 200}))
-
-(defrecord ResourceExistsAsync []
-  Example
-  (resource-map [_] '{:resource (fn [req] (future (Thread/sleep 500) true))})
-  (make-handler [ex] (yada (eval (resource-map ex))))
-  (request [_] {:method :get})
-  (expected-response [_] {:status 200}))
-
-(defrecord ResourceDoesNotExist []
-  Example
-  (resource-map [_] '{:resource false})
-  (make-handler [ex] (yada (eval (resource-map ex))))
-  (request [_] {:method :get})
-  (expected-response [_] {:status 404}))
-
-(defrecord ResourceDoesNotExistAsync []
-  Example
-  (resource-map [_] '{:resource (fn [opts] (future (Thread/sleep 500) false))})
-  (make-handler [ex] (yada (eval (resource-map ex))))
-  (request [_] {:method :get})
-  (expected-response [_] {:status 404}))
-
-;; Resource State
-
-
-;; TODO: Add other parameter types (header, formData and body)
-;;
-;; > Possible values are "query", "header", "path", "formData" or "body".
-;; -- https://github.com/swagger-api/swagger-spec/blob/master/versions/2.0.md#parameterObject
-
-(defrecord ResourceState []
+(defrecord State []
   Example
   (resource-map [_] '{:resource (fn [{{account :account} :route-params}]
                                   (when (== account 17382343)
@@ -399,12 +367,12 @@
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 
-(defrecord ResourceStateWithBody []
+(defrecord StateWithBody []
   Example
   (resource-map [_] '{:resource (fn [{{account :account} :route-params}]
                                   (when (== account 17382343)
                                     {:state {:balance 1300}}))
-                      :body {"text/plain" (fn [ctx] (format "Your balance is ฿%s " (-> ctx :resource :state :balance)))}
+                      :body {"text/plain" (fn [ctx] (format "Your balance is ฿%s " (-> ctx :state :balance)))}
                       })
   (make-handler [ex] (yada (eval (resource-map ex))))
   (path [r] [(basename r) "/" [long :account]])
@@ -412,13 +380,13 @@
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 
-(defrecord ResourceStateTopLevel []
+(defrecord StateWithFile []
   Example
-  (resource-map [_] '{:state (fn [ctx] {:accno (-> ctx :request :route-params :account)})})
+  (resource-map [_] '{:state (io/file "README.md")  ; TODO Try with README.me, seemed to cause a hang last time
+                      :methods [:put]})
   (make-handler [ex] (yada (eval (resource-map ex))))
-  (path [r] [(basename r) "/" [long :account]])
-  (path-args [_] [:account 17382343])
-  (request [_] {:method :get})
+  (path [r] [(basename r)])
+  (request [_] {:method :put})
   (expected-response [_] {:status 200}))
 
 ;; Conditional GETs
@@ -506,7 +474,7 @@
 
 (defrecord ServiceUnavailableAsync []
   Example
-  (resource-map [_] '{:service-available? #(future (Thread/sleep 500) false)})
+  (resource-map [_] '{:service-available? (fn [ctx] (future (Thread/sleep 500) false))})
   (make-handler [ex] (yada (eval (resource-map ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 503}))
@@ -530,7 +498,7 @@
 (defrecord ServiceUnavailableRetryAfter3 []
   Example
   (resource-map [_]
-    '{:service-available? #(future (Thread/sleep 500) 120)})
+    '{:service-available? (fn [ctx] (future (Thread/sleep 500) 120))})
   (make-handler [ex] (yada (eval (resource-map ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 503})

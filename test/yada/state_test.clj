@@ -2,8 +2,10 @@
 
 (ns yada.state-test
   (:require
+   [clojure.edn :as edn]
    [clojure.test :refer :all]
    [clojure.java.io :as io]
+   [clojure.tools.logging :refer :all]
    [yada.core :refer [yada]]
    [yada.state :as yst]
    [ring.mock.request :refer [request]]
@@ -47,30 +49,47 @@
 (deftest temp-file-test
   (testing "creation of a new file"
     (let [f (java.io.File/createTempFile "yada" nil nil)]
+      (infof "temp file is %s" f)
       (try
 
         (io/delete-file f)
         (is (not (exists? f)))
 
         (let [resource {:state f}
-              handler (yada resource)]
+              state {:username "alice" :name "Alice"}]
 
           (given resource
-                 [:state yst/exists?] false)
+            [:state yst/exists?] false)
+
+          ;; TODO: OPTIONS (better in a different test)
+          #_(given @(yada @resource (request :options "/"))
+              :status 200
+              )
+
+          ;; TODO: TRACE (better in a different test)
 
           ;; A PUT request arrives on a new URL, containing a
           ;; representation which is parsed into the following model :-
+          (letfn [(make-put []
+                    (merge (request :put "/")
+                           {:body (ByteArrayInputStream. (.getBytes (pr-str state)))}))]
+            ;; Since this resource does not allow the PUT method, we get a 405.
+            (given @(yada resource (make-put))
+              :status 405)
 
-          (given @(handler (request :options "/"))
-                 :status 200
-                 )
+            ;; But for a resource that /does/ allow a PUT, the server
+            ;; should create the resource with the given content and
+            ;; receive a 201
+            (given @(yada (assoc resource :methods [:put])
+                          (make-put))
+              :status 201)
 
-          ;; TODO: TRACE
+            (is (= (edn/read-string (slurp f)) state)
+                "The file content after the PUT was not the same as that
+                in the request"))
 
-          #_(given @(handler (merge (request :put "/")
-                                  {:body (ByteArrayInputStream. (.getBytes (pr-str {:username "alice" :name "Alice"})))}))
-                 :status 200
-                 )
+          ;; Now we enable PUT on the resource
+          ;; TODO
 
           ;; which is then stored
           #_(store-state! (:state resource-map) state)
