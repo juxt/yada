@@ -24,7 +24,8 @@
    [org.clojure/core.async "0.1.346.0-17112a-alpha"]
    [clj-time "0.9.0"]
    [metosin/ring-swagger "0.20.2"]
-   [ring/ring-core "1.3.2"]]
+   [ring/ring-core "1.3.2"]
+   [byte-streams "0.2.0-alpha8"]]
 
   :repl-options {:init-ns user
                  :welcome (println "Type (dev) to start")}
