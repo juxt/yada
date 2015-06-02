@@ -61,32 +61,33 @@
           (given resource
             [:state yst/exists?] false)
 
-          ;; TODO: OPTIONS (better in a different test)
-          #_(given @(yada @resource (request :options "/"))
-              :status 200
-              )
-
           ;; A PUT request arrives on a new URL, containing a
           ;; representation which is parsed into the following model :-
           (letfn [(make-put []
                     (merge (request :put "/")
                            {:body (ByteArrayInputStream. (.getBytes (pr-str state)))}))]
+
             ;; Since this resource does not allow the PUT method, we get a 405.
             (given @(yada resource (make-put))
               :status 405)
 
             ;; But for a resource that /does/ allow a PUT, the server
             ;; should create the resource with the given content and
-            ;; receive a 201
-            (given @(yada (assoc resource :methods [:put])
-                          (make-put))
-              :status 201)
+            ;; receive a 201.
+
+            (let [resource (update-in resource [:methods] conj :put)]
+
+              (given @(yada
+                       ;; Enable PUT on the resource
+                       resource
+                       (make-put))
+                :status 201))
 
             (is (= (edn/read-string (slurp f)) state)
                 "The file content after the PUT was not the same as that
                 in the request"))
 
-          ;; Now we enable PUT on the resource
+
           ;; TODO
 
           ;; which is then stored

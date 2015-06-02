@@ -155,9 +155,11 @@
   (format-event [ev] )
 
   clojure.lang.PersistentVector
-  (allowed-methods [v] v)
   (produces [v] (produces (set v)))
   (body [v ctx] v)
+
+  java.util.List
+  (allowed-methods [v] v)
 
   nil
   ;; These represent the handler defaults, all of which can be
