@@ -15,7 +15,7 @@
           request (request :options "*")
           response @(handler request)]
       (given response
-        :status 200)))
+        :status := 200)))
 
   (testing "Resource capabilities"
     (let [resource {}
@@ -23,5 +23,5 @@
           request (request :options "/")
           response @(handler request)]
       (given response
-        :status 200
-        :headers {"accept" "(TODO)"}))))
+        :status := 200
+        :headers := {"accept" "(TODO)"}))))

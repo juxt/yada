@@ -16,8 +16,8 @@
                          {:body (java.io.ByteArrayInputStream. (.getBytes "Hello World!"))})
           response @(handler request)]
       (given response
-        :status 200
-        [:body #(.endsWith % "Hello World!")] true)))
+        :status := 200
+        :body :? #(.endsWith % "Hello World!"))))
 
   (testing "TRACE disabled"
     (let [resource {:methods [:get :head]}
@@ -25,4 +25,4 @@
           request (request :trace "/")
           response @(handler request)]
       (given response
-        :status 405))))
+        :status := 405))))

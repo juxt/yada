@@ -1,7 +1,9 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.test.util
-  (:require [clojure.test :refer :all]))
+  (:require
+   [clojure.test :refer :all]
+   [clojure.set :as set]))
 
 ;; See the test at the end of this ns to understand the point of this code
 
@@ -24,6 +26,17 @@
   (as-test-function [s] #(get % s)))
 
 (defmacro given [v & body]
-  `(let [v# ~v] ; because we want to evaluate v just the once, not on every clause
-     (are [x# y#] (= ((as-test-function x#) v#) y#)
-       ~@body)))
+  `(do
+     ~@(for [[a b c] (partition 3 body)]
+        (case b
+          := `(is (= ((as-test-function ~a) ~v) ~c))
+          :!= `(is (not= ((as-test-function ~a) ~v) ~c))
+          :- `(is (nil? (s/check ~c ((as-test-function ~a) ~v))))
+          :? `(is (~c ((as-test-function ~a) ~v)))
+          :!? `(is (not (~c ((as-test-function ~a) ~v))))
+          :# `(is (re-matches (re-pattern ~c) ((as-test-function ~a) ~v)))
+          :!# `(is (not (re-matches (re-pattern ~c) ((as-test-function ~a) ~v))))
+          :> `(is (set/subset? (set ~c) (set ((as-test-function ~a) ~v))))
+          :!> `(is (not (set/subset? (set ~c) (set ((as-test-function ~a) ~v)))))
+          :< `(is (set/superset? (set ~c) (set ((as-test-function ~a) ~v))))
+          :!< `(is (not (set/superset? (set ~c) (set ((as-test-function ~a) ~v)))))))))

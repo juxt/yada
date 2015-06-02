@@ -25,26 +25,26 @@
 
     (testing "expectations of set-up"
       (given resource
-        [:state exists?] true
+        :state :? exists?
         [:state (memfn getName)] "test.txt"))
 
     (testing "response"
       (given response
-        some? true
-        :status 200
-        [:headers "content-type"] "text/plain"
-        [:body type] File
-        [:headers "content-length"] (.length (:state resource))))
+        identity :? some?
+        :status := 200
+        [:headers "content-type"] := "text/plain"
+        [:body type] := File
+        [:headers "content-length"] := (.length (:state resource))))
 
     (testing "last-modified"
       (given response
-        [:headers "last-modified"] "Sun, 24 May 2015 16:44:47 GMT"
-        [:headers "last-modified" parse-date (memfn getTime)] (.lastModified (:state resource))))
+        [:headers "last-modified"] := "Sun, 24 May 2015 16:44:47 GMT"
+        [:headers "last-modified" parse-date (memfn getTime)] := (.lastModified (:state resource))))
 
     (testing "conditional-response"
       (given @(handler (assoc-in request [:headers "if-modified-since"]
                                 (format-date (Date. (.lastModified (:state resource))))))
-            :status 304))))
+            :status := 304))))
 
 (deftest temp-file-test
   (testing "creation of a new file"
@@ -59,7 +59,7 @@
               state {:username "alice" :name "Alice"}]
 
           (given resource
-            [:state yst/exists?] false)
+            :state :!? yst/exists?)
 
           ;; A PUT request arrives on a new URL, containing a
           ;; representation which is parsed into the following model :-
@@ -88,8 +88,8 @@
                 in the request"))
 
             (given @(yada resource (request :get "/"))
-              :status 200
-              [:body slurp edn/read-string] state)
+              :status := 200
+              [:body slurp edn/read-string] := state)
             ))
 
         (finally (when (exists? f) (io/delete-file f))))))
