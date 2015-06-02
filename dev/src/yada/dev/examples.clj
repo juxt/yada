@@ -109,8 +109,8 @@
   (resource-map [_]
     {:parameters
      common-params
-     :post '(fn [ctx]
-              (format "Thank you for posting %s" (-> ctx :parameters :body)))})
+     :post! '(fn [ctx]
+               (format "Thank you for posting %s" (-> ctx :parameters :body)))})
   (make-handler [ex] (yada (eval (resource-map ex))))
   (path [r] [(basename r) "/" :account])
   (path-args [_] [:account 1234])
@@ -126,7 +126,7 @@
   (resource-map [_]
     {:parameters
      {:post {:form {:email String}}}
-     :post '(fn [ctx] (format "Saving email: %s" (-> ctx :parameters :email)))
+     :post! '(fn [ctx] (format "Saving email: %s" (-> ctx :parameters :email)))
      })
   (make-handler [ex] (yada (eval (resource-map ex))))
   (request [_] {:method :post
@@ -275,7 +275,7 @@
 (comment
   ;; client's content type already indicates content, e.g. application/json
   ;; which is already accessible via a delay (or equiv.)
-  {:post (fn [ctx]
+  {:post! (fn [ctx]
            ;; this is just like a normal Ring handler.
 
            ;; the main benefit is that state is available via deref,
@@ -513,7 +513,7 @@
 
 (defrecord DisallowedGet []
   Example
-  (resource-map [_] '{:post true})
+  (resource-map [_] '{:methods #{:put :post}})
   (make-handler [ex] (yada (eval (resource-map ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 405}))
@@ -527,7 +527,7 @@
 
 (defrecord DisallowedDelete []
   Example
-  (resource-map [_] '{:post true})
+  (resource-map [_] '{:methods #{:get :post}})
   (make-handler [ex] (yada (eval (resource-map ex))))
   (request [_] {:method :delete})
   (expected-response [_] {:status 405}))

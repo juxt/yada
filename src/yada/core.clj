@@ -116,172 +116,6 @@
 (defn as-sequential [s]
   (if (sequential? s) s [s]))
 
-(defn exists-flow [method state req status headers body post allow-origin]
-  (fn [ctx]
-    (case method
-      (:get :head)
-      (d/chain
-       ctx
-
-       ;; OK, let's pick the resource's state
-       (fn [ctx]
-         (d/chain
-          state                         ; could be nil
-          #(p/state % ctx)
-          (fn [state] (if state (assoc-in ctx [:resource :state] state) ctx))))
-
-       ;; Conditional request
-       (fn [ctx]
-         (let [state (get-in ctx [:resource :state])]
-           (if-let [last-modified (yst/last-modified state)]
-
-             (if-let [if-modified-since (some-> req
-                                                (get-in [:headers "if-modified-since"])
-                                                parse-date)]
-               (let [last-modified (if (d/deferrable? last-modified) @last-modified last-modified)]
-
-                 (if (<=
-                      (.getTime last-modified)
-                      (.getTime if-modified-since))
-
-                   ;; exit with 304
-                   (d/error-deferred
-                    (ex-info "" (merge {:status 304
-                                        ::http-response true}
-                                       ctx)))
-
-                   (assoc-in ctx [:response :headers "last-modified"] (format-date last-modified))))
-
-               (do
-                 (infof "No if-modified-since header: %s" (:headers req))
-                 (or
-                  (some->> (if (d/deferrable? last-modified) @last-modified last-modified)
-                           format-date
-                           (assoc-in ctx [:response :headers "last-modified"]))
-                  ctx)))
-
-             ctx)))
-
-       ;; Create body
-       (fn [ctx]
-         (let [state (get-in ctx [:resource :state])
-               content-type
-               (or (get-in ctx [:response :content-type])
-                   ;; It's possible another callback has set the content-type header
-                   (get-in headers ["content-type"])
-                   (when-not body
-                     ;; Hang on, we should have done content neg by now
-                     (rep/content-type-default state)))
-               content-length (rep/content-length state)]
-
-           (case method
-             :head (if content-type
-                     ;; We don't need to add Content-Length,
-                     ;; Content-Range, Trailer or Tranfer-Encoding, as
-                     ;; per rfc7231.html#section-3.3
-                     (update-in ctx [:response :headers] assoc "content-type" content-type)
-                     ctx)
-
-             :get
-             (d/chain
-
-              ;; Determine body
-              (cond
-                body (p/body body ctx)
-                state state       ; the state here can still be deferred
-                )
-
-              ;; serialize to representation (an existing string will be left intact)
-              (fn [state]
-                (rep/content state content-type))
-
-              ;; on nil, compose default result (if in dev)
-              #_(fn [x] (if x x (rep/content nil content-type)))
-
-              (fn [body]
-                (if (not= method :head)
-                  (assoc-in ctx [:response :body] body)
-                  ctx))
-
-              (fn [ctx]
-                (if content-type
-                  (update-in ctx [:response :headers] assoc "content-type" content-type)
-                  ctx
-                  ))
-
-              (fn [ctx]
-                (if content-length
-                  (update-in ctx [:response :headers] assoc "content-length" content-length)
-                  ctx)))))))
-
-      :put
-      (d/chain
-         ctx
-         (link ctx
-           (when-let [etag (get-in req [:headers "if-match"])]
-             (when (not= etag (get-in ctx [:resource :etag]))
-               (throw
-                (ex-info "Precondition failed"
-                         {:status 412
-                          ::http-response true})))))
-
-         ;; Do the put!
-         (fn [ctx]
-           (let [exists? (yst/exists? state)]
-             (if-let [put (some-> ctx :resource-map :put)]
-               ;; Custom put function
-               ;; TODO Rename put to put!
-               (p/put put ctx)
-               ;; Default behaviour
-               (if state
-                 (yst/write! state ctx)
-                 (throw (ex-info "No implementation of put" {}))))
-             (assoc-in ctx [:response :status]
-                       (if exists? 204 201)))))
-
-      :post
-      (d/chain
-       ctx
-
-       (fn [ctx]
-         (when-let [etag (get-in req [:headers "if-match"])]
-           (when (not= etag (get-in ctx [:resource :etag]))
-             (throw
-              (ex-info "Precondition failed"
-                       {:status 412
-                        ::http-response true}))))
-         ctx)
-
-       (fn [ctx]
-         ;; TODO: what if error?
-
-         ;; TODO: Should separate p/post from p/interpret-post-result
-         ;; because p/post could return a deferred, so we need to chain
-         ;; them together rather than complicate logic in resource.clj
-         (p/interpret-post-result (p/post post ctx) ctx))
-
-       (fn [ctx]
-         (-> ctx
-             (assoc-in [:response :status] 200))))
-
-      :options
-      (d/chain
-       ctx
-
-       (fn [ctx]
-         (if-let [origin (p/allow-origin allow-origin ctx)]
-           (update-in ctx [:response :headers]
-                      merge {"access-control-allow-origin"
-                             origin
-                             "access-control-allow-methods"
-                             (apply str
-                                    (interpose ", " ["GET" "POST" "PUT" "DELETE"]))})
-           ctx)))
-
-      (throw (ex-info "Unknown method"
-                      {:status 501
-                       :http-response true})))))
-
 (defn to-encoding [s encoding]
   (-> s
       (.getBytes)
@@ -362,10 +196,10 @@
      security
 
      ;; Actions
-     put                                ; async-supported
-     post                               ; async-supported
-     delete                             ; async-supported
-     patch                              ; async-supported
+     put!                                ; async-supported
+     post!                               ; async-supported
+     delete!                             ; async-supported
+     patch!                              ; async-supported
      trace                              ; async-supported
 
      produces
@@ -694,16 +528,12 @@
                    ;; Do the put!
                    (fn [ctx]
                      (let [exists? (yst/exists? state)]
-                       (if-let [put (some-> ctx :resource-map :put)]
-                         ;; Custom put function
-                         ;; TODO Rename put to put!
-                         (p/put put ctx)
-                         ;; Default behaviour
-                         (if state
-                           (yst/write! state ctx)
-                           (throw (ex-info "No implementation of put" {}))))
-                       (assoc-in ctx [:response :status]
-                                 (if exists? 204 201)))))
+                       (cond
+                         put! (p/put! put! ctx)
+                         state (yst/write! state ctx)
+                         :otherwise (throw (ex-info "No implementation of put!" {})))
+
+                       (assoc-in ctx [:response :status] (if exists? 204 201)))))
 
                   :post
                   (d/chain
@@ -720,10 +550,10 @@
                    (fn [ctx]
                      ;; TODO: what if error?
 
-                     ;; TODO: Should separate p/post from p/interpret-post-result
-                     ;; because p/post could return a deferred, so we need to chain
+                     ;; TODO: Should separate p/post! from p/interpret-post-result
+                     ;; because p/post! could return a deferred, so we need to chain
                      ;; them together rather than complicate logic in resource.clj
-                     (p/interpret-post-result (p/post post ctx) ctx))
+                     (p/interpret-post-result (p/post! post! ctx) ctx))
 
                    (fn [ctx]
                      (-> ctx
@@ -752,7 +582,7 @@
                     (d/chain
                      ctx
                      ;; Not sure we should use exists-flow for CORS pre-flight requests, should handle further above
-                     (exists-flow method state req status headers body post allow-origin)
+                     (exists-flow method state req status headers body post! allow-origin)
                      (cors allow-origin)
 
                      (fn [ctx]

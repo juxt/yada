@@ -28,8 +28,9 @@
   (status [_ ctx] "Override the response status")
   (headers [_ ctx] "Override the response headers")
 
-  (put [_ ctx] "PUT to the resource")
-  (post [_ ctx] "POST to the resource")
+  (put! [_ ctx] "PUT to the resource")
+  (post! [_ ctx] "POST to the resource")
+  (delete! [_ ctx] "DELETE the resource")
   (interpret-post-result [_ ctx] "Return the request context, according to the result of post")
 
   (trace [_ req ctx] "Intercept tracing, providing an alternative implementation, return a Ring response map.")
