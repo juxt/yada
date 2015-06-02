@@ -280,7 +280,6 @@
               ;; Method Not Allowed
               (link ctx
                 (let [am (allowed-methods ctx)]
-                  (infof "am is %s" (seq am) )
                   (when-not (contains? (allowed-methods ctx) method)
                     (d/error-deferred
                      (ex-info (format "Method not allowed: %s" method)
@@ -454,13 +453,11 @@
 
                                (assoc-in ctx [:response :headers "last-modified"] (format-date last-modified))))
 
-                           (do
-                             (infof "No if-modified-since header: %s" (:headers req))
-                             (or
-                              (some->> (if (d/deferrable? last-modified) @last-modified last-modified)
-                                       format-date
-                                       (assoc-in ctx [:response :headers "last-modified"]))
-                              ctx))))))
+                           (or
+                            (some->> (if (d/deferrable? last-modified) @last-modified last-modified)
+                                     format-date
+                                     (assoc-in ctx [:response :headers "last-modified"]))
+                            ctx)))))
 
                    ;; Create body
                    (fn [ctx]
