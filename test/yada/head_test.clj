@@ -14,7 +14,7 @@
         request (request :head "/")
         response @(handler request)]
     (given response
-      :status 200
-      [:headers "content-type"] "text/plain"
-      [:headers "content-length"] nil ; see rfc7231.html#section-3.3
-      :body nil)))
+      :status := 200
+      [:headers "content-type"] := "text/plain"
+      [:headers "content-length"] :? nil? ; see rfc7231.html#section-3.3
+      :body :? nil?)))

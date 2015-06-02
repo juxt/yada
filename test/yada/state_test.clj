@@ -69,7 +69,7 @@
 
             ;; Since this resource does not allow the PUT method, we get a 405.
             (given @(yada resource (make-put))
-              :status 405)
+              :status := 405)
 
             ;; But for a resource that /does/ allow a PUT, the server
             ;; should create the resource with the given content and
@@ -81,7 +81,7 @@
                        ;; Enable PUT on the resource
                        resource
                        (make-put))
-                :status 201)
+                :status := 201)
 
               (is (= (edn/read-string (slurp f)) state)
                 "The file content after the PUT was not the same as that
