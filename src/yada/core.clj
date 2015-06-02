@@ -116,17 +116,6 @@
 (defn as-sequential [s]
   (if (sequential? s) s [s]))
 
-(defn cors [allow-origin]
-  (fn [ctx]
-    (if-let [origin (p/allow-origin allow-origin ctx)]
-      (update-in ctx [:response :headers]
-                 merge {"access-control-allow-origin"
-                        origin
-                        "access-control-expose-headers"
-                        (apply str
-                               (interpose ", " ["Server" "Date" "Content-Length" "Access-Control-Allow-Origin"]))})
-      ctx)))
-
 (defn exists-flow [method state req status headers body post allow-origin]
   (fn [ctx]
     (case method
@@ -419,17 +408,17 @@
                ;; temporarily storing the whole (potentially huge) body
                ;; somewhere.
                #_(assoc req
-                      ;; We assoc in a 'delayed' body to the context's
-                      ;; version of the request. The first caller to
-                      ;; deref causes the slurp (which to do ahead of
-                      ;; time might be unnecessarily wasteful).
-                      :body (delay
-                             (if-let [body (:body req)]
-                               ;; TODO Don't slurp, read into a byte array
-                               ;; Does aleph provide access to the underlying javax.nio.ByteBuffer(s)?
-                               ;; (yes - provided option raw-stream? is true)
-                               (slurp body :encoding (or (character-encoding req) "utf8"))
-                               nil)))
+                        ;; We assoc in a 'delayed' body to the context's
+                        ;; version of the request. The first caller to
+                        ;; deref causes the slurp (which to do ahead of
+                        ;; time might be unnecessarily wasteful).
+                        :body (delay
+                               (if-let [body (:body req)]
+                                 ;; TODO Don't slurp, read into a byte array
+                                 ;; Does aleph provide access to the underlying javax.nio.ByteBuffer(s)?
+                                 ;; (yes - provided option raw-stream? is true)
+                                 (slurp body :encoding (or (character-encoding req) "utf8"))
+                                 nil)))
                :resource-map resource-map})
 
              (d/chain
@@ -600,31 +589,214 @@
               ;; Split the flow based on the existence of the resource
               (fn [ctx]
 
-                (cond
-                  ;; 'Exists' flow
-                  ;; TODO: Not sure that exists-flow is what we're doing here - exists-flow has all kinds of things complected in it. Break up into individual cases, perhaps based on method. We are only using this to avoid the 404 of the 'not exists' flow. Perhaps check for existence and throw the 404 now if necessary.
-                  (or state body (#{:post :put} method))
+                (case method
+                  (:get :head)
                   (d/chain
                    ctx
-                   ;; Not sure we should use exists-flow for CORS pre-flight requests, should handle further above
-                   (exists-flow method state req status headers body post allow-origin)
-                   (cors allow-origin)
+
+                   ;; OK, let's pick the resource's state
+                   (fn [ctx]
+                     (d/chain
+                      state             ; could be nil
+                      #(p/state % ctx)
+                      (fn [state] (if state (assoc-in ctx [:resource :state] state) ctx))))
+
+                   ;; Conditional request
+                   (link ctx
+                     (let [state (get-in ctx [:resource :state])]
+                       (if-let [last-modified (yst/last-modified state)]
+
+                         (if-let [if-modified-since (some-> req
+                                                            (get-in [:headers "if-modified-since"])
+                                                            parse-date)]
+                           (let [last-modified (if (d/deferrable? last-modified) @last-modified last-modified)]
+
+                             (if (<=
+                                  (.getTime last-modified)
+                                  (.getTime if-modified-since))
+
+                               ;; exit with 304
+                               (d/error-deferred
+                                (ex-info "" (merge {:status 304
+                                                    ::http-response true}
+                                                   ctx)))
+
+                               (assoc-in ctx [:response :headers "last-modified"] (format-date last-modified))))
+
+                           (do
+                             (infof "No if-modified-since header: %s" (:headers req))
+                             (or
+                              (some->> (if (d/deferrable? last-modified) @last-modified last-modified)
+                                       format-date
+                                       (assoc-in ctx [:response :headers "last-modified"]))
+                              ctx))))))
+
+                   ;; Create body
+                   (fn [ctx]
+                     (let [state (get-in ctx [:resource :state])
+                           content-type
+                           (or (get-in ctx [:response :content-type])
+                               ;; It's possible another callback has set the content-type header
+                               (get-in headers ["content-type"])
+                               (when-not body
+                                 ;; Hang on, we should have done content neg by now
+                                 (rep/content-type-default state)))
+                           content-length (rep/content-length state)]
+
+                       (case method
+                         :head (if content-type
+                                 ;; We don't need to add Content-Length,
+                                 ;; Content-Range, Trailer or Tranfer-Encoding, as
+                                 ;; per rfc7231.html#section-3.3
+                                 (update-in ctx [:response :headers] assoc "content-type" content-type)
+                                 ctx)
+
+                         :get
+                         (d/chain
+
+                          ;; Determine body
+                          (cond
+                            body (p/body body ctx)
+                            state state ; the state here can still be deferred
+                            )
+
+                          ;; serialize to representation (an existing string will be left intact)
+                          (fn [state]
+                            (rep/content state content-type))
+
+                          ;; on nil, compose default result (if in dev)
+                          #_(fn [x] (if x x (rep/content nil content-type)))
+
+                          (fn [body]
+                            (if (not= method :head)
+                              (assoc-in ctx [:response :body] body)
+                              ctx))
+
+                          (fn [ctx]
+                            (if content-type
+                              (update-in ctx [:response :headers] assoc "content-type" content-type)
+                              ctx
+                              ))
+
+                          (fn [ctx]
+                            (if content-length
+                              (update-in ctx [:response :headers] assoc "content-length" content-length)
+                              ctx)))))))
+
+                  :put
+                  (d/chain
+                   ctx
+                   (link ctx
+                     (when-let [etag (get-in req [:headers "if-match"])]
+                       (when (not= etag (get-in ctx [:resource :etag]))
+                         (throw
+                          (ex-info "Precondition failed"
+                                   {:status 412
+                                    ::http-response true})))))
+
+                   ;; Do the put!
+                   (fn [ctx]
+                     (let [exists? (yst/exists? state)]
+                       (if-let [put (some-> ctx :resource-map :put)]
+                         ;; Custom put function
+                         ;; TODO Rename put to put!
+                         (p/put put ctx)
+                         ;; Default behaviour
+                         (if state
+                           (yst/write! state ctx)
+                           (throw (ex-info "No implementation of put" {}))))
+                       (assoc-in ctx [:response :status]
+                                 (if exists? 204 201)))))
+
+                  :post
+                  (d/chain
+                   ctx
+
+                   (link ctx
+                     (when-let [etag (get-in req [:headers "if-match"])]
+                       (when (not= etag (get-in ctx [:resource :etag]))
+                         (throw
+                          (ex-info "Precondition failed"
+                                   {:status 412
+                                    ::http-response true})))))
 
                    (fn [ctx]
-                     (merge
-                      {:status (or (get-in ctx [:response :status])
-                                   (p/status status ctx)
-                                   200)
-                       :headers (merge
-                                 (get-in ctx [:response :headers])
-                                 (p/headers headers ctx))
-                       ;; TODO :status and :headers should be implemented like this in all cases
-                       :body (get-in ctx [:response :body])}))
-                   )
+                     ;; TODO: what if error?
 
-                  ;; 'Not exists' flow
-                  :otherwise
-                  (d/chain ctx (constantly {:status 404})))))
+                     ;; TODO: Should separate p/post from p/interpret-post-result
+                     ;; because p/post could return a deferred, so we need to chain
+                     ;; them together rather than complicate logic in resource.clj
+                     (p/interpret-post-result (p/post post ctx) ctx))
+
+                   (fn [ctx]
+                     (-> ctx
+                         (assoc-in [:response :status] 200))))
+
+                  :options
+                  (d/chain
+                   ctx
+                   (link ctx
+                     (if-let [origin (p/allow-origin allow-origin ctx)]
+                       (update-in ctx [:response :headers]
+                                  merge {"access-control-allow-origin"
+                                         origin
+                                         "access-control-allow-methods"
+                                         (apply str
+                                                (interpose ", " ["GET" "POST" "PUT" "DELETE"]))}))))
+
+                  (throw (ex-info "Unknown method"
+                                  {:status 501
+                                   :http-response true})))
+
+                #_(cond
+                    ;; 'Exists' flow
+                    ;; TODO: Not sure that exists-flow is what we're doing here - exists-flow has all kinds of things complected in it. Break up into individual cases, perhaps based on method. We are only using this to avoid the 404 of the 'not exists' flow. Perhaps check for existence and throw the 404 now if necessary.
+                    (or state body (#{:post :put} method))
+                    (d/chain
+                     ctx
+                     ;; Not sure we should use exists-flow for CORS pre-flight requests, should handle further above
+                     (exists-flow method state req status headers body post allow-origin)
+                     (cors allow-origin)
+
+                     (fn [ctx]
+                       (merge
+                        {:status (or (get-in ctx [:response :status])
+                                     (p/status status ctx)
+                                     200)
+                         :headers (merge
+                                   (get-in ctx [:response :headers])
+                                   (p/headers headers ctx))
+                         ;; TODO :status and :headers should be implemented like this in all cases
+                         :body (get-in ctx [:response :body])}))
+                     )
+
+                    ;; 'Not exists' flow
+                    :otherwise
+                    (d/chain ctx (constantly {:status 404}))))
+
+              (fn [ctx]
+                (merge
+                 {:status (or (get-in ctx [:response :status])
+                              (p/status status ctx)
+                              200)
+                  :headers (merge
+                            (get-in ctx [:response :headers])
+                            (p/headers headers ctx))
+                  ;; TODO :status and :headers should be implemented like this in all cases
+                  :body (get-in ctx [:response :body])}))
+
+              (fn [ctx]
+               (if-let [origin (p/allow-origin allow-origin ctx)]
+                 (update-in ctx [:response :headers]
+                            merge {"access-control-allow-origin"
+                                   origin
+                                   "access-control-expose-headers"
+                                   (apply str
+                                          (interpose ", " ["Server" "Date" "Content-Length" "Access-Control-Allow-Origin"]))})
+                 ctx))
+
+              ;; End of chain
+              )
 
              ;; Handle exits
              (d/catch clojure.lang.ExceptionInfo
