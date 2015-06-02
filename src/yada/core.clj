@@ -304,8 +304,8 @@
                      "HTTP/1.1"))
     (doseq [[h v] (:headers req)] (println (format "%s: %s" (to-title-case h) v)))
     (println)
-    (when-let [body @(:body req)]
-      (print body))))
+    (when-let [body (:body req)]
+      (print (slurp body)))))
 
 ;; Allowed methods
 
@@ -367,9 +367,6 @@
      delete                             ; async-supported
      patch                              ; async-supported
      trace                              ; async-supported
-
-     ;; A switch to enable/disable tracing
-     trace?
 
      produces
      parameters

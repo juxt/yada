@@ -66,8 +66,6 @@
               :status 200
               )
 
-          ;; TODO: TRACE (better in a different test)
-
           ;; A PUT request arrives on a new URL, containing a
           ;; representation which is parsed into the following model :-
           (letfn [(make-put []
