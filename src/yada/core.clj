@@ -416,7 +416,6 @@
                      ;; Otherwise return the context unchanged
                      %)))
 
-              ;; Split the flow based on the existence of the resource
               (fn [ctx]
 
                 (case method
