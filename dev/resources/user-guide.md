@@ -375,6 +375,12 @@ negotiated between the user agent and the server to transfer that state.
 In fact, we can think of the world-wide web as a being a solution to a
 single problem: the distribution of state.
 
+[Explain Clojure's model of quantised state - state changes are modelled as snapshots which are wholly replaced with new versions as time progresses.]
+
+[Explain yada's extensible state protocol, and how it is satisfied by default implementations for java.io.File, clojure.lang.Atom (with watchers) - clojure.lang.Ref, and possibly by datomic.Database]
+
+[Explain the role of schema in constraining the state of a resource, and its role in influencing the defaulting of parameters that yada resources expect]
+
 ### Retrieving state
 
 Until now, when we have constructed bodies we have done so explicitly.
@@ -475,6 +481,11 @@ the PUT can proceed.
 <example ref="PutResourceMatchedEtag"/>
 
 <example ref="PutResourceUnmatchedEtag"/>
+
+#### DELETEs
+
+[TODO: Explain how PUTs and DELETEs return '202 Accepted' on deferred responses]
+
 
 ## Conditional Requests
 
