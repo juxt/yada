@@ -55,7 +55,8 @@
         (io/delete-file f)
         (is (not (exists? f)))
 
-        (let [resource {:state f}
+        (let [resource {:state f
+                        :methods #{:get :head :put :delete}}
               state {:username "alice" :name "Alice"}]
 
           (given resource
@@ -67,29 +68,39 @@
                     (merge (request :put "/")
                            {:body (ByteArrayInputStream. (.getBytes (pr-str state)))}))]
 
-            ;; Since this resource does not allow the PUT method, we get a 405.
-            (given @(yada resource (make-put))
+            ;; If this resource didn't allow the PUT method, we'd get a 405.
+            (given @(yada (update-in resource [:methods] disj :put) (make-put))
               :status := 405)
 
-            ;; But for a resource that /does/ allow a PUT, the server
+            ;; The resource allows a PUT, the server
             ;; should create the resource with the given content and
             ;; receive a 201.
 
-            (let [resource (update-in resource [:methods] conj :put)]
+            (given @(yada resource (make-put))
+              :status := 201)
 
-              (given @(yada
-                       ;; Enable PUT on the resource
-                       resource
-                       (make-put))
-                :status := 201)
-
-              (is (= (edn/read-string (slurp f)) state)
+            (is (= (edn/read-string (slurp f)) state)
                 "The file content after the PUT was not the same as that
-                in the request"))
+                in the request")
 
             (given @(yada resource (request :get "/"))
               :status := 200
               [:body slurp edn/read-string] := state)
+
+            ;; Update the resource, since it already exists, we get a 204
+            ;; TODO Check spec, is this the correct status code?
+            (given @(yada resource (make-put))
+              :status := 204)
+
+            (given @(yada resource (request :delete "/"))
+              :status := 204)
+
+            (given @(yada resource (request :get "/"))
+              :status := 404
+              :body :? nil?)
+
+            (is (not (.exists f)) "File should have been deleted by the DELETE")
+
             ))
 
         (finally (when (exists? f) (io/delete-file f))))))

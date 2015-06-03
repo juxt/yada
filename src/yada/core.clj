@@ -196,10 +196,10 @@
      security
 
      ;; Actions
-     put!                                ; async-supported
-     post!                               ; async-supported
-     delete!                             ; async-supported
-     patch!                              ; async-supported
+     put!                               ; async-supported
+     post!                              ; async-supported
+     delete!                            ; async-supported
+     patch!                             ; async-supported
      trace                              ; async-supported
 
      produces
@@ -270,6 +270,7 @@
                       (contains? known-methods method)
                       )
                   (d/error-deferred (ex-info "" {:status 501
+                                                 ::method method
                                                  ::http-response true}))))
 
               (link ctx
@@ -418,6 +419,7 @@
 
               (fn [ctx]
 
+                (infof "Method is %s" method)
                 (case method
                   (:get :head)
                   (d/chain
@@ -429,6 +431,14 @@
                       state             ; could be nil
                       #(p/state % ctx)
                       (fn [state] (if state (assoc-in ctx [:resource :state] state) ctx))))
+
+                   ;; Perhaps the resource doesn't exist
+                   (link ctx
+                     (when-let [state (get-in ctx [:resource :state])]
+                       (when-not (yst/exists? state)
+                         (d/error-deferred (ex-info "" {:status 404
+                                                        ::http-response true})))))
+
 
                    ;; Conditional request
                    (link ctx
@@ -524,12 +534,18 @@
                    ;; Do the put!
                    (fn [ctx]
                      (let [exists? (yst/exists? state)]
-                       (cond
-                         put! (p/put! put! ctx)
-                         state (yst/write! state ctx)
-                         :otherwise (throw (ex-info "No implementation of put!" {})))
+                       (let [res
+                             (cond
+                               put! (p/put! put! ctx)
+                               state (yst/write! state ctx)
+                               :otherwise (throw (ex-info "No implementation of put!" {})))]
 
-                       (assoc-in ctx [:response :status] (if exists? 204 201)))))
+                         (assoc-in ctx [:response :status]
+                                   (cond
+                                     (d/deferred? res) 202
+                                     exists? 204
+                                     :otherwise 201
+                                     ))))))
 
                   :post
                   (d/chain
@@ -555,6 +571,23 @@
                      (-> ctx
                          (assoc-in [:response :status] 200))))
 
+                  :delete
+                  (d/chain
+                   ctx
+                   (fn [ctx]
+                     (if (yst/exists? state)
+                       (let [res
+                             (cond
+                               delete! (p/delete! delete! ctx)
+                               state (yst/delete! state ctx)
+                               :otherwise (throw (ex-info "No implementation of delete!" {})))]
+                         (assoc-in ctx [:response :status] (if (d/deferred? res) 202 204)))
+
+                       ;; Doesn't exist!
+                       (assoc-in ctx [:response :status] 404)
+
+                       )))
+
                   :options
                   (d/chain
                    ctx
@@ -567,9 +600,10 @@
                                          (apply str
                                                 (interpose ", " ["GET" "POST" "PUT" "DELETE"]))}))))
 
-                  (throw (ex-info "Unknown method"
+                  (throw (ex-info "Unimplemented method"
                                   {:status 501
-                                   :http-response true})))
+                                   ::method method
+                                   ::http-response true})))
 
                 #_(cond
                     ;; 'Exists' flow
@@ -609,14 +643,14 @@
                   :body (get-in ctx [:response :body])}))
 
               (fn [ctx]
-               (if-let [origin (p/allow-origin allow-origin ctx)]
-                 (update-in ctx [:response :headers]
-                            merge {"access-control-allow-origin"
-                                   origin
-                                   "access-control-expose-headers"
-                                   (apply str
-                                          (interpose ", " ["Server" "Date" "Content-Length" "Access-Control-Allow-Origin"]))})
-                 ctx))
+                (if-let [origin (p/allow-origin allow-origin ctx)]
+                  (update-in ctx [:response :headers]
+                             merge {"access-control-allow-origin"
+                                    origin
+                                    "access-control-expose-headers"
+                                    (apply str
+                                           (interpose ", " ["Server" "Date" "Content-Length" "Access-Control-Allow-Origin"]))})
+                  ctx))
 
               ;; End of chain
               )

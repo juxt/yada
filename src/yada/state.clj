@@ -14,7 +14,8 @@
 (defprotocol State
   (exists? [_] "Whether the state actually exists")
   (last-modified [_] "Return the date that the state was last modified.")
-  (write! [_ ctx] "Overwrite the state with the given representation. The content-type is the media-type and parameters include :charset"))
+  (write! [_ ctx] "Overwrite the state with the given representation. The content-type is the media-type and parameters include :charset. If a deferred is returned, the HTTP response status is set to 202")
+  (delete! [_ ctx] "Delete the state. If a deferred is returned, the HTTP response status is set to 202"))
 
 (extend-protocol State
   clojure.lang.Fn
@@ -43,6 +44,10 @@
     ;; However, the file will still be written if the body is a 'plain
     ;; old' java.io.InputStream. Hence, the best of both worlds.
     (bs/transfer (-> ctx :request :body) f))
+
+  (delete! [f ctx]
+    (when (.exists f)
+      (io/delete-file f)))
 
   Date
   (last-modified [d] d)
