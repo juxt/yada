@@ -26,23 +26,25 @@
   (as-test-function [s] #(get % s)))
 
 (defmacro given [v & body]
-  `(do
-     ~@(for [[a b c] (partition 3 body)]
-        (case b
-          ;; Equals?
-          := `(is (= ((as-test-function ~a) ~v) ~c))
-          :!= `(is (not= ((as-test-function ~a) ~v) ~c))
-          ;; Schema checks
-          :- `(is (nil? (s/check ~c ((as-test-function ~a) ~v))))
-          ;; Is?
-          :? `(is (~c ((as-test-function ~a) ~v)))
-          :!? `(is (not (~c ((as-test-function ~a) ~v))))
-          ;; Matches regex?
-          :# `(is (re-matches (re-pattern ~c) ((as-test-function ~a) ~v)))
-          :!# `(is (not (re-matches (re-pattern ~c) ((as-test-function ~a) ~v))))
-          ;; Is superset?
-          :> `(is (set/superset? (set ((as-test-function ~a) ~v)) (set ~c)))
-          :!> `(is (not (set/superset? (set ((as-test-function ~a) ~v)) (set ~c))))
-          ;; Is subset?
-          :< `(is (set/subset? (set ((as-test-function ~a) ~v)) (set ~c)))
-          :!< `(is (not (set/subset? (set ((as-test-function ~a) ~v)) (set ~c))))))))
+  (let [t (gensym)]
+    `(do
+       (let [~t ~v]
+         ~@(for [[a b c] (partition 3 body)]
+             (case b
+               ;; Equals?
+               := `(is (= ((as-test-function ~a) ~t) ~c))
+               :!= `(is (not= ((as-test-function ~a) ~t) ~c))
+               ;; Schema checks
+               :- `(is (nil? (s/check ~c ((as-test-function ~a) ~t))))
+               ;; Is?
+               :? `(is (~c ((as-test-function ~a) ~t)))
+               :!? `(is (not (~c ((as-test-function ~a) ~t))))
+               ;; Matches regex?
+               :# `(is (re-matches (re-pattern ~c) ((as-test-function ~a) ~t)))
+               :!# `(is (not (re-matches (re-pattern ~c) ((as-test-function ~a) ~t))))
+               ;; Is superset?
+               :> `(is (set/superset? (set ((as-test-function ~a) ~t)) (set ~c)))
+               :!> `(is (not (set/superset? (set ((as-test-function ~a) ~t)) (set ~c))))
+               ;; Is subset?
+               :< `(is (set/subset? (set ((as-test-function ~a) ~t)) (set ~c)))
+               :!< `(is (not (set/subset? (set ((as-test-function ~a) ~t)) (set ~c))))))))))
