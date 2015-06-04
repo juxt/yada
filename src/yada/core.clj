@@ -382,8 +382,7 @@
                                               print-request
                                               with-out-str
                                               ;; only "7bit", "8bit", or "binary" are permitted (RFC 7230 8.3.1)
-                                              (to-encoding "utf8")
-                                              )]
+                                              (to-encoding "utf8"))]
 
                                  {:status 200
                                   :headers {"content-type" "message/http;charset=utf8"
@@ -401,25 +400,23 @@
               ;; TODO OPTIONS
 
               ;; Content-negotiation - partly done here to throw back to the client any errors
-              #(let [produces (or (p/produces produces)
-                                  (p/produces-from-body body))]
-                 (if-let [content-type
-                          (best-allowed-content-type
-                           (or (get-in req [:headers "accept"]) "*/*")
-                           produces
-                           )]
-                   (assoc-in % [:response :content-type] content-type)
-                   (if produces
-                     ;; If there is a produces specification, but not
-                     ;; matched content-type, it's a 406.
-                     (d/error-deferred (ex-info "" {:status 406
-                                                    ::http-response true}))
-                     ;; Otherwise return the context unchanged
-                     %)))
+              (fn [ctx]
+                (let [produces (or (p/produces produces)
+                                   (p/produces-from-body body))]
+                  (if-let [content-type
+                           (best-allowed-content-type
+                            (or (get-in req [:headers "accept"]) "*/*")
+                            produces)]
+                    (assoc-in ctx [:response :content-type] content-type)
+                    (if produces
+                      ;; If there is a produces specification, but not
+                      ;; matched content-type, it's a 406.
+                      (d/error-deferred (ex-info "" {:status 406
+                                                     ::http-response true}))
+                      ;; Otherwise return the context unchanged
+                      ctx))))
 
               (fn [ctx]
-
-                (infof "Method is %s" method)
                 (case method
                   (:get :head)
                   (d/chain
@@ -494,8 +491,8 @@
                           ;; Determine body
                           (cond
                             body (p/body body ctx)
-                            state state ; the state here can still be deferred
-                            )
+                            ;; the state here can still be deferred
+                            state state)
 
                           ;; serialize to representation (an existing string will be left intact)
                           (fn [state]
@@ -544,8 +541,7 @@
                                    (cond
                                      (d/deferred? res) 202
                                      exists? 204
-                                     :otherwise 201
-                                     ))))))
+                                     :otherwise 201))))))
 
                   :post
                   (d/chain
@@ -560,12 +556,21 @@
                                     ::http-response true})))))
 
                    (fn [ctx]
-                     ;; TODO: what if error?
+                     (let [result
+                           (cond
+                             post! (p/post! post! ctx)
+                             state (yst/insert! state ctx)
+                             :otherwise (throw (ex-info "No implementation of put!" {})))]
 
-                     ;; TODO: Should separate p/post! from p/interpret-post-result
-                     ;; because p/post! could return a deferred, so we need to chain
-                     ;; them together rather than complicate logic in resource.clj
-                     (p/interpret-post-result (p/post! post! ctx) ctx))
+                       ;; TODO: what if error?
+
+                       (assoc ctx :post-result result)
+
+                       ))
+
+                   (fn [ctx]
+                     (p/interpret-post-result (:post-result ctx) ctx))
+
 
                    (fn [ctx]
                      (-> ctx
@@ -575,18 +580,14 @@
                   (d/chain
                    ctx
                    (fn [ctx]
-                     (if (yst/exists? state)
+                     (if-not (yst/exists? state)
+                       (assoc-in ctx [:response :status] 404)
                        (let [res
                              (cond
                                delete! (p/delete! delete! ctx)
                                state (yst/delete! state ctx)
                                :otherwise (throw (ex-info "No implementation of delete!" {})))]
-                         (assoc-in ctx [:response :status] (if (d/deferred? res) 202 204)))
-
-                       ;; Doesn't exist!
-                       (assoc-in ctx [:response :status] 404)
-
-                       )))
+                         (assoc-in ctx [:response :status] (if (d/deferred? res) 202 204))))))
 
                   :options
                   (d/chain
@@ -624,33 +625,38 @@
                                    (get-in ctx [:response :headers])
                                    (p/headers headers ctx))
                          ;; TODO :status and :headers should be implemented like this in all cases
-                         :body (get-in ctx [:response :body])}))
-                     )
+                         :body (get-in ctx [:response :body])})))
 
                     ;; 'Not exists' flow
                     :otherwise
                     (d/chain ctx (constantly {:status 404}))))
 
-              (fn [ctx]
-                (merge
-                 {:status (or (get-in ctx [:response :status])
-                              (p/status status ctx)
-                              200)
-                  :headers (merge
-                            (get-in ctx [:response :headers])
-                            (p/headers headers ctx))
-                  ;; TODO :status and :headers should be implemented like this in all cases
-                  :body (get-in ctx [:response :body])}))
+              #_(fn [ctx]
+                  (if-let [origin (p/allow-origin allow-origin ctx)]
+                    (update-in ctx [:response :headers]
+                               merge {"access-control-allow-origin"
+                                      origin
+                                      "access-control-expose-headers"
+                                      (apply str
+                                             (interpose ", " ["Server" "Date" "Content-Length" "Access-Control-Allow-Origin"]))})
+                    ctx))
 
+              ;; Response generation
               (fn [ctx]
-                (if-let [origin (p/allow-origin allow-origin ctx)]
-                  (update-in ctx [:response :headers]
-                             merge {"access-control-allow-origin"
-                                    origin
-                                    "access-control-expose-headers"
-                                    (apply str
-                                           (interpose ", " ["Server" "Date" "Content-Length" "Access-Control-Allow-Origin"]))})
-                  ctx))
+                (infof "Response generation")
+                (let [response
+                      (merge
+                       {:status (or (get-in ctx [:response :status])
+                                    (p/status status ctx)
+                                    200)
+                        :headers (merge
+                                  (get-in ctx [:response :headers])
+                                  (p/headers headers ctx))
+                        ;; TODO :status and :headers should be implemented like this in all cases
+                        :body (get-in ctx [:response :body])})]
+                  (infof "Returning response: %s" response)
+                  response
+                  ))
 
               ;; End of chain
               )

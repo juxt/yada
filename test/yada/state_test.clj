@@ -7,17 +7,20 @@
    [clojure.java.io :as io]
    [clojure.tools.logging :refer :all]
    [yada.core :refer [yada]]
+   [yada.bidi :as yb]
    [yada.state :as yst]
    [ring.mock.request :refer [request]]
    [ring.util.time :refer (parse-date format-date)]
-   [yada.test.util :refer (given)])
+   [yada.test.util :refer (given)]
+   [bidi.bidi :refer (Matched)]
+   [bidi.ring :refer (make-handler)])
   (:import [java.util Date]
            [java.io File BufferedInputStream ByteArrayInputStream]))
 
 (def exists? (memfn exists))
 
 ;; Test a resource where the state is an actual file
-(deftest file-test
+#_(deftest file-test
   (let [resource {:state (io/file "test/yada/state/test.txt")}
         handler (yada resource)
         request (request :get "/")
@@ -46,12 +49,10 @@
                                 (format-date (Date. (.lastModified (:state resource))))))
             :status := 304))))
 
-(deftest temp-file-test
+#_(deftest temp-file-test
   (testing "creation of a new file"
     (let [f (java.io.File/createTempFile "yada" nil nil)]
-      (infof "temp file is %s" f)
       (try
-
         (io/delete-file f)
         (is (not (exists? f)))
 
@@ -112,6 +113,48 @@
         (if (yst/exists? state)
           (fetch-state state)
           404))))
+
+(deftest temp-dir-test
+  (let [f (java.io.File/createTempFile "yada" nil nil)]
+    (io/delete-file f)
+    (is (not (exists? f)))
+    (.mkdirs f)
+    (is (exists? f))
+
+    (let [resource {:state f
+                    :methods #{:get :head :put :delete}}
+          handler (yb/resource resource)
+          root-handler (make-handler ["/" handler])]
+
+      (given f
+        identity :? yst/exists?
+        [(memfn listFiles) count] := 0)
+
+      ;; PUT a new file
+      (given @(root-handler
+               (merge (request :put "/abc.txt")
+                      {:body (ByteArrayInputStream. (.getBytes "foo"))}))
+        :status := 204)
+
+      (given f
+        [(memfn listFiles) count] := 1)
+
+      ;; DELETE the new file
+      (given @(root-handler (request :delete "/abc.txt"))
+        :status := 204)
+
+      (given f
+        [(memfn listFiles) count] := 0)
+
+      ;; DELETE the directory
+      (given @(root-handler (request :delete "/"))
+        :status := 204)
+
+      (given f
+        identity :!? yst/exists?))))
+
+
+;; TODO Finish the above, then start serving whole directories!
 
 ;; Test a single resource. Note that this isn't a particularly useful
 ;; resource, because it contains no knowledge of when it was modified,

@@ -22,7 +22,7 @@
     ;; Succeed, returning this, because this satisfies Ring (below), so
     ;; can be called by the handler created by bidi's make-handler
     ;; function.
-    (succeed this m))
+    (merge m {:handler this}))
   (unresolve-handler [this m]
     (when (= this (:handler m)) ""))
 
@@ -34,8 +34,12 @@
 
   Ring
   (request [_ req match-context]
-    (let [h (yada (merge (get match-context k-resource-map) resource-map))]
-      (h req))))
+    (when-let [path-info (:path-info req)]
+      (throw (ex-info "path-info already set on request" {:path-info path-info})))
+    (yada (merge (get match-context k-resource-map) resource-map)
+          (if (not-empty (:remainder match-context))
+            (assoc req :path-info (:remainder match-context))
+            req))))
 
 (defn- resource* [{:as resource-map}]
   (-> (->Resource resource-map)
