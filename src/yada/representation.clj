@@ -1,6 +1,7 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.representation
+  (:refer-clojure :exclude [type])
   (:require [cheshire.core :as json]
             [clojure.java.io :as io]
             [hiccup.core :refer [html]]
@@ -11,6 +12,35 @@
            [java.io File]
            [java.net URL]
            [manifold.stream.async CoreAsyncSource]))
+
+(defprotocol MediaType
+  "Content type, with parameters, as per rfc2616.html#section-3.7"
+  (type [_] "")
+  (subtype [_])
+  (parameter [_ name]))
+
+(defrecord MediaTypeMap [type subtype parameters]
+  MediaType
+  (type [_] type)
+  (subtype [_] subtype)
+  (parameter [_ name] (get parameters name)))
+
+(def token #"[^()<>@,;:\\\"/\[\]?={}\ \t]+")
+
+(def media-type
+  (re-pattern (str "(" token ")"
+                   "/"
+                   "(" token ")"
+                   "((?:" ";" token "=" token ")*)")))
+
+(defn string->media-type [s]
+  (let [g (rest (re-matches media-type s))]
+    (->MediaTypeMap
+     (first g)
+     (second g)
+     (into {} (map vec (map rest (re-seq (re-pattern (str ";(" token ")=(" token ")"))
+                                         (last g))))))))
+
 
 ;; From representation
 
