@@ -50,6 +50,11 @@
   Number
   (last-modified [l] (Date. l))
 
+  String
+  (exists? [s] true)
+  (last-modified [s] nil)
+  (get-state [s content-type ctx] s)
+
   File
   (exists? [f] (.exists f))
   (last-modified [f] (Date. (.lastModified f)))

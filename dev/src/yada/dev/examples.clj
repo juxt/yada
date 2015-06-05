@@ -46,7 +46,7 @@
 
 (defrecord HelloWorld []
   Example
-  (resource-map [_] '{:body "Hello World!"})
+  (resource-map [_] '{:state "Hello World!"})
   (make-handler [ex] (yada (eval (resource-map ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
