@@ -5,6 +5,7 @@
             [bidi.ring :refer (Ring)]
             [cheshire.core :as json]
             [clojure.core.async :as a]
+            [clojure.java.io :as io]
             [clojure.pprint :refer (pprint)]
             [clojure.set :as set]
             [clojure.string :as str]
@@ -27,8 +28,8 @@
             [yada.conneg :refer (best-allowed-content-type)]
             [yada.representation :as rep]
             [yada.resource :as p]
-            [yada.util :refer (link)]
-            [yada.state :as yst])
+            [yada.state :as yst]
+            [yada.util :refer (link)])
   (:import (clojure.lang IPending)
            (java.util Date)
            (java.util.concurrent Future)
@@ -465,7 +466,7 @@
                                      (assoc-in ctx [:response :headers "last-modified"]))
                             ctx)))))
 
-                   ;; Create body
+                   ;; Get body
                    (fn [ctx]
                      (let [state (get-in ctx [:resource :state])
                            content-type
@@ -492,30 +493,25 @@
                           (cond
                             body (p/body body ctx)
                             ;; the state here can still be deferred
-                            state state)
+                            state (or (yst/get-state state content-type ctx)
+                                      (throw (ex-info "" {:status 404
+                                                          ::http-response true}))))
 
                           ;; serialize to representation (an existing string will be left intact)
-                          (fn [state]
+                          #_(fn [state]
                             (rep/content state content-type))
 
-                          ;; on nil, compose default result (if in dev)
-                          #_(fn [x] (if x x (rep/content nil content-type)))
-
                           (fn [body]
-                            (if (not= method :head)
-                              (assoc-in ctx [:response :body] body)
-                              ctx))
+                            (assoc-in ctx [:response :body] body))
 
-                          (fn [ctx]
-                            (if content-type
-                              (update-in ctx [:response :headers] assoc "content-type" content-type)
-                              ctx
-                              ))
+                          (link ctx
+                            (when content-type
+                              (update-in ctx [:response :headers] assoc "content-type" content-type)))
 
-                          (fn [ctx]
-                            (if content-length
-                              (update-in ctx [:response :headers] assoc "content-length" content-length)
-                              ctx)))))))
+                          (link ctx
+                            (when content-length
+                              (update-in ctx [:response :headers] assoc "content-length" content-length))))))))
+
 
                   :put
                   (d/chain
@@ -534,7 +530,8 @@
                        (let [res
                              (cond
                                put! (p/put! put! ctx)
-                               state (yst/write! state ctx)
+                               ;; TODO: Add content and content-type
+                               state (yst/put-state! state nil nil ctx)
                                :otherwise (throw (ex-info "No implementation of put!" {})))]
 
                          (assoc-in ctx [:response :status]
@@ -559,7 +556,7 @@
                      (let [result
                            (cond
                              post! (p/post! post! ctx)
-                             state (yst/insert! state ctx)
+                             state (yst/post-state! state ctx)
                              :otherwise (throw (ex-info "No implementation of put!" {})))]
 
                        ;; TODO: what if error?
@@ -585,7 +582,7 @@
                        (let [res
                              (cond
                                delete! (p/delete! delete! ctx)
-                               state (yst/delete! state ctx)
+                               state (yst/delete-state! state ctx)
                                :otherwise (throw (ex-info "No implementation of delete!" {})))]
                          (assoc-in ctx [:response :status] (if (d/deferred? res) 202 204))))))
 
@@ -643,7 +640,6 @@
 
               ;; Response generation
               (fn [ctx]
-                (infof "Response generation")
                 (let [response
                       (merge
                        {:status (or (get-in ctx [:response :status])

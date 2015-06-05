@@ -8,7 +8,7 @@
    [clojure.tools.logging :refer :all]
    [yada.core :refer [yada]]
    [yada.bidi :as yb]
-   [yada.state :as yst]
+   [yada.state :as yst :refer (legal-name)]
    [ring.mock.request :refer [request]]
    [ring.util.time :refer (parse-date format-date)]
    [yada.test.util :refer (given)]
@@ -18,6 +18,13 @@
            [java.io File BufferedInputStream ByteArrayInputStream]))
 
 (def exists? (memfn exists))
+
+(deftest legal-name-test
+  (are [x] (not (legal-name x))
+    ".." "./foo" "./../home" "./.." "/foo" "a/b"
+    )
+  (are [x] (legal-name x)
+    "a" "b.txt" "c..txt"))
 
 ;; Test a resource where the state is an actual file
 #_(deftest file-test
@@ -49,70 +56,57 @@
                                 (format-date (Date. (.lastModified (:state resource))))))
             :status := 304))))
 
-#_(deftest temp-file-test
+(deftest temp-file-test
   (testing "creation of a new file"
     (let [f (java.io.File/createTempFile "yada" nil nil)]
-      (try
-        (io/delete-file f)
-        (is (not (exists? f)))
+      (io/delete-file f)
+      (is (not (exists? f)))
 
-        (let [resource {:state f
-                        :methods #{:get :head :put :delete}}
-              state {:username "alice" :name "Alice"}]
+      (let [resource {:state f
+                      :methods #{:get :head :put :delete}}
+            state {:username "alice" :name "Alice"}]
 
-          (given resource
-            :state :!? yst/exists?)
+        (given resource
+          :state :!? yst/exists?)
 
-          ;; A PUT request arrives on a new URL, containing a
-          ;; representation which is parsed into the following model :-
-          (letfn [(make-put []
-                    (merge (request :put "/")
-                           {:body (ByteArrayInputStream. (.getBytes (pr-str state)))}))]
+        ;; A PUT request arrives on a new URL, containing a
+        ;; representation which is parsed into the following model :-
+        (letfn [(make-put []
+                  (merge (request :put "/")
+                         {:body (ByteArrayInputStream. (.getBytes (pr-str state)))}))]
 
-            ;; If this resource didn't allow the PUT method, we'd get a 405.
-            (given @(yada (update-in resource [:methods] disj :put) (make-put))
-              :status := 405)
+          ;; If this resource didn't allow the PUT method, we'd get a 405.
+          (given @(yada (update-in resource [:methods] disj :put) (make-put))
+            :status := 405)
 
-            ;; The resource allows a PUT, the server
-            ;; should create the resource with the given content and
-            ;; receive a 201.
+          ;; The resource allows a PUT, the server
+          ;; should create the resource with the given content and
+          ;; receive a 201.
 
-            (given @(yada resource (make-put))
-              :status := 201)
+          (given @(yada resource (make-put))
+            :status := 201)
 
-            (is (= (edn/read-string (slurp f)) state)
-                "The file content after the PUT was not the same as that
+          (is (= (edn/read-string (slurp f)) state)
+              "The file content after the PUT was not the same as that
                 in the request")
 
-            (given @(yada resource (request :get "/"))
-              :status := 200
-              [:body slurp edn/read-string] := state)
+          (given @(yada resource (request :get "/"))
+            :status := 200
+            [:body slurp edn/read-string] := state)
 
-            ;; Update the resource, since it already exists, we get a 204
-            ;; TODO Check spec, is this the correct status code?
-            (given @(yada resource (make-put))
-              :status := 204)
+          ;; Update the resource, since it already exists, we get a 204
+          ;; TODO Check spec, is this the correct status code?
+          (given @(yada resource (make-put))
+            :status := 204)
 
-            (given @(yada resource (request :delete "/"))
-              :status := 204)
+          (given @(yada resource (request :delete "/"))
+            :status := 204)
 
-            (given @(yada resource (request :get "/"))
-              :status := 404
-              :body :? nil?)
+          (given @(yada resource (request :get "/"))
+            :status := 404
+            :body :? nil?)
 
-            (is (not (.exists f)) "File should have been deleted by the DELETE")
-
-            ))
-
-        (finally (when (exists? f) (io/delete-file f))))))
-
-  #_(let [resource-map {:state (io/file "/tmp/foo")}]
-
-      ;; A GET request arrives on a new URL, containing a representation which is parsed into the following model :-
-      (let [state (:state resource-map)]
-        (if (yst/exists? state)
-          (fetch-state state)
-          404))))
+          (is (not (.exists f)) "File should have been deleted by the DELETE"))))))
 
 (deftest temp-dir-test
   (let [f (java.io.File/createTempFile "yada" nil nil)]
@@ -139,8 +133,34 @@
       (given f
         [(memfn listFiles) count] := 1)
 
-      ;; DELETE the new file
+      ;; GET the new file
+      (given @(root-handler (request :get "/abc.txt"))
+        :status := 200
+        [:body slurp] := "foo")
+
+      ;; PUT another file
+      (given @(root-handler
+               (merge (request :put "/def.txt")
+                      {:body (ByteArrayInputStream. (.getBytes "bar"))}))
+        :status := 204)
+
+      ;; GET the index
+      (given @(root-handler (request :get "/"))
+        :status := 200
+        [:body] := "abc.txt\ndef.txt")
+
+      ;; GET the file that doesn't exist
+      (given @(root-handler (request :get "/abcd.txt"))
+        :status := 404)
+
+      ;; DELETE the new files
       (given @(root-handler (request :delete "/abc.txt"))
+        :status := 204)
+
+      (given f
+        [(memfn listFiles) count] := 1)
+
+      (given @(root-handler (request :delete "/def.txt"))
         :status := 204)
 
       (given f
@@ -158,7 +178,9 @@
 
 ;; Test a single resource. Note that this isn't a particularly useful
 ;; resource, because it contains no knowledge of when it was modified,
-;; how big it is, etc.
+;; how big it is, etc. (unless we can infer where it came from, if jar,
+;; use the file-size stored in the java.util.zip.JarEntry for
+;; content-length.)
 
 #_(deftest resource-test
   (let [resource {:state (io/resource "public/css/fonts.css")}
