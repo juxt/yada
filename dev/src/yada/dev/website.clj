@@ -58,8 +58,11 @@
 (defrecord Website [*router templater]
   RouteProvider
   (routes [component]
-    ["/index.html" (-> (index component)
-                       (tag ::index))]))
+    ["/"
+     [["index.html" (-> (index component)
+                         (tag ::index))]
+      ["dir" (-> (yada :state (io/file "dev/resources"))
+                 (tag ::dir))]]]))
 
 (defn new-website [& {:as opts}]
   (-> (->> opts

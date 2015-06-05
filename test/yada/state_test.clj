@@ -147,7 +147,8 @@
       ;; GET the index
       (given @(root-handler (request :get "/"))
         :status := 200
-        [:body] := "abc.txt\ndef.txt")
+        [:body] := "abc.txt\ndef.txt"
+        [:headers "content-type"] := "text/html")
 
       ;; GET the file that doesn't exist
       (given @(root-handler (request :get "/abcd.txt"))

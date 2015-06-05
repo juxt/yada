@@ -400,9 +400,14 @@
 
               ;; TODO OPTIONS
 
-              ;; Content-negotiation - partly done here to throw back to the client any errors
+              ;; Content-negotiation - done here to throw back to the client any errors
               (fn [ctx]
                 (let [produces (or (p/produces produces)
+                                   ;; TODO This is the right place to
+                                   ;; negotiate content-type from the
+                                   ;; state as well. But since we are
+                                   ;; going to try merging state and
+                                   ;; body together...
                                    (p/produces-from-body body))]
                   (if-let [content-type
                            (best-allowed-content-type
@@ -499,7 +504,7 @@
 
                           ;; serialize to representation (an existing string will be left intact)
                           #_(fn [state]
-                            (rep/content state content-type))
+                              (rep/content state content-type))
 
                           (fn [body]
                             (assoc-in ctx [:response :body] body))
