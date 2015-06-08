@@ -21,22 +21,21 @@
 
 (deftest legal-name-test
   (are [x] (not (legal-name x))
-    ".." "./foo" "./../home" "./.." "/foo" "a/b"
-    )
+    ".." "./foo" "./../home" "./.." "/foo" "a/b")
   (are [x] (legal-name x)
     "a" "b.txt" "c..txt"))
 
 ;; Test a resource where the state is an actual file
-#_(deftest file-test
-  (let [resource {:state (io/file "test/yada/state/test.txt")}
-        handler (yada resource)
+(deftest file-test
+  (let [state (io/file "test/yada/state/test.txt")
+        handler (yada state)
         request (request :get "/")
         response @(handler request)]
 
     (testing "expectations of set-up"
-      (given resource
-        :state :? exists?
-        [:state (memfn getName)] "test.txt"))
+      (given state
+        identity :? exists?
+        (memfn getName) := "test.txt"))
 
     (testing "response"
       (given response
@@ -44,17 +43,18 @@
         :status := 200
         [:headers "content-type"] := "text/plain"
         [:body type] := File
-        [:headers "content-length"] := (.length (:state resource))))
+        [:headers "content-length"] := (.length state)))
 
     (testing "last-modified"
       (given response
-        [:headers "last-modified"] := "Sun, 24 May 2015 16:44:47 GMT"
-        [:headers "last-modified" parse-date (memfn getTime)] := (.lastModified (:state resource))))
+        ;; TODO: This is going to be brittle, move these tests into temp-file-test instead
+        [:headers "last-modified"] := "Tue, 09 Jun 2015 15:42:50 GMT"
+        [:headers "last-modified" parse-date (memfn getTime)] := (.lastModified state)))
 
     (testing "conditional-response"
       (given @(handler (assoc-in request [:headers "if-modified-since"]
-                                (format-date (Date. (.lastModified (:state resource))))))
-            :status := 304))))
+                                 (format-date (Date. (.lastModified state)))))
+        :status := 304))))
 
 (deftest temp-file-test
   (testing "creation of a new file"
@@ -62,49 +62,53 @@
       (io/delete-file f)
       (is (not (exists? f)))
 
-      (let [resource {:state f
-                      :methods #{:get :head :put :delete}}
-            state {:username "alice" :name "Alice"}]
+      (let [options {:methods #{:get :head :put :delete}}
+            newstate {:username "alice" :name "Alice"}]
 
-        (given resource
-          :state :!? yst/exists?)
+        (is (not (yst/exists? f)))
 
         ;; A PUT request arrives on a new URL, containing a
         ;; representation which is parsed into the following model :-
         (letfn [(make-put []
-                  (merge (request :put "/")
-                         {:body (ByteArrayInputStream. (.getBytes (pr-str state)))}))]
+                  (merge (request :put "/" )
+                         {:headers {"x-yada-debug" "true"}}
+                         {:body (ByteArrayInputStream. (.getBytes (pr-str newstate)))}))]
 
           ;; If this resource didn't allow the PUT method, we'd get a 405.
-          (given @(yada (update-in resource [:methods] disj :put) (make-put))
-            :status := 405)
+          (let [handler (yada f (update-in options [:methods] disj :put))]
+            (given @(handler (make-put))
+              :status := 405))
 
           ;; The resource allows a PUT, the server
           ;; should create the resource with the given content and
           ;; receive a 201.
 
-          (given @(yada resource (make-put))
-            :status := 201)
+          (let [handler (yada f options)]
+            (given @(handler (make-put))
+              :status := 201
+              :body :? nil?))
 
-          (is (= (edn/read-string (slurp f)) state)
+          (is (= (edn/read-string (slurp f)) newstate)
               "The file content after the PUT was not the same as that
                 in the request")
 
-          (given @(yada resource (request :get "/"))
-            :status := 200
-            [:body slurp edn/read-string] := state)
+          (let [handler (yada f options)]
+            (given @(handler (request :get "/"))
+              :status := 200
+              [:body slurp edn/read-string] := newstate)
 
-          ;; Update the resource, since it already exists, we get a 204
-          ;; TODO Check spec, is this the correct status code?
-          (given @(yada resource (make-put))
-            :status := 204)
+            ;; Update the resource, since it already exists, we get a 204
+            ;; TODO Check spec, is this the correct status code?
 
-          (given @(yada resource (request :delete "/"))
-            :status := 204)
+            (given @(handler (make-put))
+              :status := 204)
 
-          (given @(yada resource (request :get "/"))
-            :status := 404
-            :body :? nil?)
+            (given @(handler (request :delete "/"))
+              :status := 204)
+
+            (given @(handler (request :get "/"))
+              :status := 404
+              :body :? nil?))
 
           (is (not (.exists f)) "File should have been deleted by the DELETE"))))))
 
@@ -115,9 +119,9 @@
     (.mkdirs f)
     (is (exists? f))
 
-    (let [resource {:state f
-                    :methods #{:get :head :put :delete}}
-          handler (yb/resource resource)
+    (let [state f
+          options {:methods #{:get :head :put :delete}}
+          handler (yb/resource state options)
           root-handler (make-handler ["/" handler])]
 
       (given f

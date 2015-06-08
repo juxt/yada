@@ -16,7 +16,7 @@
   k-resource-map :yada/resource-map)
 
 ;; Define a resource which can act as a handler in a bidi
-(defrecord Resource [resource-map]
+(defrecord Resource [state options]
   Matched
   (resolve-handler [this m]
     ;; Succeed, returning this, because this satisfies Ring (below), so
@@ -30,26 +30,24 @@
   ;; as if it were a normal Ring handler function.
   clojure.lang.IFn
   (invoke [this req]
-    ((yada resource-map) req))
+    ((yada state options) req))
 
   Ring
   (request [_ req match-context]
     (when-let [path-info (:path-info req)]
       (throw (ex-info "path-info already set on request" {:path-info path-info})))
-    (yada (merge (get match-context k-resource-map) resource-map)
-          (if (not-empty (:remainder match-context))
-            (assoc req :path-info (:remainder match-context))
-            req))))
+    (let [handler (yada state (merge (get match-context k-resource-map) options))]
+      (handler (if (not-empty (:remainder match-context))
+                 (assoc req :path-info (:remainder match-context))
+                 req)))))
 
-(defn- resource* [{:as resource-map}]
-  (-> (->Resource resource-map)
-      ;; Inherit metadata, exploited for swagger spec gen
-      (with-meta (meta resource-map))))
-
-(defn resource [& args]
-  (if (keyword? (first args))
-    (resource* (into {} (map vec (partition 2 args))))
-    (resource* (first args))))
+(defn resource
+  ([state]
+   (resource state {}))
+  ([state {:as options}]
+   (-> (->Resource state options)
+       ;; Inherit metadata, exploited for swagger spec gen
+       (with-meta (meta options)))))
 
 (defn partial
   "Contextually bind a set of resource-map entries to the match

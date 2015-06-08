@@ -7,4 +7,5 @@
    [potemkin :refer (import-vars)]))
 
 (import-vars
- [yada.core yada])
+ [yada.core yada]
+ [yada.representation string->media-type])

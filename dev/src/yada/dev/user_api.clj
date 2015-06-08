@@ -36,27 +36,24 @@
        {"/users"
         {""
          (resource
-          ^{:swagger {:get {:summary "Get users"
-                            :description "Get a list of all known users"}}}
-          {:state (:users db)})
+          (:users db)
+          {:swagger {:get {:summary "Get users"
+                           :description "Get a list of all known users"}}})
 
          ["/" :username]
          {"" (resource
-              ^{:swagger {:get {:summary "Get user"
-                                :description "Get the details of a known user"
-                                }}}
-              {:state (fn [ctx]
-                        (when-let [user (get {"bob" {:name "Bob"}}
-                                             (-> ctx :parameters :username))]
-                          {:user user}))
+              (fn [ctx]
+                (when-let [user (get {"bob" {:name "Bob"}}
+                                     (-> ctx :parameters :username))]
+                  {:user user}))
+              {:swagger {:get {:summary "Get user"
+                               :description "Get the details of a known user"}}
                :parameters {:get {:path {:username s/Str}}}})
 
           "/posts" (resource
-                    ^{:swagger {:post {:summary "Create a new post"}}}
-                    {:state "Posts"
-                     :post (fn [ctx] nil)}
-
-                    )}}})
+                    "Posts"
+                    {:swagger {:post {:summary "Create a new post"}}
+                     :post (fn [ctx] nil)})}}})
       (tag ::user-api))]))
 
 (defn new-user-api []

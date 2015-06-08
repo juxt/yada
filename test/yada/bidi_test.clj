@@ -23,7 +23,7 @@
 
 (def api
   ["/api"
-   {"/status" (resource {:body "API working!"})
+   {"/status" (resource "API working!")
     "/hello" (fn [req] {:body "hello"})
     "/protected" (secure {"/a" (resource :body "Secret area A")
                           "/b" (resource :body "Secret area B")})}])

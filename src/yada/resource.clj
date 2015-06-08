@@ -5,8 +5,10 @@
             [clojure.set :as set]
             [clojure.tools.logging :refer :all :exclude [trace]]
             [manifold.deferred :as d]
-            [manifold.stream :refer (->source transform)])
+            [manifold.stream :refer (->source transform)]
+            [yada.representation :refer (MediaType full-type)])
   (import [clojure.core.async.impl.protocols ReadPort]
+          [yada.representation MediaTypeMap]
           [java.io File]
           [java.util Date]))
 
@@ -24,7 +26,6 @@
 
   (body [_ ctx] "Return a representation of the resource. Supply a function which can return a deferred, if necessary.")
   (produces [_] "Return the content-types, as a set, that the resource can produce")
-  (produces-from-body [_] "If produces yields nil, try to extract from body")
   (status [_ ctx] "Override the response status")
   (headers [_ ctx] "Override the response headers")
 
@@ -103,7 +104,6 @@
         (body res ctx))))
 
   (produces [f] (f))
-  (produces-from-body [f] nil)
 
   (post [f ctx]
     (f ctx))
@@ -120,10 +120,12 @@
   String
   (body [s _] s)
   (state [s ctx] s)
-  (produces-from-body [s] nil)
   (interpret-post-result [s ctx]
     (assoc-in ctx [:response :body] s))
   (format-event [ev] [(format "data: %s\n" ev)])
+
+  MediaTypeMap
+  (produces [m] [m])
 
   Number
   (service-available? [n _] n)
@@ -150,7 +152,6 @@
     ;; For matching on content-type, use a vector of vectors (TODO)
     (when-let [delegate (get m (get-in ctx [:response :content-type]))]
       (body delegate ctx)))
-  (produces-from-body [m] (keys m))
   (headers [m _] m)
   ;;(interpret-post-result [m _] m)
   (format-event [ev] )
@@ -172,7 +173,6 @@
   (body [_ _] nil)
   (post [_ _] nil)
   (produces [_] nil)
-  (produces-from-body [_] nil)
   (status [_ _] nil)
   (headers [_ _] nil)
   (interpret-post-result [_ ctx] ctx)

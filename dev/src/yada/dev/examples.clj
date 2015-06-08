@@ -28,9 +28,10 @@
 (defn chapter? [h] (instance? Chapter h))
 
 (defprotocol Example
-  (resource-map [_] "Return handler")
+  (resource [_] "Return handler")
+  (options [_] "Return resource options")
   (make-handler [_] "Create handler")
-  (request [_] "Return request sent to handler")
+  (request [_] "Return the example request that should be sent to handler")
   (path [_] "Where a resource is mounted")
   (path-args [_] "Any path arguments to use in the URI")
   (query-string [_] "Query string to add to the request")
@@ -46,24 +47,24 @@
 
 (defrecord HelloWorld []
   Example
-  (resource-map [_] '{:state "Hello World!"})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (resource [_] "Hello World!")
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 
 (defrecord DynamicHelloWorld []
   Example
-  (resource-map [_] '{:body (fn [ctx] "Hello World!")})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (resource [_] '{:body (fn [ctx] "Hello World!")})
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 
 (defrecord AsyncHelloWorld []
   Example
-  (resource-map [_] '{:body (fn [ctx]
+  (resource [_] '{:body (fn [ctx]
                               (future (Thread/sleep 1000)
                                       "Hello World!"))})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 
@@ -71,11 +72,12 @@
 
 (defrecord PathParameterUndeclared []
   Example
-  (resource-map [_]
+  (resource [_]
     '{:body (fn [ctx]
               (str "Account number is "
                    (-> ctx :request :route-params :account)))})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (options [_] '{})
+  (make-handler [ex] (yada (eval (resource ex))))
   (path [r] [(basename r) "/" :account])
   (path-args [_] [:account 1234])
   (request [_] {:method :get})
@@ -91,13 +93,14 @@
 
 (defrecord ParameterDeclaredPathQueryWithGet []
   Example
-  (resource-map [_]
-    {:parameters common-params
+  (resource [_]
+    {
      :body '(fn [ctx]
               (let [{:keys [since account]} (:parameters ctx)]
                 (format "List transactions since %s from account number %s"
                           since account)))})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (options [_] {:parameters common-params})
+  (make-handler [ex] (yada (eval (resource ex))))
   (path [r] [(basename r) "/" :account])
   (path-args [_] [:account 1234])
   (request [_] {:method :get})
@@ -106,12 +109,12 @@
 
 (defrecord ParameterDeclaredPathQueryWithPost []
   Example
-  (resource-map [_]
+  (resource [_]
     {:parameters
      common-params
      :post! '(fn [ctx]
                (format "Thank you for posting %s" (-> ctx :parameters :body)))})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (path [r] [(basename r) "/" :account])
   (path-args [_] [:account 1234])
   (request [_] {:method :post
@@ -123,12 +126,12 @@
 
 (defrecord FormParameter []
   Example
-  (resource-map [_]
+  (resource [_]
     {:parameters
      {:post {:form {:email String}}}
      :post! '(fn [ctx] (format "Saving email: %s" (-> ctx :parameters :email)))
      })
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :post
                 :headers {"Content-Type" "application/x-www-form-urlencoded;charset=US-ASCII"}
                 :data "email=alice%40example.org"})
@@ -136,34 +139,34 @@
 
 (defrecord HeaderParameter []
   Example
-  (resource-map [_]
+  (resource [_]
     {:parameters
      {:get {:header {:x-tag String}}}
      :body '(fn [ctx] (format "x-tag is %s" (-> ctx :parameters :x-tag)))
      })
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :get
                 :headers {"X-Tag" "foobar"}})
   (expected-response [_] {:status 200}))
 
 #_(defrecord PathParameterRequired []
   Example
-  (resource-map [_]
+  (resource [_]
     '{:parameters
       {:path {:account schema.core/Num}}
       :body (fn [ctx] (str "Account number is " (-> ctx :parameters :account)))})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 400}))
 
 #_(defrecord PathParameterCoerced []
   Example
-  (resource-map [_]
+  (resource [_]
     '{:params
       {:account {:in :path :type Long}
        :account-type {:in :path :type schema.core/Keyword}}
       :body (fn [ctx] (format "Type of account parameter is %s, account type is %s" (-> ctx :params :account type) (-> ctx :params :account-type)))})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (path [r] [(basename r) "/" :account-type "/" :account])
   (path-args [_] [:account 1234 :account-type "savings"])
   (request [_] {:method :get})
@@ -171,11 +174,11 @@
 
 #_(defrecord PathParameterCoercedError []
   Example
-  (resource-map [_]
+  (resource [_]
     '{:params
       {:account {:in :path :type Long :required true}}
       :body (fn [ctx] (format "Account is %s" (-> ctx :params :account)))})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (path [r] [(basename r) "/" :account])
   (path-args [_] [:account "wrong"])
   (request [_] {:method :get})
@@ -183,11 +186,11 @@
 
 #_(defrecord QueryParameter []
   Example
-  (resource-map [_]
+  (resource [_]
     '{:body (fn [ctx]
               (str "Showing transaction in month "
                    (-> ctx :request :query-params (get "month"))))})
-  (make-handler [ex] (-> (yada (eval (resource-map ex)))
+  (make-handler [ex] (-> (yada (eval (resource ex)))
                          (wrap-params)))
   (query-string [_] "month=2014-09")
   (request [_] {:method :get})
@@ -195,20 +198,20 @@
 
 #_(defrecord QueryParameterDeclared []
   Example
-  (resource-map [_]
+  (resource [_]
     '{:parameters
       {:get {:query {:month s/Str}}}
       :body (fn [ctx]
               (str "Showing transactions in month "
                    (-> ctx :parameters :month)))})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (query-string [_] "month=2014-09")
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 
 #_(defrecord QueryParameterRequired []
   Example
-  (resource-map [_]
+  (resource [_]
     '{:parameters
       {:month {:in :query :required true}
        :order {:in :query :required true}}
@@ -216,27 +219,27 @@
               (format "Showing transactions in month %s ordered by %s"
                       (-> ctx :params :month)
                       (-> ctx :params :order)))})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (query-string [_] "month=2014-09")
   (request [_] {:method :get})
   (expected-response [_] {:status 400}))
 
 #_(defrecord QueryParameterNotRequired []
   Example
-  (resource-map [_]
+  (resource [_]
     '{:params
       {:month {:in :query :required true}
        :order {:in :query}}
       ;; TODO: When we try to return the map, we get this instead: Caused by: java.lang.IllegalArgumentException: No method in multimethod 'render-map' for dispatch value: null
       :body (fn [ctx] (str "Parameters: " (-> ctx :params)))})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (query-string [_] "month=2014-09")
   (request [_] {:method :get})
   (expected-response [_] {:status 400}))
 
 #_(defrecord QueryParameterCoerced []
   Example
-  (resource-map [_]
+  (resource [_]
     '{:params
       {:month {:in :query :type schema.core/Inst}
        :order {:in :query :type schema.core/Keyword}}
@@ -244,7 +247,7 @@
               (format "Month type is %s, ordered by %s"
                       (-> ctx :params :month type)
                       (-> ctx :params :order)))})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (query-string [_] "month=2014-09&order=most-recent")
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
@@ -253,20 +256,20 @@
 
 (defrecord CustomStatus []
   Example
-  (resource-map [_] '{:status 418
+  (resource [_] '{:status 418
                       :headers {"content-type" "text/plain;charset=utf-8"}
                       :body "I'm a teapot!"})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 418}))
 
 (defrecord CustomHeader []
   Example
-  (resource-map [_] '{:status (fn [ctx] 418)
+  (resource [_] '{:status (fn [ctx] 418)
                       :headers {"content-type" "text/plain;charset=utf-8"
                                 "x-blend" "dahjeeling"}
                       :body "I'm a teapot, here's my custom header"})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 418}))
 
@@ -311,16 +314,16 @@
 
 (defrecord BodyContentTypeNegotiation []
   Example
-  (resource-map [_] simple-body-map)
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (resource [_] simple-body-map)
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :get
                 :headers {"Accept" "text/html"}})
   (expected-response [_] {:status 200}))
 
 (defrecord BodyContentTypeNegotiation2 []
   Example
-  (resource-map [_] simple-body-map)
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (resource [_] simple-body-map)
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :get
                 :headers {"Accept" "text/plain"}})
   (expected-response [_] {:status 200}))
@@ -349,8 +352,8 @@
 
 #_(defrecord StateFile []
   Example
-  (resource-map [_] '{:state "README.md"})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (resource [_] '{:state "README.md"})
+  (make-handler [ex] (yada (eval (resource ex))))
   #_(path [r] [(basename r) "/" [long :account]])
   #_(path-args [_] [:account 17382343])
   (request [_] {:method :get})
@@ -358,10 +361,10 @@
 
 (defrecord State []
   Example
-  (resource-map [_] '{:resource (fn [{{account :account} :route-params}]
+  (resource [_] '{:resource (fn [{{account :account} :route-params}]
                                   (when (== account 17382343)
                                     {:state {:balance 1300}}))})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (path [r] [(basename r) "/" [long :account]])
   (path-args [_] [:account 17382343])
   (request [_] {:method :get})
@@ -369,12 +372,12 @@
 
 (defrecord StateWithBody []
   Example
-  (resource-map [_] '{:resource (fn [{{account :account} :route-params}]
+  (resource [_] '{:resource (fn [{{account :account} :route-params}]
                                   (when (== account 17382343)
                                     {:state {:balance 1300}}))
                       :body {"text/plain" (fn [ctx] (format "Your balance is ฿%s " (-> ctx :state :balance)))}
                       })
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (path [r] [(basename r) "/" [long :account]])
   (path-args [_] [:account 17382343])
   (request [_] {:method :get})
@@ -382,9 +385,9 @@
 
 (defrecord StateWithFile []
   Example
-  (resource-map [_] '{:state (io/file "README.md")  ; TODO Try with README.me, seemed to cause a hang last time
+  (resource [_] '{:state (io/file "README.md")  ; TODO Try with README.me, seemed to cause a hang last time
                       :methods [:put]})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (path [r] [(basename r)])
   (request [_] {:method :put})
   (expected-response [_] {:status 200}))
@@ -393,39 +396,39 @@
 
 (defrecord LastModifiedHeader [start-time]
   Example
-  (resource-map [_] {:body "Hello World!"
+  (resource [_] {:body "Hello World!"
                      :resource {:last-modified start-time}
                      })
-  (make-handler [ex] (yada (resource-map ex)))
+  (make-handler [ex] (yada (resource ex)))
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 
 (defrecord LastModifiedHeaderAsLong [start-time]
   Example
-  (resource-map [_] {:body "Hello World!"
+  (resource [_] {:body "Hello World!"
                      :resource {:last-modified (.getTime start-time)}
                      })
-  (make-handler [ex] (yada (resource-map ex)))
+  (make-handler [ex] (yada (resource ex)))
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 
 (defrecord LastModifiedHeaderAsDeferred [start-time]
   Example
-  (resource-map [_]
+  (resource [_]
     (let [s start-time]
       `{:body "Hello World!"
         :resource {:last-modified (fn [ctx#] (delay (.getTime ~s)))}
         }))
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 
 (defrecord IfModifiedSince [start-time]
   Example
-  (resource-map [_] {:body "Hello World!"
+  (resource [_] {:body "Hello World!"
                      :resource {:last-modified start-time}
                      })
-  (make-handler [ex] (yada (resource-map ex)))
+  (make-handler [ex] (yada (resource ex)))
   (request [_] {:method :get
                 :headers {"If-Modified-Since" (format-date (new java.util.Date (+ (.getTime start-time) (* 60 1000))))}})
   (expected-response [_] {:status 304}))
@@ -434,8 +437,8 @@
 
 #_(defrecord PostNewResource []
   Example
-  (resource-map [_] '{})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (resource [_] '{})
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :get
                 :headers {"Accept" "text/plain"}})
   (expected-response [_] {:status 200}))
@@ -444,9 +447,9 @@
 
 (defrecord PutResourceMatchedEtag []
   Example
-  (resource-map [_] '{:resource {:etag "58614618"}
+  (resource [_] '{:resource {:etag "58614618"}
                       :put true})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :put
                 :headers {"If-Match" "58614618"}})
   (expected-response [_] {:status 204})
@@ -454,9 +457,9 @@
 
 (defrecord PutResourceUnmatchedEtag []
   Example
-  (resource-map [_] '{:resource {:etag "58614618"}
+  (resource [_] '{:resource {:etag "58614618"}
                       :put true})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :put
                 :headers {"If-Match" "c668ab6b"}})
   (expected-response [_] {:status 412})
@@ -466,69 +469,69 @@
 
 (defrecord ServiceUnavailable []
   Example
-  (resource-map [_] '{:service-available? false})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (resource [_] '{:service-available? false})
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 503})
   (http-spec [_] ["7231" "6.6.4"]))
 
 (defrecord ServiceUnavailableAsync []
   Example
-  (resource-map [_] '{:service-available? (fn [ctx] (future (Thread/sleep 500) false))})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (resource [_] '{:service-available? (fn [ctx] (future (Thread/sleep 500) false))})
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 503}))
 
 (defrecord ServiceUnavailableRetryAfter []
   Example
-  (resource-map [_] '{:service-available? 120})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (resource [_] '{:service-available? 120})
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 503})
   (http-spec [_] ["7231" "6.6.4"]))
 
 (defrecord ServiceUnavailableRetryAfter2 []
   Example
-  (resource-map [_] '{:service-available? (constantly 120)})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (resource [_] '{:service-available? (constantly 120)})
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 503})
   (http-spec [_] ["7231" "6.6.4"]))
 
 (defrecord ServiceUnavailableRetryAfter3 []
   Example
-  (resource-map [_]
+  (resource [_]
     '{:service-available? (fn [ctx] (future (Thread/sleep 500) 120))})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 503})
   (http-spec [_] ["7231" "6.6.4"]))
 
 (defrecord DisallowedPost []
   Example
-  (resource-map [_] '{:body "Hello World!"})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (resource [_] '{:body "Hello World!"})
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :post})
   (expected-response [_] {:status 405}))
 
 (defrecord DisallowedGet []
   Example
-  (resource-map [_] '{:methods #{:put :post}})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (resource [_] '{:methods #{:put :post}})
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 405}))
 
 (defrecord DisallowedPut []
   Example
-  (resource-map [_] '{:body "Hello World!"})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (resource [_] '{:body "Hello World!"})
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :put})
   (expected-response [_] {:status 405}))
 
 (defrecord DisallowedDelete []
   Example
-  (resource-map [_] '{:methods #{:get :post}})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (resource [_] '{:methods #{:get :post}})
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :delete})
   (expected-response [_] {:status 405}))
 
@@ -536,33 +539,33 @@
 
 (defrecord PostCounter []
   Example
-  (resource-map [_]
+  (resource [_]
     '{:post
       (let [counter (:*post-counter yada.dev.examples/*state*)]
         (fn [ctx]
           (assoc-in ctx
                     [:response :headers "X-Counter"]
                     (swap! counter inc))))})
-  (make-handler [ex] (yada (binding [*state* ex] (eval (resource-map ex)))))
+  (make-handler [ex] (yada (binding [*state* ex] (eval (resource ex)))))
   (request [_] {:method :post})
   (expected-response [_] {:status 200}))
 
 (defrecord AccessForbiddenToAll []
   Example
-  (resource-map [_]
+  (resource [_]
     '{:authorization false
       :body "Secret message!"})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 403}))
 
 (defrecord AccessForbiddenToSomeRequests []
   Example
-  (resource-map [_]
+  (resource [_]
     '{:parameters {:get {:query {:secret String}}}
       :authorization (fn [ctx] (= (-> ctx :parameters :secret) "oak"))
       :body "Secret message!"})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (path [r] [(basename r)])
   (query-string [_] "secret=ash")
   (request [_] {:method :get})
@@ -570,11 +573,11 @@
 
 (defrecord AccessAllowedToOtherRequests []
   Example
-  (resource-map [_]
+  (resource [_]
     '{:parameters {:get {:query {:secret String}}}
       :authorization (fn [ctx] (= (-> ctx :parameters :secret) "oak"))
       :body "Secret message!"})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (path [r] [(basename r)])
   (query-string [_] "secret=oak")
   (request [_] {:method :get})
@@ -582,16 +585,16 @@
 
 (defrecord NotAuthorized []
   Example
-  (resource-map [_]
+  (resource [_]
     '{:authorization (fn [ctx] :not-authorized)
       :body "Secret message!"})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 401}))
 
 (defrecord BasicAccessAuthentication []
   Example
-  (resource-map [_]
+  (resource [_]
     '{:security {:type :basic :realm "Gondor"}
       :authorization
       (fn [ctx]
@@ -601,58 +604,58 @@
               ["Denethor" "palantir"]))
          :not-authorized))
       :body "All is lost. Yours, Sauron (Servant of Morgoth, yada yada yada)"})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 401}))
 
 (defrecord CorsAll []
   Example
-  (resource-map [_]
+  (resource [_]
     '{:allow-origin true
       :body "Hello everyone!"})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 
 (defrecord CorsCheckOrigin []
   Example
-  (resource-map [_]
+  (resource [_]
     '{:allow-origin
       (fn [ctx]
         (println (get-in ctx [:request :headers "origin"]))
         (get-in ctx [:request :headers "origin"]))
       :body "Hello friend!"})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 200})
   (different-origin? [_] true))
 
 (defrecord CorsPreflight []
   Example
-  (resource-map [_]
+  (resource [_]
     '{:allow-origin
       (fn [ctx]
         (println (get-in ctx [:request :headers "origin"]))
         (get-in ctx [:request :headers "origin"]))
       :put (fn [_] "Resource changed!")
       :body "Hello friend!"})
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :put})
   (expected-response [_] {:status 204})
   (different-origin? [_] true))
 
 (defrecord ServerSentEvents []
   Example
-  (resource-map [_]
+  (resource [_]
     '{:body {"text/event-stream" ["Event 1" "Event 2" "Event 3"]}
       })
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 
 (defrecord ServerSentEventsWithCoreAsyncChannel []
   Example
-  (resource-map [_]
+  (resource [_]
     '(do
        (require '[clojure.core.async :refer (chan go-loop <! >! timeout close!)])
        (require '[manifold.stream :refer (->source)])
@@ -669,14 +672,14 @@
                  (close! ch)))
              ch)
            )}}))
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 200})
   (test-function [_] "tryItEvents"))
 
 (defrecord ServerSentEventsDefaultContentType []
   Example
-  (resource-map [_]
+  (resource [_]
     '(do
        (require '[clojure.core.async :refer (chan go-loop <! >! timeout close!)])
        (require '[manifold.stream :refer (->source)])
@@ -692,7 +695,7 @@
                 (close! ch)))
             ch)
           )}))
-  (make-handler [ex] (yada (eval (resource-map ex))))
+  (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 200})
   (test-function [_] "tryItEvents"))

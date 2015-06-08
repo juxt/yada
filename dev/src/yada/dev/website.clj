@@ -28,40 +28,39 @@
 
 (defn index [{:keys [*router templater]}]
   (yada
-   :body
-   {"text/html"
-    (fn [ctx]
-      (render-template
-       templater
-       "templates/page.html.mustache"
-       {:content
-        (let [header [:button.btn.btn-primary {:onClick "testAll()"} "Repeat tests"]]
-          (html
-           [:div.container
-            [:h2 "Welcome to " [:span.yada "yada"] "!"]
-            [:ol
-             [:li [:a {:href (path-for @*router :yada.dev.user-guide/user-guide)} "User guide"] " (and " [:a {:href (path-for @*router :yada.dev.user-guide/tests)} "tests"] ")"]
-             [:li "HTTP and related specifications"
-              [:ul
-               [:li [:a {:href "/static/spec/rfc2616.html"} "RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1"]]
-               (for [i (range 7230 (inc 7240))]
-                 [:li [:a {:href (format "/static/spec/rfc%d.html" i)}
-                       (format "RFC %d: %s" i (or (get titles i) ""))]])]]
-             [:li [:a {:href
-                       (format "%s/index.html?url=%s/swagger.json"
-                               (path-for @*router :swagger-ui)
-                               (path-for @*router :yada.dev.user-api/user-api)
-                               )}
-                   "Swagger UI"]
-              " - to demonstrate Swagger integration"]]]))}))}))
+   (fn [ctx]
+     (render-template
+      templater
+      "templates/page.html.mustache"
+      {:content
+       (let [header [:button.btn.btn-primary {:onClick "testAll()"} "Repeat tests"]]
+         (html
+          [:div.container
+           [:h2 "Welcome to " [:span.yada "yada"] "!"]
+           [:ol
+            [:li [:a {:href (path-for @*router :yada.dev.user-guide/user-guide)} "User guide"] " (and " [:a {:href (path-for @*router :yada.dev.user-guide/tests)} "tests"] ")"]
+            [:li "HTTP and related specifications"
+             [:ul
+              [:li [:a {:href "/static/spec/rfc2616.html"} "RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1"]]
+              (for [i (range 7230 (inc 7240))]
+                [:li [:a {:href (format "/static/spec/rfc%d.html" i)}
+                      (format "RFC %d: %s" i (or (get titles i) ""))]])]]
+            [:li [:a {:href
+                      (format "%s/index.html?url=%s/swagger.json"
+                              (path-for @*router :swagger-ui)
+                              (path-for @*router :yada.dev.user-api/user-api)
+                              )}
+                  "Swagger UI"]
+             " - to demonstrate Swagger integration"]]]))}))
+   {:produces #{"text/html"}}))
 
 (defrecord Website [*router templater]
   RouteProvider
   (routes [component]
     ["/"
      [["index.html" (-> (index component)
-                         (tag ::index))]
-      ["dir" (-> (yada :state (io/file "dev/resources"))
+                        (tag ::index))]
+      ["dir" (-> (yada (io/file "dev/resources"))
                  (tag ::dir))]]]))
 
 (defn new-website [& {:as opts}]

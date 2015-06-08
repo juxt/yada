@@ -29,6 +29,7 @@
             [yada.representation :as rep]
             [yada.resource :as p]
             [yada.state :as yst]
+            [yada.trace]
             [yada.util :refer (link)])
   (:import (clojure.lang IPending)
            (java.util Date)
@@ -38,17 +39,18 @@
 
 (def k-bidi-match-context :bidi/match-context)
 
+;; TODO: Find a better name
 (defprotocol YadaInvokeable
   (invoke-with-initial-context [_ req ctx]
     "Invoke the yada handler with some initial context entries"))
 
-;; Yada returns instances of YadaHandler, which allows yada to integrate
+;; Yada returns instances of Endpoint, which allows yada to integrate
 ;; with bidi's matching-context.
-(defrecord YadaHandler [delegate]
+(defrecord Endpoint [state handler]
   clojure.lang.IFn
-  (invoke [_ req] (delegate req {}))
+  (invoke [_ req] (handler req {}))
   YadaInvokeable
-  (invoke-with-initial-context [this req ctx] (delegate req ctx))
+  (invoke-with-initial-context [this req ctx] (handler req ctx))
   Matched
   (resolve-handler [this m]
     (succeed this m))
@@ -56,7 +58,7 @@
     (when (= this (:handler m)) ""))
   Ring
   (request [this req m]
-    (delegate req {k-bidi-match-context m})))
+    (handler req {k-bidi-match-context m})))
 
 ;; "It is better to have 100 functions operate on one data structure
 ;; than 10 functions on 10 data structures." — Alan Perlis
@@ -64,43 +66,10 @@
 (defn- not* [[result m]]
   [(not result) m])
 
-(defmacro nonblocking-exit-when*
-  "Short-circuit exit a d/chain with an error if expr evaluates to
-  truthy. To avoid blocking the request thread, the callback can return
-  a deferred value."
-  [callback expr status]
-  `(fn [x#]
-     (let [[b# m#] (when (some? ~callback) ; guard for performance
-                   ~expr)]
-       ;; Exit, intended to be caught with a d/catch
-       (if b#
-         (d/error-deferred (ex-info "" (merge {:status ~status
-                                               ::http-response true} m#)))
-         x#))))
-
-(defmacro nonblocking-exit-when
-  [callback expr status]
-  `(nonblocking-exit-when* ~callback (deref (d/chain ~expr)) ~status))
-
-(defmacro nonblocking-exit-when-not
-  [callback expr status]
-  `(nonblocking-exit-when* ~callback (deref (d/chain ~expr not*)) ~status))
-
-(defmacro exit-when [expr status]
-  `(fn [x#]
-     (let [[b# m#] ~expr]
-       (if b#
-         (d/error-deferred (ex-info "" (merge {:status ~status
-                                               ::http-response true}
-                                              m#)))
-         x#))))
-
-(defmacro exit-when-not [expr status]
-  `(exit-when (not* ~expr) ~status))
-
 (defn spyctx [label & [korks]]
   (fn [ctx]
-    (debugf "SPYCTX %s: Context is %s" label
+    (debugf "SPYCTX %s: Context is %s"
+            label
             (if korks (get-in ctx (if (sequential? korks) korks [korks])) ctx))
     ctx))
 
@@ -123,24 +92,7 @@
       (java.io.ByteArrayInputStream.)
       (slurp :encoding encoding)))
 
-(defn to-title-case [s]
-  (when s
-    (str/replace s #"(\w+)" (comp str/capitalize second))))
 
-(defn print-request
-  "Print the request. Used for TRACE."
-  [req]
-  (letfn [(println [& x]
-            (apply print x)
-            (print "\r\n"))]
-    (println (format "%s %s %s"
-                     (str/upper-case (name (:request-method req)))
-                     (:uri req)
-                     "HTTP/1.1"))
-    (doseq [[h v] (:headers req)] (println (format "%s: %s" (to-title-case h) v)))
-    (println)
-    (when-let [body (:body req)]
-      (print (slurp body)))))
 
 ;; Allowed methods
 
@@ -179,7 +131,8 @@
                 (when (:delete rmap) :delete)))))))
 
 (defn make-handler
-  [{:keys
+  [state
+   {:keys
     [service-available?                 ; async-supported
      known-method?                      ; async-supported
      request-uri-too-long?
@@ -188,9 +141,6 @@
 
      status                             ; async-supported
      headers                            ; async-supported
-
-     state                              ; async-supported
-     body                               ; async-supported
 
      ;; Security
      authorization                      ; async-supported
@@ -216,17 +166,14 @@
     :or {authorization (NoAuthorizationSpecified.)}
     }]
 
-  ;; We use this let binding to deduce the values of resource-map
-  ;; entries that have not been given, based on the values of entries
-  ;; that have. This approach makes it possible for developers to leave
-  ;; out entries that are implied by the other entries. For example, if a body has been specified, we resource
-
   (let [security (as-sequential security)]
 
-    (->YadaHandler
+    (->Endpoint
+     state
      (fn [req ctx]
 
-       (let [method (:request-method req)]
+       (let [method (:request-method req)
+             debug (boolean (get-in req [:headers "x-yada-debug"]))]
 
          (-> ctx
              (merge
@@ -236,7 +183,7 @@
                ;; access from individual State protocol implementations
                ;; to raw ByteBufers. You can only read the body stream
                ;; once, when it is required. Subsequent calls to :body
-               ;; will yield nil. There's no way round this short to
+               ;; will yield nil. There's no way round this short of
                ;; temporarily storing the whole (potentially huge) body
                ;; somewhere.
                #_(assoc req
@@ -380,7 +327,7 @@
                                               ;; a user agent to send stored user credentials [RFC7235] or cookies [RFC6265] in a
                                               ;; TRACE request.
                                               (update-in [:headers] dissoc "authorization" "cookie")
-                                              print-request
+                                              yada.trace/print-request
                                               with-out-str
                                               ;; only "7bit", "8bit", or "binary" are permitted (RFC 7230 8.3.1)
                                               (to-encoding "utf8"))]
@@ -402,23 +349,27 @@
 
               ;; Content-negotiation - done here to throw back to the client any errors
               (fn [ctx]
-                (let [produces (or (p/produces produces)
-                                   ;; TODO This is the right place to
-                                   ;; negotiate content-type from the
-                                   ;; state as well. But since we are
-                                   ;; going to try merging state and
-                                   ;; body together...
-                                   (p/produces-from-body body))]
+                (let [available-content-types
+                      (remove nil?
+                            (or (p/produces produces)
+                                (yst/produces state)
+                                nil))]
+                  (infof "available-content-types is %s" available-content-types)
                   (if-let [content-type
                            (best-allowed-content-type
                             (or (get-in req [:headers "accept"]) "*/*")
-                            produces)]
+                            (map (comp rep/full-type rep/to-media-type-map) available-content-types))]
                     (assoc-in ctx [:response :content-type] content-type)
-                    (if produces
+                    ;; No best allowed content type
+                    (if (not-empty available-content-types)
                       ;; If there is a produces specification, but not
                       ;; matched content-type, it's a 406.
-                      (d/error-deferred (ex-info "" {:status 406
-                                                     ::http-response true}))
+                      (d/error-deferred
+                       (ex-info ""
+                                {:status 406
+                                 ::debug {:message "Debug!"
+                                          :available-content-types available-content-types}
+                                 ::http-response true}))
                       ;; Otherwise return the context unchanged
                       ctx))))
 
@@ -426,18 +377,11 @@
                 (case method
                   (:get :head)
                   (d/chain
-                   ctx
-
-                   ;; OK, let's pick the resource's state
-                   (fn [ctx]
-                     (d/chain
-                      state             ; could be nil
-                      #(p/state % ctx)
-                      (fn [state] (if state (assoc-in ctx [:resource :state] state) ctx))))
+                   (assoc ctx :state (p/state state ctx))
 
                    ;; Perhaps the resource doesn't exist
                    (link ctx
-                     (when-let [state (get-in ctx [:resource :state])]
+                     (when-let [state (:state ctx)]
                        (when-not (yst/exists? state)
                          (d/error-deferred (ex-info "" {:status 404
                                                         ::http-response true})))))
@@ -445,43 +389,41 @@
 
                    ;; Conditional request
                    (link ctx
-                     (let [state (get-in ctx [:resource :state])]
-                       (if-let [last-modified (yst/last-modified state)]
+                     (when-let [last-modified (yst/last-modified (:state ctx))]
 
-                         (if-let [if-modified-since (some-> req
-                                                            (get-in [:headers "if-modified-since"])
-                                                            parse-date)]
-                           (let [last-modified (if (d/deferrable? last-modified) @last-modified last-modified)]
+                       (if-let [if-modified-since (some-> req
+                                                          (get-in [:headers "if-modified-since"])
+                                                          parse-date)]
+                         ;; TODO: Hang on, we can't deref in the
+                         ;; middle of a handler like this, we need to
+                         ;; build a chain (I think)
+                         (let [last-modified (if (d/deferrable? last-modified) @last-modified last-modified)]
 
-                             (if (<=
-                                  (.getTime last-modified)
-                                  (.getTime if-modified-since))
+                           (if (<=
+                                (.getTime last-modified)
+                                (.getTime if-modified-since))
 
-                               ;; exit with 304
-                               (d/error-deferred
-                                (ex-info "" (merge {:status 304
-                                                    ::http-response true}
-                                                   ctx)))
+                             ;; exit with 304
+                             (d/error-deferred
+                              (ex-info "" (merge {:status 304
+                                                  ::http-response true}
+                                                 ctx)))
 
-                               (assoc-in ctx [:response :headers "last-modified"] (format-date last-modified))))
+                             (assoc-in ctx [:response :headers "last-modified"] (format-date last-modified))))
 
-                           (or
-                            (some->> (if (d/deferrable? last-modified) @last-modified last-modified)
-                                     format-date
-                                     (assoc-in ctx [:response :headers "last-modified"]))
-                            ctx)))))
+                         (or
+                          ;; TODO: Hang on, we can't deref in the
+                          ;; middle of a handler like this, we need to
+                          ;; build a chain (I think)
+
+                          (some->> (if (d/deferrable? last-modified) @last-modified last-modified)
+                                   format-date
+                                   (assoc-in ctx [:response :headers "last-modified"]))
+                          ctx))))
 
                    ;; Get body
                    (fn [ctx]
-                     (let [state (get-in ctx [:resource :state])
-                           content-type
-                           (or (get-in ctx [:response :content-type])
-                               ;; It's possible another callback has set the content-type header
-                               (get-in headers ["content-type"])
-                               (when-not body
-                                 ;; Hang on, we should have done content neg by now
-                                 (rep/content-type-default state)))
-                           content-length (rep/content-length state)]
+                     (let [content-type (get-in ctx [:response :content-type])]
 
                        (case method
                          :head (if content-type
@@ -494,17 +436,15 @@
                          :get
                          (d/chain
 
-                          ;; Determine body
-                          (cond
-                            body (p/body body ctx)
-                            ;; the state here can still be deferred
-                            state (or (yst/get-state state content-type ctx)
-                                      (throw (ex-info "" {:status 404
-                                                          ::http-response true}))))
+                          ;; the state here can still be deferred
+                          (:state ctx)
 
-                          ;; serialize to representation (an existing string will be left intact)
-                          #_(fn [state]
-                              (rep/content state content-type))
+                          (fn [state]
+                            (or (yst/get-state state content-type ctx)
+                                (throw (ex-info "" {:status 404
+                                                    ;; TODO: Do something nice for developers here
+                                                    :body "Not Found"
+                                                    ::http-response true}))))
 
                           (fn [body]
                             (assoc-in ctx [:response :body] body))
@@ -514,7 +454,7 @@
                               (update-in ctx [:response :headers] assoc "content-type" content-type)))
 
                           (link ctx
-                            (when content-length
+                            (when-let [content-length (yst/content-length (:state ctx))]
                               (update-in ctx [:response :headers] assoc "content-length" content-length))))))))
 
 
@@ -655,7 +595,7 @@
                                   (p/headers headers ctx))
                         ;; TODO :status and :headers should be implemented like this in all cases
                         :body (get-in ctx [:response :body])})]
-                  (infof "Returning response: %s" response)
+                  (infof "Returning response: %s" (dissoc response :body))
                   response
                   ))
 
@@ -666,7 +606,10 @@
              (d/catch clojure.lang.ExceptionInfo
                  #(let [data (ex-data %)]
                     (if (::http-response data)
-                      data
+                      (if-let [debug-data (when debug (::debug data))]
+                        (assoc data :body (prn-str debug-data))
+                        data)
+
                       (throw (ex-info "Internal Server Error (ex-info)" data %))
                       #_{:status 500
                          :body (format "Internal Server Error: %s" (pr-str data))})))
@@ -680,19 +623,10 @@
                              [:p (str %)]
                              [:pre (with-out-str (apply str (interpose "\n" (seq (.getStackTrace %)))))]])}))))))))
 
-(defn yada [& args]
-  (if (keyword? (first args))
-    (make-handler (into {} (map vec (partition 2 args))))
-    (let [handler (make-handler (first args))]
-      (if (= (count args) 2)
-        ;; 2-arity function means the 2nd argument is a request. This
-        ;; means the yada handler is created just-in-time. This is
-        ;; useful when certain values are only known at runtime, for
-        ;; example, when using destructured args from Compojure routes
-        ;; in resource-maps.
-        (handler (second args))
-
-        ;; Otherwise the handler is returned. TODO: Replace this
-        ;; implementation with one using clojure.core/partial, because
-        ;; that is essentially the model.
-        handler))))
+(defn yada
+  ([state]
+   (yada state {}))
+  ([state opts]
+   (if (keyword? state)
+     (throw (ex-info "Deprecated usage" {}))
+     (make-handler state opts))))

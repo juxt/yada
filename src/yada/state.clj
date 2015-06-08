@@ -5,7 +5,8 @@
             [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.tools.logging :refer :all]
-            [manifold.deferred :as d])
+            [manifold.deferred :as d]
+            [ring.util.mime-type :as mime])
   (import
    [clojure.core.async.impl.protocols ReadPort]
    [java.io File InputStream]
@@ -18,6 +19,9 @@
   (exists? [_] "Whether the state actually exists")
 
   (last-modified [_] "Return the date that the state was last modified.")
+
+  (produces [_] "Return the mime types that can be produced from this state")
+  (content-length [_] "Return the content length, if possible")
 
   (get-state [_ content-type ctx] "Return the state, formatted to a representation of the given content-type and charset. Returning nil results in a 404.")
 
@@ -54,10 +58,17 @@
   (exists? [s] true)
   (last-modified [s] nil)
   (get-state [s content-type ctx] s)
+  (content-length [_] nil)
 
   File
   (exists? [f] (.exists f))
   (last-modified [f] (Date. (.lastModified f)))
+  (produces [f]
+    (when (.isFile f)
+      [(mime/ext-mime-type (.getName f))]))
+  (content-length [f]
+    (when (.isFile f)
+      (.length f)))
 
   ;; When specifying :state as a file, the resource-map should also
   ;; specify whether the file's content should be encoded to a given
@@ -146,8 +157,11 @@
   nil
   ;; last-modified of 'nil' means we don't consider last-modified
   (last-modified [_] nil)
+  (get-state [_ content-type ctx] nil)
+  (content-length [_] nil)
 
   Object
   (last-modified [_] nil)
+  (content-length [_] nil)
 
   )

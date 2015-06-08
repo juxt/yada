@@ -17,8 +17,8 @@
    [modular.bidi :refer (path-for)]
    [modular.template :as template :refer (render-template)]
    [modular.component.co-dependency :refer (co-using)]
-   [yada.dev.examples :refer (resource-map get-path get-path-args get-query-string get-request request make-handler expected-response get-test-function external?)]
-   [yada.yada :refer (yada)]))
+   [yada.dev.examples :refer (resource get-path get-path-args get-query-string get-request make-handler expected-response get-test-function external?)]
+   [yada.yada :refer (yada string->media-type)]))
 
 (defn emit-element
   ;; An alternative emit-element that doesn't cause newlines to be
@@ -97,6 +97,12 @@
           {:keys [method headers data] :as req} (get-request ex)
           ]
 
+      (infof "ex is %s" ex)
+      (infof "router is %s" @(:*router user-guide))
+      (infof "keys is %s" (keys @(:*router user-guide)))
+      (infof "path is %s" (apply path-for @(:*router user-guide) (keyword (basename ex)) (get-path-args ex)))
+      (infof "example url is %s" url)
+
       (postwalk
        (fn [{:keys [tag attrs content] :as el}]
          (cond
@@ -109,7 +115,7 @@
                                              (str/trim
                                               (with-out-str
                                                 (binding [*print-right-margin* 80]
-                                                  (pprint (resource-map ex))))))]}]}]}
+                                                  (pprint (resource ex))))))]}]}]}
 
            (= tag :request)
            {:tag :div
@@ -357,10 +363,17 @@
       ["/user-guide"
        [[".html"
          (->
-          (yada :body {"text/html" (fn [ctx]
-                                     (let [config {:prefix prefix :ext-prefix ext-prefix}]
-                                       (body component (post-process-doc component xbody (into {} examples) config) config)))})
-          (tag ::user-guide))]
+          (let [config {:prefix prefix :ext-prefix ext-prefix}]
+
+            ;; The problem now is that yada knows neither this string's
+            ;; content-type (nor its charset), so can't produce the
+            ;; correct Content-Type for the response. So we must specify it.
+            (->
+             (yada (fn [ctx]
+                     (body component (post-process-doc component xbody (into {} examples) config) config))
+                   {:produces (string->media-type "text/html;charset=utf8")})
+             (tag ::user-guide))))]
+
         ["/examples/"
          (vec
           (for [[_ h] examples]
@@ -368,10 +381,8 @@
                            (make-handler h)
                            (keyword (basename h)))]))]
         ["/tests.html"
-         (-> (yada :body {"text/html"
-                          (fn [ctx]
-                            (tests component examples)
-                            )})
+         (-> (yada (fn [ctx] (tests component examples))
+                   {:produces #{"text/html;charset=utf8"}})
              (tag ::tests))]]])))
 
 (defmethod clojure.core/print-method UserGuide
