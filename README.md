@@ -17,7 +17,7 @@ The full documentation is available at [http://yada.juxt.pro](http://yada.juxt.p
 Add the following dependency to your `project.clj` file :-
 
 ```clojure
-[yada "0.4.2"]
+[yada "0.4.3"]
 ```
 
 ## Status
