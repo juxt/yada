@@ -54,9 +54,17 @@
   [m _]
   (json/encode m))
 
+(defmethod render-map "application/edn"
+  [m _]
+  (pr-str m))
+
 (defmethod render-seq "application/json"
   [s _]
   (json/encode s))
+
+(defmethod render-seq "application/edn"
+  [s _]
+  (pr-str s))
 
 (defmethod render-seq "text/event-stream"
   [s _]

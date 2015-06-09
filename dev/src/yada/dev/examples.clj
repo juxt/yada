@@ -325,6 +325,24 @@
                 :headers {"Accept" "text/plain"}})
   (expected-response [_] {:status 200}))
 
+(defrecord ProducesContentTypeNegotiationJson []
+  Example
+  (resource-map [_] '{:state (fn [ctx] {:foo "bar"})
+                     :produces #{"application/json" "application/edn"}})
+  (make-handler [ex] (yada (eval (resource-map ex))))
+  (request [_] {:method :get
+                :headers {"Accept" "application/json"}})
+  (expected-response [_] {:status 200}))
+
+(defrecord ProducesContentTypeNegotiationEdn []
+  Example
+  (resource-map [_] '{:state (fn [ctx] {:foo "bar"})
+                     :produces #{"application/json" "application/edn"}})
+  (make-handler [ex] (yada (eval (resource-map ex))))
+  (request [_] {:method :get
+                :headers {"Accept" "application/edn"}})
+  (expected-response [_] {:status 200}))
+
 ;; Resource metadata (conditional requests)
 
 (defrecord ResourceExists []

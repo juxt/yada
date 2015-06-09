@@ -375,6 +375,8 @@ caching and other HTTP features.
 
 ## Content Negotiation
 
+<div class="warning"><p>Deprecated, see State section below</p></div>
+
 HTTP has a content negotiation feature which allows a user agent
 (browser, device) and a web server to establish the best representation
 for a given resource. This may include the mime-type of the content, its
@@ -430,6 +432,16 @@ exist. It is therefore unnecessary to provide a non-nil `:resource`
 entry, unless you wish to communicate a resource's meta-data.
 
 <example ref="ResourceStateTopLevel"/>
+
+### Declaring available content-types
+
+You can use the __:produces__ declaration to declare the content types that state can produce.
+
+(This is a different approach that the one we've seen before, with a __:body__ map. It is likely that the __:body__ map approach will be deprecated in a future release.)
+
+<example ref="ProducesContentTypeNegotiationJson"/>
+
+<example ref="ProducesContentTypeNegotiationEdn"/>
 
 ### Changing state
 
