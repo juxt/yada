@@ -27,7 +27,7 @@
             [yada.coerce :refer (coercion-matcher)]
             [yada.conneg :refer (best-allowed-content-type)]
             [yada.representation :as rep]
-            [yada.resource :as p]
+            [yada.options :as p]
             [yada.state :as yst]
             [yada.trace]
             [yada.util :refer (link)])
@@ -74,7 +74,7 @@
     ctx))
 
 (defrecord NoAuthorizationSpecified []
-  p/Resource
+  p/ResourceOptions
   (authorize [b ctx] true)
   (authorization [_] nil))
 
