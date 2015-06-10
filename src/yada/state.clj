@@ -58,6 +58,10 @@
   (exists? [s] true)
   (last-modified [s] nil)
   (get-state [s content-type ctx] s)
+  ;; Without attempting to actually parse it (which isn't completely
+  ;; impossible) we're not able to guess the content-type of this
+  ;; string, so we return nil.
+  (produces [s] nil)
   (content-length [_] nil)
 
   File
