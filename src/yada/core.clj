@@ -27,7 +27,7 @@
             [yada.coerce :refer (coercion-matcher)]
             [yada.conneg :refer (best-allowed-content-type)]
             [yada.representation :as rep]
-            [yada.options :as p]
+            [yada.resource-options :as ropts]
             [yada.state :as yst]
             [yada.trace]
             [yada.util :refer (link)])
@@ -74,7 +74,7 @@
     ctx))
 
 (defrecord NoAuthorizationSpecified []
-  p/ResourceOptions
+  ropts/ResourceOptions
   (authorize [b ctx] true)
   (authorization [_] nil))
 
@@ -121,7 +121,7 @@
 (defn allowed-methods [ctx]
   (let [rmap (:resource-map ctx)]
     (if-let [methods (:methods rmap)]
-      (set (p/allowed-methods methods))
+      (set (ropts/allowed-methods methods))
       (set
        (remove nil?
                (conj
@@ -204,17 +204,17 @@
               ;; TODO Inline these macros, they don't buy much for their complexity
 
               (link ctx
-                (let [res (p/service-available? service-available? ctx)]
-                  (if-not (p/interpret-service-available res)
+                (let [res (ropts/service-available? service-available? ctx)]
+                  (if-not (ropts/interpret-service-available res)
                     (d/error-deferred
                      (ex-info "" (merge {:status 503
                                          ::http-response true}
-                                        (when-let [retry-after (p/retry-after res)] {:headers {"retry-after" retry-after}})))))))
+                                        (when-let [retry-after (ropts/retry-after res)] {:headers {"retry-after" retry-after}})))))))
 
               (link ctx
                 (when-not
                     (if known-method?
-                      (p/known-method? known-method? method)
+                      (ropts/known-method? known-method? method)
                       (contains? known-methods method)
                       )
                   (d/error-deferred (ex-info "" {:status 501
@@ -222,7 +222,7 @@
                                                  ::http-response true}))))
 
               (link ctx
-                (when (p/request-uri-too-long? request-uri-too-long? (:uri req))
+                (when (ropts/request-uri-too-long? request-uri-too-long? (:uri req))
                   (d/error-deferred (ex-info "" {:status 414
                                                  ::http-response true}))))
 
@@ -286,7 +286,7 @@
 
               ;; Authorization
               (fn [ctx]
-                (if-let [res (p/authorize authorization ctx)]
+                (if-let [res (ropts/authorize authorization ctx)]
                   (if (= res :not-authorized)
                     (d/error-deferred
                      (ex-info ""
@@ -295,7 +295,7 @@
                                (when-let [basic-realm (first (sequence realms-xf security))]
                                  {:headers {"www-authenticate" (format "Basic realm=\"%s\"" basic-realm)}}))
                               ))
-                    (if-let [auth (p/authorization res)]
+                    (if-let [auth (ropts/authorization res)]
                       (assoc ctx :authorization auth)
                       ctx))
                   (d/error-deferred (ex-info "" {:status 403
@@ -316,7 +316,7 @@
                                      merge
                                      {:headers {"content-type" "message/http;charset=utf8"}}
                                      ;; Custom code /can/ override (but really shouldn't)
-                                     (p/trace trace req ctx)))
+                                     (ropts/trace trace req ctx)))
                                    (update-in [:body] to-encoding "utf8"))
 
                                ;; otherwise default implementation
@@ -351,7 +351,7 @@
               (fn [ctx]
                 (let [available-content-types
                       (remove nil?
-                              (or (p/produces produces)
+                              (or (ropts/produces produces)
                                   (yst/produces state)))]
                   (if-let [content-type
                            (best-allowed-content-type
@@ -375,7 +375,7 @@
                 (case method
                   (:get :head)
                   (d/chain
-                   (assoc ctx :state (p/state state ctx))
+                   (assoc ctx :state (ropts/state state ctx))
 
                    ;; Perhaps the resource doesn't exist
                    (link ctx
@@ -472,7 +472,7 @@
                      (let [exists? (yst/exists? state)]
                        (let [res
                              (cond
-                               put! (p/put! put! ctx)
+                               put! (ropts/put! put! ctx)
                                ;; TODO: Add content and content-type
                                state (yst/put-state! state nil nil ctx)
                                :otherwise (throw (ex-info "No implementation of put!" {})))]
@@ -498,7 +498,7 @@
                    (fn [ctx]
                      (let [result
                            (cond
-                             post! (p/post! post! ctx)
+                             post! (ropts/post! post! ctx)
                              state (yst/post-state! state ctx)
                              :otherwise (throw (ex-info "No implementation of put!" {})))]
 
@@ -509,7 +509,7 @@
                        ))
 
                    (fn [ctx]
-                     (p/interpret-post-result (:post-result ctx) ctx))
+                     (ropts/interpret-post-result (:post-result ctx) ctx))
 
 
                    (fn [ctx]
@@ -524,7 +524,7 @@
                        (assoc-in ctx [:response :status] 404)
                        (let [res
                              (cond
-                               delete! (p/delete! delete! ctx)
+                               delete! (ropts/delete! delete! ctx)
                                state (yst/delete-state! state ctx)
                                :otherwise (throw (ex-info "No implementation of delete!" {})))]
                          (assoc-in ctx [:response :status] (if (d/deferred? res) 202 204))))))
@@ -533,7 +533,7 @@
                   (d/chain
                    ctx
                    (link ctx
-                     (if-let [origin (p/allow-origin allow-origin ctx)]
+                     (if-let [origin (ropts/allow-origin allow-origin ctx)]
                        (update-in ctx [:response :headers]
                                   merge {"access-control-allow-origin"
                                          origin
@@ -559,11 +559,11 @@
                      (fn [ctx]
                        (merge
                         {:status (or (get-in ctx [:response :status])
-                                     (p/status status ctx)
+                                     (ropts/status status ctx)
                                      200)
                          :headers (merge
                                    (get-in ctx [:response :headers])
-                                   (p/headers headers ctx))
+                                   (ropts/headers headers ctx))
                          ;; TODO :status and :headers should be implemented like this in all cases
                          :body (get-in ctx [:response :body])})))
 
@@ -572,7 +572,7 @@
                     (d/chain ctx (constantly {:status 404}))))
 
               #_(fn [ctx]
-                  (if-let [origin (p/allow-origin allow-origin ctx)]
+                  (if-let [origin (ropts/allow-origin allow-origin ctx)]
                     (update-in ctx [:response :headers]
                                merge {"access-control-allow-origin"
                                       origin
@@ -586,11 +586,11 @@
                 (let [response
                       (merge
                        {:status (or (get-in ctx [:response :status])
-                                    (p/status status ctx)
+                                    (ropts/status status ctx)
                                     200)
                         :headers (merge
                                   (get-in ctx [:response :headers])
-                                  (p/headers headers ctx))
+                                  (ropts/headers headers ctx))
                         ;; TODO :status and :headers should be implemented like this in all cases
                         :body (get-in ctx [:response :body])})]
                   (debugf "Returning response: %s" (dissoc response :body))

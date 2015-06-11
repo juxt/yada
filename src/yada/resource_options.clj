@@ -1,6 +1,6 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(ns yada.options
+(ns yada.resource-options
   (:require [clojure.core.async.impl.protocols :as aip]
             [clojure.set :as set]
             [clojure.tools.logging :refer :all :exclude [trace]]
