@@ -47,8 +47,7 @@
 
     (testing "last-modified"
       (given response
-        ;; TODO: This is going to be brittle, move these tests into temp-file-test instead
-        [:headers "last-modified"] := "Tue, 09 Jun 2015 15:42:50 GMT"
+        [:headers "last-modified" parse-date] := (java.util.Date. (.lastModified state))
         [:headers "last-modified" parse-date (memfn getTime)] := (.lastModified state)))
 
     (testing "conditional-response"
@@ -124,43 +123,44 @@
           handler (yb/resource state options)
           root-handler (make-handler ["/" handler])]
 
-      (given f
-        identity :? yst/exists?
-        [(memfn listFiles) count] := 0)
+      (testing "Start with 0 files"
+        (given f
+          identity :? yst/exists?
+          [(memfn listFiles) count] := 0))
 
-      ;; PUT a new file
-      (given @(root-handler
-               (merge (request :put "/abc.txt")
-                      {:body (ByteArrayInputStream. (.getBytes "foo"))}))
-        :status := 204)
+      (testing "PUT a new file"
+        (given @(root-handler
+                 (merge (request :put "/abc.txt")
+                        {:body (ByteArrayInputStream. (.getBytes "foo"))}))
+          :status := 204))
 
       (given f
         [(memfn listFiles) count] := 1)
 
-      ;; GET the new file
-      (given @(root-handler (request :get "/abc.txt"))
-        :status := 200
-        [:body slurp] := "foo")
+      (testing "GET the new file"
+        (given @(root-handler (request :get "/abc.txt"))
+          :status := 200
+          [:body slurp] := "foo"))
 
-      ;; PUT another file
-      (given @(root-handler
-               (merge (request :put "/def.txt")
-                      {:body (ByteArrayInputStream. (.getBytes "bar"))}))
-        :status := 204)
+      (testing "PUT another file"
+        (given @(root-handler
+                 (merge (request :put "/def.txt")
+                        {:body (ByteArrayInputStream. (.getBytes "bar"))}))
+          :status := 204))
 
-      ;; GET the index
-      (given @(root-handler (request :get "/"))
-        :status := 200
-        [:body] := "abc.txt\ndef.txt"
-        [:headers "content-type"] := "text/html")
+      (testing "GET the index"
+        (given @(root-handler (request :get "/"))
+          :status := 200
+          [:body] := "abc.txt\ndef.txt"
+          [:headers "content-type"] := "text/html"))
 
-      ;; GET the file that doesn't exist
-      (given @(root-handler (request :get "/abcd.txt"))
-        :status := 404)
+      (testing "GET the file that doesn't exist"
+        (given @(root-handler (request :get "/abcd.txt"))
+          :status := 404))
 
-      ;; DELETE the new files
-      (given @(root-handler (request :delete "/abc.txt"))
-        :status := 204)
+      (testing "DELETE the new files"
+        (given @(root-handler (request :delete "/abc.txt"))
+          :status := 204))
 
       (given f
         [(memfn listFiles) count] := 1)
@@ -171,15 +171,15 @@
       (given f
         [(memfn listFiles) count] := 0)
 
-      ;; DELETE the directory
-      (given @(root-handler (request :delete "/"))
-        :status := 204)
+      (testing "DELETE the directory"
+          (given @(root-handler (request :delete "/"))
+            :status := 204))
 
       (given f
         identity :!? yst/exists?))))
 
 
-;; TODO Finish the above, then start serving whole directories!
+;; TODO Finish the above, then start serving whole directories.
 
 ;; Test a single resource. Note that this isn't a particularly useful
 ;; resource, because it contains no knowledge of when it was modified,

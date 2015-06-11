@@ -351,9 +351,8 @@
               (fn [ctx]
                 (let [available-content-types
                       (remove nil?
-                            (or (p/produces produces)
-                                (yst/produces state)
-                                nil))]
+                              (or (p/produces produces)
+                                  (yst/produces state)))]
                   (infof "available-content-types is %s" available-content-types)
                   (if-let [content-type
                            (best-allowed-content-type

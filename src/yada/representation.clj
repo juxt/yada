@@ -29,6 +29,7 @@
   (parameter [_ name] (get parameters name))
   (to-media-type-map [this] this))
 
+
 (def token #"[^()<>@,;:\\\"/\[\]?={}\ \t]+")
 
 (def media-type
@@ -37,13 +38,15 @@
                    "(" token ")"
                    "((?:" ";" token "=" token ")*)")))
 
-(defn string->media-type [s]
-  (let [g (rest (re-matches media-type s))]
-    (->MediaTypeMap
-     (first g)
-     (second g)
-     (into {} (map vec (map rest (re-seq (re-pattern (str ";(" token ")=(" token ")"))
-                                         (last g))))))))
+(memoize
+ (defn string->media-type [s]
+   (let [g (rest (re-matches media-type s))]
+     (->MediaTypeMap
+      (first g)
+      (second g)
+      (into {} (map vec (map rest (re-seq (re-pattern (str ";(" token ")=(" token ")"))
+                                          (last g)))))))))
+
 
 (extend-protocol MediaType
   String

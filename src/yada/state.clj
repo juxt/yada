@@ -68,8 +68,9 @@
   (exists? [f] (.exists f))
   (last-modified [f] (Date. (.lastModified f)))
   (produces [f]
-    (when (.isFile f)
-      [(mime/ext-mime-type (.getName f))]))
+    (cond
+      (.isFile f) [(mime/ext-mime-type (.getName f))]
+      (.isDirectory f) ["text/html" "text/plain"]))
   (content-length [f]
     (when (.isFile f)
       (.length f)))
@@ -85,18 +86,15 @@
 
     (let [path-info (-> ctx :request :path-info)]
       (cond
-        (and (nil? path-info) (.isFile f))
-        f
+        (and (nil? path-info) (.isFile f)) f
 
-        (and (.isDirectory f) path-info)
-        (let [f (child-file f path-info)]
-          (when (.exists f) f))
+        (and (.isDirectory f) path-info) (let [f (child-file f path-info)]
+                                           (when (.exists f) f))
 
-        (.isDirectory f)
         ;; TODO: The content-type indicates the format. Use support in
         ;; yada.representation to help format the response body.
         ;; This will have to do for now
-        (str/join "\n" (sort (.list f)))
+        (.isDirectory f) (str/join "\n" (sort (.list f)))
         )))
 
   (put-state! [f content content-type ctx]
