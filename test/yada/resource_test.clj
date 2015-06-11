@@ -1,6 +1,6 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(ns yada.state-test
+(ns yada.resource-test
   (:require
    [clojure.edn :as edn]
    [clojure.test :refer :all]
@@ -8,7 +8,7 @@
    [clojure.tools.logging :refer :all]
    [yada.core :refer [yada]]
    [yada.bidi :as yb]
-   [yada.state :as yst :refer (legal-name)]
+   [yada.resource :as yst :refer (legal-name)]
    [ring.mock.request :refer [request]]
    [ring.util.time :refer (parse-date format-date)]
    [yada.test.util :refer (given)]
@@ -25,15 +25,15 @@
   (are [x] (legal-name x)
     "a" "b.txt" "c..txt"))
 
-;; Test a resource where the state is an actual file
+;; Test an actual file resource
 (deftest file-test
-  (let [state (io/file "test/yada/state/test.txt")
-        handler (yada state)
+  (let [resource (io/file "test/yada/state/test.txt")
+        handler (yada resource)
         request (request :get "/")
         response @(handler request)]
 
     (testing "expectations of set-up"
-      (given state
+      (given resource
         identity :? exists?
         (memfn getName) := "test.txt"))
 
@@ -43,16 +43,16 @@
         :status := 200
         [:headers "content-type"] := "text/plain"
         [:body type] := File
-        [:headers "content-length"] := (.length state)))
+        [:headers "content-length"] := (.length resource)))
 
     (testing "last-modified"
       (given response
-        [:headers "last-modified" parse-date] := (java.util.Date. (.lastModified state))
-        [:headers "last-modified" parse-date (memfn getTime)] := (.lastModified state)))
+        [:headers "last-modified" parse-date] := (java.util.Date. (.lastModified resource))
+        [:headers "last-modified" parse-date (memfn getTime)] := (.lastModified resource)))
 
     (testing "conditional-response"
       (given @(handler (assoc-in request [:headers "if-modified-since"]
-                                 (format-date (Date. (.lastModified state)))))
+                                 (format-date (Date. (.lastModified resource)))))
         :status := 304))))
 
 (deftest temp-file-test
@@ -118,9 +118,9 @@
     (.mkdirs f)
     (is (exists? f))
 
-    (let [state f
+    (let [resource f
           options {:methods #{:get :head :put :delete}}
-          handler (yb/resource state options)
+          handler (yb/resource resource options)
           root-handler (make-handler ["/" handler])]
 
       (testing "Start with 0 files"

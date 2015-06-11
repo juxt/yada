@@ -28,7 +28,7 @@
             [yada.conneg :refer (best-allowed-content-type)]
             [yada.representation :as rep]
             [yada.resource-options :as ropts]
-            [yada.state :as yst]
+            [yada.resource :as yst]
             [yada.trace]
             [yada.util :refer (link)])
   (:import (clojure.lang IPending)
@@ -46,7 +46,9 @@
 
 ;; Yada returns instances of Endpoint, which allows yada to integrate
 ;; with bidi's matching-context.
-(defrecord Endpoint [state handler]
+
+;; Check duplication with yada/bidi ns
+(defrecord Endpoint [resource handler]
   clojure.lang.IFn
   (invoke [_ req] (handler req {}))
   YadaInvokeable
@@ -130,8 +132,8 @@
                 (when (:post rmap) :post)
                 (when (:delete rmap) :delete)))))))
 
-(defn make-handler
-  [state
+(defn make-endpoint
+  [resource
    {:keys
     [service-available?                 ; async-supported
      known-method?                      ; async-supported
@@ -169,7 +171,7 @@
   (let [security (as-sequential security)]
 
     (->Endpoint
-     state
+     resource
      (fn [req ctx]
 
        (let [method (:request-method req)
@@ -352,7 +354,7 @@
                 (let [available-content-types
                       (remove nil?
                               (or (ropts/produces produces)
-                                  (yst/produces state)))]
+                                  (yst/produces resource)))]
                   (if-let [content-type
                            (best-allowed-content-type
                             (or (get-in req [:headers "accept"]) "*/*")
@@ -375,19 +377,19 @@
                 (case method
                   (:get :head)
                   (d/chain
-                   (assoc ctx :state (ropts/state state ctx))
+                   (assoc ctx :resource (yst/resource resource ctx))
 
                    ;; Perhaps the resource doesn't exist
                    (link ctx
-                     (when-let [state (:state ctx)]
-                       (when-not (yst/exists? state)
+                     (when-let [resource (:resource ctx)]
+                       (when-not (yst/exists? resource)
                          (d/error-deferred (ex-info "" {:status 404
                                                         ::http-response true})))))
 
 
                    ;; Conditional request
                    (link ctx
-                     (when-let [last-modified (yst/last-modified (:state ctx))]
+                     (when-let [last-modified (yst/last-modified (:resource ctx))]
 
                        (if-let [if-modified-since (some-> req
                                                           (get-in [:headers "if-modified-since"])
@@ -434,11 +436,11 @@
                          :get
                          (d/chain
 
-                          ;; the state here can still be deferred
-                          (:state ctx)
+                          ;; the resource here can still be deferred
+                          (:resource ctx)
 
-                          (fn [state]
-                            (or (yst/get-state state content-type ctx)
+                          (fn [resource]
+                            (or (yst/get-state resource content-type ctx)
                                 (throw (ex-info "" {:status 404
                                                     ;; TODO: Do something nice for developers here
                                                     :body "Not Found"
@@ -452,7 +454,7 @@
                               (update-in ctx [:response :headers] assoc "content-type" content-type)))
 
                           (link ctx
-                            (when-let [content-length (yst/content-length (:state ctx))]
+                            (when-let [content-length (yst/content-length (:resource ctx))]
                               (update-in ctx [:response :headers] assoc "content-length" content-length))))))))
 
 
@@ -469,12 +471,12 @@
 
                    ;; Do the put!
                    (fn [ctx]
-                     (let [exists? (yst/exists? state)]
+                     (let [exists? (yst/exists? resource)]
                        (let [res
                              (cond
                                put! (ropts/put! put! ctx)
                                ;; TODO: Add content and content-type
-                               state (yst/put-state! state nil nil ctx)
+                               resource (yst/put-state! resource nil nil ctx)
                                :otherwise (throw (ex-info "No implementation of put!" {})))]
 
                          (assoc-in ctx [:response :status]
@@ -499,7 +501,7 @@
                      (let [result
                            (cond
                              post! (ropts/post! post! ctx)
-                             state (yst/post-state! state ctx)
+                             resource (yst/post-state! resource ctx)
                              :otherwise (throw (ex-info "No implementation of put!" {})))]
 
                        ;; TODO: what if error?
@@ -520,12 +522,12 @@
                   (d/chain
                    ctx
                    (fn [ctx]
-                     (if-not (yst/exists? state)
+                     (if-not (yst/exists? resource)
                        (assoc-in ctx [:response :status] 404)
                        (let [res
                              (cond
                                delete! (ropts/delete! delete! ctx)
-                               state (yst/delete-state! state ctx)
+                               resource (yst/delete-state! resource ctx)
                                :otherwise (throw (ex-info "No implementation of delete!" {})))]
                          (assoc-in ctx [:response :status] (if (d/deferred? res) 202 204))))))
 
@@ -549,11 +551,11 @@
                 #_(cond
                     ;; 'Exists' flow
                     ;; TODO: Not sure that exists-flow is what we're doing here - exists-flow has all kinds of things complected in it. Break up into individual cases, perhaps based on method. We are only using this to avoid the 404 of the 'not exists' flow. Perhaps check for existence and throw the 404 now if necessary.
-                    (or state body (#{:post :put} method))
+                    (or resource body (#{:post :put} method))
                     (d/chain
                      ctx
                      ;; Not sure we should use exists-flow for CORS pre-flight requests, should handle further above
-                     (exists-flow method state req status headers body post! allow-origin)
+                     (exists-flow method resource req status headers body post! allow-origin)
                      (cors allow-origin)
 
                      (fn [ctx]
@@ -622,9 +624,9 @@
                              [:pre (with-out-str (apply str (interpose "\n" (seq (.getStackTrace %)))))]])}))))))))
 
 (defn yada
-  ([state]
-   (yada state {}))
-  ([state opts]
-   (if (keyword? state)
+  ([resource]
+   (yada resource {}))
+  ([resource opts]
+   (if (keyword? resource)
      (throw (ex-info "Deprecated usage" {}))
-     (make-handler state opts))))
+     (make-endpoint resource opts))))

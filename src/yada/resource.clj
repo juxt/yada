@@ -1,6 +1,6 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(ns yada.state
+(ns yada.resource
   (:require [byte-streams :as bs]
             [clojure.java.io :as io]
             [clojure.string :as str]
@@ -12,15 +12,32 @@
    [java.io File InputStream]
    [java.util Date]))
 
-(defprotocol State
-  "A protocol for describing state: where it is, when it was last
+(defprotocol Resourceful
+  "A protocol for finding resources from yada's initial resource argument"
+  (resource [_ ctx]))
+
+(extend-protocol Resourceful
+  clojure.lang.Fn
+  (resource [f ctx]
+    (let [res (f)]
+      (if (d/deferrable? res)
+        (d/chain res #(resource % ctx))
+        (resource res ctx))))
+  Object
+  (resource [o ctx] o)
+
+  nil
+  (resource [_ ctx] nil))
+
+(defprotocol Resource
+  "A protocol for describing a resource: where it is, when it was last
   updated, how to change it, etc. "
 
-  (exists? [_] "Whether the state actually exists")
+  (exists? [_] "Whether the resource actually exists")
 
-  (last-modified [_] "Return the date that the state was last modified.")
+  (last-modified [_] "Return the date that the resource was last modified.")
 
-  (produces [_] "Return the mime types that can be produced from this state")
+  (produces [_] "Return the mime types that can be produced from this resource")
   (content-length [_] "Return the content length, if possible")
 
   (get-state [_ content-type ctx] "Return the state, formatted to a representation of the given content-type and charset. Returning nil results in a 404.")
@@ -43,7 +60,7 @@
                             :yada.core/http-response true})))
   (io/file dir name))
 
-(extend-protocol State
+(extend-protocol Resource
   clojure.lang.Fn
   (last-modified [f]
     (let [res (f)]

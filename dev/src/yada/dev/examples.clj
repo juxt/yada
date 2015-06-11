@@ -281,7 +281,7 @@
   {:post! (fn [ctx]
            ;; this is just like a normal Ring handler.
 
-           ;; the main benefit is that state is available via deref,
+           ;; the main benefit is that resource is available via deref,
            ;; the content-type is already handled
 
            (let [entity @(get-in ctx [:request :entity])]

@@ -67,10 +67,10 @@
 (defprotocol Representation
   (content [_ content-type] "Get representation data, given the content-type")
   (content-type-default [_] "Return the default content type of the object if not specified explicitly")
-  (content-length [_] "Return the size of the state's represenation, if this can possibly be known up-front (return nil if this is unknown)"))
+  (content-length [_] "Return the size of the resource's represenation, if this can possibly be known up-front (return nil if this is unknown)"))
 
-(defmulti render-map (fn [state content-type] content-type))
-(defmulti render-seq (fn [state content-type] content-type))
+(defmulti render-map (fn [resource content-type] content-type))
+(defmulti render-seq (fn [resource content-type] content-type))
 
 ;; TODO: what does it mean to have a default content type? Perhaps, this
 ;; should be a list of content types that the representation can adapt
@@ -79,20 +79,20 @@
 (extend-protocol Representation
 
   java.util.Map
-  (content [state content-type] (render-map state content-type))
+  (content [resource content-type] (render-map resource content-type))
   (content-type-default [_] "application/json")
 
   clojure.lang.Sequential
-  (content [state content-type] (render-seq state content-type))
+  (content [resource content-type] (render-seq resource content-type))
   (content-type-default [_] "application/json")
 
   String
-  (content [state _] state)
+  (content [resource _] resource)
   (content-type-default [_] "text/plain")
   (content-length [s] (.length s))
 
   CoreAsyncSource
-  (content [state content-type] (render-seq state content-type))
+  (content [resource content-type] (render-seq resource content-type))
   (content-type-default [_] "text/event-stream")
   (content-length [_] nil)
 

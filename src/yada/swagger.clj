@@ -57,7 +57,7 @@
     ;; This yada resource has match-context in its lexical scope,
     ;; containing any yada/partial (or bidi/partial) entries.
     ((resource
-      :state (rs/swagger-json
+      (rs/swagger-json
               (merge spec {:paths (into {} (map to-path (route-seq ["" routes])))})))
      req)))
 

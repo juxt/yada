@@ -22,7 +22,6 @@
   (request-uri-too-long? [_ uri])
 
   (allowed-methods [_] "Return a set of the allowed methods. Must be determined at compile time (for purposes of introspection by tools). No async support.")
-  (state [_ ctx] "Return the resource's state. Supply a function which can return a deferred, if necessary.")
 
   (body [_ ctx] "Return a representation of the resource. Supply a function which can return a deferred, if necessary.")
   (produces [_] "Return the content-types that the resource can produce")
@@ -72,7 +71,7 @@
 
   (request-uri-too-long? [f uri] (request-uri-too-long? (f uri) uri))
 
-  (state [f ctx]
+  #_(state [f ctx]
     (let [res (f ctx)]
       (cond
         ;; ReadPort is deferrable, but we want the non-deferrable handling in this case
@@ -119,7 +118,7 @@
 
   String
   (body [s _] s)
-  (state [s ctx] s)
+  #_(state [s ctx] s)
   (interpret-post-result [s ctx]
     (assoc-in ctx [:response :body] s))
   (format-event [ev] [(format "data: %s\n" ev)])
@@ -170,7 +169,7 @@
   (service-available? [_ _] true)
   (request-uri-too-long? [_ uri]
     (request-uri-too-long? 4096 uri))
-  (state [_ _] nil)
+  #_(state [_ _] nil)
   (body [_ _] nil)
   (post [_ _] nil)
   (produces [_] nil)
@@ -180,13 +179,13 @@
   (allow-origin [_ _] nil)
 
   ReadPort
-  (state [port ctx] (->source port))
+  #_(state [port ctx] (->source port))
   (body [port ctx] (->source port))
 
   Object
   (authorization [o] o)
   ;; Default is to return the value as-is and leave to subsequent
   ;; processing to determine how to manage or represent it
-  (state [o ctx] o)
+  #_(state [o ctx] o)
 
   )
