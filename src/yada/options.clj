@@ -25,7 +25,7 @@
   (state [_ ctx] "Return the resource's state. Supply a function which can return a deferred, if necessary.")
 
   (body [_ ctx] "Return a representation of the resource. Supply a function which can return a deferred, if necessary.")
-  (produces [_] "Return the content-types, as a set, that the resource can produce")
+  (produces [_] "Return the content-types that the resource can produce")
   (status [_ ctx] "Override the response status")
   (headers [_ ctx] "Override the response headers")
 
@@ -103,7 +103,7 @@
         :otherwise
         (body res ctx))))
 
-  (produces [f] (f))
+  (produces [f] (produces (f)))
 
   (post [f ctx]
     (f ctx))
@@ -123,6 +123,7 @@
   (interpret-post-result [s ctx]
     (assoc-in ctx [:response :body] s))
   (format-event [ev] [(format "data: %s\n" ev)])
+  (produces [s] [s])
 
   MediaTypeMap
   (produces [m] [m])
@@ -146,7 +147,6 @@
     (known-method? #{k} method))
 
   java.util.Map
-  (allowed-methods [m] (keys m))
   (body [m ctx]
     ;; Maps indicate keys are exact content-types
     ;; For matching on content-type, use a vector of vectors (TODO)
@@ -157,8 +157,9 @@
   (format-event [ev] )
 
   clojure.lang.PersistentVector
-  (produces [v] (produces (set v)))
+  (produces [v] v)
   (body [v ctx] v)
+  (allowed-methods [v] v)
 
   java.util.List
   (allowed-methods [v] v)

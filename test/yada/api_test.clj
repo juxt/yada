@@ -33,7 +33,8 @@
     (let [res (h (assoc req :route-params rp))]
       (if (d/deferrable? res) @res res))))
 
-(deftest handlers
+;; TODO: Disabled until revisting Swagger support
+#_(deftest handlers
   (testing "Service Unavailable"
 
     (let [response (get-op-response

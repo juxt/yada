@@ -8,20 +8,23 @@
    [yada.core :refer [yada]]
    [yada.test.util :refer (given)]))
 
+;; TODO: OPTIONS needs to be documented and implemented, then re-enable
+;; these tests
+
 (deftest options-test []
   (testing "Server capabilities"
-    (let [resource {}
+    (let [resource "Hello World!"
           handler (yada resource)
           request (request :options "*")
           response @(handler request)]
       (given response
         :status := 200)))
 
-  (testing "Resource capabilities"
-    (let [resource {}
-          handler (yada resource)
-          request (request :options "/")
-          response @(handler request)]
-      (given response
-        :status := 200
-        :headers := {"accept" "(TODO)"}))))
+  #_(testing "Resource capabilities"
+      (let [resource "Hello World!"
+            handler (yada resource)
+            request (request :options "/")
+            response @(handler request)]
+        (given response
+          :status := 200
+          :headers := {"accept" "(TODO)"}))))

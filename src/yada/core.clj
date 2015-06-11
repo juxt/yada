@@ -353,7 +353,6 @@
                       (remove nil?
                               (or (p/produces produces)
                                   (yst/produces state)))]
-                  (infof "available-content-types is %s" available-content-types)
                   (if-let [content-type
                            (best-allowed-content-type
                             (or (get-in req [:headers "accept"]) "*/*")
@@ -594,7 +593,7 @@
                                   (p/headers headers ctx))
                         ;; TODO :status and :headers should be implemented like this in all cases
                         :body (get-in ctx [:response :body])})]
-                  (infof "Returning response: %s" (dissoc response :body))
+                  (debugf "Returning response: %s" (dissoc response :body))
                   response
                   ))
 

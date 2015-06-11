@@ -10,7 +10,7 @@
 
 (deftest trace-test []
   (testing "Normal operation"
-    (let [resource {}
+    (let [resource "Hello World!"
           handler (yada resource)
           request (merge (request :trace "/")
                          {:body (java.io.ByteArrayInputStream. (.getBytes "Hello World!"))})
@@ -19,9 +19,9 @@
         :status := 200
         :body :? #(.endsWith % "Hello World!"))))
 
+  ;; TODO: TRACE needs to be documented
   (testing "TRACE disabled"
-    (let [resource {:methods [:get :head]}
-          handler (yada resource)
+    (let [handler (yada "Hello World!" {:methods [:get :head]})
           request (request :trace "/")
           response @(handler request)]
       (given response

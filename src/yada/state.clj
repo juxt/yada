@@ -124,11 +124,7 @@
         (throw (ex-info "TODO: Directory creation from archive stream is not yet implemented" {}))
 
         :otherwise
-        (do
-          (infof "Should transfer...")
-          (bs/transfer (-> ctx :request :body) f))
-
-        )))
+        (bs/transfer (-> ctx :request :body) f))))
 
   (delete-state! [f ctx]
     (let [path-info (-> ctx :request :path-info)]

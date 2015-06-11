@@ -9,8 +9,8 @@
    [yada.test.util :refer (given)]))
 
 (deftest head-test []
-  (let [resource {:state "Hello World!"}
-        handler (yada resource)
+  (let [resource "Hello World!"
+        handler (yada resource {:produces "text/plain"})
         request (request :head "/")
         response @(handler request)]
     (given response
