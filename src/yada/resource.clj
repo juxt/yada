@@ -19,7 +19,7 @@
 (extend-protocol Resourceful
   clojure.lang.Fn
   (resource [f ctx]
-    (let [res (f)]
+    (let [res (f ctx)]
       (if (d/deferrable? res)
         (d/chain res #(resource % ctx))
         (resource res ctx))))
