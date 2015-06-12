@@ -1,17 +1,17 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.dev.website
-  (:require
-   [schema.core :as s]
-   [bidi.bidi :refer (RouteProvider tag)]
-   [modular.bidi :refer (path-for)]
-   yada.bidi
-   [clojure.java.io :as io]
-   [hiccup.core :refer (html)]
-   [com.stuartsierra.component :refer (using)]
-   [modular.template :as template :refer (render-template)]
-   [modular.component.co-dependency :refer (co-using)]
-   [yada.yada :refer (yada)]))
+  (:require [bidi.bidi :refer (RouteProvider tag)]
+            [clojure.java.io :as io]
+            [com.stuartsierra.component :refer (using)]
+            [hiccup.core :refer (html)]
+            [modular.bidi :refer (path-for)]
+            [modular.component.co-dependency :refer (co-using)]
+            [modular.template :as template :refer (render-template)]
+            [schema.core :as s]
+            yada.bidi
+            yada.file-resource
+            [yada.yada :refer (yada)]))
 
 (def titles
   {7230 "Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing"
