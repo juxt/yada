@@ -62,8 +62,6 @@
       (let [options {:methods #{:get :head :put :delete}}
             newstate {:username "alice" :name "Alice"}]
 
-        (is (not (yst/exists? f)))
-
         ;; A PUT request arrives on a new URL, containing a
         ;; representation which is parsed into the following model :-
         (letfn [(make-put []
@@ -174,4 +172,4 @@
             :status := 204))
 
       (given f
-        identity :!? yst/exists?))))
+        identity :!? exists?))))

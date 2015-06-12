@@ -28,12 +28,13 @@
   "A protocol for describing a resource: where it is, when it was last
   updated, how to change it, etc. "
 
-  (exists? [_] "Whether the resource actually exists")
+  (exists? [_ ctx] "Whether the resource actually exists")
 
-  (last-modified [_] "Return the date that the resource was last modified.")
+  (last-modified [_ ctx] "Return the date that the resource was last modified.")
 
-  (produces [_] "Return the mime types that can be produced from this resource")
-  (content-length [_] "Return the content length, if possible")
+  (produces [_] "Return the mime types that can be produced from this resource. The result is request-context independent, suitable for consumption by introspectng tools such as swagger.")
+
+  (content-length [_ ctx] "Return the content length, if possible.")
 
   (get-state [_ content-type ctx] "Return the state, formatted to a representation of the given content-type and charset. Returning nil results in a 404.")
 
@@ -45,36 +46,36 @@
 
 (extend-protocol Resource
   clojure.lang.Fn
-  (last-modified [f]
+  (last-modified [f ctx]
     (let [res (f)]
       (if (d/deferrable? res)
-        (d/chain res #(last-modified %))
-        (last-modified res))))
+        (d/chain res #(last-modified % ctx))
+        (last-modified res ctx))))
 
   Number
-  (last-modified [l] (Date. l))
+  (last-modified [l _] (Date. l))
 
   String
-  (exists? [s] true)
-  (last-modified [s] nil)
+  (exists? [s ctx] true)
+  (last-modified [s _] nil)
   (get-state [s content-type ctx] s)
   ;; Without attempting to actually parse it (which isn't completely
   ;; impossible) we're not able to guess the content-type of this
   ;; string, so we return nil.
   (produces [s] nil)
-  (content-length [_] nil)
+  (content-length [_ _] nil)
 
   Date
-  (last-modified [d] d)
+  (last-modified [d _] d)
 
   nil
   ;; last-modified of 'nil' means we don't consider last-modified
-  (last-modified [_] nil)
+  (last-modified [_ _] nil)
   (get-state [_ content-type ctx] nil)
-  (content-length [_] nil)
+  (content-length [_ _] nil)
 
   Object
-  (last-modified [_] nil)
-  (content-length [_] nil)
+  (last-modified [_ _] nil)
+  (content-length [_ _] nil)
 
   )

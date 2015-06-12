@@ -382,14 +382,14 @@
                    ;; Perhaps the resource doesn't exist
                    (link ctx
                      (when-let [resource (:resource ctx)]
-                       (when-not (yst/exists? resource)
+                       (when-not (yst/exists? resource ctx)
                          (d/error-deferred (ex-info "" {:status 404
                                                         ::http-response true})))))
 
 
                    ;; Conditional request
                    (link ctx
-                     (when-let [last-modified (yst/last-modified (:resource ctx))]
+                     (when-let [last-modified (yst/last-modified (:resource ctx) ctx)]
 
                        (if-let [if-modified-since (some-> req
                                                           (get-in [:headers "if-modified-since"])
@@ -397,7 +397,8 @@
                          ;; TODO: Hang on, we can't deref in the
                          ;; middle of a handler like this, we need to
                          ;; build a chain (I think)
-                         (let [last-modified (if (d/deferrable? last-modified) @last-modified last-modified)]
+                         (let [last-modified
+                               (if (d/deferrable? last-modified) @last-modified last-modified)]
 
                            (if (<=
                                 (.getTime last-modified)
@@ -415,6 +416,8 @@
                           ;; TODO: Hang on, we can't deref in the
                           ;; middle of a handler like this, we need to
                           ;; build a chain (I think)
+
+                          ;; TODO: Also, haven't we already calculated last-modified?
 
                           (some->> (if (d/deferrable? last-modified) @last-modified last-modified)
                                    format-date
@@ -454,7 +457,7 @@
                               (update-in ctx [:response :headers] assoc "content-type" content-type)))
 
                           (link ctx
-                            (when-let [content-length (yst/content-length (:resource ctx))]
+                            (when-let [content-length (yst/content-length (:resource ctx) ctx)]
                               (update-in ctx [:response :headers] assoc "content-length" content-length))))))))
 
 
@@ -471,7 +474,7 @@
 
                    ;; Do the put!
                    (fn [ctx]
-                     (let [exists? (yst/exists? resource)]
+                     (let [exists? (yst/exists? resource ctx)]
                        (let [res
                              (cond
                                put! (ropts/put! put! ctx)
@@ -522,7 +525,7 @@
                   (d/chain
                    ctx
                    (fn [ctx]
-                     (if-not (yst/exists? resource)
+                     (if-not (yst/exists? resource ctx)
                        (assoc-in ctx [:response :status] 404)
                        (let [res
                              (cond

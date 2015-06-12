@@ -5,7 +5,9 @@
             [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.tools.logging :refer :all]
+            [hiccup.core :refer (html h)]
             [ring.util.mime-type :as mime]
+            [ring.util.response :refer (redirect)]
             [yada.resource :refer [Resource]])
   (:import [java.io File]
            [java.util Date]))
@@ -16,21 +18,32 @@
    (re-matches #"[\w\.]+" s)))
 
 (defn- child-file [dir name]
-  (when-not (legal-name name)
-    (warn "Attempt to make a child file which ascends a directory")
-    (throw (ex-info "TODO" {:status 400
-                            :yada.core/http-response true})))
-  (io/file dir name))
+  (assert (.startsWith name "/"))
+  (let [name (.substring name 1)] ; remove leading /
+    (when-not (legal-name name)
+      (warn "Attempt to make a child file which ascends a directory")
+      (throw (ex-info "TODO"
+                      {:status 400
+                       :body "Attempt to make a child file which ascends a directory"
+                       :yada.core/http-response true})))
+    (io/file dir name)))
+
+(defn html-dir-index [dir]
+  (html
+   [:html
+    [:head
+     [:title (.getName dir)]]
+    [:body
+     (for [child (sort (.list dir))]
+       [:p [:a {:href child} child]])]]))
 
 (extend-protocol Resource
   File
-  (exists? [f] (.exists f))
-  (last-modified [f] (Date. (.lastModified f)))
+  (exists? [f ctx] (.exists f))
+  (last-modified [f ctx] (Date. (.lastModified f)))
   (produces [f]
-    (cond
-      (.isFile f) [(mime/ext-mime-type (.getName f))]
-      (.isDirectory f) ["text/html" "text/plain"]))
-  (content-length [f]
+    (when (.isFile f) [(mime/ext-mime-type (.getName f))]))
+  (content-length [f ctx]
     (when (.isFile f)
       (.length f)))
 
@@ -43,18 +56,39 @@
     ;; TODO: Check that file is compliant with the given content-type
     ;; (type/subtype and charset)
 
-    (let [path-info (-> ctx :request :path-info)]
-      (cond
-        (and (nil? path-info) (.isFile f)) f
+    (errorf "is-dir? %s, get-state: uri is '%s', path-info is '%s'"
+            (.isDirectory f)
+            (-> ctx :request :uri)
+            (-> ctx :request :path-info))
 
-        (and (.isDirectory f) path-info) (let [f (child-file f path-info)]
-                                           (when (.exists f) f))
+    (if-let [path-info (-> ctx :request :path-info)]
+      (do
+        (errorf "boolean: %s" (and (.isDirectory f) path-info (.startsWith path-info "/")))
+        ;;(assert (.startsWith path-info "/") "path-info must start with /")
+        ;;
+        (cond
+          (and (.isDirectory f) path-info)
+          (if (= path-info "/")
+            ;; TODO: The content-type indicates the format. Use support in
+            ;; yada.representation to help format the response body.
+            ;; This will have to do for now
+            (html-dir-index f)
 
-        ;; TODO: The content-type indicates the format. Use support in
-        ;; yada.representation to help format the response body.
-        ;; This will have to do for now
-        (.isDirectory f) (str/join "\n" (sort (.list f)))
-        )))
+            (let [f (child-file f path-info)]
+              (errorf "f is %s" f)
+              (cond
+                (.isFile f) f
+                (.isDirectory f) (html-dir-index f)
+                :otherwise (throw (ex-info {:status 404 :yada.core/http-response true})))))
+
+          (.isDirectory f)
+          (throw (ex-info "" {:status 302 :headers {"location" (str (-> ctx :request :uri) "/")}
+                              :yada.core/http-response true}))
+          ))
+
+      ;; Redirect so that path-info is not nil
+      (throw (ex-info "" {:status 302 :headers {"location" (str (-> ctx :request :uri) "/")}
+                          :yada.core/http-response true}))))
 
   (put-state! [f content content-type ctx]
     ;; The reason to use bs/transfer is to allow an efficient copy of byte buffers
@@ -104,12 +138,7 @@
               (throw (ex-info {:status 404 :yada.core/http-response true}))))
 
           (let [child-files (.listFiles f)]
-            (if (empty? child-files)
+            (if (seq child-files)
+              (throw (ex-info "By default, the policy is not to delete a non-empty directory" {}))
               (io/delete-file f)
-              (throw (ex-info "By default, the policy is not to delete a non-empty directory" {}))))))))
-
-
-
-
-
-  )
+              )))))))

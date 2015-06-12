@@ -16,6 +16,11 @@
   k-resource-map :yada/resource-map)
 
 ;; Define a resource which can act as a handler in a bidi
+
+;; This Matched is fairly specialised in that it matches even if there
+;; is a bidi remainder, capturing the trailing path in path-info, iff it
+;; begins with /. This needs to be generalized. (TODO)
+
 (defrecord ResourceEndpoint [resource options]
   Matched
   (resolve-handler [this m]
@@ -34,12 +39,14 @@
 
   Ring
   (request [_ req match-context]
-    (when-let [path-info (:path-info req)]
-      (throw (ex-info "path-info already set on request" {:path-info path-info})))
     (let [handler (yada resource (merge (get match-context k-resource-map) options))]
-      (handler (if (not-empty (:remainder match-context))
-                 (assoc req :path-info (:remainder match-context))
-                 req)))))
+      (handler (let [rem (:remainder match-context)]
+                 (if (and (seq req) (.startsWith rem "/"))
+                   (do
+                     (when-let [path-info (:path-info req)]
+                       (throw (ex-info "path-info already set on request" {:path-info path-info})))
+                     (assoc req :path-info (:remainder match-context)))
+                   req))))))
 
 (defn resource
   ([res]
