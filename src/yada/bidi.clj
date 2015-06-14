@@ -10,10 +10,9 @@
    [bidi.bidi :refer (Matched resolve-handler unresolve-handler context succeed)]
    [bidi.ring :refer (Ring request)]))
 
-(def ^{:doc "This key is used to inject partial yada resource-map
-  entries into bidi's matching-context, which is a map that is built up
-  during bidi's matching process."}
-  k-resource-map :yada/resource-map)
+(def ^{:doc "This key is used to inject partial yada resource options
+  into bidi's matching-context, which is a map that is built up during
+  bidi's matching process."}  k-options :yada/resource-options)
 
 ;; Define a resource which can act as a handler in a bidi
 
@@ -39,7 +38,7 @@
 
   Ring
   (request [_ req match-context]
-    (let [handler (yada resource (merge (get match-context k-resource-map) options))]
+    (let [handler (yada resource (merge (get match-context k-options) options))]
       (handler (let [rem (:remainder match-context)]
                  (if (and (seq req) (.startsWith rem "/"))
                    (do
@@ -57,7 +56,7 @@
        (with-meta (meta options)))))
 
 (defn partial
-  "Contextually bind a set of resource-map entries to the match
+  "Contextually bind a set of resource options to the match
   context. This allows policies (e.g. security entries) to be specified
   at a bidi route context which are merged with the final resource
   map. Where there is a merge clash, the inner-most (lower) context
@@ -65,5 +64,5 @@
   [m routes]
   (context
    (fn [ctx]
-     (merge-with merge ctx {k-resource-map m}))
+     (merge-with merge ctx {k-options m}))
    routes))

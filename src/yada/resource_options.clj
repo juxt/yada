@@ -6,7 +6,8 @@
             [clojure.tools.logging :refer :all :exclude [trace]]
             [manifold.deferred :as d]
             [manifold.stream :refer (->source transform)]
-            [yada.representation :refer (MediaType full-type)])
+            [yada.representation :refer (MediaType full-type)]
+            [yada.util :refer (deferrable?)])
   (import [clojure.core.async.impl.protocols ReadPort]
           [yada.representation MediaTypeMap]
           [java.io File]
@@ -59,13 +60,13 @@
   clojure.lang.Fn
   (service-available? [f ctx]
     (let [res (f ctx)]
-      (if (d/deferrable? res)
+      (if (deferrable? res)
         (d/chain res #(service-available? % ctx))
         (service-available? res ctx))))
 
   (known-method? [f method]
     (let [res (known-method? (f method) method)]
-      (if (d/deferrable? res)
+      (if (deferrable? res)
         (d/chain res #(known-method? % method))
         res)))
 
@@ -73,33 +74,14 @@
 
   #_(state [f ctx]
     (let [res (f ctx)]
-      (cond
-        ;; ReadPort is deferrable, but we want the non-deferrable handling in this case
-        (satisfies? aip/ReadPort res)
-        (state res ctx)
-
-        ;; Deferrable
-        (d/deferrable? res)
+      (if (deferrable? res)
         (d/chain res #(state % ctx))
-
-        :otherwise
         (state res ctx))))
 
   (body [f ctx]
     (let [res (f ctx)]
-      (cond
-        ;; If this is something we can take from, in the core.async
-        ;; sense, then call body again. We need this clause here
-        ;; because: (satisfies? d/Deferrable (a/chan)) => true, so
-        ;; (deferrable?  (a/chan) is (consequently) true too.
-        (satisfies? aip/ReadPort res)
-        (body res ctx)
-
-        ;; Deferrable
-        (d/deferrable? res)
+      (if (deferrable? res)
         (d/chain res #(body % ctx))
-
-        :otherwise
         (body res ctx))))
 
   (produces [f] (produces (f)))

@@ -9,6 +9,7 @@
             [ring.util.time :refer [parse-date format-date]]
             [yada.bidi :as yb]
             [yada.core :refer [yada]]
+            [clojure.tools.logging :refer :all]
             [yada.file-resource :refer :all]
             [yada.resource :as yst]
             [yada.test.util :refer [given]])
@@ -117,16 +118,16 @@
     (let [resource f
           options {:methods #{:get :head :put :delete}}
           handler (yb/resource resource options)
-          root-handler (make-handler ["/" handler])]
+          root-handler (make-handler ["/dir" handler])]
 
       (testing "Start with 0 files"
         (given f
-          identity :? yst/exists?
+          #(yst/exists? % {}) :? true?
           [(memfn listFiles) count] := 0))
 
       (testing "PUT a new file"
         (given @(root-handler
-                 (merge (request :put "/abc.txt")
+                 (merge (request :put "/dir/abc.txt")
                         {:body (ByteArrayInputStream. (.getBytes "foo"))}))
           :status := 204))
 
@@ -134,42 +135,42 @@
         [(memfn listFiles) count] := 1)
 
       (testing "GET the new file"
-        (given @(root-handler (request :get "/abc.txt"))
+        (given @(root-handler (request :get "/dir/abc.txt"))
           :status := 200
           [:body slurp] := "foo"))
 
       (testing "PUT another file"
         (given @(root-handler
-                 (merge (request :put "/def.txt")
+                 (merge (request :put "/dir/def.txt")
                         {:body (ByteArrayInputStream. (.getBytes "bar"))}))
           :status := 204))
 
       (testing "GET the index"
-        (given @(root-handler (request :get "/"))
+        (given @(root-handler (request :get "/dir/"))
           :status := 200
-          [:body] := "abc.txt\ndef.txt"
-          [:headers "content-type"] := "text/html"))
+          [:headers "content-type"] := "text/html"
+          [:body] := "abc.txt\ndef.txt"))
 
       (testing "GET the file that doesn't exist"
-        (given @(root-handler (request :get "/abcd.txt"))
+        (given @(root-handler (request :get "/dir/abcd.txt"))
           :status := 404))
 
       (testing "DELETE the new files"
-        (given @(root-handler (request :delete "/abc.txt"))
+        (given @(root-handler (request :delete "/dir/abc.txt"))
           :status := 204))
 
       (given f
         [(memfn listFiles) count] := 1)
 
-      (given @(root-handler (request :delete "/def.txt"))
+      (given @(root-handler (request :delete "/dir/def.txt"))
         :status := 204)
 
       (given f
         [(memfn listFiles) count] := 0)
 
       (testing "DELETE the directory"
-          (given @(root-handler (request :delete "/"))
-            :status := 204))
+        (given @(root-handler (request :delete "/dir"))
+          :status := 204))
 
       (given f
         identity :!? exists?))))

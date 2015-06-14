@@ -2,37 +2,24 @@
 
 (ns yada.resource
   (:require [clojure.tools.logging :refer :all]
-            [manifold.deferred :as d])
+            [manifold.deferred :as d]
+            [yada.util :refer (deferrable?)])
   (:import [clojure.core.async.impl.protocols ReadPort]
            [java.io File InputStream]
            [java.util Date]))
 
-(defprotocol Resourceful
-  "A protocol for finding resources from yada's initial resource argument"
-  (resource [_ ctx]))
-
-(extend-protocol Resourceful
-  clojure.lang.Fn
-  (resource [f ctx]
-    (let [res (f ctx)]
-      (if (d/deferrable? res)
-        (d/chain res #(resource % ctx))
-        (resource res ctx))))
-  Object
-  (resource [o ctx] o)
-
-  nil
-  (resource [_ ctx] nil))
-
 (defprotocol Resource
   "A protocol for describing a resource: where it is, when it was last
-  updated, how to change it, etc. "
+  updated, how to change it, etc. A resource may hold its state, or be able to educe the state on demand (via get-state)."
+
+  (fetch [_ ctx] "Fetch the resource state and/or metadata, such that questions can be answered about it. Anything you return from this function will be available in the :resource entry of ctx passed to other functions in this protocol. You can return a deferred if necessary (indeed, you should do so if you have to perform some IO in this function)")
 
   (exists? [_ ctx] "Whether the resource actually exists")
 
   (last-modified [_ ctx] "Return the date that the resource was last modified.")
 
-  (produces [_] "Return the mime types that can be produced from this resource. The result is request-context independent, suitable for consumption by introspectng tools such as swagger.")
+  (produces [_] [_ ctx]
+    "Return the mime types that can be produced from this resource. The first form is request-context independent, suitable for up-front consumption by introspectng tools such as swagger. The second form can be more sensitive to the request context.")
 
   (content-length [_ ctx] "Return the content length, if possible.")
 
@@ -46,9 +33,14 @@
 
 (extend-protocol Resource
   clojure.lang.Fn
+  (fetch [f ctx]
+    (let [res (f ctx)]
+      (if (deferrable? res)
+        (d/chain res #(fetch % ctx))
+        (fetch res ctx))))
   (last-modified [f ctx]
     (let [res (f)]
-      (if (d/deferrable? res)
+      (if (deferrable? res)
         (d/chain res #(last-modified % ctx))
         (last-modified res ctx))))
 
@@ -56,6 +48,7 @@
   (last-modified [l _] (Date. l))
 
   String
+  (fetch [s ctx] s)
   (exists? [s ctx] true)
   (last-modified [s _] nil)
   (get-state [s content-type ctx] s)
@@ -69,13 +62,31 @@
   (last-modified [d _] d)
 
   nil
+  (fetch [_ ctx] nil)
   ;; last-modified of 'nil' means we don't consider last-modified
   (last-modified [_ _] nil)
   (get-state [_ content-type ctx] nil)
   (content-length [_ _] nil)
 
   Object
+  (fetch [o ctx] o)
   (last-modified [_ _] nil)
   (content-length [_ _] nil)
 
   )
+
+
+(defprotocol ResourceConstructor
+  (make-resource [_] "Make a resource. Often, resources need to be constructed rather than simply extending types with the Resource protocol. For example, we sometimes need to know the exact time that a resource is constructed, to support time-based conditional requests. For example, a simple StringResource is immutable, so by knowing the time of construction, we can precisely state its Last-Modified-Date."))
+
+(extend-protocol ResourceConstructor
+  clojure.lang.Fn
+  (make-resource [f]
+    ;; In the case of a function, we assume thee function is dynamic
+    ;; (taking the request context), so we return it ready for its
+    ;; default Resource implementation (above)
+    f)
+  Object
+  (make-resource [o] o)
+  nil
+  (make-resource [_] nil))

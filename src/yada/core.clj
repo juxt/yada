@@ -70,7 +70,7 @@
 
 (defn spyctx [label & [korks]]
   (fn [ctx]
-    (debugf "SPYCTX %s: Context is %s"
+    (infof "SPYCTX %s: Context is %s"
             label
             (if korks (get-in ctx (if (sequential? korks) korks [korks])) ctx))
     ctx))
@@ -121,7 +121,7 @@
   (contains? #{:delete :get :head :options :put :trace} method))
 
 (defn allowed-methods [ctx]
-  (let [rmap (:resource-map ctx)]
+  (let [rmap (:options ctx)]
     (if-let [methods (:methods rmap)]
       (set (ropts/allowed-methods methods))
       (set
@@ -163,7 +163,7 @@
 
      ] ;; :or {resource {}}
 
-    :as resource-map
+    :as options
 
     :or {authorization (NoAuthorizationSpecified.)}
     }]
@@ -171,7 +171,7 @@
   (let [security (as-sequential security)]
 
     (->Endpoint
-     resource
+     (yst/make-resource resource)
      (fn [req ctx]
 
        (let [method (:request-method req)
@@ -200,7 +200,7 @@
                                  ;; (yes - provided option raw-stream? is true)
                                  (slurp body :encoding (or (character-encoding req) "utf8"))
                                  nil)))
-               :resource-map resource-map})
+               :options options})
 
              (d/chain
               ;; TODO Inline these macros, they don't buy much for their complexity
@@ -349,6 +349,25 @@
 
               ;; TODO OPTIONS
 
+              ;; Prior to conneg we do a pre-fetch, so the resource has
+              ;; a chance to load any metadata it may need to answer the
+              ;; questions to follow. It can also load state in this
+              ;; step, if it wants, but can defer this to the get-state
+              ;; call if it wants. This would usually depend on the size
+              ;; of the state. For example, if it's a stream, it would
+              ;; be returned on get-state.
+
+              ;; The pre-fetch can return a deferred result. (TODO think
+              ;; about this) ; yes it can because the implementation can
+              ;; check it's deferred and then place it in a chain
+              (fn [ctx]
+                (infof "Calling resource... resource is %s" resource)
+                (d/chain
+                 (yst/fetch resource ctx)
+                 (fn [res]
+                   (infof "res is %s" res)
+                   (assoc ctx :resource res))))
+
               ;; Content-negotiation - done here to throw back to the client any errors
               (fn [ctx]
                 (let [available-content-types
@@ -359,25 +378,31 @@
                            (best-allowed-content-type
                             (or (get-in req [:headers "accept"]) "*/*")
                             (map (comp rep/full-type rep/to-media-type-map) available-content-types))]
-                    (assoc-in ctx [:response :content-type] content-type)
+                    (do
+                      (infof "Content-type is %s" content-type)
+                      (assoc-in ctx [:response :content-type] content-type))
                     ;; No best allowed content type
-                    (if (not-empty available-content-types)
-                      ;; If there is a produces specification, but not
-                      ;; matched content-type, it's a 406.
-                      (d/error-deferred
-                       (ex-info ""
-                                {:status 406
-                                 ::debug {:message "Debug!"
-                                          :available-content-types available-content-types}
-                                 ::http-response true}))
-                      ;; Otherwise return the context unchanged
-                      ctx))))
+                    (do
+                      (infof "No content-type")
+                      (if (not-empty available-content-types)
+                        ;; If there is a produces specification, but not
+                        ;; matched content-type, it's a 406.
+                        (d/error-deferred
+                         (ex-info ""
+                                  {:status 406
+                                   ::debug {:message "Debug!"
+                                            :available-content-types available-content-types}
+                                   ::http-response true}))
+                        ;; Otherwise return the context unchanged
+                        ctx)))))
+
+              (spyctx "check")
 
               (fn [ctx]
                 (case method
                   (:get :head)
                   (d/chain
-                   (assoc ctx :resource (yst/resource resource ctx))
+                   ctx
 
                    ;; Perhaps the resource doesn't exist
                    (link ctx
@@ -596,6 +621,7 @@
                         :headers (merge
                                   (get-in ctx [:response :headers])
                                   (ropts/headers headers ctx))
+
                         ;; TODO :status and :headers should be implemented like this in all cases
                         :body (get-in ctx [:response :body])})]
                   (debugf "Returning response: %s" (dissoc response :body))
