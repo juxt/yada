@@ -168,10 +168,13 @@
     :or {authorization (NoAuthorizationSpecified.)}
     }]
 
-  (let [security (as-sequential security)]
+  (let [security (as-sequential security)
+        ;; Note that the resource is constructed during the yada call,
+        ;; not during the request. If you want per-request, see yst/fetch.
+        resource (yst/make-resource resource)]
 
     (->Endpoint
-     (yst/make-resource resource)
+     resource
      (fn [req ctx]
 
        (let [method (:request-method req)
@@ -361,6 +364,7 @@
               ;; about this) ; yes it can because the implementation can
               ;; check it's deferred and then place it in a chain
               (fn [ctx]
+                (infof "Fetch: resource is %s" (type resource))
                 (d/chain
                  (yst/fetch resource ctx)
                  (fn [res]
@@ -368,10 +372,16 @@
 
               ;; Content-type and charset negotiation - done here to throw back to the client any errors
               (fn [ctx]
-                (let [available-content-types
+                (let [resource (:resource ctx)
+                      available-content-types
                       (remove nil?
                               (or (ropts/produces produces ctx)
-                                  (yst/produces resource ctx)))]
+                                  (try
+                                    (yst/produces resource ctx)
+                                    (catch Exception e
+                                      (throw (ex-info "EXCEPTION" {:resource resource
+                                                                   :type (type resource)}))
+                                      ))))]
 
                   (if-let [content-type
                            (best-allowed-content-type

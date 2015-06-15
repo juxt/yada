@@ -12,7 +12,7 @@
   "A protocol for describing a resource: where it is, when it was last
   updated, how to change it, etc. A resource may hold its state, or be able to educe the state on demand (via get-state)."
 
-  (fetch [_ ctx] "Fetch the resource state and/or metadata, such that questions can be answered about it. Anything you return from this function will be available in the :resource entry of ctx passed to other functions in this protocol. You can return a deferred if necessary (indeed, you should do so if you have to perform some IO in this function)")
+  (fetch [this ctx] "Fetch the resource, such that questions can be answered about it. Anything you return from this function will be available in the :resource entry of ctx and will form the type that will be used to dispatch other functions in this protocol. You can return a deferred if necessary (indeed, you should do so if you have to perform some IO in this function). Often, you will return 'this', perhaps augmented with some additional state. Sometimes you will return something else.")
 
   (exists? [_ ctx] "Whether the resource actually exists")
 
@@ -23,7 +23,7 @@
 
   (content-length [_ ctx] "Return the content length, if possible.")
 
-  (get-state [_ content-type ctx] "Return the state, formatted to a representation of the given content-type and charset. Returning nil results in a 404.")
+  (get-state [_ content-type ctx] "Return the state, formatted to a representation of the given content-type and charset. Returning nil results in a 404. Get the charset from the context [:request :charset], if you can support different charsets. A nil charset at [:request :charset] means the user-agent can support all charsets, so just pick one.")
 
   (put-state! [_ content content-type ctx] "Overwrite the state with the data. To avoid inefficiency in abstraction, satisfying types are required to manage the parsing of the representation in the request body. If a deferred is returned, the HTTP response status is set to 202")
 

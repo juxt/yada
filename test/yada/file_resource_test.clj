@@ -122,7 +122,7 @@
 
       (testing "Start with 0 files"
         (given f
-          #(yst/exists? % {}) :? true?
+          [yst/make-resource #(yst/exists? % {})] :? true?
           [(memfn listFiles) count] := 0))
 
       (testing "PUT a new file"

@@ -1,5 +1,7 @@
 ;; Copyright © 2015, JUXT LTD.
 
+;; Rename to service
+
 (ns yada.resource-options
   (:require [clojure.core.async.impl.protocols :as aip]
             [clojure.set :as set]
@@ -13,7 +15,11 @@
           [java.io File]
           [java.util Date]))
 
+
+;; Rename to Service
+
 (defprotocol ResourceOptions
+  "These options are mostly for the service rather than the resource. Although it is possible to provide methods, these options are mostly to secure and protected the service, via access control and rate limiting."
   (service-available? [_ ctx] "Return whether the service is available. Supply a function which can return a deferred, if necessary.")
   (interpret-service-available [_] "Whether the result of service-available? means that the service is actually available")
   (retry-after [_] "Given the result of service-available? implies the service is unavailable, interpret the result as a retry-after header value")
