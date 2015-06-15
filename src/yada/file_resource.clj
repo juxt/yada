@@ -15,6 +15,9 @@
            [java.util Date TimeZone]
            [java.text SimpleDateFormat]))
 
+
+;; TODO: Fix this to ensure that ascending a directory is completely
+;; impossible, and test.
 (defn legal-name [s]
   (and
    (not= s "..")

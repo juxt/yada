@@ -18,7 +18,7 @@
 
 (def exists? (memfn exists))
 
-(deftest legal-name-test
+#_(deftest legal-name-test
   (are [x] (not (#'legal-name x))
     ".." "./foo" "./../home" "./.." "/foo" "a/b")
   (are [x] (legal-name x)
