@@ -148,7 +148,7 @@
       (testing "GET the index"
         (given @(root-handler (merge-with merge (request :get "/dir/") {:headers {"accept" "text/plain"}}))
           :status := 200
-          ;;[:headers "content-type"] := "text/html"
+          [:headers "content-type"] := "text/plain"
           [:body] := "abc.txt\ndef.txt\n"
           ))
 

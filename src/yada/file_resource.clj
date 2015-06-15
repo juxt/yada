@@ -8,6 +8,7 @@
             [hiccup.core :refer (html h)]
             [ring.util.mime-type :as mime]
             [ring.util.response :refer (redirect)]
+            [ring.util.time :refer (format-date)]
             [yada.representation :refer (full-type)]
             [yada.resource :refer [Resource ResourceConstructor]])
   (:import [java.io File]
@@ -16,7 +17,7 @@
 (defn legal-name [s]
   (and
    (not= s "..")
-   (re-matches #"[\w\.]+" s)))
+   (re-matches #"[^/]+(?:/[^/]+)*/?" s)))
 
 (defn- child-file [dir name]
   (assert (.startsWith name "/"))
@@ -34,8 +35,8 @@
   (case content-type
     "text/plain"
     (apply str
-           (for [child (sort (.list dir))]
-             (str child \newline)
+           (for [child (sort (.listFiles dir))]
+             (str (.getName child) \newline)
              ))
     "text/html"
     (html
@@ -43,8 +44,18 @@
       [:head
        [:title (.getName dir)]]
       [:body
-       (for [child (sort (.list dir))]
-         [:p [:a {:href child} child]])]])))
+       [:table
+        [:thead
+         [:tr
+          [:th "Name"]
+          [:th "Size"]
+          [:th "Last modified"]]]
+        [:tbody
+         (for [child (sort (.listFiles dir))]
+           [:tr
+            [:td [:a {:href (if (.isDirectory child) (str (.getName child) "/") (.getName child))} (.getName child)]]
+            [:td (if (.isDirectory child) "" (.length child))]
+            [:td (format-date (java.util.Date. (.lastModified child)))]])]]]])))
 
 (extend-protocol Resource
   File
@@ -57,7 +68,7 @@
     (if (.isFile f)
       [(mime/ext-mime-type (.getName f))]
       (when-let [path-info (-> ctx :request :path-info)]
-        (if (= path-info "/")
+        (if (.endsWith path-info "/")
           ;; We can deliver directory contents in numerous types
           ["text/html" "text/plain"]
           (let [child (child-file f path-info)]
