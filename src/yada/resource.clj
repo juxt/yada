@@ -19,7 +19,7 @@
   (last-modified [_ ctx] "Return the date that the resource was last modified.")
 
   (produces [_] [_ ctx]
-    "Return the mime types that can be produced from this resource. The first form is request-context independent, suitable for up-front consumption by introspectng tools such as swagger. The second form can be more sensitive to the request context.")
+    "Return the mime types that can be produced from this resource. The first form is request-context independent, suitable for up-front consumption by introspectng tools such as swagger. The second form can be more sensitive to the request context. Return a string or strings, such as text/html. If text, and multiple charsets are possible, return charset information. e.g. [\"text/html;charset=utf8\" \"text/html;charset=unicode-1-1\"]")
 
   (content-length [_ ctx] "Return the content length, if possible.")
 
@@ -55,7 +55,9 @@
   ;; Without attempting to actually parse it (which isn't completely
   ;; impossible) we're not able to guess the content-type of this
   ;; string, so we return nil.
-  (produces [s] nil)
+  (produces
+    ([s] nil)
+    ([s ctx] nil))
   (content-length [_ _] nil)
 
   Date

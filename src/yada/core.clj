@@ -25,7 +25,7 @@
             [schema.core :as s]
             [schema.utils :refer (error? error-val)]
             [yada.coerce :refer (coercion-matcher)]
-            [yada.conneg :refer (best-allowed-content-type)]
+            [yada.conneg :refer (best-allowed-content-type best-allowed-charset)]
             [yada.representation :as rep]
             [yada.resource-options :as ropts]
             [yada.resource :as yst]
@@ -361,42 +361,46 @@
               ;; about this) ; yes it can because the implementation can
               ;; check it's deferred and then place it in a chain
               (fn [ctx]
-                (infof "Calling resource... resource is %s" resource)
                 (d/chain
                  (yst/fetch resource ctx)
                  (fn [res]
-                   (infof "res is %s" res)
                    (assoc ctx :resource res))))
 
-              ;; Content-negotiation - done here to throw back to the client any errors
+              ;; Content-type and charset negotiation - done here to throw back to the client any errors
               (fn [ctx]
                 (let [available-content-types
                       (remove nil?
-                              (or (ropts/produces produces)
-                                  (yst/produces resource)))]
+                              (or (ropts/produces produces ctx)
+                                  (yst/produces resource ctx)))]
+
                   (if-let [content-type
                            (best-allowed-content-type
                             (or (get-in req [:headers "accept"]) "*/*")
                             (map (comp rep/full-type rep/to-media-type-map) available-content-types))]
-                    (do
-                      (infof "Content-type is %s" content-type)
-                      (assoc-in ctx [:response :content-type] content-type))
-                    ;; No best allowed content type
-                    (do
-                      (infof "No content-type")
-                      (if (not-empty available-content-types)
-                        ;; If there is a produces specification, but not
-                        ;; matched content-type, it's a 406.
-                        (d/error-deferred
-                         (ex-info ""
-                                  {:status 406
-                                   ::debug {:message "Debug!"
-                                            :available-content-types available-content-types}
-                                   ::http-response true}))
-                        ;; Otherwise return the context unchanged
-                        ctx)))))
 
-              (spyctx "check")
+                    ;; A request without any Accept-Charset header field
+                    ;; implies that the user agent will accept any
+                    ;; charset in response.  Most general-purpose user
+                    ;; agents do not send Accept-Charset.
+                    ;; rfc7231.html#section-5.3.3
+                    #_(when-let [accept-charset (get-in req [:headers "accept-charset"])]
+                        (throw (ex-info "TODO" {}))
+                      )
+
+                    (assoc-in ctx [:response :content-type] content-type)
+
+                    ;; No best allowed content type
+                    (if (not-empty available-content-types)
+                      ;; If there is a produces specification, but not
+                      ;; matched content-type, it's a 406.
+                      (d/error-deferred
+                       (ex-info ""
+                                {:status 406
+                                 ::debug {:message "Debug!"
+                                          :available-content-types available-content-types}
+                                 ::http-response true}))
+                      ;; Otherwise return the context unchanged
+                      ctx))))
 
               (fn [ctx]
                 (case method

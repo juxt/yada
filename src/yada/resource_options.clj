@@ -25,7 +25,7 @@
   (allowed-methods [_] "Return a set of the allowed methods. Must be determined at compile time (for purposes of introspection by tools). No async support.")
 
   (body [_ ctx] "Return a representation of the resource. Supply a function which can return a deferred, if necessary.")
-  (produces [_] "Return the content-types that the resource can produce")
+  (produces [_] [_ ctx] "Return the content-types that the resource can produce")
   (status [_ ctx] "Override the response status")
   (headers [_ ctx] "Override the response headers")
 
@@ -84,7 +84,9 @@
         (d/chain res #(body % ctx))
         (body res ctx))))
 
-  (produces [f] (produces (f)))
+  (produces
+    ([f] (produces (f)))
+    ([f _] (produces (f))))
 
   (post [f ctx]
     (f ctx))
@@ -104,7 +106,9 @@
   (interpret-post-result [s ctx]
     (assoc-in ctx [:response :body] s))
   (format-event [ev] [(format "data: %s\n" ev)])
-  (produces [s] [s])
+  (produces
+    ([s] [s])
+    ([s ctx] [s]))
 
   MediaTypeMap
   (produces [m] [m])
@@ -121,7 +125,9 @@
   (known-method? [set method]
     (contains? set method))
   (allowed-methods [s] s)
-  (produces [set] set)
+  (produces
+    ([s] s)
+    ([s ctx] s))
 
   clojure.lang.Keyword
   (known-method? [k method]
@@ -138,7 +144,9 @@
   (format-event [ev] )
 
   clojure.lang.PersistentVector
-  (produces [v] v)
+  (produces
+    ([v] v)
+    ([v ctx] v))
   (body [v ctx] v)
   (allowed-methods [v] v)
 
@@ -154,7 +162,9 @@
   #_(state [_ _] nil)
   (body [_ _] nil)
   (post [_ _] nil)
-  (produces [_] nil)
+  (produces
+    ([_] nil)
+    ([_ ctx] nil))
   (status [_ _] nil)
   (headers [_ _] nil)
   (interpret-post-result [_ ctx] ctx)

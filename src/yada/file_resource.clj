@@ -8,6 +8,7 @@
             [hiccup.core :refer (html h)]
             [ring.util.mime-type :as mime]
             [ring.util.response :refer (redirect)]
+            [yada.representation :refer (full-type)]
             [yada.resource :refer [Resource ResourceConstructor]])
   (:import [java.io File]
            [java.util Date]))
@@ -24,18 +25,26 @@
       (warn "Attempt to make a child file which ascends a directory")
       (throw (ex-info "TODO"
                       {:status 400
-                       :body "Attempt to make a child file which ascends a directory"
-                       :yada.core/http-response true})))
+                       :body (format "Attempt to make a child file which ascends a directory, name is '%s'" name)
+                       ;;:yada.core/http-response true
+                       })))
     (io/file dir name)))
 
-(defn html-dir-index [dir]
-  (html
-   [:html
-    [:head
-     [:title (.getName dir)]]
-    [:body
-     (for [child (sort (.list dir))]
-       [:p [:a {:href child} child]])]]))
+(defn dir-index [dir content-type]
+  (case content-type
+    "text/plain"
+    (apply str
+           (for [child (sort (.list dir))]
+             (str child \newline)
+             ))
+    "text/html"
+    (html
+     [:html
+      [:head
+       [:title (.getName dir)]]
+      [:body
+       (for [child (sort (.list dir))]
+         [:p [:a {:href child} child]])]])))
 
 (extend-protocol Resource
   File
@@ -44,8 +53,17 @@
     this)
   (exists? [f ctx] (.exists f))
   (last-modified [f ctx] (Date. (.lastModified f)))
-  (produces [f]
-    (when (.isFile f) [(mime/ext-mime-type (.getName f))]))
+  (produces [f ctx]
+    (if (.isFile f)
+      [(mime/ext-mime-type (.getName f))]
+      (when-let [path-info (-> ctx :request :path-info)]
+        (if (= path-info "/")
+          ;; We can deliver directory contents in numerous types
+          ["text/html" "text/plain"]
+          (let [child (child-file f path-info)]
+            (when (.isFile child)
+              [(mime/ext-mime-type (.getName child))]))))))
+
   (content-length [f ctx]
     (when (.isFile f)
       (.length f)))
@@ -59,35 +77,25 @@
     ;; TODO: Check that file is compliant with the given content-type
     ;; (type/subtype and charset)
 
-    (infof "is-dir? %s, get-state: uri is '%s', path-info is '%s'"
-            (.isDirectory f)
-            (-> ctx :request :uri)
-            (-> ctx :request :path-info))
-
     (if-let [path-info (-> ctx :request :path-info)]
-      (do
-        (infof "boolean: %s" (and (.isDirectory f) path-info (.startsWith path-info "/")))
-        ;;(assert (.startsWith path-info "/") "path-info must start with /")
-        ;;
-        (cond
-          (and (.isDirectory f) path-info)
-          (if (= path-info "/")
-            ;; TODO: The content-type indicates the format. Use support in
-            ;; yada.representation to help format the response body.
-            ;; This will have to do for now
-            (html-dir-index f)
+      (cond
+        (and (.isDirectory f) path-info)
+        (if (= path-info "/")
+          ;; TODO: The content-type indicates the format. Use support in
+          ;; yada.representation to help format the response body.
+          ;; This will have to do for now
+          (dir-index f content-type)
 
-            (let [f (child-file f path-info)]
-              (errorf "f is %s" f)
-              (cond
-                (.isFile f) f
-                (.isDirectory f) (html-dir-index f)
-                :otherwise (throw (ex-info "File not found" {:status 404 :yada.core/http-response true})))))
+          (let [f (child-file f path-info)]
+            (cond
+              (.isFile f) f
+              (.isDirectory f) (dir-index f content-type)
+              :otherwise (throw (ex-info "File not found" {:status 404 :yada.core/http-response true})))))
 
-          (.isDirectory f)
-          (throw (ex-info "" {:status 302 :headers {"location" (str (-> ctx :request :uri) "/")}
-                              :yada.core/http-response true}))
-          ))
+        (.isDirectory f)
+        (throw (ex-info "" {:status 302 :headers {"location" (str (-> ctx :request :uri) "/")}
+                            :yada.core/http-response true}))
+        )
 
       ;; Redirect so that path-info is not nil
       (if (.isDirectory f)
@@ -115,7 +123,6 @@
     ;; code allows the same efficiency for file uploads.
 
     (let [path-info (-> ctx :request :path-info)]
-      (errorf "put-state path-info is %s, is-dir?" path-info (.isDirectory f))
       (cond
         (and (.isDirectory f) path-info)
         (let [f (child-file f path-info)]

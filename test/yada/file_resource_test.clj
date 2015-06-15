@@ -146,10 +146,11 @@
           :status := 204))
 
       (testing "GET the index"
-        (given @(root-handler (request :get "/dir/"))
+        (given @(root-handler (merge-with merge (request :get "/dir/") {:headers {"accept" "text/plain"}}))
           :status := 200
-          [:headers "content-type"] := "text/html"
-          [:body] := "abc.txt\ndef.txt"))
+          ;;[:headers "content-type"] := "text/html"
+          [:body] := "abc.txt\ndef.txt\n"
+          ))
 
       (testing "GET the file that doesn't exist"
         (given @(root-handler (request :get "/dir/abcd.txt"))

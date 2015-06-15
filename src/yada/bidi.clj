@@ -6,6 +6,7 @@
   yada.bidi
   (:refer-clojure :exclude [partial])
   (:require
+   [clojure.tools.logging :refer :all]
    [yada.core :refer (yada invoke-with-initial-context k-bidi-match-context)]
    [bidi.bidi :refer (Matched resolve-handler unresolve-handler context succeed)]
    [bidi.ring :refer (Ring request)]))
@@ -40,7 +41,7 @@
   (request [_ req match-context]
     (let [handler (yada resource (merge (get match-context k-options) options))]
       (handler (let [rem (:remainder match-context)]
-                 (if (and (seq req) (.startsWith rem "/"))
+                 (if (and (seq rem) (.startsWith rem "/"))
                    (do
                      (when-let [path-info (:path-info req)]
                        (throw (ex-info "path-info already set on request" {:path-info path-info})))
