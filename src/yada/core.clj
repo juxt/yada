@@ -27,8 +27,8 @@
             [yada.coerce :refer (coercion-matcher)]
             [yada.conneg :refer (best-allowed-content-type best-allowed-charset)]
             [yada.representation :as rep]
-            [yada.resource-options :as ropts]
-            [yada.resource :as yst]
+            [yada.service :as service]
+            [yada.resource :as res]
             [yada.trace]
             [yada.util :refer (link)])
   (:import (clojure.lang IPending)
@@ -76,7 +76,7 @@
     ctx))
 
 (defrecord NoAuthorizationSpecified []
-  ropts/ResourceOptions
+  service/Service
   (authorize [b ctx] true)
   (authorization [_] nil))
 
@@ -123,7 +123,7 @@
 (defn allowed-methods [ctx]
   (let [rmap (:options ctx)]
     (if-let [methods (:methods rmap)]
-      (set (ropts/allowed-methods methods))
+      (set (service/allowed-methods methods))
       (set
        (remove nil?
                (conj
@@ -170,8 +170,8 @@
 
   (let [security (as-sequential security)
         ;; Note that the resource is constructed during the yada call,
-        ;; not during the request. If you want per-request, see yst/fetch.
-        resource (yst/make-resource resource)]
+        ;; not during the request. If you want per-request, see res/fetch.
+        resource (res/make-resource resource)]
 
     (->Endpoint
      resource
@@ -209,17 +209,17 @@
               ;; TODO Inline these macros, they don't buy much for their complexity
 
               (link ctx
-                (let [res (ropts/service-available? service-available? ctx)]
-                  (if-not (ropts/interpret-service-available res)
+                (let [res (service/service-available? service-available? ctx)]
+                  (if-not (service/interpret-service-available res)
                     (d/error-deferred
                      (ex-info "" (merge {:status 503
                                          ::http-response true}
-                                        (when-let [retry-after (ropts/retry-after res)] {:headers {"retry-after" retry-after}})))))))
+                                        (when-let [retry-after (service/retry-after res)] {:headers {"retry-after" retry-after}})))))))
 
               (link ctx
                 (when-not
                     (if known-method?
-                      (ropts/known-method? known-method? method)
+                      (service/known-method? known-method? method)
                       (contains? known-methods method)
                       )
                   (d/error-deferred (ex-info "" {:status 501
@@ -227,7 +227,7 @@
                                                  ::http-response true}))))
 
               (link ctx
-                (when (ropts/request-uri-too-long? request-uri-too-long? (:uri req))
+                (when (service/request-uri-too-long? request-uri-too-long? (:uri req))
                   (d/error-deferred (ex-info "" {:status 414
                                                  ::http-response true}))))
 
@@ -291,7 +291,7 @@
 
               ;; Authorization
               (fn [ctx]
-                (if-let [res (ropts/authorize authorization ctx)]
+                (if-let [res (service/authorize authorization ctx)]
                   (if (= res :not-authorized)
                     (d/error-deferred
                      (ex-info ""
@@ -300,7 +300,7 @@
                                (when-let [basic-realm (first (sequence realms-xf security))]
                                  {:headers {"www-authenticate" (format "Basic realm=\"%s\"" basic-realm)}}))
                               ))
-                    (if-let [auth (ropts/authorization res)]
+                    (if-let [auth (service/authorization res)]
                       (assoc ctx :authorization auth)
                       ctx))
                   (d/error-deferred (ex-info "" {:status 403
@@ -321,7 +321,7 @@
                                      merge
                                      {:headers {"content-type" "message/http;charset=utf8"}}
                                      ;; Custom code /can/ override (but really shouldn't)
-                                     (ropts/trace trace req ctx)))
+                                     (service/trace trace req ctx)))
                                    (update-in [:body] to-encoding "utf8"))
 
                                ;; otherwise default implementation
@@ -366,7 +366,7 @@
               (fn [ctx]
                 (infof "Fetch: resource is %s" (type resource))
                 (d/chain
-                 (yst/fetch resource ctx)
+                 (res/fetch resource ctx)
                  (fn [res]
                    (assoc ctx :resource res))))
 
@@ -375,9 +375,9 @@
                 (let [resource (:resource ctx)
                       available-content-types
                       (remove nil?
-                              (or (ropts/produces produces ctx)
+                              (or (service/produces produces ctx)
                                   (try
-                                    (yst/produces resource ctx)
+                                    (res/produces resource ctx)
                                     (catch Exception e
                                       (throw (ex-info "EXCEPTION" {:resource resource
                                                                    :type (type resource)}))
@@ -421,14 +421,14 @@
                    ;; Perhaps the resource doesn't exist
                    (link ctx
                      (when-let [resource (:resource ctx)]
-                       (when-not (yst/exists? resource ctx)
+                       (when-not (res/exists? resource ctx)
                          (d/error-deferred (ex-info "" {:status 404
                                                         ::http-response true})))))
 
 
                    ;; Conditional request
                    (link ctx
-                     (when-let [last-modified (yst/last-modified (:resource ctx) ctx)]
+                     (when-let [last-modified (res/last-modified (:resource ctx) ctx)]
 
                        (if-let [if-modified-since (some-> req
                                                           (get-in [:headers "if-modified-since"])
@@ -482,7 +482,7 @@
                           (:resource ctx)
 
                           (fn [resource]
-                            (or (yst/get-state resource content-type ctx)
+                            (or (res/get-state resource content-type ctx)
                                 (throw (ex-info "" {:status 404
                                                     ;; TODO: Do something nice for developers here
                                                     :body "Not Found"
@@ -496,7 +496,7 @@
                               (update-in ctx [:response :headers] assoc "content-type" content-type)))
 
                           (link ctx
-                            (when-let [content-length (yst/content-length (:resource ctx) ctx)]
+                            (when-let [content-length (res/content-length (:resource ctx) ctx)]
                               (update-in ctx [:response :headers] assoc "content-length" content-length))))))))
 
 
@@ -513,12 +513,12 @@
 
                    ;; Do the put!
                    (fn [ctx]
-                     (let [exists? (yst/exists? resource ctx)]
+                     (let [exists? (res/exists? resource ctx)]
                        (let [res
                              (cond
-                               put! (ropts/put! put! ctx)
+                               put! (service/put! put! ctx)
                                ;; TODO: Add content and content-type
-                               resource (yst/put-state! resource nil nil ctx)
+                               resource (res/put-state! resource nil nil ctx)
                                :otherwise (throw (ex-info "No implementation of put!" {})))]
 
                          (assoc-in ctx [:response :status]
@@ -542,8 +542,8 @@
                    (fn [ctx]
                      (let [result
                            (cond
-                             post! (ropts/post! post! ctx)
-                             resource (yst/post-state! resource ctx)
+                             post! (service/post! post! ctx)
+                             resource (res/post-state! resource ctx)
                              :otherwise (throw (ex-info "No implementation of put!" {})))]
 
                        ;; TODO: what if error?
@@ -553,7 +553,7 @@
                        ))
 
                    (fn [ctx]
-                     (ropts/interpret-post-result (:post-result ctx) ctx))
+                     (service/interpret-post-result (:post-result ctx) ctx))
 
 
                    (fn [ctx]
@@ -564,12 +564,12 @@
                   (d/chain
                    ctx
                    (fn [ctx]
-                     (if-not (yst/exists? resource ctx)
+                     (if-not (res/exists? resource ctx)
                        (assoc-in ctx [:response :status] 404)
                        (let [res
                              (cond
-                               delete! (ropts/delete! delete! ctx)
-                               resource (yst/delete-state! resource ctx)
+                               delete! (service/delete! delete! ctx)
+                               resource (res/delete-state! resource ctx)
                                :otherwise (throw (ex-info "No implementation of delete!" {})))]
                          (assoc-in ctx [:response :status] (if (d/deferred? res) 202 204))))))
 
@@ -577,7 +577,7 @@
                   (d/chain
                    ctx
                    (link ctx
-                     (if-let [origin (ropts/allow-origin allow-origin ctx)]
+                     (if-let [origin (service/allow-origin allow-origin ctx)]
                        (update-in ctx [:response :headers]
                                   merge {"access-control-allow-origin"
                                          origin
@@ -603,11 +603,11 @@
                      (fn [ctx]
                        (merge
                         {:status (or (get-in ctx [:response :status])
-                                     (ropts/status status ctx)
+                                     (service/status status ctx)
                                      200)
                          :headers (merge
                                    (get-in ctx [:response :headers])
-                                   (ropts/headers headers ctx))
+                                   (service/headers headers ctx))
                          ;; TODO :status and :headers should be implemented like this in all cases
                          :body (get-in ctx [:response :body])})))
 
@@ -616,7 +616,7 @@
                     (d/chain ctx (constantly {:status 404}))))
 
               #_(fn [ctx]
-                  (if-let [origin (ropts/allow-origin allow-origin ctx)]
+                  (if-let [origin (service/allow-origin allow-origin ctx)]
                     (update-in ctx [:response :headers]
                                merge {"access-control-allow-origin"
                                       origin
@@ -630,11 +630,11 @@
                 (let [response
                       (merge
                        {:status (or (get-in ctx [:response :status])
-                                    (ropts/status status ctx)
+                                    (service/status status ctx)
                                     200)
                         :headers (merge
                                   (get-in ctx [:response :headers])
-                                  (ropts/headers headers ctx))
+                                  (service/headers headers ctx))
 
                         ;; TODO :status and :headers should be implemented like this in all cases
                         :body (get-in ctx [:response :body])})]

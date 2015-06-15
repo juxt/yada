@@ -1,8 +1,6 @@
 ;; Copyright © 2015, JUXT LTD.
 
-;; Rename to service
-
-(ns yada.resource-options
+(ns yada.service
   (:require [clojure.core.async.impl.protocols :as aip]
             [clojure.set :as set]
             [clojure.tools.logging :refer :all :exclude [trace]]
@@ -16,9 +14,7 @@
           [java.util Date]))
 
 
-;; Rename to Service
-
-(defprotocol ResourceOptions
+(defprotocol Service
   "These options are mostly for the service rather than the resource. Although it is possible to provide methods, these options are mostly to secure and protected the service, via access control and rate limiting."
   (service-available? [_ ctx] "Return whether the service is available. Supply a function which can return a deferred, if necessary.")
   (interpret-service-available [_] "Whether the result of service-available? means that the service is actually available")
@@ -49,7 +45,7 @@
 
   (allow-origin [_ ctx] "If another origin (other than the resource's origin) is allowed, return the the value of the Access-Control-Allow-Origin header to be set on the response"))
 
-(extend-protocol ResourceOptions
+(extend-protocol Service
   Boolean
   (service-available? [b ctx] b)
   (interpret-service-available [b] b)

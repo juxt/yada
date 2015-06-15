@@ -11,9 +11,9 @@
    [bidi.bidi :refer (Matched resolve-handler unresolve-handler context succeed)]
    [bidi.ring :refer (Ring request)]))
 
-(def ^{:doc "This key is used to inject partial yada resource options
+(def ^{:doc "This key is used to inject partial yada service options
   into bidi's matching-context, which is a map that is built up during
-  bidi's matching process."}  k-options :yada/resource-options)
+  bidi's matching process."}  k-service :yada/service)
 
 ;; Define a resource which can act as a handler in a bidi
 
@@ -21,7 +21,7 @@
 ;; is a bidi remainder, capturing the trailing path in path-info, iff it
 ;; begins with /. This needs to be generalized. (TODO)
 
-(defrecord ResourceEndpoint [resource options]
+(defrecord ResourceEndpoint [resource service]
   Matched
   (resolve-handler [this m]
     ;; Succeed, returning this, because this satisfies Ring (below), so
@@ -35,11 +35,11 @@
   ;; as if it were a normal Ring handler function.
   clojure.lang.IFn
   (invoke [this req]
-    ((yada resource options) req))
+    ((yada resource service) req))
 
   Ring
   (request [_ req match-context]
-    (let [handler (yada resource (merge (get match-context k-options) options))]
+    (let [handler (yada resource (merge (get match-context k-service) service))]
       (handler (let [rem (:remainder match-context)]
                  (if (and (seq rem) (.startsWith rem "/"))
                    (do
@@ -51,10 +51,11 @@
 (defn resource
   ([res]
    (resource res {}))
-  ([res {:as options}]
-   (-> (->ResourceEndpoint res options)
+  ([res service]
+   (-> (->ResourceEndpoint res service)
        ;; Inherit metadata, exploited for swagger spec gen
-       (with-meta (meta options)))))
+       ;; TODO Do we need this any more?
+       (with-meta (meta service)))))
 
 (defn partial
   "Contextually bind a set of resource options to the match
@@ -65,5 +66,5 @@
   [m routes]
   (context
    (fn [ctx]
-     (merge-with merge ctx {k-options m}))
+     (merge-with merge ctx {k-service m}))
    routes))
