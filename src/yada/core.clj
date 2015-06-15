@@ -30,6 +30,7 @@
             [yada.service :as service]
             [yada.resource :as res]
             [yada.trace]
+            [yada.mime :as mime]
             [yada.util :refer (link)])
   (:import (clojure.lang IPending)
            (java.util Date)
@@ -386,7 +387,7 @@
                   (if-let [content-type
                            (best-allowed-content-type
                             (or (get-in req [:headers "accept"]) "*/*")
-                            (map (comp rep/full-type rep/to-media-type-map) available-content-types))]
+                            (map (comp mime/full-type mime/to-media-type-map) available-content-types))]
 
                     ;; A request without any Accept-Charset header field
                     ;; implies that the user agent will accept any

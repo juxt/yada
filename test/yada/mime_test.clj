@@ -1,6 +1,6 @@
-(ns yada.representation-test
+(ns yada.mime-test
   (:refer-clojure :exclude [type])
-  (:require [yada.representation :refer :all]
+  (:require [yada.mime :refer :all]
             [clojure.test :refer :all]
             [yada.test.util :refer (given)]))
 

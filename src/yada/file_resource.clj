@@ -9,7 +9,6 @@
             [ring.util.mime-type :as mime]
             [ring.util.response :refer (redirect)]
             [ring.util.time :refer (format-date)]
-            [yada.representation :refer (full-type)]
             [yada.resource :refer [Resource ResourceConstructor]])
   (:import [java.io File]
            [java.util Date TimeZone]

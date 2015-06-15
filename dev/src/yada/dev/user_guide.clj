@@ -18,7 +18,9 @@
    [modular.template :as template :refer (render-template)]
    [modular.component.co-dependency :refer (co-using)]
    [yada.dev.examples :refer (resource get-path get-path-args get-query-string get-request make-handler expected-response get-test-function external?)]
-   [yada.yada :refer (yada string->media-type)]))
+   [yada.yada :refer (yada)]
+   [yada.mime :as mime]
+))
 
 (defn emit-element
   ;; An alternative emit-element that doesn't cause newlines to be
@@ -371,7 +373,7 @@
             (->
              (yada (fn [ctx]
                      (body component (post-process-doc component xbody (into {} examples) config) config))
-                   {:produces (string->media-type "text/html;charset=utf8")})
+                   {:produces (mime/string->media-type "text/html;charset=utf8")})
              (tag ::user-guide))))]
 
         ["/examples/"

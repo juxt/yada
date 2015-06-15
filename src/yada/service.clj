@@ -6,10 +6,10 @@
             [clojure.tools.logging :refer :all :exclude [trace]]
             [manifold.deferred :as d]
             [manifold.stream :refer (->source transform)]
-            [yada.representation :refer (MediaType full-type)]
+            [yada.mime :refer (MediaType full-type)]
             [yada.util :refer (deferrable?)])
   (import [clojure.core.async.impl.protocols ReadPort]
-          [yada.representation MediaTypeMap]
+          [yada.mime MediaTypeMap]
           [java.io File]
           [java.util Date]))
 
