@@ -12,7 +12,8 @@
             [yada.representation :refer (full-type)]
             [yada.resource :refer [Resource ResourceConstructor]])
   (:import [java.io File]
-           [java.util Date]))
+           [java.util Date TimeZone]
+           [java.text SimpleDateFormat]))
 
 (defn legal-name [s]
   (and
@@ -55,7 +56,10 @@
            [:tr
             [:td [:a {:href (if (.isDirectory child) (str (.getName child) "/") (.getName child))} (.getName child)]]
             [:td (if (.isDirectory child) "" (.length child))]
-            [:td (format-date (java.util.Date. (.lastModified child)))]])]]]])))
+            [:td (.format
+                  (doto (SimpleDateFormat. "yyyy-MM-dd HH:mm:ss zzz")
+                    (.setTimeZone (TimeZone/getTimeZone "UTC")))
+                  (java.util.Date. (.lastModified child)))]])]]]])))
 
 (extend-protocol Resource
   File
