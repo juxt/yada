@@ -4,13 +4,12 @@
    [yada.charset :as cs]
    [yada.util :refer [parameters parameter weight]]
    [clojure.tools.logging :refer :all :exclude [trace]]
-   [clojure.tools.trace :refer :all]
    [clojure.string :as str]))
 
 ;; ------------------------------------------------------------------------
 ;; Content types
 
-(deftrace acceptable? [acceptable candidate]
+(defn- acceptable? [acceptable candidate]
   (when
       (and
        (or
@@ -25,10 +24,10 @@
        )
     [acceptable candidate]))
 
-(deftrace any-acceptable? [acceptables candidate]
+(defn- any-acceptable? [acceptables candidate]
   (some #(acceptable? % candidate) acceptables))
 
-(deftrace negotiate-content-type*
+(defn- negotiate-content-type*
   "Return the best content type via negotiation."
   [acceptables candidates]
   (->> candidates
