@@ -376,12 +376,7 @@
                       available-content-types
                       (remove nil?
                               (or (service/produces produces ctx)
-                                  (try
-                                    (res/produces resource ctx)
-                                    (catch Exception e
-                                      (throw (ex-info "EXCEPTION" {:resource resource
-                                                                   :type (type resource)}))
-                                      ))))]
+                                  (res/produces resource ctx)))]
 
                   (if-let [content-type
                            (best-allowed-content-type

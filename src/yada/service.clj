@@ -86,9 +86,8 @@
         (d/chain res #(body % ctx))
         (body res ctx))))
 
-  (produces
-    ([f] (produces (f)))
-    ([f _] (produces (f))))
+  (produces [f] (produces (f)))
+  (produces [f ctx] (produces (f) ctx))
 
   (post [f ctx]
     (f ctx))
@@ -108,12 +107,13 @@
   (interpret-post-result [s ctx]
     (assoc-in ctx [:response :body] s))
   (format-event [ev] [(format "data: %s\n" ev)])
-  (produces
-    ([s] [s])
-    ([s ctx] [s]))
+  (produces [s] [s])
+  (produces [s ctx] [s])
 
   MediaTypeMap
   (produces [m] [m])
+  (produces [m _] [m])
+
 
   Number
   (service-available? [n _] n)
@@ -127,9 +127,8 @@
   (known-method? [set method]
     (contains? set method))
   (allowed-methods [s] s)
-  (produces
-    ([s] s)
-    ([s ctx] s))
+  (produces [s] s)
+  (produces [s ctx] s)
 
   clojure.lang.Keyword
   (known-method? [k method]
@@ -146,9 +145,8 @@
   (format-event [ev] )
 
   clojure.lang.PersistentVector
-  (produces
-    ([v] v)
-    ([v ctx] v))
+  (produces [v] v)
+  (produces [v ctx] v)
   (body [v ctx] v)
   (allowed-methods [v] v)
 
@@ -164,9 +162,8 @@
   #_(state [_ _] nil)
   (body [_ _] nil)
   (post [_ _] nil)
-  (produces
-    ([_] nil)
-    ([_ ctx] nil))
+  (produces [_] nil)
+  (produces [_ ctx] nil)
   (status [_ _] nil)
   (headers [_ _] nil)
   (interpret-post-result [_ ctx] ctx)

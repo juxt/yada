@@ -55,9 +55,8 @@
   ;; Without attempting to actually parse it (which isn't completely
   ;; impossible) we're not able to guess the content-type of this
   ;; string, so we return nil.
-  (produces
-    ([s] nil)
-    ([s ctx] nil))
+  (produces [s] nil)
+  (produces [s ctx] nil)
   (content-length [_ _] nil)
 
   Date
