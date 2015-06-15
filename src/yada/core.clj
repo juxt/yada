@@ -365,7 +365,6 @@
               ;; about this) ; yes it can because the implementation can
               ;; check it's deferred and then place it in a chain
               (fn [ctx]
-                (infof "Fetch: resource is %s" (type resource))
                 (d/chain
                  (res/fetch resource ctx)
                  (fn [res]
