@@ -37,21 +37,23 @@
   Weight
   (weight [_] weight))
 
-(def charset
+(def charset-pattern
   (re-pattern (str "(" http-token ")"
                    "((?:" ";" http-token "=" http-token ")*)")))
 
 (memoize
  (defn string->charset [s]
-   (let [g (rest (re-matches charset s))
+   (let [g (rest (re-matches charset-pattern s))
          params (into {} (map vec (map rest (re-seq (re-pattern (str ";(" http-token ")=(" http-token ")"))
                                                     (last g)))))]
      (->CharsetMap
       (first g)
-      (try
-        (Float/parseFloat (get params "q"))
-        (catch java.lang.NumberFormatException e
-          1.0))))))
+      (if-let [q (get params "q")]
+        (try
+          (Float/parseFloat q)
+          (catch java.lang.NumberFormatException e
+            1.0))
+        1.0)))))
 
 (extend-protocol Charset
   String
@@ -61,7 +63,7 @@
   [cs ^java.io.Writer writer]
   (.write writer (format "%s%s%s"
                          (preferred-alias cs)
+                         (when-let [w (weight cs)] (str ";q=" w))
                          (apply str (for [[k v] (parameters cs)
                                           :when (not= k "q")]
-                                      (format ";%s=%s" k v)))
-                         (when-let [w (weight cs)] (str ";q=" w)))))
+                                      (format ";%s=%s" k v))))))

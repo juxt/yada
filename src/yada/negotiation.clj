@@ -54,7 +54,9 @@
     [acceptable-charset candidate]))
 
 (defn any-charset-acceptable? [acceptables candidate]
-  (some #(acceptable-charset? % candidate) acceptables))
+  (if (nil? acceptables)
+    [candidate candidate] ; no header means the user-agent accepts 'any charset' in response - rfc7231.html#section-5.3.3
+    (some #(acceptable-charset? % candidate) acceptables)))
 
 (defn negotiate-charset*
   "Returns a pair."
@@ -66,18 +68,23 @@
              reverse ;; highest weight wins
              first ;; winning pair
              )]
-    (if (not= (-> winner first cs/charset) "*")
-      ;; We return a pair. The first is what we set the charset
-      ;; parameter of the Content-Type header. The second is what we
-      ;; ask the server to provide. These could be different, because
-      ;; the user-agent and server may be using different aliases for
-      ;; the same charset.
-      winner
-      ;; Otherwise, the server gets to dictate the charset
-      [(second winner) (second winner)]
+    (when winner
+      (let [cs1 (-> winner first cs/charset)
+            cs2 (-> winner second cs/charset)]
+        (if (not= cs1 "*")
+          ;; We return a pair. The first is what we set the charset
+          ;; parameter of the Content-Type header. The second is what we
+          ;; ask the server to provide. These could be different, because
+          ;; the user-agent and server may be using different aliases for
+          ;; the same charset.
+          [cs1 cs2]
+          ;; Otherwise, the server gets to dictate the charset
+          [cs2 cs2]
+          ))
       )))
 
 (defn negotiate-charset [accept-charset-header candidates]
   (negotiate-charset*
-   (map cs/to-charset-map (map str/trim (str/split accept-charset-header #"\s*,\s*")))
+   (when accept-charset-header
+     (map cs/to-charset-map (map str/trim (str/split accept-charset-header #"\s*,\s*"))))
    (map cs/to-charset-map candidates)))

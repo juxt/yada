@@ -21,7 +21,7 @@
   (subtype [_] subtype)
   (full-type [_] (str type "/" subtype))
   (to-media-type-map [this] this)
-  Parameters
+  Parameters ; TODO: This is over use of protocols, use a map
   (parameters [_] parameters)
   (parameter [_ name] (get parameters name))
   Weight
@@ -58,6 +58,6 @@
   (.write writer (format "%s/%s%s%s"
                          (type mt)
                          (subtype mt)
+                         (when-let [w (weight mt)] (str ";q=" w))
                          (apply str (for [[k v] (parameters mt)]
-                                      (format ";%s=%s" k v)))
-                         (when-let [w (weight mt)] (str ";q=" w)))))
+                                      (format ";%s=%s" k v))))))
