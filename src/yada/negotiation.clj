@@ -3,13 +3,12 @@
    [yada.mime :as mime]
    [yada.charset :as cs]
    [clojure.tools.logging :refer :all :exclude [trace]]
-   [clojure.tools.trace :refer :all]
    [clojure.string :as str]))
 
 ;; ------------------------------------------------------------------------
 ;; Content types
 
-(deftrace acceptable?
+(defn- acceptable?
   "Compare a single acceptable mime-type (extracted from an Accept
   header) and a candidate. If the candidate is acceptable, return a
   sortable vector [acceptable candidate weight1 weight2]. Weight1
@@ -32,7 +31,7 @@
       (and (= (mime/media-type acceptable) "*/*"))
       [acceptable candidate {:weight 1} {:weight (count (:parameters candidate))}])))
 
-(deftrace any-acceptable? [acceptables candidate]
+(defn- any-acceptable? [acceptables candidate]
   (some #(acceptable? % candidate) acceptables))
 
 (defn- negotiate-content-type*

@@ -8,7 +8,7 @@
 (deftest content-type-test
   (is (= (print-str (mime/string->media-type "text/html;level=1.0")) "text/html;q=1.0;level=1.0"))
 
-  (are [accept candidates => expected] (= (negotiate-content-type accept candidates) (mime/string->media-type expected))
+  (are [accept candidates => expected] (= (negotiate-content-type accept (map mime/string->media-type candidates)) (mime/string->media-type expected))
     "text/*" ["text/html"] => "text/html"
     "text/*" ["image/png" "text/html"] => "text/html"
     "image/*,text/*" ["image/png;q=0.8" "text/jpeg;q=0.9"] => "text/jpeg;q=0.9"
