@@ -18,6 +18,8 @@
 (def alias->name
   (into {} (for [{:keys [name aliases]} index alias (conj aliases name)] [(.toUpperCase alias) name])))
 
+(defn valid-charset? [charset] (contains? alias->name (.toUpperCase charset)))
+
 (def name->alias
   (into {} (for [{:keys [name preferred-alias]} index] [name (or preferred-alias name)])))
 

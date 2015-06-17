@@ -49,7 +49,7 @@
 (defn negotiate-content-type [accept-header available]
   (negotiate-content-type*
    (map mime/string->media-type (map str/trim (str/split accept-header #"\s*,\s*")))
-   (map mime/string->media-type available)))
+   available))
 
 ;; ------------------------------------------------------------------------
 ;; Charsets

@@ -38,9 +38,10 @@
 ;; TODO: Replace memoize with cache to avoid memory exhaustion attacks
 (memoize
  (defn media-type->string [mt]
-   (str (media-type mt)
-        (apply str (for [[k v] (:parameters mt)]
-                     (str ";" k "=" v))))))
+   (.toLowerCase
+    (str (media-type mt)
+         (apply str (for [[k v] (:parameters mt)]
+                      (str ";" k "=" v)))))))
 
 (defmethod clojure.core/print-method MediaTypeMap
   [mt ^java.io.Writer writer]

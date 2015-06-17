@@ -375,17 +375,16 @@
               (fn [ctx]
                 (let [resource (:resource ctx)
                       available-content-types
-                      (remove nil?
-                              (or (service/produces produces ctx)
-                                  (res/produces resource ctx)))]
+                      (map mime/string->media-type (remove nil?
+                                                           (or (service/produces produces ctx)
+                                                               (res/produces resource ctx))))]
 
-                  (infof "available-content-types: %s" (seq available-content-types))
-                  (infof "accept: %s" (or (get-in req [:headers "accept"]) "*/*"))
+                  (when-let [bad-charset
+                             (some (fn [mt] (when-let [charset (some-> mt :parameters (get "charset"))]
+                                             (when-not (charset/valid-charset? charset) charset)))
+                                   available-content-types)]
+                    (throw (ex-info (format "Resource or service declares it produces an unknown charset: %s" bad-charset) {:charset bad-charset})))
 
-                  (info "content-type is %s" (conneg/negotiate-content-type
-                                              ;; TODO: Check, if no Accept header, is it really */* ?
-                                              (or (get-in req [:headers "accept"]) "*/*")
-                                              available-content-types))
 
                   (if-let [content-type
                            (conneg/negotiate-content-type
@@ -409,6 +408,8 @@
                       ctx))))
 
               (link ctx
+                ;; Check there is no incompatible Accept-Charset header.
+
                 ;; A request without any Accept-Charset header field
                 ;; implies that the user agent will accept any
                 ;; charset in response.  Most general-purpose user
@@ -417,6 +418,11 @@
                 (when-not
                     (conneg/negotiate-charset
                      (get-in req [:headers "accept-charset"])
+                     ;; We don't ask the resource which charsets are
+                     ;; available, we assume utf-8 which will be the
+                     ;; case almost invariably nowadays. We could
+                     ;; support charset-negotiation in the future, if
+                     ;; someone needs it.
                      ["utf-8"])
                   (d/error-deferred
                    (ex-info ""
