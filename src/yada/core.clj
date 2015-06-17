@@ -345,14 +345,14 @@
                                   :body body
                                   ::http-response true})))))))
 
-              ;; TODO Not implemented (if unknown Content-* header)
+              ;; TODO: Not implemented (if unknown Content-* header)
 
-              ;; TODO Unsupported media type
+              ;; TODO: Unsupported media type
 
-              ;; TODO Request entity too large - shouldn't we do this later,
+              ;; TODO: Request entity too large - shouldn't we do this later,
               ;; when we determine we actually need to read the request body?
 
-              ;; TODO OPTIONS
+              ;; TODO: OPTIONS
 
               ;; Prior to conneg we do a pre-fetch, so the resource has
               ;; a chance to load any metadata it may need to answer the
@@ -379,6 +379,14 @@
                                                            (or (service/produces produces ctx)
                                                                (res/produces resource ctx))))]
 
+                  ;; Check to see if the charset is recognized
+                  ;; (registered with IANA). If it isn't we throw a 500,
+                  ;; as this is a server error. It might be necessary to
+                  ;; disable this check in future but a balance should
+                  ;; be struck between giving the developer complete
+                  ;; control to dictate charsets, and error-proofing. It
+                  ;; might be possible to disable this check for
+                  ;; advanced users if a reasonable case is made.
                   (when-let [bad-charset
                              (some (fn [mt] (when-let [charset (some-> mt :parameters (get "charset"))]
                                              (when-not (charset/valid-charset? charset) charset)))
