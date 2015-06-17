@@ -25,8 +25,9 @@
             [schema.core :as s]
             [schema.utils :refer (error? error-val)]
             [yada.coerce :refer (coercion-matcher)]
-            [yada.conneg :refer (best-allowed-content-type best-allowed-charset)]
+            [yada.charset :as charset]
             [yada.representation :as rep]
+            [yada.negotiation :as conneg]
             [yada.service :as service]
             [yada.resource :as res]
             [yada.trace]
@@ -378,19 +379,19 @@
                               (or (service/produces produces ctx)
                                   (res/produces resource ctx)))]
 
-                  (if-let [content-type
-                           (best-allowed-content-type
-                            (or (get-in req [:headers "accept"]) "*/*")
-                            (map (comp mime/full-type mime/to-media-type-map) available-content-types))]
+                  (infof "available-content-types: %s" (seq available-content-types))
+                  (infof "accept: %s" (or (get-in req [:headers "accept"]) "*/*"))
 
-                    ;; A request without any Accept-Charset header field
-                    ;; implies that the user agent will accept any
-                    ;; charset in response.  Most general-purpose user
-                    ;; agents do not send Accept-Charset.
-                    ;; rfc7231.html#section-5.3.3
-                    #_(when-let [accept-charset (get-in req [:headers "accept-charset"])]
-                        (throw (ex-info "TODO" {}))
-                      )
+                  (info "content-type is %s" (conneg/negotiate-content-type
+                                              ;; TODO: Check, if no Accept header, is it really */* ?
+                                              (or (get-in req [:headers "accept"]) "*/*")
+                                              available-content-types))
+
+                  (if-let [content-type
+                           (conneg/negotiate-content-type
+                            ;; TODO: Check, if no Accept header, is it really */* ?
+                            (or (get-in req [:headers "accept"]) "*/*")
+                            available-content-types)]
 
                     (assoc-in ctx [:response :content-type] content-type)
 
@@ -401,11 +402,27 @@
                       (d/error-deferred
                        (ex-info ""
                                 {:status 406
-                                 ::debug {:message "Debug!"
+                                 ::debug {:message "No acceptable content-type"
                                           :available-content-types available-content-types}
                                  ::http-response true}))
                       ;; Otherwise return the context unchanged
                       ctx))))
+
+              (link ctx
+                ;; A request without any Accept-Charset header field
+                ;; implies that the user agent will accept any
+                ;; charset in response.  Most general-purpose user
+                ;; agents do not send Accept-Charset.
+                ;; rfc7231.html#section-5.3.3
+                (when-not
+                    (conneg/negotiate-charset
+                     (get-in req [:headers "accept-charset"])
+                     ["utf-8"])
+                  (d/error-deferred
+                   (ex-info ""
+                            {:status 406
+                             ::debug {:message "No acceptable charset"}
+                             ::http-response true}))))
 
               (fn [ctx]
                 (case method
@@ -467,7 +484,8 @@
                                  ;; We don't need to add Content-Length,
                                  ;; Content-Range, Trailer or Tranfer-Encoding, as
                                  ;; per rfc7231.html#section-3.3
-                                 (update-in ctx [:response :headers] assoc "content-type" content-type)
+                                 (update-in ctx [:response :headers]
+                                            assoc "content-type" (mime/media-type->string content-type))
                                  ctx)
 
                          :get
@@ -488,7 +506,7 @@
 
                           (link ctx
                             (when content-type
-                              (update-in ctx [:response :headers] assoc "content-type" content-type)))
+                              (update-in ctx [:response :headers] assoc "content-type" (mime/media-type->string content-type))))
 
                           (link ctx
                             (when-let [content-length (res/content-length (:resource ctx) ctx)]

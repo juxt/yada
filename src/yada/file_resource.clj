@@ -6,10 +6,11 @@
             [clojure.string :as str]
             [clojure.tools.logging :refer :all]
             [hiccup.core :refer (html h)]
-            [ring.util.mime-type :as mime]
+            [ring.util.mime-type :refer (ext-mime-type)]
             [ring.util.response :refer (redirect)]
             [ring.util.time :refer (format-date)]
-            [yada.resource :refer [Resource ResourceConstructor]])
+            [yada.resource :refer [Resource ResourceConstructor]]
+            [yada.mime :as mime])
   (:import [java.io File]
            [java.util Date TimeZone]
            [java.text SimpleDateFormat]))
@@ -35,7 +36,7 @@
     (io/file dir name)))
 
 (defn dir-index [dir content-type]
-  (case content-type
+  (case (mime/full-type content-type)
     "text/plain"
     (apply str
            (for [child (sort (.listFiles dir))]
@@ -69,7 +70,7 @@
   (exists? [_ ctx] (.exists f))
   (last-modified [_ ctx] (Date. (.lastModified f)))
   (produces [_ ctx]
-    [(mime/ext-mime-type (.getName f))])
+    [(ext-mime-type (.getName f))])
   (content-length [_ ctx]
     (when (.isFile f)
       (.length f)))
@@ -107,7 +108,7 @@
         ["text/html" "text/plain"]
         (let [child (child-file dir path-info)]
           (when (.isFile child)
-            [(mime/ext-mime-type (.getName child))])))))
+            [(ext-mime-type (.getName child))])))))
   (content-length [_ ctx] nil)
   (get-state [_ content-type ctx]
     ;; TODO: Check that file is compliant with the given content-type

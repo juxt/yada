@@ -12,7 +12,10 @@
     "text/*" ["text/html"] => "text/html"
     "text/*" ["image/png" "text/html"] => "text/html"
     "image/*,text/*" ["image/png;q=0.8" "text/jpeg;q=0.9"] => "text/jpeg;q=0.9"
-    "text/*;q=0.3, text/html;q=0.7, text/html;level=1, text/html;level=2;q=0.4, */*;q=0.5  " ["text/html;level=1" "text/html"] => "text/html;level=1"))
+    "text/*;q=0.3, text/html;q=0.7, text/html;level=1, text/html;level=2;q=0.4, */*;q=0.5  " ["text/html;level=1" "text/html"] => "text/html;level=1"
+    "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
+    ["text/html;charset=utf-8"] => "text/html;charset=utf-8"
+    ))
 
 
 ;;    The special value "*", if present in the Accept-Charset field,

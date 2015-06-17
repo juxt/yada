@@ -373,7 +373,7 @@
             (->
              (yada (fn [ctx]
                      (body component (post-process-doc component xbody (into {} examples) config) config))
-                   {:produces (mime/string->media-type "text/html;charset=utf8")})
+                   {:produces (mime/string->media-type "text/html;charset=utf-8")})
              (tag ::user-guide))))]
 
         ["/examples/"

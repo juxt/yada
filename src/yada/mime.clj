@@ -33,6 +33,7 @@
                    "(" http-token ")"
                    "((?:" ";" http-token "=" http-token ")*)")))
 
+;; TODO: Replace memoize with cache to avoid memory exhaustion attacks
 (memoize
  (defn string->media-type [s]
    (let [g (rest (re-matches media-type s))
@@ -52,6 +53,14 @@
 (extend-protocol MediaType
   String
   (to-media-type-map [s] (string->media-type s)))
+
+;; TODO: Replace memoize with cache to avoid memory exhaustion attacks
+(memoize
+ (defn media-type->string [mt]
+   (let [mt (to-media-type-map mt)]
+     (str (type mt) "/" (subtype mt)
+          (apply str (for [[k v] (:parameters mt)]
+                       (str ";" k "=" v)))))))
 
 (defmethod clojure.core/print-method MediaTypeMap
   [mt ^java.io.Writer writer]

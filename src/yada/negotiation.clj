@@ -2,29 +2,35 @@
   (:require
    [yada.mime :as mime]
    [yada.charset :as cs]
-   [yada.util :refer [parameters parameter weight]]
+   [yada.util :refer [parameters parameter weight Weight]]
    [clojure.tools.logging :refer :all :exclude [trace]]
+   [clojure.tools.trace :refer :all]
    [clojure.string :as str]))
 
 ;; ------------------------------------------------------------------------
 ;; Content types
 
-(defn- acceptable? [acceptable candidate]
+(extend-protocol Weight
+  clojure.lang.PersistentArrayMap
+  (weight [this] (:weight this)))
+
+(deftrace acceptable? [acceptable candidate]
   (when
-      (and
-       (or
-        (and (= (mime/type acceptable) (mime/type candidate))
-             (= (mime/subtype acceptable) (mime/subtype candidate)))
+      (= (parameters acceptable)
+         (select-keys (parameters candidate) (keys (parameters acceptable))))
+    (cond
+      (and (= (mime/type acceptable) (mime/type candidate))
+           (= (mime/subtype acceptable) (mime/subtype candidate)))
+      [acceptable candidate {:weight 3} {:weight (count (parameters candidate))}]
 
-        (and (= (mime/type acceptable) (mime/type candidate))
-             (= (mime/subtype acceptable) "*"))
+      (and (= (mime/type acceptable) (mime/type candidate))
+           (= (mime/subtype acceptable) "*"))
+      [acceptable candidate {:weight 2}  {:weight (count (parameters candidate))}]
 
-        (and (= (mime/full-type acceptable) "*/*")))
-       (= (parameters acceptable) (parameters candidate))
-       )
-    [acceptable candidate]))
+      (and (= (mime/full-type acceptable) "*/*"))
+      [acceptable candidate {:weight 1}  {:weight (count (parameters candidate))}])))
 
-(defn- any-acceptable? [acceptables candidate]
+(deftrace any-acceptable? [acceptables candidate]
   (some #(acceptable? % candidate) acceptables))
 
 (defn- negotiate-content-type*
