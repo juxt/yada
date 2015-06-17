@@ -13,18 +13,17 @@
 
   :dependencies
   [[prismatic/schema "0.4.2" :exclusions [potemkin]] ; TODO 0.4.2
-   [manifold "0.1.0-beta12"]
+   [potemkin "0.3.11" :exclusions [riddley]]
+   [manifold "0.1.0"]
    [bidi "1.19.0"]
-   [potemkin "0.3.11"]
    [hiccup "1.0.5"]
    [cheshire "5.4.0"]
    [ring-basic-authentication "1.0.5"]
    [camel-snake-kebab "0.1.4"]
-   [potemkin "0.3.11"]
    [org.clojure/core.async "0.1.346.0-17112a-alpha"]
    [clj-time "0.9.0"]
-   [metosin/ring-swagger "0.20.2"]
-   [ring/ring-core "1.3.2"]
+   [metosin/ring-swagger "0.20.2" :exclusions [potemkin]]
+   [ring/ring-core "1.3.2" :exclusions [org.clojure/tools.reader]]
    [byte-streams "0.2.0-alpha8"]]
 
   :repl-options {:init-ns user
@@ -37,7 +36,7 @@
          :dependencies
          [[org.clojure/clojure "1.7.0-beta3"]
 
-          [org.clojure/tools.logging "0.2.6"]
+          [org.clojure/tools.logging "0.3.1"]
           [org.clojure/tools.trace "0.7.8"]
 
           [ch.qos.logback/logback-classic "1.0.7"
