@@ -47,12 +47,5 @@
 
 ;; --- Conneg
 
-(defprotocol Parameters
-  (parameters [_])
-  (parameter [_ name]))
-
-(defprotocol Weight
-  (weight [_]))
-
 ;; TODO: Need to align this with specs
 (def http-token #"[^()<>@,;:\\\"/\[\]?={}\ \t]+")

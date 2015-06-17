@@ -33,9 +33,7 @@
   (charset [_] alias)
   (canonical-name [_] (get alias->name (.toUpperCase alias)))
   (preferred-alias [this] (name->alias (canonical-name this)))
-  (to-charset-map [this] this)
-  Weight
-  (weight [_] weight))
+  (to-charset-map [this] this))
 
 (def charset-pattern
   (re-pattern (str "(" http-token ")"
@@ -63,7 +61,4 @@
   [cs ^java.io.Writer writer]
   (.write writer (format "%s%s%s"
                          (preferred-alias cs)
-                         (when-let [w (weight cs)] (str ";q=" w))
-                         (apply str (for [[k v] (parameters cs)
-                                          :when (not= k "q")]
-                                      (format ";%s=%s" k v))))))
+                         (when-let [w (:weight cs)] (str ";q=" w)))))

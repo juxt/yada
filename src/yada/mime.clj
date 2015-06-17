@@ -1,6 +1,6 @@
 (ns yada.mime
   (:refer-clojure :exclude [type])
-  (:require [yada.util :refer (http-token Parameters parameters Weight weight)]))
+  (:require [yada.util :refer (http-token)]))
 
 ;; For implementation efficiency, we often want to communicate media
 ;; types via records rather than encode in Strings which require
@@ -8,26 +8,11 @@
 ;; below. In all cases, we can use strings interchangeably. For advanced
 ;; users only, who are concerned with performance.
 
-(defprotocol MediaType
-  "Content type, with parameters, as per rfc2616.html#section-3.7"
-  (type [_] "")
-  (subtype [_])
-  (full-type [_] "type/subtype")
-  (to-media-type-map [_] "Return an efficient version of this protocol"))
+(defrecord MediaTypeMap [type subtype parameters weight])
 
-(defrecord MediaTypeMap [type subtype parameters weight]
-  MediaType
-  (type [_] type)
-  (subtype [_] subtype)
-  (full-type [_] (str type "/" subtype))
-  (to-media-type-map [this] this)
-  Parameters ; TODO: This is over use of protocols, use a map
-  (parameters [_] parameters)
-  (parameter [_ name] (get parameters name))
-  Weight
-  (weight [_] weight))
+(defn media-type [mt] (str (:type mt) "/" (:subtype mt)))
 
-(def media-type
+(def media-type-pattern
   (re-pattern (str "(" http-token ")"
                    "/"
                    "(" http-token ")"
@@ -36,7 +21,7 @@
 ;; TODO: Replace memoize with cache to avoid memory exhaustion attacks
 (memoize
  (defn string->media-type [s]
-   (let [g (rest (re-matches media-type s))
+   (let [g (rest (re-matches media-type-pattern s))
          params (into {} (map vec (map rest (re-seq (re-pattern (str ";(" http-token ")=(" http-token ")"))
                                                     (last g)))))]
      (->MediaTypeMap
@@ -50,23 +35,17 @@
             1.0))
         1.0)))))
 
-(extend-protocol MediaType
-  String
-  (to-media-type-map [s] (string->media-type s)))
-
 ;; TODO: Replace memoize with cache to avoid memory exhaustion attacks
 (memoize
  (defn media-type->string [mt]
-   (let [mt (to-media-type-map mt)]
-     (str (type mt) "/" (subtype mt)
-          (apply str (for [[k v] (:parameters mt)]
-                       (str ";" k "=" v)))))))
+   (str (media-type mt)
+        (apply str (for [[k v] (:parameters mt)]
+                     (str ";" k "=" v))))))
 
 (defmethod clojure.core/print-method MediaTypeMap
   [mt ^java.io.Writer writer]
-  (.write writer (format "%s/%s%s%s"
-                         (type mt)
-                         (subtype mt)
-                         (when-let [w (weight mt)] (str ";q=" w))
-                         (apply str (for [[k v] (parameters mt)]
+  (.write writer (format "%s%s%s"
+                         (media-type mt)
+                         (when-let [w (:weight mt)] (str ";q=" w))
+                         (apply str (for [[k v] (:parameters mt)]
                                       (format ";%s=%s" k v))))))

@@ -2,7 +2,6 @@
   (:require
    [yada.mime :as mime]
    [yada.charset :as cs]
-   [yada.util :refer [parameters parameter weight Weight]]
    [clojure.tools.logging :refer :all :exclude [trace]]
    [clojure.tools.trace :refer :all]
    [clojure.string :as str]))
@@ -10,25 +9,28 @@
 ;; ------------------------------------------------------------------------
 ;; Content types
 
-(extend-protocol Weight
-  clojure.lang.PersistentArrayMap
-  (weight [this] (:weight this)))
-
-(deftrace acceptable? [acceptable candidate]
+(deftrace acceptable?
+  "Compare a single acceptable mime-type (extracted from an Accept
+  header) and a candidate. If the candidate is acceptable, return a
+  sortable vector [acceptable candidate weight1 weight2]. Weight1
+  prefers specificity, e.g. prefers text/html over text/* over
+  */*. Weight2 gives preference to candidates with a greater number of
+  parameters, which preferes text/html;level=1 over text/html. This meets the criteria in the HTTP specifications. Although the preference that should result with multiple parameters is not specified formally, candidates that "
+  [acceptable candidate]
   (when
-      (= (parameters acceptable)
-         (select-keys (parameters candidate) (keys (parameters acceptable))))
+      (= (:parameters acceptable)
+         (select-keys (:parameters candidate) (keys (:parameters acceptable))))
     (cond
-      (and (= (mime/type acceptable) (mime/type candidate))
-           (= (mime/subtype acceptable) (mime/subtype candidate)))
-      [acceptable candidate {:weight 3} {:weight (count (parameters candidate))}]
+      (and (= (:type acceptable) (:type candidate))
+           (= (:subtype acceptable) (:subtype candidate)))
+      [acceptable candidate {:weight 3} {:weight (count (:parameters candidate))}]
 
-      (and (= (mime/type acceptable) (mime/type candidate))
-           (= (mime/subtype acceptable) "*"))
-      [acceptable candidate {:weight 2}  {:weight (count (parameters candidate))}]
+      (and (= (:type acceptable) (:type candidate))
+           (= (:subtype acceptable) "*"))
+      [acceptable candidate {:weight 2} {:weight (count (:parameters candidate))}]
 
-      (and (= (mime/full-type acceptable) "*/*"))
-      [acceptable candidate {:weight 1}  {:weight (count (parameters candidate))}])))
+      (and (= (mime/media-type acceptable) "*/*"))
+      [acceptable candidate {:weight 1} {:weight (count (:parameters candidate))}])))
 
 (deftrace any-acceptable? [acceptables candidate]
   (some #(acceptable? % candidate) acceptables))
@@ -38,7 +40,7 @@
   [acceptables candidates]
   (->> candidates
        (keep (partial any-acceptable? acceptables))
-       (sort-by #(vec (map weight %)))
+       (sort-by #(vec (map :weight %)))
        reverse ;; highest weight wins
        first ;; winning pair
        second ;; extract the server provided mime-type
@@ -46,8 +48,8 @@
 
 (defn negotiate-content-type [accept-header available]
   (negotiate-content-type*
-   (map mime/to-media-type-map (map str/trim (str/split accept-header #"\s*,\s*")))
-   (map mime/to-media-type-map available)))
+   (map mime/string->media-type (map str/trim (str/split accept-header #"\s*,\s*")))
+   (map mime/string->media-type available)))
 
 ;; ------------------------------------------------------------------------
 ;; Charsets
@@ -70,7 +72,7 @@
   (let [winner
         (->> candidates
              (keep (partial any-charset-acceptable? acceptables))
-             (sort-by #(vec (map weight %)))
+             (sort-by #(vec (map :weight %)))
              reverse ;; highest weight wins
              first ;; winning pair
              )]

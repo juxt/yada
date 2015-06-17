@@ -36,7 +36,7 @@
     (io/file dir name)))
 
 (defn dir-index [dir content-type]
-  (case (mime/full-type content-type)
+  (case (mime/media-type content-type)
     "text/plain"
     (apply str
            (for [child (sort (.listFiles dir))]
