@@ -431,6 +431,16 @@
                      ;; case almost invariably nowadays. We could
                      ;; support charset-negotiation in the future, if
                      ;; someone needs it.
+                     ;;
+                     ;; There could still be a case for asking the
+                     ;; resource to tell us which charsets it supports,
+                     ;; because then we could augment a content-type
+                     ;; declaration. For example, a resource may tell us
+                     ;; it produces text/html. The resource by deliver a
+                     ;; string, which we know (on the Java platform) can
+                     ;; be encoded as utf-8. We can add the charset
+                     ;; parameter to the content-type (if one doesn't
+                     ;; already exist).
                      ["utf-8"])
                   (d/error-deferred
                    (ex-info ""
