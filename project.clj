@@ -8,14 +8,13 @@
 
   :exclusions [com.stuartsierra/component
                org.clojure/clojure
-               ring/ring-core
                prismatic/schema]
 
   :dependencies
   [[prismatic/schema "0.4.2" :exclusions [potemkin]] ; TODO 0.4.2
    [potemkin "0.3.11" :exclusions [riddley]]
    [manifold "0.1.0"]
-   [bidi "1.19.0"]
+   [bidi "1.19.1"]
    [hiccup "1.0.5"]
    [cheshire "5.4.0"]
    [ring-basic-authentication "1.0.5"]
@@ -23,7 +22,7 @@
    [org.clojure/core.async "0.1.346.0-17112a-alpha"]
    [clj-time "0.9.0"]
    [metosin/ring-swagger "0.20.2" :exclusions [potemkin]]
-   [ring/ring-core "1.3.2" :exclusions [org.clojure/tools.reader]]
+   ;;[ring/ring-core "1.3.2" :exclusions [org.clojure/tools.reader]]
    [byte-streams "0.2.0-alpha8"]]
 
   :repl-options {:init-ns user
