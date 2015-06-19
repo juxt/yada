@@ -135,6 +135,7 @@
                 (when (:delete rmap) :delete)))))))
 
 (defn make-endpoint
+  "Create a yada endpoint (Ring handler)"
   [resource
    {:keys
     [service-available?                 ; async-supported
@@ -704,9 +705,30 @@
                              [:pre (with-out-str (apply str (interpose "\n" (seq (.getStackTrace %)))))]])}))))))))
 
 (defn yada
-  ([resource]
-   (yada resource {}))
-  ([resource opts]
-   (if (keyword? resource)
-     (throw (ex-info "Deprecated usage" {}))
-     (make-endpoint resource opts))))
+  "The Yada API. The first form takes the resource."
+  ([arg & otherargs]
+   (apply make-endpoint
+          (cond
+            ;; If the only argument is a map, it's the options
+            (and (map? arg) (nil? otherargs))
+            [nil arg]
+
+            ;; If the only argument is not a keyword, it's the resource
+            (and (not (keyword? arg)) (nil? otherargs))
+            [arg {}]
+
+            ;; If the first argument is a map, the whole arg list are the options
+            (and (keyword? arg) (odd? otherargs))
+            [nil (into {} (cons arg otherargs))]
+
+            ;; If there are just two args, the second is the options, if it's a map
+            (and (= 1 (count otherargs)) (map? (first otherargs)))
+            [arg (first otherargs)]
+
+            (and (pos? (count otherargs))
+                 (even? (count otherargs))
+                 (not (keyword? arg)))
+            [arg (into {} (map vec (partition 2 otherargs)))]
+
+            :otherwise
+            (throw (ex-info "The yada function does not support this form" {:args (cons arg otherargs)}))))))
