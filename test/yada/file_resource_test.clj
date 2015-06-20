@@ -1,18 +1,20 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.file-resource-test
-  (:require [bidi.ring :refer [make-handler]]
-            [clojure.edn :as edn]
-            [clojure.java.io :as io]
-            [clojure.test :refer :all]
-            [ring.mock.request :refer [request]]
-            [ring.util.time :refer [parse-date format-date]]
-            [yada.bidi :as yb]
-            [yada.core :refer [yada]]
-            [clojure.tools.logging :refer :all]
-            [yada.file-resource :refer :all]
-            [yada.resource :as yst]
-            [yada.test.util :refer [given]])
+  (:require
+   [byte-streams :as bs]
+   [bidi.ring :refer [make-handler]]
+   [clojure.edn :as edn]
+   [clojure.java.io :as io]
+   [clojure.test :refer :all]
+   [ring.mock.request :refer [request]]
+   [ring.util.time :refer [parse-date format-date]]
+   [yada.bidi :as yb]
+   [yada.core :refer [yada]]
+   [clojure.tools.logging :refer :all]
+   [yada.file-resource :refer :all]
+   [yada.resource :as yst]
+   [yada.test.util :refer [given]])
   (:import [java.io File ByteArrayInputStream]
            [java.util Date]))
 
@@ -43,6 +45,8 @@
         [:headers "content-type"] := "text/plain"
         [:body type] := File
         [:headers "content-length"] := (.length resource)))
+
+
 
     (testing "last-modified"
       (given response
@@ -141,16 +145,28 @@
 
       (testing "PUT another file"
         (given @(root-handler
-                 (merge (request :put "/dir/def.txt")
+                 (merge (request :put "/dir/håkan.txt")
                         {:body (ByteArrayInputStream. (.getBytes "bar"))}))
           :status := 204))
 
-      (testing "GET the index"
-        (given @(root-handler (merge-with merge (request :get "/dir/") {:headers {"accept" "text/plain"}}))
+      (testing "GET the index, in US-ASCII"
+        (given @(root-handler (merge-with merge (request :get "/dir/")
+                                          {:headers {"accept" "text/plain"
+                                                     "accept-charset" "US-ASCII"}}))
           :status := 200
-          [:headers "content-type"] := "text/plain"
-          [:body] := "abc.txt\ndef.txt\n"
-          ))
+          [:headers "content-type"] := "text/plain;charset=us-ascii"
+          [:body #(bs/convert % String)] := "abc.txt\nh?kan.txt\n"))
+
+
+      ;; In ASCII, Håkan's 'å' gets turned into a '?', so let's try UTF-8 (the default)
+      (testing "GET the index"
+        (given @(root-handler (merge-with merge (request :get "/dir/")
+                                          {:headers {"accept" "text/plain"}}))
+          :status := 200
+          [:headers "content-type"] := "text/plain;charset=utf-8"
+          [:body #(bs/convert % String)] := "abc.txt\nhåkan.txt\n"))
+
+
 
       (testing "GET the file that doesn't exist"
         (given @(root-handler (request :get "/dir/abcd.txt"))
@@ -163,7 +179,7 @@
       (given f
         [(memfn listFiles) count] := 1)
 
-      (given @(root-handler (request :delete "/dir/def.txt"))
+      (given @(root-handler (request :delete "/dir/håkan.txt"))
         :status := 204)
 
       (given f

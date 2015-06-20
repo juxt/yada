@@ -3,7 +3,9 @@
    [yada.mime :as mime]
    [yada.charset :as cs]
    [clojure.tools.logging :refer :all :exclude [trace]]
-   [clojure.string :as str]))
+   [clojure.tools.trace :refer :all]
+   [clojure.string :as str])
+  (:import [yada.charset CharsetMap]))
 
 ;; ------------------------------------------------------------------------
 ;; Content types
@@ -56,17 +58,25 @@
 (defn- acceptable-charset? [acceptable-charset candidate]
   (when
       (or (= (cs/charset acceptable-charset) "*")
-          (= (cs/canonical-name acceptable-charset)
-             (cs/canonical-name candidate)))
+          (and
+           (some? (cs/charset acceptable-charset))
+           (= (cs/charset acceptable-charset)
+              (cs/charset candidate)))
+          ;; As a stretch, let's see if their canonical names match
+          (and
+           (some? (cs/canonical-name acceptable-charset))
+           (= (cs/canonical-name acceptable-charset)
+              (cs/canonical-name candidate)))
+          )
     [acceptable-charset candidate]))
 
-(defn any-charset-acceptable? [acceptables candidate]
+(defn- any-charset-acceptable? [acceptables candidate]
   (if (nil? acceptables)
     [candidate candidate] ; no header means the user-agent accepts 'any charset' in response - rfc7231.html#section-5.3.3
     (some #(acceptable-charset? % candidate) acceptables)))
 
-(defn negotiate-charset*
-  "Returns a pair."
+(defn- negotiate-charset*
+  "Returns a pair. The first is the charset alias used in the Accept header by the user-agent, the second is the charset alias declared by the server. Often these are the same, but if they differ, use the first alias when talking with the user-agent, while using the second alias while asking the resource/service to encode the representation"
   [acceptables candidates]
   (let [winner
         (->> candidates

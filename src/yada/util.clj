@@ -45,7 +45,6 @@
 (def text (comp (mapcat :content) (filter string?)))
 
 
-;; --- Conneg
+;; Parsing
 
-;; TODO: Need to align this with specs
-(def http-token #"[^()<>@,;:\\\"/\[\]?={}\ \t]+")
+(def http-token #"[!#$%&'*+-\.\^_`|~\p{Alnum}]+")

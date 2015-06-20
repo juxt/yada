@@ -26,14 +26,17 @@
 
   (allowed-methods [_] "Return a set of the allowed methods. Must be determined at compile time (for purposes of introspection by tools). No async support.")
 
-  (body [_ ctx] "Return a representation of the resource. Supply a function which can return a deferred, if necessary.")
-  (produces [_] [_ ctx] "Return the content-types that the resource can produce")
+  (body [_ ctx] "Return the response body. Supply a function which can return a deferred, if necessary.")
+
+  (produces [_] [_ ctx] "Return the content-types that the service can produce")
+  (produces-charsets [_ ctx] "Return the charsets that the service can produce")
+
   (status [_ ctx] "Override the response status")
   (headers [_ ctx] "Override the response headers")
 
-  (put! [_ ctx] "PUT to the resource")
-  (post! [_ ctx] "POST to the resource")
-  (delete! [_ ctx] "DELETE the resource")
+  (put! [_ ctx] "Implement a service's PUT method")
+  (post! [_ ctx] "Implement a service's POST method")
+  (delete! [_ ctx] "Implement a service's DELETE method")
   (interpret-post-result [_ ctx] "Return the request context, according to the result of post")
 
   (trace [_ req ctx] "Intercept tracing, providing an alternative implementation, return a Ring response map.")
@@ -43,7 +46,7 @@
 
   (format-event [_] "Format an individual event (server sent events)")
 
-  (allow-origin [_ ctx] "If another origin (other than the resource's origin) is allowed, return the the value of the Access-Control-Allow-Origin header to be set on the response"))
+  (allow-origin [_ ctx] "If another origin is allowed, return the the value of the Access-Control-Allow-Origin header to be set on the response"))
 
 (extend-protocol Service
   Boolean
@@ -164,6 +167,7 @@
   (post [_ _] nil)
   (produces [_] nil)
   (produces [_ ctx] nil)
+  (produces-charsets [_ ctx] nil)
   (status [_ _] nil)
   (headers [_ _] nil)
   (interpret-post-result [_ ctx] ctx)

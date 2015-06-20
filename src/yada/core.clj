@@ -158,7 +158,11 @@
      patch!                             ; async-supported
      trace                              ; async-supported
 
+     ;; Service overrides
+     body                               ; async-supported
+
      produces
+     produces-charsets
      parameters
 
      ;; CORS
@@ -380,14 +384,15 @@
                                                            (or (service/produces produces ctx)
                                                                (res/produces resource ctx))))]
 
-                  ;; Check to see if the charset is recognized
-                  ;; (registered with IANA). If it isn't we throw a 500,
-                  ;; as this is a server error. It might be necessary to
-                  ;; disable this check in future but a balance should
-                  ;; be struck between giving the developer complete
-                  ;; control to dictate charsets, and error-proofing. It
-                  ;; might be possible to disable this check for
-                  ;; advanced users if a reasonable case is made.
+                  ;; Check to see if the server-specified charset is
+                  ;; recognized (registered with IANA). If it isn't we
+                  ;; throw a 500, as this is a server error. (It might be
+                  ;; necessary to disable this check in future but a
+                  ;; balance should be struck between giving the
+                  ;; developer complete control to dictate charsets, and
+                  ;; error-proofing. It might be possible to disable
+                  ;; this check for advanced users if a reasonable case
+                  ;; is made.)
                   (when-let [bad-charset
                              (some (fn [mt] (when-let [charset (some-> mt :parameters (get "charset"))]
                                              (when-not (charset/valid-charset? charset) charset)))
@@ -395,15 +400,16 @@
                     (throw (ex-info (format "Resource or service declares it produces an unknown charset: %s" bad-charset) {:charset bad-charset})))
 
 
+                  ;; Negotiate the content type
                   (if-let [content-type
                            (conneg/negotiate-content-type
-                            ;; TODO: Check, if no Accept header, is it really */* ?
+                            ;; TODO: Check, if no Accept header, does it really default to */* ?
                             (or (get-in req [:headers "accept"]) "*/*")
                             available-content-types)]
 
                     (assoc-in ctx [:response :content-type] content-type)
 
-                    ;; No best allowed content type
+                    ;; No content type negotiated means a 406
                     (if (not-empty available-content-types)
                       ;; If there is a produces specification, but not
                       ;; matched content-type, it's a 406.
@@ -424,30 +430,44 @@
                 ;; charset in response.  Most general-purpose user
                 ;; agents do not send Accept-Charset.
                 ;; rfc7231.html#section-5.3.3
-                (when-not
-                    (conneg/negotiate-charset
-                     (get-in req [:headers "accept-charset"])
-                     ;; We don't ask the resource which charsets are
-                     ;; available, we assume utf-8 which will be the
-                     ;; case almost invariably nowadays. We could
-                     ;; support charset-negotiation in the future, if
-                     ;; someone needs it.
-                     ;;
-                     ;; There could still be a case for asking the
-                     ;; resource to tell us which charsets it supports,
-                     ;; because then we could augment a content-type
-                     ;; declaration. For example, a resource may tell us
-                     ;; it produces text/html. The resource by deliver a
-                     ;; string, which we know (on the Java platform) can
-                     ;; be encoded as utf-8. We can add the charset
-                     ;; parameter to the content-type (if one doesn't
-                     ;; already exist).
-                     ["utf-8"])
-                  (d/error-deferred
-                   (ex-info ""
-                            {:status 406
-                             ::debug {:message "No acceptable charset"}
-                             ::http-response true}))))
+
+                (let [resource (:resource ctx)
+                      available-charsets
+                      (remove nil?
+                              (or (service/produces-charsets produces-charsets ctx)
+                                  (res/produces-charsets resource ctx)
+                                  ;;[(charset/to-charset-map (.name (java.nio.charset.Charset/defaultCharset)))]
+                                  ))
+                      accept-charset (get-in req [:headers "accept-charset"])]
+
+                  (if-let [charset (conneg/negotiate-charset accept-charset available-charsets)]
+
+                    (-> ctx
+                        (assoc-in [:response :charset] charset)
+                        ;; Update charset in ctx content-type
+                        (update-in [:response :content-type]
+                                   (fn [ct] (when ct
+                                             ;; But don't overwrite an existing charset
+                                             (if-not (some-> ct :parameters (get "charset"))
+                                               (assoc-in ct [:parameters "charset"] (first charset))
+                                               ct)))))
+
+                    ;; We should support the case where a resource or
+                    ;; service declares charset parameters in the
+                    ;; content-types they declare in :produces.
+
+                    ;; If no charset (usually only if there's an
+                    ;; explicit Accept-Charset header sent, or the
+                    ;; resource really declares that it provides no
+                    ;; charsets), then send a 406, a per the
+                    ;; specification.
+
+                    (when accept-charset
+                      (d/error-deferred
+                       (ex-info ""
+                                {:status 406
+                                 ::debug {:message "No acceptable charset"}
+                                 ::http-response true}))))))
 
               (fn [ctx]
                 (case method
@@ -461,7 +481,6 @@
                        (when-not (res/exists? resource ctx)
                          (d/error-deferred (ex-info "" {:status 404
                                                         ::http-response true})))))
-
 
                    ;; Conditional request
                    (link ctx
@@ -521,6 +540,7 @@
 
                           (fn [resource]
                             (or (res/get-state resource content-type ctx)
+                                (service/body body ctx)
                                 (throw (ex-info "" {:status 404
                                                     ;; TODO: Do something nice for developers here
                                                     :body "Not Found"

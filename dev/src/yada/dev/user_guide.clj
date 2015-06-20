@@ -99,12 +99,6 @@
           {:keys [method headers data] :as req} (get-request ex)
           ]
 
-      (infof "ex is %s" ex)
-      (infof "router is %s" @(:*router user-guide))
-      (infof "keys is %s" (keys @(:*router user-guide)))
-      (infof "path is %s" (apply path-for @(:*router user-guide) (keyword (basename ex)) (get-path-args ex)))
-      (infof "example url is %s" url)
-
       (postwalk
        (fn [{:keys [tag attrs content] :as el}]
          (cond
@@ -359,7 +353,6 @@
 
   RouteProvider
   (routes [component]
-    (infof "Providing routes from user-guide, examples are" )
     (let [xbody (:xbody component)
           examples (:examples component)]
       ["/user-guide"
@@ -373,7 +366,7 @@
             (->
              (yada (fn [ctx]
                      (body component (post-process-doc component xbody (into {} examples) config) config))
-                   {:produces ["text/html;charset=UTF-8"]})
+                   :produces "text/html")
              (tag ::user-guide))))]
 
         ["/examples/"
@@ -384,7 +377,7 @@
                            (keyword (basename h)))]))]
         ["/tests.html"
          (-> (yada (fn [ctx] (tests component examples))
-                   {:produces #{"text/html;charset=utf8"}})
+                   :produces "text/html")
              (tag ::tests))]]])))
 
 (defmethod clojure.core/print-method UserGuide

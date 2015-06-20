@@ -30,15 +30,15 @@
 
 (deftest charset-test
   (are [accept-charset-header available expected]
-      (given (negotiate-charset accept-charset-header available)
-        first := expected
-        second := expected
-        )
-    "*" ["utf-8" "Shift_JIS;q=0.3"] "utf-8"
-    "*" ["utf-8;q=0.8" "Shift_JIS;q=1.0"] "Shift_JIS"
+      (= (negotiate-charset accept-charset-header available) expected)
+    "*" ["utf-8" "Shift_JIS;q=0.3"] ["utf-8" "utf-8"]
+    "*" ["utf-8;q=0.8" "Shift_JIS;q=1.0"] ["Shift_JIS" "Shift_JIS"]
     "utf-8" ["unicode-1-1"] nil
-    "utf-8" ["utf-8;q=0.8" "Shift_JIS;q=1.0"] "utf-8"
+    "utf-8" ["utf-8;q=0.8" "Shift_JIS;q=1.0"] ["utf-8" "utf-8"]
     "unicode-1.1" ["utf-8;q=0.8" "Shift_JIS;q=1.0"] nil
-    "unicode-1.1" ["utf-8;q=0.8" "Shift_JIS;q=1.0" "unicode-1.1;q=0.1"] "unicode-1.1"
-    nil ["utf-8;q=0.8" "Shift_JIS;q=1.0"] "Shift_JIS"
-    nil ["utf-8;q=0.8" "Shift_JIS;q=0.2"] "utf-8"))
+    "unicode-1.1" ["utf-8;q=0.8" "Shift_JIS;q=1.0" "unicode-1.1;q=0.1"] ["unicode-1.1" "unicode-1.1"]
+    nil ["utf-8;q=0.8" "Shift_JIS;q=1.0"] ["Shift_JIS" "Shift_JIS"]
+    nil ["utf-8;q=0.8" "Shift_JIS;q=0.2"] ["utf-8" "utf-8"]
+    nil yada.resource/supported-charsets ["UTF-8" "UTF-8"]
+    "dummyfox" ["utf-8;q=0.8" "Shift_JIS;q=1.0"] nil
+    ))

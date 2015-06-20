@@ -1,7 +1,10 @@
 (ns yada.charset
   (:require [clojure.java.io :as io]
+            [clojure.string :as str]
             [clojure.xml :as xml]
             [yada.util :refer :all]))
+
+;; TODO: Replace with java.nio.charset.Charset, which contains the same logic
 
 (def charsets-xml-doc
   (xml/parse
@@ -27,22 +30,20 @@
   "Charset, with parameters, as per rfc2616.html#section-5.3.3"
   (charset [_] "")
   (canonical-name [_] "")
-  (preferred-alias [_])
-  (to-charset-map [_] "Return an efficient version of this protocol"))
+  (preferred-alias [_]))
 
 (defrecord CharsetMap [alias weight]
   Charset
   (charset [_] alias)
   (canonical-name [_] (get alias->name (.toUpperCase alias)))
-  (preferred-alias [this] (name->alias (canonical-name this)))
-  (to-charset-map [this] this))
+  (preferred-alias [this] (name->alias (canonical-name this))))
 
 (def charset-pattern
   (re-pattern (str "(" http-token ")"
                    "((?:" ";" http-token "=" http-token ")*)")))
 
 (memoize
- (defn string->charset [s]
+ (defn- string->charset* [s]
    (let [g (rest (re-matches charset-pattern s))
          params (into {} (map vec (map rest (re-seq (re-pattern (str ";(" http-token ")=(" http-token ")"))
                                                     (last g)))))]
@@ -55,12 +56,21 @@
             1.0))
         1.0)))))
 
-(extend-protocol Charset
+(defn- string->charsetmap [s]
+  (string->charset* (str/trim s)))
+
+(defprotocol Coercions
+  (to-charset-map [_]))
+
+(extend-protocol Coercions
+  CharsetMap
+  (to-charset-map [c] c)
   String
-  (to-charset-map [s] (string->charset s)))
+  (to-charset-map [s]
+    (string->charsetmap s)))
 
 (defmethod clojure.core/print-method CharsetMap
   [cs ^java.io.Writer writer]
-  (.write writer (format "%s%s%s"
-                         (preferred-alias cs)
+  (.write writer (format "%s%s"
+                         (charset cs)
                          (when-let [w (:weight cs)] (str ";q=" w)))))

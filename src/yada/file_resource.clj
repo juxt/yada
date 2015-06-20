@@ -9,11 +9,12 @@
             [ring.util.mime-type :refer (ext-mime-type)]
             [ring.util.response :refer (redirect)]
             [ring.util.time :refer (format-date)]
-            [yada.resource :refer [Resource ResourceConstructor]]
+            [yada.resource :refer [Resource ResourceFetch ResourceConstructor]]
             [yada.mime :as mime])
   (:import [java.io File]
            [java.util Date TimeZone]
-           [java.text SimpleDateFormat]))
+           [java.text SimpleDateFormat]
+           [java.nio.charset Charset]))
 
 
 ;; TODO: Fix this to ensure that ascending a directory is completely
@@ -64,13 +65,25 @@
                     (.setTimeZone (TimeZone/getTimeZone "UTC")))
                   (java.util.Date. (.lastModified child)))]])]]]])))
 
+(defn charset-encoded-dir-index [dir content-type]
+  (let [s (dir-index dir content-type)]
+    (or
+     (when-let [charset (some-> content-type :parameters (get "charset"))]
+       (when-let [cs (Charset/forName charset)]
+         (when (.canEncode cs)
+           (.encode cs s))))
+     s)))
+
 (defrecord FileResource [f]
-  Resource
+  ResourceFetch
   (fetch [this ctx] this)
+
+  Resource
   (exists? [_ ctx] (.exists f))
   (last-modified [_ ctx] (Date. (.lastModified f)))
   (produces [_ ctx]
     [(ext-mime-type (.getName f))])
+  (produces-charsets [_ ctx] nil)
   (content-length [_ ctx]
     (when (.isFile f)
       (.length f)))
@@ -97,8 +110,10 @@
     (.delete f)))
 
 (defrecord DirectoryResource [dir]
-  Resource
+  ResourceFetch
   (fetch [this ctx] this)
+
+  Resource
   (exists? [_ ctx] (.exists dir))
   (last-modified [_ ctx] (Date. (.lastModified dir)))
   (produces [_ ctx]
@@ -109,22 +124,25 @@
         (let [child (child-file dir path-info)]
           (when (.isFile child)
             [(ext-mime-type (.getName child))])))))
+  (produces-charsets [_ ctx]
+    (when-let [path-info (-> ctx :request :path-info)]
+      (when (.endsWith path-info "/")
+        ["UTF-8" "US-ASCII;q=0.9"])))
   (content-length [_ ctx] nil)
   (get-state [_ content-type ctx]
-    ;; TODO: Check that file is compliant with the given content-type
-    ;; (type/subtype and charset)
+
 
     (if-let [path-info (-> ctx :request :path-info)]
       (if (= path-info "/")
         ;; TODO: The content-type indicates the format. Use support in
         ;; yada.representation to help format the response body.
         ;; This will have to do for now
-        (dir-index dir content-type)
+        (charset-encoded-dir-index dir content-type)
 
         (let [f (child-file dir path-info)]
           (cond
             (.isFile f) f
-            (.isDirectory f) (dir-index f content-type)
+            (.isDirectory f) (charset-encoded-dir-index f content-type)
             :otherwise (throw (ex-info "File not found" {:status 404 :yada.core/http-response true})))))
 
       ;; Redirect so that path-info is not nil - there is a case for this being done in the bidi handler
