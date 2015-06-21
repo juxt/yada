@@ -3,14 +3,8 @@
 Welcome to the yada user guide!
 
 This guide is ideal if you are new to yada and is suitable for anyone
-who is interested in building robust RESTful web APIs quickly and
-easily. Previous experience of web development in Clojure may be helpful
-but is not mandatory.
-
-### yada is simple, but also easy!
-
-If you follow this guide carefully you will learn how to take advantage
-of the many features yada has to offer.
+who is interested in building robust RESTful web APIs with Clojure
+quickly and easily.
 
 If you are a more experienced Clojure or REST developer and would like
 to get involved in influencing yada's future, please join our
@@ -37,15 +31,21 @@ a contributor!
 ## Forward
 
 With the emergence and dominance of HTTP, and the increasing importance
-to the world's economy of APIs built on it, creating high-quality APIs
-rapidly and reliably has become crucially important.
+to the world's economy of APIs built on it, building robust APIs
+rapidly has never been so important.
 
-Clojure makes an ideal choice for writing solid software, but most
-existing web libraries and frameworks for Clojure are bound to the
-synchronous, 'one thread per request' model. This is now becoming a
-limitation, and in the future, with HTTP/2 around the corner, this
-constraint will need to be relaxed in order to achieve the scale and
-throughput required for some applications.
+Clojure makes an ideal choice for writing solid software. Fundamentally,
+web APIs must share state with multiple actors. The Clojure language
+guarantees that concurrent access to shared state is safe - removing the
+role of the developer from checking that their code does not suffer from
+side-effects, deadlocks, race conditions and bottlenecks.
+
+But more importantly, Clojure shares many of the values and much of the
+philosophy behind the dominant architectural style of today's web APIs:
+[REST](https://www.ics.uci.edu/~fielding/pubs/dissertation/rest_arch_style.htm)
+(Representational State Transfer).
+
+[more to follow]
 
 ## Introduction
 
