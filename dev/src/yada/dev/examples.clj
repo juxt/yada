@@ -54,16 +54,16 @@
 
 (defrecord DynamicHelloWorld []
   Example
-  (resource [_] '{:body (fn [ctx] "Hello World!")})
+  (resource [_] '(fn [ctx] "Hello World!"))
   (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
 
 (defrecord AsyncHelloWorld []
   Example
-  (resource [_] '{:body (fn [ctx]
-                              (future (Thread/sleep 1000)
-                                      "Hello World!"))})
+  (resource [_] '(fn [ctx]
+                  (future (Thread/sleep 1000)
+                          "Hello World!")))
   (make-handler [ex] (yada (eval (resource ex))))
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
@@ -73,9 +73,9 @@
 (defrecord PathParameterUndeclared []
   Example
   (resource [_]
-    '{:body (fn [ctx]
-              (str "Account number is "
-                   (-> ctx :request :route-params :account)))})
+    '(fn [ctx]
+      (str "Account number is "
+           (-> ctx :request :route-params :account))))
   (options [_] '{})
   (make-handler [ex] (yada (eval (resource ex))))
   (path [r] [(basename r) "/" :account])
@@ -700,35 +700,49 @@
   (expected-response [_] {:status 200})
   (test-function [_] "tryItEvents"))
 
-(defn title [r]
-  (last (string/split (.getName (type r)) #"\.")))
+(defn title [ex]
+  (last (string/split (.getName (type ex)) #"\.")))
 
-(defn get-path [r]
-  (or
-   (try (path r) (catch AbstractMethodError e))
-   (last (string/split (.getName (type r)) #"\."))))
+(defn get-resource [ex]
+  (try (resource ex) (catch AbstractMethodError e)))
 
-(defn get-path-args [r]
+(defn get-options [ex]
+  (try (options ex) (catch AbstractMethodError e)))
+
+(defn get-path [ex]
   (or
-   (try (path-args r) (catch AbstractMethodError e))
+   (try (path ex) (catch AbstractMethodError e))
+   (last (string/split (.getName (type ex)) #"\."))))
+
+(defn get-path-args [ex]
+  (or
+   (try (path-args ex) (catch AbstractMethodError e))
    []))
 
-(defn get-query-string [r]
-  (try (query-string r) (catch AbstractMethodError e)))
+(defn get-query-string [ex]
+  (try (query-string ex) (catch AbstractMethodError e)))
 
-(defn get-request [r]
-  (try (request r) (catch AbstractMethodError e)))
+(defn get-request [ex]
+  (try (request ex) (catch AbstractMethodError e)))
 
 (defn get-test-function [ex]
   (try (test-function ex) (catch AbstractMethodError e)))
 
-(defn description [r]
-  (when-let [s (io/resource (str "examples/pre/" (title r) ".md"))]
+(defn description [ex]
+  (when-let [s (io/resource (str "examples/pre/" (title ex) ".md"))]
     (markdown/md-to-html-string (slurp s))))
 
-(defn post-description [r]
-  (when-let [s (io/resource (str "examples/post/" (title r) ".md"))]
+(defn post-description [ex]
+  (when-let [s (io/resource (str "examples/post/" (title ex) ".md"))]
     (markdown/md-to-html-string (slurp s))))
 
-(defn external? [r]
-  (try (different-origin? r) (catch AbstractMethodError e false)))
+(defn external? [ex]
+  (try (different-origin? ex) (catch AbstractMethodError e false)))
+
+(defn make-example-handler [ex]
+  (let [res (eval (get-resource ex))
+        opts (eval (get-options ex))]
+    (cond
+      (and res opts) (yada res opts)
+      res (yada res)
+      opts (yada opts))))

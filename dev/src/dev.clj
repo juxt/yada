@@ -59,7 +59,8 @@
   (stop)
   (refresh :after 'dev/go))
 
-
+(defn test-all []
+  (clojure.test/run-all-tests #"yada.*test$"))
 
 (defn routes []
   (-> system :router :routes))

@@ -17,7 +17,7 @@
    [modular.bidi :refer (path-for)]
    [modular.template :as template :refer (render-template)]
    [modular.component.co-dependency :refer (co-using)]
-   [yada.dev.examples :refer (resource get-path get-path-args get-query-string get-request make-handler expected-response get-test-function external?)]
+   [yada.dev.examples :refer (get-resource get-options get-path get-path-args get-query-string get-request expected-response get-test-function external? make-example-handler)]
    [yada.yada :refer (yada)]
    [yada.mime :as mime]
 ))
@@ -102,7 +102,7 @@
       (postwalk
        (fn [{:keys [tag attrs content] :as el}]
          (cond
-           (= tag :resource-map)
+           (= tag :handler)
            {:tag :div
             :content [{:tag :pre
                        :content [{:tag :code
@@ -111,7 +111,16 @@
                                              (str/trim
                                               (with-out-str
                                                 (binding [*print-right-margin* 80]
-                                                  (pprint (resource ex))))))]}]}]}
+                                                  (let [res (get-resource ex)
+                                                        opts (get-options ex)]
+                                                    (pprint
+                                                     (cond
+                                                       (and res opts)
+                                                       `(yada ~res ~opts)
+                                                       res `(yada ~res)
+                                                       opts `(yada ~opts)
+                                                       )
+                                                     ))))))]}]}]}
 
            (= tag :request)
            {:tag :div
@@ -345,8 +354,7 @@
                      component
                      :start-time (java.util.Date.)
                      :*post-counter (atom 0)
-                     :xbody xbody)
-          examples (extract-examples component xbody)]
+                     :xbody xbody)]
       (assoc component
              :examples (extract-examples component xbody))))
   (stop [component] component)
@@ -371,10 +379,11 @@
 
         ["/examples/"
          (vec
-          (for [[_ h] examples]
-            [(get-path h) (tag
-                           (make-handler h)
-                           (keyword (basename h)))]))]
+          (for [[_ ex] examples]
+            [(get-path ex) (->
+                            (make-example-handler ex)
+                            (tag
+                             (keyword (basename ex))))]))]
         ["/tests.html"
          (-> (yada (fn [ctx] (tests component examples))
                    :produces "text/html")

@@ -1,8 +1,8 @@
-Let's look in more detail at the _resource object_ you pass to yada's `yada` function to create a Ring handler. This is some kind of object. Let's demonstrate using the example we have already seen.
+Let's look in more detail at the _resource_ you pass to yada's `yada` function to create a Ring handler. This is some kind of object. Let's demonstrate using the example we have already seen.
 
 Suppose the resource is the string "Hello World!".
 
-<resource-map/>
+<handler/>
 
 We can test the effect of this by running the example with the 'Try it' button below. This sends the following request from your browser to a web application.
 
