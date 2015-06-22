@@ -6,7 +6,7 @@
    [clojure.tools.logging :refer :all]
    [com.stuartsierra.component :refer (using)]
    [yada.dev.user-guide :refer (basename)]
-   [yada.dev.examples :refer (make-handler get-path)]))
+   [yada.dev.examples :refer (make-example-handler get-path)]))
 
 (defrecord ExternalResources [user-guide]
   RouteProvider
@@ -15,8 +15,9 @@
      [["" (fn [req] {:body "examples"})]
       ["/"
        (vec
-        (for [[_ h] (:examples user-guide)]
-          [(get-path h) (make-handler h)]))]]]))
+        (for [[_ ex] (:examples user-guide)]
+          [(get-path ex)
+           (make-example-handler ex)]))]]]))
 
 (defn new-external-resources
   "External resources are those that run on a different port, such that

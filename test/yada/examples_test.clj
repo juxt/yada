@@ -9,7 +9,10 @@
 (defn ex-handler [ex]
   (let [h (make-example-handler ex)
         route [(get-path ex) h]
-        path (apply path-for route h (get-path-args ex))
+        path (let [qs (get-query-string ex)]
+               (cond-> (apply path-for route h (get-path-args ex))
+                 qs (str "?" qs)))
+
         bh (br/make-handler route)
         req (get-request ex)
         ]

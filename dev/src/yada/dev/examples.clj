@@ -77,7 +77,6 @@
       (str "Account number is "
            (-> ctx :request :route-params :account))))
   (options [_] '{})
-  (make-handler [ex] (yada (eval (resource ex))))
   (path [r] [(basename r) "/" :account])
   (path-args [_] [:account 1234])
   (request [_] {:method :get})
@@ -94,11 +93,10 @@
 (defrecord ParameterDeclaredPathQueryWithGet []
   Example
   (resource [_]
-    {
-     :body '(fn [ctx]
-              (let [{:keys [since account]} (:parameters ctx)]
-                (format "List transactions since %s from account number %s"
-                          since account)))})
+    '(fn [ctx]
+       (let [{:keys [since account]} (:parameters ctx)]
+         (format "List transactions since %s from account number %s"
+                 since account))))
   (options [_] {:parameters common-params})
   (make-handler [ex] (yada (eval (resource ex))))
   (path [r] [(basename r) "/" :account])
