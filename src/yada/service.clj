@@ -92,7 +92,7 @@
   (produces [f] (produces (f)))
   (produces [f ctx] (produces (f) ctx))
 
-  (post [f ctx]
+  (post! [f ctx]
     (f ctx))
 
   (authorize [f ctx] (f ctx))

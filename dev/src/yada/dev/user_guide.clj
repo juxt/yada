@@ -17,7 +17,7 @@
    [modular.bidi :refer (path-for)]
    [modular.template :as template :refer (render-template)]
    [modular.component.co-dependency :refer (co-using)]
-   [yada.dev.examples :refer (get-resource get-options get-path get-path-args get-query-string get-request expected-response get-test-function external? make-example-handler)]
+   [yada.dev.examples :refer (get-resource get-options get-path get-path-args get-query-string get-request expected-response get-test-function external? make-example-handler encode-data)]
    [yada.yada :refer (yada)]
    [yada.mime :as mime]
 ))
@@ -84,11 +84,6 @@
 (defn example-instance [user-guide example]
   (when-let [v (find-var (symbol "yada.dev.examples" (str "map->" (namespace-munge example))))]
     (v user-guide)))
-
-(defn encode-data [data content-type]
-  (case content-type
-    "application/json" (json/encode data)
-    (str "\"" data "\"")))
 
 (defn post-process-example [user-guide ex xml {:keys [prefix ext-prefix]}]
   (when xml

@@ -96,7 +96,8 @@
       (java.io.ByteArrayInputStream.)
       (slurp :encoding encoding)))
 
-
+(defn read-body [req]
+  (slurp (:body req) :encoding (or (character-encoding req) "utf8")))
 
 ;; Allowed methods
 
@@ -124,15 +125,16 @@
 
 (defn allowed-methods [ctx]
   (let [rmap (:options ctx)]
+    (infof "allowed-methods, rmap is %s" rmap)
     (if-let [methods (:methods rmap)]
       (set (service/allowed-methods methods))
       (set
        (remove nil?
                (conj
                 (filter safe? known-methods)
-                (when (:put rmap) :put)
-                (when (:post rmap) :post)
-                (when (:delete rmap) :delete)))))))
+                (when (:put! rmap) :put)
+                (when (:post! rmap) :post)
+                (when (:delete! rmap) :delete)))))))
 
 (defn make-endpoint
   "Create a yada endpoint (Ring handler)"
@@ -178,8 +180,6 @@
 
       :or {authorization (NoAuthorizationSpecified.)}
      }]
-
-   (infof "resource is %s, type %s" resource (type resource))
 
    (let [security (as-sequential security)
          ;; Note that the resource is constructed during the yada call,
@@ -255,7 +255,6 @@
 
                ;; Malformed
                (fn [ctx]
-                 (infof "parameters1 are %s" parameters)
                  (let [keywordize (fn [m] (into {} (for [[k v] m] [(keyword k) v])))
                        parameters
                        {:path
@@ -268,14 +267,14 @@
 
                         :body
                         (when-let [schema (get-in parameters [method :body])]
-                          (let [body (-> ctx :request :body deref)]
+                          (let [body (read-body (-> ctx :request))]
                             (rep/decode-representation body (content-type req) schema)))
 
                         :form
                         (when-let [schema (get-in parameters [method :form])]
                           (when (urlencoded-form? req)
                             (let [fp (keywordize-keys
-                                      (form-decode (-> ctx :request :body deref)
+                                      (form-decode (read-body (-> ctx :request))
                                                    (character-encoding req)))]
                               (rs/coerce schema fp :json))))
 
@@ -283,8 +282,6 @@
                         (when-let [schema (get-in parameters [method :header])]
                           (let [params (select-keys (-> req :headers keywordize-keys) (keys schema))]
                             (rs/coerce schema params :query)))}]
-
-                   (infof "parameters2 are %s" parameters)
 
                    (let [errors (filter (comp error? second) parameters)]
 
@@ -380,16 +377,13 @@
                ;; about this) ; yes it can because the implementation can
                ;; check it's deferred and then place it in a chain
                (fn [ctx]
-                 (infof "fetching")
                  (d/chain
                   (res/fetch resource ctx)
                   (fn [res]
-                    (infof "assoc'ing resource to ctx: %s" res)
                     (assoc ctx :resource res))))
 
                ;; Content-type and charset negotiation - done here to throw back to the client any errors
                (fn [ctx]
-                 (infof "resource.. is %s" (:resource ctx))
                  (let [resource (:resource ctx)
                        available-content-types
                        (map mime/string->media-type (remove nil?
