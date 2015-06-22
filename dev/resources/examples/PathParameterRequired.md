@@ -1,6 +1,6 @@
 We declare a path parameter as being required.
 
-<resource-map/>
+<handler/>
 
 But we'll omit to include the parameter in the request URI :-
 

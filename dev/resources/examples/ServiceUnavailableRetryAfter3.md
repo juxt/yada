@@ -11,7 +11,7 @@ seconds in the future when new requests would be considered.
 By using promises, this potentially difficult rate-limiting algorithm
 can be separated from the API service itself.
 
-<resource-map/>
+<handler/>
 
 <request/>
 

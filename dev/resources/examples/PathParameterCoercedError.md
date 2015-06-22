@@ -2,7 +2,7 @@ In this example we want to demonstrate what happens if there is an error extract
 
 We want __account__ to be extracted as a `java.lang.Long`
 
-<resource-map/>
+<handler/>
 
 In the request we provide the string `"wrong"` in the place where the
 account number is expected.

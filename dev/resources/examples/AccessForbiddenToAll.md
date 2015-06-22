@@ -1,6 +1,6 @@
 In this example, we set the __:authorization__ entry to false.
 
-<resource-map/>
+<handler/>
 
 This means that no access is allowed, by anyone, at any time.
 

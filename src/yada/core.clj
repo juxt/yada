@@ -140,7 +140,9 @@
 (defn make-endpoint
   "Create a yada endpoint (Ring handler)"
   ([resource options]
-   (make-endpoint (assoc options :resource resource)))
+   (make-endpoint (if resource
+                    (assoc options :resource resource)
+                    options)))
 
   ([{:keys
       [resource                        ; async-supported
@@ -744,7 +746,7 @@
             (and (not (keyword? arg)) (nil? otherargs))
             [arg {}]
 
-            ;; If the first argument is a map, the whole arg list are the options
+            ;; If the first argument is a keyword, the whole arg list are the options
             (and (keyword? arg) (odd? otherargs))
             [nil (into {} (cons arg otherargs))]
 

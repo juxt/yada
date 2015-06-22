@@ -6,6 +6,9 @@
    [bidi.bidi :refer (Matched resolve-handler unresolve-handler route-seq succeed)]
    [bidi.ring :refer (Ring)]
    [yada.bidi :refer (resource)]
+   [yada.resource :refer (Resource)]
+   [yada.mime :as mime]
+   [clojure.tools.logging :refer :all]
    [camel-snake-kebab :as csk]
    [cheshire.core :as json]
    [ring.swagger.swagger2 :as rs]
@@ -36,7 +39,19 @@
                       [k {:parameters v}]
                       )))]))
 
-(defrecord Swagger [spec routes]
+(defrecord SwaggerSpec [spec created-at]
+  Resource
+  (produces [_ ctx] #{"application/json"})
+  (produces-charsets [_ ctx] #{"UTF-8"})
+  (exists? [_ ctx] true)
+  (last-modified [_ ctx] created-at)
+  (get-state [_ content-type ctx]
+    (assert (= (mime/media-type content-type) "application/json"))
+    (infof "type of swagger-json is %s" (type (rs/swagger-json spec)))
+    (json/encode (rs/swagger-json spec)))
+  (content-length [_ ctx] nil))
+
+(defrecord Swagger [spec routes handler]
   Matched
   (resolve-handler [this m]
     (if (= (:remainder m) (str (or (:base-path spec) "") "/swagger.json"))
@@ -56,22 +71,10 @@
   (request [_ req match-context]
     ;; This yada resource has match-context in its lexical scope,
     ;; containing any yada/partial (or bidi/partial) entries.
-    ((resource
-      (rs/swagger-json
-              (merge spec {:paths (into {} (map to-path (route-seq ["" routes])))})))
+
+    (handler
      req)))
 
 (defn swaggered [spec routes]
-  (->Swagger spec routes))
-
-
-
-(defrecord Thing [])
-
-(defn thing [m]
-  m
-  (with-meta (map->Thing m) (meta m)))
-
-(let [f (thing ^{:summary "a thing"} {})]
-  (meta f)
-  )
+  (let [spec (merge spec {:paths (into {} (map to-path (route-seq ["" routes])))})]
+    (->Swagger spec routes (resource (->SwaggerSpec spec (java.util.Date.))))))

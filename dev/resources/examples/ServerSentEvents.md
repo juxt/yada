@@ -1,6 +1,6 @@
 For example, here we simply specify a vector of events, creating a resource map with a single __:events__ entry.
 
-<resource-map/>
+<handler/>
 
 That's it, because yada takes care of all the other details.
 

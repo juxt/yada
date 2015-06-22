@@ -6,7 +6,7 @@ Note that the function returns a value immediately. The receiving thread sees
 that the value is deferred, so parks the job so that it can be freed up
 to work on another task.
 
-<resource-map/>
+<handler/>
 
 When the sleep is over, a new thread will pick up the job and create the body that will go into the response.
 

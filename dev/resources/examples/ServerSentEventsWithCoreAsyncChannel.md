@@ -4,7 +4,7 @@ channel, and pause for a second. After 10 tries we close the core.async
 channel. Upon closing this channel, yada (actually manifold!)
 automatically closes the connection with the user-agent.
 
-<resource-map/>
+<handler/>
 
 <curl/>
 

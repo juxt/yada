@@ -4,7 +4,7 @@ First we must add a __:security__ entry, with __:type__ set to `:basic` and a __
 
 In the __:authorization__ function, we can pull out the credentials from the request context's __:authentication__ entry. For basic access authentication, this is a normal map containing the user and password provided by the user.
 
-<resource-map/>
+<handler/>
 
 Examine the code above. Note that __:not-authorized__ is returned if no
 authentication credentials exist, or if the credentials are wrong. This

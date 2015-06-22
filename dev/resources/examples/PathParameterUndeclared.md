@@ -8,7 +8,7 @@ Let's assume the path in the request URI is `/PathParameter/1234`. Let's also as
 
 Let's add a __:body__ entry with a function that extracts the parameter from the request context and uses it in a formatted string.
 
-<resource-map/>
+<handler/>
 
 The code in __:body__ can reach into the _request context_ for the Ring request, and from that extract the `:route-params` entry for `:account`.
 

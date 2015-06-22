@@ -3,7 +3,7 @@ the service is determined asynchronously. In this test, a short-lived
 sleep is used to simulate the effect of asynchronously checking service
 availability.
 
-<resource-map/>
+<handler/>
 
 <request/>
 

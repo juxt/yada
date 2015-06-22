@@ -13,7 +13,7 @@ __:query-params__ to the Ring request.
 
 Let's add a __:body__ entry with a function that extracts the parameter from the request context and uses it in a formatted string.
 
-<resource-map/>
+<handler/>
 
 The code in __:body__ can reach into the _request context_ for the Ring request, and from that extract the `:query-params` entry for `:month`.
 

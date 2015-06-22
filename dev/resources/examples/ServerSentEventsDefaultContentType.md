@@ -1,4 +1,4 @@
-<resource-map/>
+<handler/>
 
 <curl/>
 

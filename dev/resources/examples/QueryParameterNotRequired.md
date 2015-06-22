@@ -2,7 +2,7 @@ In this example, we declare __:account-type__ as optional, by omitting a __:requ
 
 This time we'll return the params map, so we can see what's going on.
 
-<resource-map/>
+<handler/>
 
 We use the same request as in the previous example.
 

@@ -1,6 +1,6 @@
 This example demonstrates a resource that is available in both `text/html` and `text/plain`. The client sets an accept header, indicating that `text/html` is preferred.
 
-<resource-map/>
+<handler/>
 
 We set the __Accept__ header in the request to `text/html`, to specify that we prefer a response body formatted as HTML.
 

@@ -1,6 +1,6 @@
 Now let's try the same thing but with the client setting the `Accept` header to indicate that `text/plain` is preferred.
 
-<resource-map/>
+<handler/>
 
 Now we set the __Accept__ header in the request to `text/plain`, to specify that we prefer a response body formatted as plain text.
 
