@@ -1,38 +1,40 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.core
-  (:require [bidi.bidi :refer (Matched succeed)]
-            [bidi.ring :refer (Ring)]
-            [cheshire.core :as json]
-            [clojure.core.async :as a]
-            [clojure.java.io :as io]
-            [clojure.pprint :refer (pprint)]
-            [clojure.set :as set]
-            [clojure.string :as str]
-            [clojure.tools.logging :refer :all :exclude [trace]]
-            [clojure.walk :refer (keywordize-keys)]
-            [hiccup.core :refer (html h)]
-            [manifold.deferred :as d]
-            [manifold.stream :refer (->source transform)]
-            [ring.middleware.basic-authentication :as ba]
-            [ring.middleware.params :refer (params-request)]
-            [ring.swagger.coerce :as rc]
-            [ring.swagger.schema :as rs]
-            [ring.util.codec :refer (form-decode)]
-            [ring.util.request :refer (character-encoding urlencoded-form? content-type)]
-            [ring.util.time :refer (parse-date format-date)]
-            [schema.coerce :refer (coercer string-coercion-matcher) :as sc]
-            [schema.core :as s]
-            [schema.utils :refer (error? error-val)]
-            [yada.coerce :refer (coercion-matcher)]
-            [yada.charset :as charset]
-            [yada.representation :as rep]
-            [yada.negotiation :as conneg]
-            [yada.service :as service]
-            [yada.resource :as res]
-            [yada.trace]
-            [yada.mime :as mime]
-            [yada.util :refer (link)])
+  (:require
+   [byte-streams :refer (convert)]
+   [bidi.bidi :refer (Matched succeed)]
+   [bidi.ring :refer (Ring)]
+   [cheshire.core :as json]
+   [clojure.core.async :as a]
+   [clojure.java.io :as io]
+   [clojure.pprint :refer (pprint)]
+   [clojure.set :as set]
+   [clojure.string :as str]
+   [clojure.tools.logging :refer :all :exclude [trace]]
+   [clojure.walk :refer (keywordize-keys)]
+   [hiccup.core :refer (html h)]
+   [manifold.deferred :as d]
+   [manifold.stream :refer (->source transform)]
+   [ring.middleware.basic-authentication :as ba]
+   [ring.middleware.params :refer (params-request)]
+   [ring.swagger.coerce :as rc]
+   [ring.swagger.schema :as rs]
+   [ring.util.codec :refer (form-decode)]
+   [ring.util.request :refer (character-encoding urlencoded-form? content-type)]
+   [ring.util.time :refer (parse-date format-date)]
+   [schema.coerce :refer (coercer string-coercion-matcher) :as sc]
+   [schema.core :as s]
+   [schema.utils :refer (error? error-val)]
+   [yada.coerce :refer (coercion-matcher)]
+   [yada.charset :as charset]
+   [yada.representation :as rep]
+   [yada.negotiation :as conneg]
+   [yada.service :as service]
+   [yada.resource :as res]
+   [yada.trace]
+   [yada.mime :as mime]
+   [yada.util :refer (link)])
   (:import (clojure.lang IPending)
            (java.util Date)
            (java.util.concurrent Future)
@@ -97,7 +99,7 @@
       (slurp :encoding encoding)))
 
 (defn read-body [req]
-  (slurp (:body req) :encoding (or (character-encoding req) "utf8")))
+  (convert (:body req) String {:encoding (or (character-encoding req) "utf8")}))
 
 ;; Allowed methods
 
@@ -125,7 +127,6 @@
 
 (defn allowed-methods [ctx]
   (let [rmap (:options ctx)]
-    (infof "allowed-methods, rmap is %s" rmap)
     (if-let [methods (:methods rmap)]
       (set (service/allowed-methods methods))
       (set

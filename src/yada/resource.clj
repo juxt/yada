@@ -43,7 +43,6 @@
   clojure.lang.Fn
   (fetch [f ctx]
     (let [res (f ctx)]
-      (infof "fetch result is %s" res)
       (if (deferrable? res)
         (d/chain res #(fetch % ctx))
         (fetch res ctx))))
