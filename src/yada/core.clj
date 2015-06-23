@@ -12,6 +12,7 @@
    [clojure.set :as set]
    [clojure.string :as str]
    [clojure.tools.logging :refer :all :exclude [trace]]
+   #_[clojure.tools.trace :refer (deftrace)]
    [clojure.walk :refer (keywordize-keys)]
    [hiccup.core :refer (html h)]
    [manifold.deferred :as d]
@@ -126,16 +127,16 @@
   (contains? #{:delete :get :head :options :put :trace} method))
 
 (defn allowed-methods [ctx]
-  (let [rmap (:options ctx)]
-    (if-let [methods (:methods rmap)]
+  (let [options (:options ctx)]
+    (if-let [methods (:methods options)]
       (set (service/allowed-methods methods))
       (set
        (remove nil?
                (conj
                 (filter safe? known-methods)
-                (when (:put! rmap) :put)
-                (when (:post! rmap) :post)
-                (when (:delete! rmap) :delete)))))))
+                (when (:put! options) :put)
+                (when (:post! options) :post)
+                (when (:delete! options) :delete)))))))
 
 (defn make-endpoint
   "Create a yada endpoint (Ring handler)"
@@ -693,8 +694,8 @@
    (apply make-endpoint
           (cond
             ;; If the only argument is a map, it's the options
-            (and (map? arg) (nil? otherargs))
-            [nil arg]
+            #_(and (map? arg) (nil? otherargs))
+            #_[nil arg]
 
             ;; If the only argument is not a keyword, it's the resource
             (and (not (keyword? arg)) (nil? otherargs))

@@ -9,23 +9,6 @@
   (:import [java.io File BufferedInputStream ByteArrayInputStream]
            [java.util Date]))
 
-;; TODO Finish the above, then start serving whole directories.
-
-;; Test a single resource. Note that this isn't a particularly useful
-;; resource, because it contains no knowledge of when it was modified,
-;; how big it is, etc. (unless we can infer where it came from, if jar,
-;; use the file-size stored in the java.util.zip.JarEntry for
-;; content-length.)
-
-#_(deftest resource-test
-  (let [resource {:state (io/resource "public/css/fonts.css")}
-        handler (yada resource)
-        response @(handler (request :get "/"))]
-    (is (some? response))
-    (is (= (:status response) 200))
-    (is (= (get-in response [:headers "content-type"]) "text/css"))
-    (is (instance? BufferedInputStream (:body response)))))
-
 ;; TODO: Test conditional content
 ;; TODO: Serve up file images and other content required for the examples with yada - don't use bidi/resources
 ;; TODO: yada should replace bidi's resources, files, etc.  and do a far better job

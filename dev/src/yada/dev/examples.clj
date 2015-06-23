@@ -2,6 +2,7 @@
 
 (ns yada.dev.examples
   (:require
+   [clojure.tools.logging :refer :all]
    [bidi.bidi :refer (RouteProvider path-for alts tag)]
    [bidi.ring :refer (redirect)]
    [cheshire.core :as json]
@@ -102,9 +103,8 @@
 
 (defrecord ParameterDeclaredPathQueryWithPost []
   Example
-  (resource [_]
-    {:parameters
-     common-params
+  (options [_]
+    {:parameters common-params
      :post! '(fn [ctx]
                (format "Description is '%s'" (-> ctx :parameters :body :description)))})
   (path [r] [(basename r) "/" :account])
@@ -688,7 +688,7 @@
     (cond
       (and res opts) (yada res opts)
       res (yada res)
-      opts (yada opts))))
+      opts (yada nil opts))))
 
 (defn encode-data [data content-type]
   (case content-type

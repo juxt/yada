@@ -27,7 +27,7 @@
   ;;(content-length [_ ctx] "Return the content length, if possible.")
 
   ;; TODO: Misnomer. If content-type is a parameter, then it isn't state, it's representation. Perhaps rename simply to 'get-representation' or even just 'get'
-  (get-state [_ media-type ctx] "Return the state, formatted to a representation of the given media-type and charset. Returning nil results in a 404. Get the charset from the context [:request :charset], if you can support different charsets. A nil charset at [:request :charset] means the user-agent can support all charsets, so just pick one.")
+  (get-state [_ media-type ctx] "Return the state. Can be formatted to a representation of the given media-type and charset. Returning nil results in a 404. Get the charset from the context [:request :charset], if you can support different charsets. A nil charset at [:request :charset] means the user-agent can support all charsets, so just pick one. If you don't return a String, a representation will be attempted from whatever you do return.")
 
   (put-state! [_ content media-type ctx] "Overwrite the state with the data. To avoid inefficiency in abstraction, satisfying types are required to manage the parsing of the representation in the request body. If a deferred is returned, the HTTP response status is set to 202")
 
@@ -72,10 +72,7 @@
   (get-state [_ media-type ctx] nil)
   (produces [_] nil)
   (produces [_ _] nil)
-  (produces-charsets [_ _] nil)
-
-  )
-
+  (produces-charsets [_ _] nil))
 
 (defprotocol ResourceConstructor
   (make-resource [_] "Make a resource. Often, resources need to be constructed rather than simply extending types with the Resource protocol. For example, we sometimes need to know the exact time that a resource is constructed, to support time-based conditional requests. For example, a simple StringResource is immutable, so by knowing the time of construction, we can precisely state its Last-Modified-Date."))
