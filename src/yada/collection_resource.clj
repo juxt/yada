@@ -15,16 +15,7 @@
   (produces-charsets [_ ctx] platform-charsets)
   (exists? [_ ctx] true)
   (last-modified [_ ctx] last-modified)
-  (get-state [_ content-type ctx]
-    (let [mt (media-type content-type)]
-      (case mt
-        "application/json" (str (json/encode m) \newline)
-        "application/edn" (prn-str m)
-        "text/html" (str (jh/edn->html m) \newline)
-        ;; This is our fault, we must have declared that we produce the
-        ;; media-type, but now we ducking out of creating a
-        ;; representation in it.
-        (throw (ex-info "Negotiated media type cannot be represented" {:media-type mt}))))))
+  (get-state [_ content-type ctx] m))
 
 (extend-protocol ResourceConstructor
   APersistentMap

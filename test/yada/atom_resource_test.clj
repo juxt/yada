@@ -18,6 +18,7 @@
 
         (given response
           :status := 200
+          :headers := nil
           :body :? string?)
 
         )))
