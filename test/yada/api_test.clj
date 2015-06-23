@@ -3,9 +3,11 @@
 (ns yada.api-test
   (:require
    [com.stuartsierra.component :refer (system-using system-map)]
-   [bidi.bidi :refer (match-route)]
+   [bidi.bidi :refer (match-route routes)]
+   [bidi.ring :refer (make-handler)]
    [clojure.test :refer :all]
    [yada.yada :refer (yada) :as yada]
+   [yada.test.util :refer (given)]
    [manifold.deferred :as d]
    [modular.test :refer (with-system-fixture *system*)]
    [ring.mock.request :as mock]
@@ -25,15 +27,24 @@
 (use-fixtures :each (with-system-fixture new-system))
 
 (defn get-api []
-  ["" (-> *system* :api)])
+  (-> *system* :api))
 
-(defn get-op-response [spec req & {:as opts}]
+#_(defn get-op-response [api req & {:as opts}]
   (let [h (yada opts)
-        {rp :route-params} (match-route spec (:uri req))]
+        {rp :route-params} (match-route api (:uri req))]
     (let [res (h (assoc req :route-params rp))]
       (if (d/deferrable? res) @res res))))
 
-;; TODO: Disabled until revisting Swagger support
+;; First get this API integration test working, then build a proper swagger_test suite
+
+(deftest api-test
+  (let [h (make-handler (routes (:api *system*)))
+        req (mock/request :get "/api/swagger.json")]
+    (given @(h req)
+      :status := 200
+      :headers :> {"content-type" "application/json"})))
+
+
 #_(deftest handlers
   (testing "Service Unavailable"
 

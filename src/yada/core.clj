@@ -145,43 +145,43 @@
                     options)))
 
   ([{:keys
-      [resource                        ; async-supported
+     [resource                          ; async-supported
 
-       service-available?              ; async-supported
-       known-method?                   ; async-supported
-       request-uri-too-long?
+      service-available?                ; async-supported
+      known-method?                     ; async-supported
+      request-uri-too-long?
 
-       methods
+      methods
 
-       status                          ; async-supported
-       headers                         ; async-supported
+      status                            ; async-supported
+      headers                           ; async-supported
 
-       ;; Security
-       authorization                   ; async-supported
-       security
+      ;; Security
+      authorization                     ; async-supported
+      security
 
-       ;; Actions
-       put!                            ; async-supported
-       post!                           ; async-supported
-       delete!                         ; async-supported
-       patch!                          ; async-supported
-       trace                           ; async-supported
+      ;; Actions
+      put!                              ; async-supported
+      post!                             ; async-supported
+      delete!                           ; async-supported
+      patch!                            ; async-supported
+      trace                             ; async-supported
 
-       ;; Service overrides
-       body                            ; async-supported
+      ;; Service overrides
+      body                              ; async-supported
 
-       produces
-       produces-charsets
-       parameters
+      produces
+      produces-charsets
+      parameters
 
-       ;; CORS
-       allow-origin
+      ;; CORS
+      allow-origin
 
-       ] ;; :or {resource {}}
+      ] ;; :or {resource {}}
 
-      :as options
+     :as options
 
-      :or {authorization (NoAuthorizationSpecified.)}
+     :or {authorization (NoAuthorizationSpecified.)}
      }]
 
    (let [security (as-sequential security)
@@ -404,7 +404,7 @@
                    ;; is made.)
                    (when-let [bad-charset
                               (some (fn [mt] (when-let [charset (some-> mt :parameters (get "charset"))]
-                                               (when-not (charset/valid-charset? charset) charset)))
+                                              (when-not (charset/valid-charset? charset) charset)))
                                     available-content-types)]
                      (throw (ex-info (format "Resource or service declares it produces an unknown charset: %s" bad-charset) {:charset bad-charset})))
 
@@ -455,11 +455,13 @@
                          (assoc-in [:response :charset] charset)
                          ;; Update charset in ctx content-type
                          (update-in [:response :content-type]
-                                    (fn [ct] (when ct
-                                               ;; But don't overwrite an existing charset
-                                               (if-not (some-> ct :parameters (get "charset"))
-                                                 (assoc-in ct [:parameters "charset"] (first charset))
-                                                 ct)))))
+                                    (fn [ct] (if (and ct
+                                                     ;; Only for text media-types
+                                                     (= (:type ct) "text")
+                                                     ;; But don't overwrite an existing charset
+                                                     (not (some-> ct :parameters (get "charset"))))
+                                              (assoc-in ct [:parameters "charset"] (first charset))
+                                              ct))))
 
                      ;; We should support the case where a resource or
                      ;; service declares charset parameters in the
