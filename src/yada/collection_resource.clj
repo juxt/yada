@@ -4,9 +4,10 @@
   (:require
    [clojure.tools.logging :refer :all]
    [yada.mime :refer (media-type)]
-   [yada.resource :refer (Resource platform-charsets)]
+   [yada.resource :refer (Resource ResourceConstructor platform-charsets)]
    [cheshire.core :as json]
-   [json-html.core :as jh]))
+   [json-html.core :as jh])
+  (:import [clojure.lang APersistentMap]))
 
 (defrecord MapResource [m last-modified]
   Resource
@@ -25,5 +26,6 @@
         ;; representation in it.
         (throw (ex-info "Negotiated media type cannot be represented" {:media-type mt}))))))
 
-(defn new-map-resource [m]
-  (->MapResource m (java.util.Date.)))
+(extend-protocol ResourceConstructor
+  APersistentMap
+  (make-resource [m] (->MapResource m (java.util.Date.))))

@@ -9,4 +9,15 @@
    [yada.yada :refer [yada]]
    yada.collection-resource))
 
-;; Collections are resource too
+;; Collections can be resources too, we should test them
+
+(deftest map-resource-test
+  (testing "atom"
+    (let [resource {:name "Frank"}
+          handler (yada resource)
+          request (request :get "/")
+          response @(handler request)]
+
+        (given response
+          :status := 200
+          :body :? string?))))
