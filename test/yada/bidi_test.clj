@@ -25,8 +25,8 @@
   ["/api"
    {"/status" (resource-leaf "API working!")
     "/hello" (fn [req] {:body "hello"})
-    "/protected" (secure {"/a" (resource-leaf :body "Secret area A")
-                          "/b" (resource-leaf :body "Secret area B")})}])
+    "/protected" (secure {"/a" (resource-leaf "Secret area A")
+                          "/b" (resource-leaf "Secret area B")})}])
 
 (deftest api-tests
   (let [h (make-handler api)

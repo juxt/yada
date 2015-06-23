@@ -126,8 +126,6 @@
       (when (.endsWith path-info "/")
         ["UTF-8" "US-ASCII;q=0.9"])))
   (get-state [_ content-type ctx]
-
-
     (if-let [path-info (-> ctx :request :path-info)]
       (if (= path-info "/")
         ;; TODO: The content-type indicates the format. Use support in

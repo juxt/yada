@@ -46,17 +46,17 @@
                    req))))))
 
 (defn resource-branch
-  ([res]
-   (resource-branch res {}))
-  ([res service]
-   (->ResourceBranchEndpoint res service)))
+  ([resource]
+   (resource-branch resource {}))
+  ([resource options]
+   (->ResourceBranchEndpoint resource options)))
 
 (defrecord ResourceLeafEndpoint [resource options]
   Matched
   (resolve-handler [this m]
-    ;; Succeed with this has the handler, because this satisfies Ring (below), so
-    ;; can be called by the handler created by bidi's make-handler
-    ;; function.
+    ;; Succeed with 'this' as the handler, because we satisfies Ring
+    ;; (below), so can be called by the handler created by bidi's
+    ;; make-handler function.
     (succeed this m))
   (unresolve-handler [this m]
     (when (= this (:handler m)) ""))
@@ -64,8 +64,7 @@
   ;; For testing, it can be useful to invoke this with a request, just
   ;; as if it were a normal Ring handler function.
   clojure.lang.IFn
-  (invoke [this req]
-    ((yada resource options) req))
+  (invoke [this req] ((yada resource options) req))
 
   Ring
   (request [_ req match-context]
@@ -73,10 +72,10 @@
       (handler req))))
 
 (defn resource-leaf
-  ([res]
-   (resource-leaf res {}))
-  ([res service]
-   (->ResourceLeafEndpoint res service)))
+  ([resource]
+   (resource-leaf resource {}))
+  ([resource options]
+   (->ResourceLeafEndpoint resource options)))
 
 (defn partial
   "Contextually bind a set of resource options to the match
