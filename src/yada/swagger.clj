@@ -7,7 +7,7 @@
    [bidi.ring :refer (Ring)]
    [ring.util.response :refer (redirect)]
    [yada.bidi :refer (resource-leaf)]
-   [yada.resource :refer (Resource platform-charsets)]
+   [yada.resource :refer (Resource ResourceConstructor platform-charsets)]
    [yada.mime :as mime]
    [clojure.tools.logging :refer :all]
    [camel-snake-kebab :as csk]
@@ -37,6 +37,8 @@
                          )))]))
 
 (defrecord SwaggerSpec [spec created-at]
+  ResourceConstructor
+  (make-resource [o] o)
   Resource
   (produces [_ ctx] #{"application/json" "text/html;q=0.9" "application/edn;q=0.8"})
   (produces-charsets [_ ctx] platform-charsets)

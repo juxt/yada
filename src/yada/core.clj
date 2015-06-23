@@ -192,9 +192,11 @@
 
      (->Endpoint
       resource
+
       (fn [req ctx]
 
         (let [method (:request-method req)
+              ;; TODO: Document this debug feature
               debug (boolean (get-in req [:headers "x-yada-debug"]))]
 
           (-> ctx

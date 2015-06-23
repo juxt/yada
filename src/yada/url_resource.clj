@@ -1,7 +1,7 @@
 (ns yada.url-resource
   (:require
    [clojure.java.io :as io]
-   [yada.resource :refer (Resource)]
+   [yada.resource :refer (Resource ResourceConstructor)]
    [ring.util.mime-type :refer (ext-mime-type)])
   (:import [java.net URL]
            [java.util Date]))
@@ -20,3 +20,8 @@
     (.openStream u)
     )
   )
+
+
+(extend-protocol ResourceConstructor
+  URL
+  (make-resource [url] url))

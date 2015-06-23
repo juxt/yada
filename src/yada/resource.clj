@@ -9,6 +9,26 @@
            [java.io File InputStream]
            [java.util Date]))
 
+(defprotocol ResourceConstructor
+  (make-resource [_] "Make a resource. Often, resources need to be constructed rather than simply extending types with the Resource protocol. For example, we sometimes need to know the exact time that a resource is constructed, to support time-based conditional requests. For example, a simple StringResource is immutable, so by knowing the time of construction, we can precisely state its Last-Modified-Date."))
+
+(extend-protocol ResourceConstructor
+  clojure.lang.Fn
+  (make-resource [f]
+    ;; In the case of a function, we assume the function is dynamic
+    ;; (taking the request context), so we return it ready for its
+    ;; default Resource implementation (above)
+    f)
+
+  String
+  (make-resource [s] s)
+
+  #_Object
+  #_(make-resource [o] o)
+
+  nil
+  (make-resource [_] nil))
+
 (defprotocol ResourceFetch
   (fetch [this ctx] "Fetch the resource, such that questions can be answered about it. Anything you return from this function will be available in the :resource entry of ctx and will form the type that will be used to dispatch other functions in this protocol. You can return a deferred if necessary (indeed, you should do so if you have to perform some IO in this function). Often, you will return 'this', perhaps augmented with some additional state. Sometimes you will return something else."))
 
@@ -44,9 +64,16 @@
   clojure.lang.Fn
   (fetch [f ctx]
     (let [res (f ctx)]
+      ;; We call make-resource on dynamic fetch functions, to ensure the
+      ;; result they return are treated just the same as if they were
+      ;; presented statically to the yada function.  Fetch is complected
+      ;; two ideas here. The first is the loading of
+      ;; state/meta-state. The second is allowing us to use functions in
+      ;; place of resources. Things seem to work OK with this complected
+      ;; design, but alarm bells are beginning to sound...
       (if (deferrable? res)
-        (d/chain res #(fetch % ctx))
-        (fetch res ctx))))
+        (d/chain res #(make-resource (fetch % ctx)))
+        (make-resource (fetch res ctx)))))
   nil ; The user has not elected to specify a resource, that's fine (and common)
   (fetch [_ ctx] nil)
   Object
@@ -73,18 +100,3 @@
   (produces [_] nil)
   (produces [_ _] nil)
   (produces-charsets [_ _] nil))
-
-(defprotocol ResourceConstructor
-  (make-resource [_] "Make a resource. Often, resources need to be constructed rather than simply extending types with the Resource protocol. For example, we sometimes need to know the exact time that a resource is constructed, to support time-based conditional requests. For example, a simple StringResource is immutable, so by knowing the time of construction, we can precisely state its Last-Modified-Date."))
-
-(extend-protocol ResourceConstructor
-  clojure.lang.Fn
-  (make-resource [f]
-    ;; In the case of a function, we assume the function is dynamic
-    ;; (taking the request context), so we return it ready for its
-    ;; default Resource implementation (above)
-    f)
-  Object
-  (make-resource [o] o)
-  nil
-  (make-resource [_] nil))

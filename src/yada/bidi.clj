@@ -1,4 +1,4 @@
-;; Copyright © 2015, JUXT LTD.
+; Copyright © 2015, JUXT LTD.
 
 (ns ^{:doc "When bidi is used as a routing library, yada provides some
   support functions for more seamless integration and combined
@@ -61,7 +61,8 @@
   ;; For testing, it can be useful to invoke this with a request, just
   ;; as if it were a normal Ring handler function.
   clojure.lang.IFn
-  (invoke [this req] ((yada resource options) req))
+  (invoke [this req]
+    ((yada resource options) req))
 
   Ring
   (request [_ req match-context]

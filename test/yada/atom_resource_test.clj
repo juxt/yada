@@ -18,7 +18,8 @@
 
         (given response
           :status := 200
-          :headers := nil
+          :headers :> {"content-length" 16
+                       "content-type" "application/edn"}
           :body :? string?)
 
         )))
