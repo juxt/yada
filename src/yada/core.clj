@@ -251,7 +251,7 @@
                         :body
                         (when-let [schema (get-in parameters [method :body])]
                           (let [body (read-body (-> ctx :request))]
-                            (rep/decode-representation body (content-type req) schema)))
+                            (rep/from-representation body (content-type req) schema)))
 
                         :form
                         (when-let [schema (get-in parameters [method :form])]
@@ -530,7 +530,9 @@
                            (:resource ctx)
 
                            (fn [resource]
-                             (or (res/get-state resource content-type ctx)
+                             (or (rep/to-representation
+                                  (res/get-state resource content-type ctx)
+                                  content-type)
                                  (service/body body ctx)
                                  (throw (ex-info "" {:status 404
                                                      ;; TODO: Do something nice for developers here

@@ -63,6 +63,7 @@
                     (.setTimeZone (TimeZone/getTimeZone "UTC")))
                   (java.util.Date. (.lastModified child)))]])]]]])))
 
+;; TODO: This shouldn't be necessary now because of String's to-representation should cover the general case
 (defn charset-encoded-dir-index [dir content-type]
   (let [s (dir-index dir content-type)]
     (or

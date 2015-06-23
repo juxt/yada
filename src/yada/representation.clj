@@ -1,12 +1,15 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.representation
-  (:require [cheshire.core :as json]
-            [clojure.java.io :as io]
-            [hiccup.core :refer [html]]
-            [manifold.stream :refer [->source transform]]
-            [ring.swagger.schema :as rs]
-            [ring.util.mime-type :as mime])
+  (:require
+   [byte-streams :as bs]
+   [cheshire.core :as json]
+   [clojure.java.io :as io]
+   [hiccup.core :refer [html]]
+   [manifold.stream :refer [->source transform]]
+   [ring.swagger.schema :as rs]
+   [yada.mime :as mime]
+   [json-html.core :as jh])
   (:import [clojure.core.async.impl.channels ManyToManyChannel]
            [java.io File]
            [java.net URL]
@@ -14,21 +17,22 @@
 
 ;; From representation
 
-(defmulti decode-representation (fn [representation content-type & args] content-type))
+(defmulti from-representation (fn [representation media-type & args] media-type))
 
-(defmethod decode-representation "application/json"
-  ([representation content-type schema]
-   (rs/coerce schema (decode-representation representation content-type) :json))
-  ([representation content-type]
+(defmethod from-representation "application/json"
+  ([representation media-type schema]
+   (rs/coerce schema (from-representation representation media-type) :json))
+  ([representation media-type]
    (json/decode representation keyword)))
 
 ;; Representation means the representation of state, for the purposes of network communication.
 
 (defprotocol Representation
-  (content-length [_] "Return the size of the resource's represenation, if this can possibly be known up-front (return nil if this is unknown)"))
+  (to-representation [state ^mime/MediaTypeMap media-type] "Represent the state. The me")
+  (content-length [_] "Return the size of the resource's representation, if this can possibly be known up-front (return nil if this is unknown)"))
 
-(defmulti render-map (fn [resource content-type] content-type))
-(defmulti render-seq (fn [resource content-type] content-type))
+(defmulti render-map (fn [resource media-type] media-type))
+(defmulti render-seq (fn [resource media-type] media-type))
 
 ;; TODO: what does it mean to have a default content type? Perhaps, this
 ;; should be a list of content types that the representation can adapt
@@ -37,15 +41,37 @@
 (extend-protocol Representation
 
   String
+  ;; A String is already its own representation, all we must do now is encode it to a char buffer
+  (to-representation [s media-type]
+    (or
+     (when (= (:type media-type) "text")
+       (when-let [encoding (some-> media-type :parameters (get "charset"))]
+         (bs/convert s java.nio.ByteBuffer {:encoding encoding})))
+     s))
   (content-length [s] (.length s))
+
+  clojure.lang.APersistentMap
+  (to-representation [m media-type] (render-map m (mime/media-type media-type)))
 
   CoreAsyncSource
   (content-length [_] nil)
 
   File
+  (to-representation [f media-type]
+    ;; The file can simply go into the body of the Ring response. We
+    ;; could transcode it according to the charset if only we knew what
+    ;; the file's initial encoding was. (We can't know this.)
+    f)
   (content-length [f] (.length f))
 
+  java.nio.ByteBuffer
+  (to-representation [b _] b)
+  (content-length [_] nil)
+
   Object
+  ;; We could implement to-representation here as a pass-through, but it
+  ;; is currently useful to have yada fail on types it doesn't know how to
+  ;; represent.
   (content-length [_] nil)
 
   nil
@@ -74,37 +100,4 @@
 
 (defmethod render-map "text/html"
   [m _]
-  (let [style {:style "border: 1px solid black; border-collapse: collapse"}]
-    (html
-     [:html
-      [:body
-       (cond
-         (map? (second (first m)))
-         (let [ks (keys (second (first m)))
-               ]
-           [:table
-            [:thead
-             [:tr
-              [:th style "id"]
-              (for [k ks] [:th style k])
-              ]]
-            [:tbody
-             (for [[k v] (sort m)]
-               [:tr
-                [:td style k]
-                (for [k ks]
-                  [:td style (get v k)])])]])
-         :otherwise
-         [:table
-          [:thead
-           [:tr
-            [:th "Name"]
-            [:th "Value"]
-            ]]
-          [:tbody
-           (for [[k v] m]
-             [:tr
-              [:td style k]
-              [:td style v]
-              ])]])
-       [:p "This is a default rendering to assist development"]]])))
+  (jh/edn->html m))
