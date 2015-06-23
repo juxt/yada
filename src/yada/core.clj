@@ -552,7 +552,7 @@
                                  (service/body body ctx)
                                  (throw (ex-info "" {:status 404
                                                      ;; TODO: Do something nice for developers here
-                                                     :body "Not Found"
+                                                     :body "Not Found\n"
                                                      ::http-response true}))))
 
                            (fn [body]
@@ -717,7 +717,7 @@
 
                        (throw (ex-info "Internal Server Error (ex-info)" data %))
                        #_{:status 500
-                          :body (format "Internal Server Error: %s" (pr-str data))})))
+                          :body (format "Internal Server Error: %s" (prn-str data))})))
 
               (d/catch #(identity
                          (throw (ex-info "Internal Server Error" {:request req} %))
