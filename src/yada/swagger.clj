@@ -26,16 +26,13 @@
   Keyword
   (encode [k] (str "{" (name k) "}")))
 
-;; TODO: Now extract the produces section!
-
 (defn- to-path [x]
   (let [swagger (-> x :handler meta :swagger)
-        resource-map (-> x :handler :resource-map)
-        ]
+        parameters (-> x :handler :options :parameters)]
     [(apply str (map encode (:path x)))
      (merge-with merge swagger
               (into {}
-                    (for [[k v] (:parameters resource-map)]
+                    (for [[k v] parameters]
                       [k {:parameters v}]
                       )))]))
 
@@ -46,9 +43,8 @@
   (exists? [_ ctx] true)
   (last-modified [_ ctx] created-at)
   (get-state [_ content-type ctx]
-    (assert (= (mime/media-type content-type) "application/json"))
-    (infof "type of swagger-json is %s" (type (rs/swagger-json spec)))
-    (json/encode (rs/swagger-json spec)))
+    (when (= (mime/media-type content-type) "application/json")
+      (json/encode (rs/swagger-json spec))))
   (content-length [_ ctx] nil))
 
 (defrecord Swagger [spec routes handler]

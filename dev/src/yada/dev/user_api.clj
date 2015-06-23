@@ -3,7 +3,7 @@
 (ns yada.dev.user-api
   (:require
    [yada.yada :refer (yada) :as yada]
-   [yada.map-resource :refer (->MapResource)]
+   [yada.map-resource :refer (new-map-resource)]
    [yada.bidi :refer (resource)]
    [bidi.bidi :refer (RouteProvider tag)]
    [bidi.ring :refer (make-handler)]
@@ -37,7 +37,7 @@
        {"/users"
         {""
          (resource
-          (->MapResource (:users db))
+          (new-map-resource (:users db))
           {:swagger {:get {:summary "Get users"
                            :description "Get a list of all known users"}}})
 
@@ -46,7 +46,7 @@
               (fn [ctx]
                 (when-let [user (get {"bob" {:name "Bob"}}
                                      (-> ctx :parameters :username))]
-                  (->MapResource {:user user})))
+                  (new-map-resource {:user user})))
               {:swagger {:get {:summary "Get user"
                                :description "Get the details of a known user"}}
                :parameters {:get {:path {:username s/Str}}}})

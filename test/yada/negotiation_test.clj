@@ -39,6 +39,6 @@
     "unicode-1.1" ["utf-8;q=0.8" "Shift_JIS;q=1.0" "unicode-1.1;q=0.1"] ["unicode-1.1" "unicode-1.1"]
     nil ["utf-8;q=0.8" "Shift_JIS;q=1.0"] ["Shift_JIS" "Shift_JIS"]
     nil ["utf-8;q=0.8" "Shift_JIS;q=0.2"] ["utf-8" "utf-8"]
-    nil yada.resource/supported-charsets ["UTF-8" "UTF-8"]
+    nil yada.resource/platform-charsets ["UTF-8" "UTF-8"]
     "dummyfox" ["utf-8;q=0.8" "Shift_JIS;q=1.0"] nil
     ))

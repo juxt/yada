@@ -35,7 +35,7 @@
 
   (delete-state! [_ ctx] "Delete the state. If a deferred is returned, the HTTP response status is set to 202"))
 
-(def supported-charsets
+(def platform-charsets
   (concat
    [(to-charset-map (.name (java.nio.charset.Charset/defaultCharset)))]
    (map #(assoc % :weight 0.9) (map to-charset-map (keys (java.nio.charset.Charset/availableCharsets))))))
@@ -64,7 +64,7 @@
   ;; string, so we return nil.
   (produces [s] nil)
   (produces [s ctx] nil)
-  (produces-charsets [_ ctx] supported-charsets)
+  (produces-charsets [_ ctx] platform-charsets)
 
   (content-length [_ _] nil)
 
