@@ -29,14 +29,14 @@
   (encode [k] (str "{" (name k) "}")))
 
 (defn- to-path [x]
-  (let [swagger (-> x :handler meta :swagger)
+  (let [swagger (-> x :handler :options :swagger)
         parameters (-> x :handler :options :parameters)]
     [(apply str (map encode (:path x)))
      (merge-with merge swagger
-              (into {}
-                    (for [[k v] parameters]
-                      [k {:parameters v}]
-                      )))]))
+                 (into {}
+                       (for [[k v] parameters]
+                         [k {:parameters v}]
+                         )))]))
 
 (defrecord SwaggerSpec [spec created-at]
   Resource

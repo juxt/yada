@@ -54,8 +54,11 @@
       "consumes" := ["application/json"]
       "basePath" := "/api"
 
-      ["paths" "/users"] := {}
+      ["paths" "/users" "get" "summary"] := "Get users"
+      ["paths" "/users" "get" "description"] := "Get a list of all known users"
 
+      ["paths" "/users/{username}" "get" "parameters"] :? vector?
+      ["paths" "/users/{username}" "get" "parameters" first] :? map?
       ["paths" "/users/{username}" "get" "parameters" first "in"] := "path"
       ["paths" "/users/{username}" "get" "parameters" first "name"] := "username"
       ["paths" "/users/{username}" "get" "parameters" first "description"] := ""
@@ -63,6 +66,10 @@
       ["paths" "/users/{username}" "get" "parameters" first "type"] := "string"
       ["paths" "/users/{username}" "get" "responses" "default" "description"] := ""
 
-      ["paths" "/users/{username}/posts"] := {}
+      ["paths" "/users/{username}/posts" "post"] :? map?
+      ["paths" "/users/{username}/posts" "post" "summary"] := "Create a new post"
+      ["paths" "/users/{username}/posts" "post" "responses"] :? map?
+      ["paths" "/users/{username}/posts" "post" "responses" "default"] :? map?
+      ["paths" "/users/{username}/posts" "post" "responses" "default" "description"] := ""
 
       "definitions" := {})))
