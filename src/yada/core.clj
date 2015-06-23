@@ -99,6 +99,24 @@
       (java.io.ByteArrayInputStream.)
       (slurp :encoding encoding)))
 
+(defn round-seconds-up
+  "Round up to the nearest second. The rationale here is that
+  last-modified times from resources are to the nearest millisecond, but
+  HTTP dates have a granularity of a second. This makes testing 304
+  harder. By ceiling every date to the nearest (future) second, we
+  side-step this problem. If an update happens a split-second after the
+  previous update, it's possible that a client might miss an
+  update. However, the point is that user agents using dates don't
+  generally care about having the very latest if they're using
+  If-Modified-Since, otherwise they'd omit the header completely."
+  [d]
+  (when d
+    (let [n (.getTime d)
+          m (mod n 1000)]
+      (if (pos? m)
+        (Date. (+ (- n m) 1000))
+        d))))
+
 (defn read-body [req]
   (convert (:body req) String {:encoding (or (character-encoding req) "utf8")}))
 
@@ -477,8 +495,9 @@
                                                          ::http-response true})))))
 
                     ;; Conditional request
-                    (link ctx
-                      (when-let [last-modified (res/last-modified (:resource ctx) ctx)]
+                    (fn [ctx]
+
+                      (if-let [last-modified (round-seconds-up (res/last-modified (:resource ctx) ctx))]
 
                         (if-let [if-modified-since (some-> req
                                                            (get-in [:headers "if-modified-since"])
@@ -511,7 +530,8 @@
                            (some->> (if (d/deferrable? last-modified) @last-modified last-modified)
                                     format-date
                                     (assoc-in ctx [:response :headers "last-modified"]))
-                           ctx))))
+                           ctx))
+                        ctx))
 
                     ;; Get body
                     (fn [ctx]

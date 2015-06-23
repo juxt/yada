@@ -3,6 +3,7 @@
 (ns yada.collection-resource-test
   (:require
    [clojure.test :refer :all]
+   [clojure.tools.logging :refer :all]
    [ring.mock.request :as mock]
    [clojure.java.io :as io]
    [ring.util.time :refer (parse-date format-date)]
@@ -32,7 +33,9 @@
                            {:headers {"if-modified-since" (format-date last-modified)}})
             response @(handler request)
             ]
-        #_(given response
+        (given response
           :status := 304))
 
       )))
+
+;; For tests we need to round-up to seconds given that HTTP formats are to the nearest second

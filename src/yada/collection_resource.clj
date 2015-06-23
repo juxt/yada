@@ -19,4 +19,5 @@
 
 (extend-protocol ResourceConstructor
   APersistentMap
-  (make-resource [m] (->MapResource m (java.util.Date.))))
+  (make-resource [m]
+    (->MapResource m (java.util.Date.))))
