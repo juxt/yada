@@ -41,12 +41,14 @@
 
 (defrecord SwaggerSpec [spec created-at]
   Resource
-  (produces [_ ctx] #{"application/json" "text/html;q=0.9"})
+  (produces [_ ctx] #{"application/json" "text/html;q=0.9" "application/edn;q=0.8"})
   (produces-charsets [_ ctx] #{"UTF-8"})
   (exists? [_ ctx] true)
   (last-modified [_ ctx] created-at)
   (get-state [_ content-type ctx]
-    (case (mime/media-type content-type)
+    (rs/swagger-json spec)
+    ;; Actually, don't we have a general case now? TODO: return
+    #_(case (mime/media-type content-type)
       "application/json" (json/encode (rs/swagger-json spec))
       "text/html" (html5
                    [:head [:style (-> "json.human.css" clojure.java.io/resource slurp)]]

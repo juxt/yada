@@ -1,6 +1,6 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(ns yada.map-resource
+(ns yada.collection-resource
   (:require
    [clojure.tools.logging :refer :all]
    [yada.mime :refer (media-type)]

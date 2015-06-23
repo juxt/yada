@@ -63,16 +63,6 @@
                     (.setTimeZone (TimeZone/getTimeZone "UTC")))
                   (java.util.Date. (.lastModified child)))]])]]]])))
 
-;; TODO: This shouldn't be necessary now because of String's to-representation should cover the general case
-(defn charset-encoded-dir-index [dir content-type]
-  (let [s (dir-index dir content-type)]
-    (or
-     (when-let [charset (some-> content-type :parameters (get "charset"))]
-       (when-let [cs (Charset/forName charset)]
-         (when (.canEncode cs)
-           (.encode cs s))))
-     s)))
-
 (defrecord FileResource [f]
   ResourceFetch
   (fetch [this ctx] this)
@@ -131,12 +121,12 @@
         ;; TODO: The content-type indicates the format. Use support in
         ;; yada.representation to help format the response body.
         ;; This will have to do for now
-        (charset-encoded-dir-index dir content-type)
+        (dir-index dir content-type)
 
         (let [f (child-file dir path-info)]
           (cond
             (.isFile f) f
-            (.isDirectory f) (charset-encoded-dir-index f content-type)
+            (.isDirectory f) (dir-index f content-type)
             :otherwise (throw (ex-info "File not found" {:status 404 :yada.core/http-response true})))))
 
       ;; Redirect so that path-info is not nil - there is a case for this being done in the bidi handler

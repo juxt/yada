@@ -4,7 +4,7 @@
   (:require
    [clojure.tools.logging :refer :all]
    [yada.yada :refer (yada) :as yada]
-   [yada.map-resource :refer (new-map-resource)]
+   [yada.collection-resource :refer (new-map-resource)]
    [yada.bidi :refer (resource-leaf)]
    [bidi.bidi :refer (RouteProvider tag)]
    [bidi.ring :refer (make-handler)]

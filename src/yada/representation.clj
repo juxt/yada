@@ -79,6 +79,7 @@
   (content-length [_] nil)
 
   nil
+  (to-representation [_ _] nil)
   (content-length [_] nil))
 
 (defmethod render-map "application/json"

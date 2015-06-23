@@ -1,4 +1,6 @@
-(ns yada.atom-test
+;; Copyright © 2015, JUXT LTD.
+
+(ns yada.atom-resource-test
   (:require
    [clojure.test :refer :all]
    [ring.mock.request :refer [request]]

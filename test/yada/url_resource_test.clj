@@ -1,3 +1,5 @@
+;; Copyright © 2015, JUXT LTD.
+
 (ns yada.url-resource-test
   (:require [yada.url-resource :refer :all]
             [clojure.test :refer :all]

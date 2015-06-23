@@ -30,12 +30,6 @@
 (defn get-api []
   (-> *system* :api))
 
-#_(defn get-op-response [api req & {:as opts}]
-  (let [h (yada opts)
-        {rp :route-params} (match-route api (:uri req))]
-    (let [res (h (assoc req :route-params rp))]
-      (if (d/deferrable? res) @res res))))
-
 (deftest api-test
   (let [h (make-handler (routes (:api *system*)))
         req (mock/request :get "/api/swagger.json")
@@ -73,3 +67,6 @@
       ["paths" "/users/{username}/posts" "post" "responses" "default" "description"] := ""
 
       "definitions" := {})))
+
+
+;; TODO: Test GET bill returns bill as a map, and GET bob returns 404
