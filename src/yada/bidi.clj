@@ -38,12 +38,9 @@
   (request [_ req match-context]
     (let [handler (yada resource (merge (get match-context k-options) options))]
       (handler (let [rem (:remainder match-context)]
-                 (if (and (seq rem) (.startsWith rem "/"))
-                   (do
-                     (when-let [path-info (:path-info req)]
-                       (throw (ex-info "path-info already set on request" {:path-info path-info})))
-                     (assoc req :path-info (:remainder match-context)))
-                   req))))))
+                 (when-let [path-info (:path-info req)]
+                   (throw (ex-info "path-info already set on request" {:path-info path-info})))
+                 (assoc req :path-info (:remainder match-context)))))))
 
 (defn resource-branch
   ([resource]

@@ -25,16 +25,14 @@
    (re-matches #"[^/]+(?:/[^/]+)*/?" s)))
 
 (defn- child-file [dir name]
-  (assert (.startsWith name "/"))
-  (let [name (.substring name 1)] ; remove leading /
-    (when-not (legal-name name)
-      (warn "Attempt to make a child file which ascends a directory")
-      (throw (ex-info "TODO"
-                      {:status 400
-                       :body (format "Attempt to make a child file which ascends a directory, name is '%s'" name)
-                       ;;:yada.core/http-response true
-                       })))
-    (io/file dir name)))
+  (when-not (legal-name name)
+    (warn "Attempt to make a child file which ascends a directory")
+    (throw (ex-info "TODO"
+                    {:status 400
+                     :body (format "Attempt to make a child file which ascends a directory, name is '%s'" name)
+                     ;;:yada.core/http-response true
+                     })))
+  (io/file dir name))
 
 (defn dir-index [dir content-type]
   (case (mime/media-type content-type)
@@ -115,19 +113,20 @@
   (last-modified [_ ctx] (Date. (.lastModified dir)))
   (produces [_ ctx]
     (when-let [path-info (-> ctx :request :path-info)]
-      (if (.endsWith path-info "/")
+      (if (or (= path-info "") (.endsWith path-info "/"))
         ;; We can deliver directory contents in numerous types
         ["text/html" "text/plain"]
+        ;; Otherwise, it's the child-file
         (let [child (child-file dir path-info)]
           (when (.isFile child)
             [(ext-mime-type (.getName child))])))))
   (produces-charsets [_ ctx]
     (when-let [path-info (-> ctx :request :path-info)]
-      (when (.endsWith path-info "/")
+      (when (or (= path-info "") (.endsWith path-info "/"))
         ["UTF-8" "US-ASCII;q=0.9"])))
   (get-state [_ content-type ctx]
     (if-let [path-info (-> ctx :request :path-info)]
-      (if (= path-info "/")
+      (if (= path-info "")
         ;; TODO: The content-type indicates the format. Use support in
         ;; yada.representation to help format the response body.
         ;; This will have to do for now
@@ -149,20 +148,23 @@
       (throw (ex-info "TODO: Directory creation from archive stream is not yet implemented" {}))))
 
   (delete-state! [_ ctx]
-    (if-let [path-info (-> ctx :request :path-info)]
+    (let [path-info (-> ctx :request :path-info)]
       ;; TODO: We must be ensure that the path-info points to a file
       ;; within the directory tree, otherwise this is an attack vector -
       ;; we should return 403 in this case - same above with PUTs and POSTs
 
-      (let [f (child-file dir path-info)]
-        ;; f is not certain to exist
-        (if (.exists f)
-          (.delete f)
-          (throw (ex-info {:status 404 :yada.core/http-response true}))))
+      (if (= path-info "")
+        (if (seq (.listFiles dir))
+          (throw (ex-info "By default, the policy is not to delete a non-empty directory" {:files (.listFiles dir)}))
+          (io/delete-file dir)
+          )
 
-      (if (seq (.listFiles dir))
-        (throw (ex-info "By default, the policy is not to delete a non-empty directory" {}))
-        (io/delete-file dir)
+        (let [f (child-file dir path-info)]
+          ;; f is not certain to exist
+          (if (.exists f)
+            (.delete f)
+            (throw (ex-info {:status 404 :yada.core/http-response true}))))
+
         ))))
 
 (extend-protocol ResourceConstructor

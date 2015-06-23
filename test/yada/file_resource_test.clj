@@ -122,7 +122,7 @@
     (let [resource f
           options {:methods #{:get :head :put :delete}}
           handler (yb/resource-branch resource options)
-          root-handler (make-handler ["/dir" handler])]
+          root-handler (make-handler ["/dir/" handler])]
 
       (testing "Start with 0 files"
         (given f
@@ -186,7 +186,7 @@
         [(memfn listFiles) count] := 0)
 
       (testing "DELETE the directory"
-        (given @(root-handler (request :delete "/dir"))
+        (given @(root-handler (request :delete "/dir/"))
           :status := 204))
 
       (given f
