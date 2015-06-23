@@ -5,6 +5,7 @@
    [clojure.pprint :refer (pprint)]
    [bidi.bidi :refer (Matched resolve-handler unresolve-handler route-seq succeed)]
    [bidi.ring :refer (Ring)]
+   [ring.util.response :refer (redirect)]
    [yada.bidi :refer (resource-leaf)]
    [yada.resource :refer (Resource)]
    [yada.mime :as mime]
@@ -55,13 +56,19 @@
 (defrecord Swagger [spec routes handler]
   Matched
   (resolve-handler [this m]
-    (if (= (:remainder m) (str (or (:base-path spec) "") "/swagger.json"))
-      ;; Return this, which satisfies Ring.
-      ;; Truncate :remainder to ensure succeed actually succeeds.
-      (succeed this (assoc m :remainder ""))
-      ;; Otherwise
-      (resolve-handler [[(or (:base-path spec) "") routes]]
-                       (merge m {::spec spec}))))
+    (cond (= (:remainder m) (str (or (:base-path spec) "") "/swagger.json"))
+          ;; Return this, which satisfies Ring.
+          ;; Truncate :remainder to ensure succeed actually succeeds.
+          (succeed this (assoc m :remainder ""))
+
+          ;; Redirect to swagger.json
+          (= (:remainder m) (str (or (:base-path spec) "") "/"))
+          (succeed (reify Ring (request [_ req _] (redirect (str (:uri req) "swagger.json"))))
+                   (assoc m :remainder ""))
+
+          ;; Otherwise
+          :otherwise (resolve-handler [[(or (:base-path spec) "") routes]]
+                                      (merge m {::spec spec}))))
 
   (unresolve-handler [this m]
     (if (= this (:handler m))
