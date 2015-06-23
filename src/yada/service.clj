@@ -26,6 +26,7 @@
 
   (allowed-methods [_] "Return a set of the allowed methods. Must be determined at compile time (for purposes of introspection by tools). No async support.")
 
+  (last-modified [_ ctx] "Return the last modified time, as a date or long, of the resource.")
   (body [_ ctx] "Return the response body. Supply a function which can return a deferred, if necessary.")
 
   (produces [_] [_ ctx] "Return the content-types that the service can produce")
@@ -83,6 +84,12 @@
         (d/chain res #(body % ctx))
         (body res ctx))))
 
+  (last-modified [f ctx]
+    (let [res (f ctx)]
+      (if (deferrable? res)
+        (d/chain res #(last-modified % ctx))
+        (last-modified res ctx))))
+
   (produces [f] (produces (f)))
   (produces [f ctx] (produces (f) ctx))
 
@@ -110,7 +117,6 @@
   (produces [m] [m])
   (produces [m _] [m])
 
-
   Number
   (service-available? [n _] n)
   (interpret-service-available [_] false)
@@ -118,6 +124,11 @@
   (request-uri-too-long? [n uri]
     (request-uri-too-long? (> (.length uri) n) uri))
   (status [n ctx] n)
+
+  Long
+  (last-modified [l ctx] (Date. l))
+  (request-uri-too-long? [n uri]
+    (request-uri-too-long? (> (.length uri) n) uri))
 
   java.util.Set
   (known-method? [set method]

@@ -188,6 +188,7 @@
 
       ;; Service overrides
       body                              ; async-supported
+      last-modified                     ; async-supported (in the future)
 
       produces
       produces-charsets
@@ -497,7 +498,10 @@
                     ;; Conditional request
                     (fn [ctx]
 
-                      (if-let [last-modified (round-seconds-up (res/last-modified (:resource ctx) ctx))]
+                      (if-let [last-modified (round-seconds-up
+                                              (or
+                                               (service/last-modified last-modified ctx)
+                                               (res/last-modified (:resource ctx) ctx)))]
 
                         (if-let [if-modified-since (some-> req
                                                            (get-in [:headers "if-modified-since"])

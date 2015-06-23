@@ -368,8 +368,10 @@
             ;; correct Content-Type for the response. So we must specify it.
             (->
              (yada (fn [ctx]
+                     ;; The 'resource' could be the source markdown, and we create a body renderer?
                      (body component (post-process-doc component xbody (into {} examples) config) config))
-                   :produces "text/html")
+                   :produces "text/html"
+                   :last-modified (fn [ctx] (.lastModified (io/file "dev/resources/user-guide.md"))))
              (tag ::user-guide))))]
 
         ["/examples/"
