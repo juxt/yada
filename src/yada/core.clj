@@ -693,10 +693,6 @@
   ([arg & otherargs]
    (apply make-endpoint
           (cond
-            ;; If the only argument is a map, it's the options
-            #_(and (map? arg) (nil? otherargs))
-            #_[nil arg]
-
             ;; If the only argument is not a keyword, it's the resource
             (and (not (keyword? arg)) (nil? otherargs))
             [arg {}]
