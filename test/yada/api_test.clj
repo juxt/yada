@@ -2,6 +2,7 @@
 
 (ns yada.api-test
   (:require
+   [clojure.edn :as edn]
    [com.stuartsierra.component :refer (system-using system-map)]
    [bidi.bidi :refer (match-route routes)]
    [bidi.ring :refer (make-handler)]
@@ -31,42 +32,55 @@
   (-> *system* :api))
 
 (deftest api-test
-  (let [h (make-handler (routes (:api *system*)))
-        req (mock/request :get "/api/swagger.json")
-        response @(h req)]
-    (given response
-      :status := 200
-      :headers :> {"content-type" "application/json"}
-;;      [:body json/decode] := ""
+  (let [handler (make-handler (routes (:api *system*)))]
+    (testing "swagger.json"
+      (let [response @(handler (mock/request :get "/api/swagger.json"))]
+
+        (given response
+          :status := 200
+          :headers :> {"content-type" "application/json"})
+
+        (given (-> response :body json/decode)
+          "swagger" := "2.0"
+          ["info" "title"] := "User API"
+          ["info" "version"] := "0.0.1"
+          ["info" "description"] := "Example user API"
+          "produces" := ["application/json"]
+          "consumes" := ["application/json"]
+          "basePath" := "/api"
+
+          ["paths" "/users" "get" "summary"] := "Get users"
+          ["paths" "/users" "get" "description"] := "Get a list of all known users"
+
+          ["paths" "/users/{username}" "get" "parameters"] :? vector?
+          ["paths" "/users/{username}" "get" "parameters" first] :? map?
+          ["paths" "/users/{username}" "get" "parameters" first "in"] := "path"
+          ["paths" "/users/{username}" "get" "parameters" first "name"] := "username"
+          ["paths" "/users/{username}" "get" "parameters" first "description"] := ""
+          ["paths" "/users/{username}" "get" "parameters" first "required"] := true
+          ["paths" "/users/{username}" "get" "parameters" first "type"] := "string"
+          ["paths" "/users/{username}" "get" "responses" "default" "description"] := ""
+
+          ["paths" "/users/{username}/posts" "post"] :? map?
+          ["paths" "/users/{username}/posts" "post" "summary"] := "Create a new post"
+          ["paths" "/users/{username}/posts" "post" "responses"] :? map?
+          ["paths" "/users/{username}/posts" "post" "responses" "default"] :? map?
+          ["paths" "/users/{username}/posts" "post" "responses" "default" "description"] := ""
+
+          "definitions" := {})))
+
+    (testing "/users"
+      ;; TODO
       )
-    (given (-> response :body json/decode)
-      "swagger" := "2.0"
-      ["info" "title"] := "User API"
-      ["info" "version"] := "0.0.1"
-      ["info" "description"] := "Example user API"
-      "produces" := ["application/json"]
-      "consumes" := ["application/json"]
-      "basePath" := "/api"
 
-      ["paths" "/users" "get" "summary"] := "Get users"
-      ["paths" "/users" "get" "description"] := "Get a list of all known users"
+    (testing "/users/{username}"
+      (let [response @(handler (mock/request :get "/api/users/bob"))]
 
-      ["paths" "/users/{username}" "get" "parameters"] :? vector?
-      ["paths" "/users/{username}" "get" "parameters" first] :? map?
-      ["paths" "/users/{username}" "get" "parameters" first "in"] := "path"
-      ["paths" "/users/{username}" "get" "parameters" first "name"] := "username"
-      ["paths" "/users/{username}" "get" "parameters" first "description"] := ""
-      ["paths" "/users/{username}" "get" "parameters" first "required"] := true
-      ["paths" "/users/{username}" "get" "parameters" first "type"] := "string"
-      ["paths" "/users/{username}" "get" "responses" "default" "description"] := ""
+        (given response
+          :status := 200
+          :headers :> {"content-type" "application/edn"}
+          [:body edn/read-string :user :name] := "Bob"))
 
-      ["paths" "/users/{username}/posts" "post"] :? map?
-      ["paths" "/users/{username}/posts" "post" "summary"] := "Create a new post"
-      ["paths" "/users/{username}/posts" "post" "responses"] :? map?
-      ["paths" "/users/{username}/posts" "post" "responses" "default"] :? map?
-      ["paths" "/users/{username}/posts" "post" "responses" "default" "description"] := ""
-
-      "definitions" := {})))
-
-
-;; TODO: Test GET bill returns bill as a map, and GET bob returns 404
+      (let [response @(handler (mock/request :get "/api/users/zippo"))]
+        (given response
+          :status := 404)))))
