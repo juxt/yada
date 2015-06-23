@@ -33,4 +33,4 @@
         send (comp (juxt :status :headers :body) deref h)]
     (testing "hello"
       (is (= (send (request :get "/api/status"))
-             [200 nil "API working!"])))))
+             [200 {"content-length" 12} "API working!"])))))

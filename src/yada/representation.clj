@@ -25,8 +25,7 @@
 ;; Representation means the representation of state, for the purposes of network communication.
 
 (defprotocol Representation
-  (content [_ content-type] "Get representation data, given the content-type")
-  (content-type-default [_] "Return the default content type of the object if not specified explicitly")
+  #_(content [_ content-type] "Get representation data, given the content-type")
   (content-length [_] "Return the size of the resource's represenation, if this can possibly be known up-front (return nil if this is unknown)"))
 
 (defmulti render-map (fn [resource content-type] content-type))
@@ -39,38 +38,31 @@
 (extend-protocol Representation
 
   java.util.Map
-  (content [resource content-type] (render-map resource content-type))
-  (content-type-default [_] "application/json")
+  #_(content [resource content-type] (render-map resource content-type))
 
   clojure.lang.Sequential
-  (content [resource content-type] (render-seq resource content-type))
-  (content-type-default [_] "application/json")
+  #_(content [resource content-type] (render-seq resource content-type))
 
   String
-  (content [resource _] resource)
-  (content-type-default [_] "text/plain")
+  #_(content [resource _] resource)
   (content-length [s] (.length s))
 
   CoreAsyncSource
-  (content [resource content-type] (render-seq resource content-type))
-  (content-type-default [_] "text/event-stream")
+  #_(content [resource content-type] (render-seq resource content-type))
   (content-length [_] nil)
 
   File
-  (content [f content-type] f)
-  (content-type-default [f] (or (mime/ext-mime-type (.getName f)) "application/octet-stream"))
+  #_(content [f content-type] f)
   (content-length [f] (.length f))
 
   URL
-  (content [url content-type] (.openStream url))
-  (content-type-default [f] (or (mime/ext-mime-type (.getPath f)) "application/octet-stream"))
+  #_(content [url content-type] (.openStream url))
 
   Object
-  (content-type-default [_] nil)
+  (content-length [_] nil)
 
   nil
-  (content [_ content-type] nil)
-  (content-type-default [_] nil)
+  #_(content [_ content-type] nil)
   (content-length [_] nil))
 
 (defmethod render-map "application/json"

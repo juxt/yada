@@ -6,7 +6,7 @@
             ))
 
 (deftest content-type-test
-  (is (= (print-str (mime/string->media-type "text/html;level=1.0")) "text/html;q=1.0;level=1.0"))
+  (is (= (print-str (mime/string->media-type "text/html;level=1.0")) "#yada.media-type[text/html;q=1.0;level=1.0]"))
 
   (are [accept candidates => expected] (= (negotiate-content-type accept (map mime/string->media-type candidates)) (dissoc (mime/string->media-type expected) :weight))
     "text/*" ["text/html"] => "text/html"
