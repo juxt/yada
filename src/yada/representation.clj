@@ -105,8 +105,10 @@
   (transform (map (partial format "data: %s\n\n")) (->source s)))
 
 (defmethod render-map "text/html"
-  [m _]
-  (str (html5
-        [:head [:style (-> "json.human.css" clojure.java.io/resource slurp)]]
-        (jh/edn->html m))
-       \newline))
+  [m mt]
+  (-> (html5
+         [:head [:style (-> "json.human.css" clojure.java.io/resource slurp)]]
+         (jh/edn->html m))
+      (str \newline) ; annoying on the command-line otherwise
+      (to-representation mt) ; for potential charset encoding if 'text' media-type
+      ))

@@ -7,7 +7,7 @@
    [bidi.ring :refer (Ring)]
    [ring.util.response :refer (redirect)]
    [yada.bidi :refer (resource-leaf)]
-   [yada.resource :refer (Resource)]
+   [yada.resource :refer (Resource platform-charsets)]
    [yada.mime :as mime]
    [clojure.tools.logging :refer :all]
    [camel-snake-kebab :as csk]
@@ -22,12 +22,9 @@
   (encode [_] "Format route as a swagger path"))
 
 (extend-protocol SwaggerPath
-  String
-  (encode [s] s)
-  PersistentVector
-  (encode [v] (apply str (map encode v)))
-  Keyword
-  (encode [k] (str "{" (name k) "}")))
+  String (encode [s] s)
+  PersistentVector (encode [v] (apply str (map encode v)))
+  Keyword (encode [k] (str "{" (name k) "}")))
 
 (defn- to-path [x]
   (let [swagger (-> x :handler :options :swagger)
@@ -42,7 +39,7 @@
 (defrecord SwaggerSpec [spec created-at]
   Resource
   (produces [_ ctx] #{"application/json" "text/html;q=0.9" "application/edn;q=0.8"})
-  (produces-charsets [_ ctx] #{"UTF-8"})
+  (produces-charsets [_ ctx] platform-charsets)
   (exists? [_ ctx] true)
   (last-modified [_ ctx] created-at)
   (get-state [_ content-type ctx] (rs/swagger-json spec)))
