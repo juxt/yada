@@ -15,7 +15,7 @@
    [yada.dev.website :refer (new-website)]
    [yada.dev.user-guide :refer (new-user-guide)]
    [yada.dev.database :refer (new-database)]
-   [yada.dev.user-api :refer (new-user-api)]
+   [yada.dev.user-api :refer (new-verbose-user-api)]
    [modular.aleph :refer (new-webserver)]
    [modular.component.co-dependency :refer (co-using system-co-using)]
 
@@ -63,7 +63,7 @@
 (defn api-components [system config]
   (assoc system
     :user-api
-    (make new-user-api config)))
+    (make new-verbose-user-api config)))
 
 (defn website-components [system config]
   (assoc

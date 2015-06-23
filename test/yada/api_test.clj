@@ -12,7 +12,7 @@
    [modular.test :refer (with-system-fixture *system*)]
    [cheshire.core :as json]
    [ring.mock.request :as mock]
-   [yada.dev.user-api :refer (new-user-api)]
+   [yada.dev.user-api :refer (new-verbose-user-api)]
    [yada.dev.database :refer (new-database)]
    ))
 
@@ -22,7 +22,7 @@
   []
   (system-using
    (system-map
-    :api (new-user-api))
+    :api (new-verbose-user-api))
     {}))
 
 (use-fixtures :each (with-system-fixture new-system))
