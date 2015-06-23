@@ -2,11 +2,9 @@
   (:refer-clojure :exclude [type])
   (:require [yada.util :refer (http-token)]))
 
-;; For implementation efficiency, we often want to communicate media
-;; types via records rather than encode in Strings which require
-;; reparsing. This is the sole purpose of the MediaTypeMap record
-;; below. In all cases, we can use strings interchangeably. For advanced
-;; users only, who are concerned with performance.
+;; For implementation efficiency, we keep the parsed versions of media
+;; types as records rather than encode in Strings which require
+;; reparsing. This is the sole purpose of the MediaTypeMap record below.
 
 (defrecord MediaTypeMap [type subtype parameters weight])
 
@@ -45,7 +43,7 @@
 
 (defmethod clojure.core/print-method MediaTypeMap
   [mt ^java.io.Writer writer]
-  (.write writer (format "%s%s%s"
+  (.write writer (format "#yada.media-type[%s%s%s]"
                          (media-type mt)
                          (when-let [w (:weight mt)] (str ";q=" w))
                          (apply str (for [[k v] (:parameters mt)]

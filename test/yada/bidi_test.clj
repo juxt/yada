@@ -4,7 +4,7 @@
   (:require
    [clojure.test :refer :all]
    [yada.yada :refer (yada) :as yada]
-   [yada.bidi :refer (resource)]
+   [yada.bidi :refer (resource-leaf)]
    [bidi.bidi :as bidi :refer (Matched compile-route succeed context)]
    [bidi.ring :refer (make-handler Ring)]
    [ring.mock.request :refer (request)]))
@@ -23,10 +23,10 @@
 
 (def api
   ["/api"
-   {"/status" (resource "API working!")
+   {"/status" (resource-leaf "API working!")
     "/hello" (fn [req] {:body "hello"})
-    "/protected" (secure {"/a" (resource :body "Secret area A")
-                          "/b" (resource :body "Secret area B")})}])
+    "/protected" (secure {"/a" (resource-leaf :body "Secret area A")
+                          "/b" (resource-leaf :body "Secret area B")})}])
 
 (deftest api-tests
   (let [h (make-handler api)

@@ -45,6 +45,7 @@
        reverse ;; highest weight wins
        first ;; winning pair
        second ;; extract the server provided mime-type
+       (#(dissoc % :weight))
        ))
 
 (defn negotiate-content-type [accept-header available]

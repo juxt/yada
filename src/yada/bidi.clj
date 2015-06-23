@@ -17,14 +17,11 @@
 
 ;; Define a resource which can act as a handler in a bidi
 
-;; This Matched is fairly specialised in that it matches even if there
-;; is a bidi remainder, capturing the trailing path in path-info, iff it
-;; begins with /. This needs to be generalized. (TODO)
-
-(defrecord ResourceEndpoint [resource options]
+;; A bidi endpoint that captures a path remainder as path-info
+(defrecord ResourceBranchEndpoint [resource options]
   Matched
   (resolve-handler [this m]
-    ;; Succeed, returning this, because this satisfies Ring (below), so
+    ;; Succeed with this as the handler, because this satisfies Ring (below), so
     ;; can be called by the handler created by bidi's make-handler
     ;; function.
     (merge m {:handler this}))
@@ -48,11 +45,38 @@
                      (assoc req :path-info (:remainder match-context)))
                    req))))))
 
-(defn resource
+(defn resource-branch
   ([res]
-   (resource res {}))
+   (resource-branch res {}))
   ([res service]
-   (->ResourceEndpoint res service)))
+   (->ResourceBranchEndpoint res service)))
+
+(defrecord ResourceLeafEndpoint [resource options]
+  Matched
+  (resolve-handler [this m]
+    ;; Succeed with this has the handler, because this satisfies Ring (below), so
+    ;; can be called by the handler created by bidi's make-handler
+    ;; function.
+    (succeed this m))
+  (unresolve-handler [this m]
+    (when (= this (:handler m)) ""))
+
+  ;; For testing, it can be useful to invoke this with a request, just
+  ;; as if it were a normal Ring handler function.
+  clojure.lang.IFn
+  (invoke [this req]
+    ((yada resource options) req))
+
+  Ring
+  (request [_ req match-context]
+    (let [handler (yada resource (merge (get match-context k-options) options))]
+      (handler req))))
+
+(defn resource-leaf
+  ([res]
+   (resource-leaf res {}))
+  ([res service]
+   (->ResourceLeafEndpoint res service)))
 
 (defn partial
   "Contextually bind a set of resource options to the match

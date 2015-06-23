@@ -5,7 +5,7 @@
    [clojure.pprint :refer (pprint)]
    [bidi.bidi :refer (Matched resolve-handler unresolve-handler route-seq succeed)]
    [bidi.ring :refer (Ring)]
-   [yada.bidi :refer (resource)]
+   [yada.bidi :refer (resource-leaf)]
    [yada.resource :refer (Resource)]
    [yada.mime :as mime]
    [clojure.tools.logging :refer :all]
@@ -73,4 +73,4 @@
 
 (defn swaggered [spec routes]
   (let [spec (merge spec {:paths (into {} (map to-path (route-seq ["" routes])))})]
-    (->Swagger spec routes (resource (->SwaggerSpec spec (java.util.Date.))))))
+    (->Swagger spec routes (resource-leaf (->SwaggerSpec spec (java.util.Date.))))))

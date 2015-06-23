@@ -121,7 +121,7 @@
 
     (let [resource f
           options {:methods #{:get :head :put :delete}}
-          handler (yb/resource resource options)
+          handler (yb/resource-branch resource options)
           root-handler (make-handler ["/dir" handler])]
 
       (testing "Start with 0 files"

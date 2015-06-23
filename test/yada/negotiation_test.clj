@@ -8,15 +8,14 @@
 (deftest content-type-test
   (is (= (print-str (mime/string->media-type "text/html;level=1.0")) "text/html;q=1.0;level=1.0"))
 
-  (are [accept candidates => expected] (= (negotiate-content-type accept (map mime/string->media-type candidates)) (mime/string->media-type expected))
+  (are [accept candidates => expected] (= (negotiate-content-type accept (map mime/string->media-type candidates)) (dissoc (mime/string->media-type expected) :weight))
     "text/*" ["text/html"] => "text/html"
     "text/*" ["image/png" "text/html"] => "text/html"
-    "image/*,text/*" ["image/png;q=0.8" "text/jpeg;q=0.9"] => "text/jpeg;q=0.9"
+    "image/*,text/*" ["image/png;q=0.8" "text/jpeg;q=0.9"] => "text/jpeg"
     "text/*;q=0.3, text/html;q=0.7, text/html;level=1, text/html;level=2;q=0.4, */*;q=0.5  " ["text/html;level=1" "text/html"] => "text/html;level=1"
     "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
     ["text/html;charset=utf-8"] => "text/html;charset=utf-8"
     ))
-
 
 ;;    The special value "*", if present in the Accept-Charset field,
 ;;    matches every charset that is not mentioned elsewhere in the

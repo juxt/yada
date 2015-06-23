@@ -2,9 +2,10 @@
 
 (ns yada.dev.user-api
   (:require
+   [clojure.tools.logging :refer :all]
    [yada.yada :refer (yada) :as yada]
    [yada.map-resource :refer (new-map-resource)]
-   [yada.bidi :refer (resource)]
+   [yada.bidi :refer (resource-leaf)]
    [bidi.bidi :refer (RouteProvider tag)]
    [bidi.ring :refer (make-handler)]
    [ring.mock.request :refer (request)]
@@ -36,13 +37,13 @@
         :basePath "/api"}
        {"/users"
         {""
-         (resource
+         (resource-leaf
           (new-map-resource (:users db))
           {:swagger {:get {:summary "Get users"
                            :description "Get a list of all known users"}}})
 
          ["/" :username]
-         {"" (resource
+         {"" (resource-leaf
               (fn [ctx]
                 (when-let [user (get {"bob" {:name "Bob"}}
                                      (-> ctx :parameters :username))]
@@ -51,8 +52,8 @@
                                :description "Get the details of a known user"}}
                :parameters {:get {:path {:username s/Str}}}})
 
-          "/posts" (resource
-                    "Posts"
+          "/posts" (resource-leaf
+                    "Posts" ; TODO
                     {:swagger {:post {:summary "Create a new post"}}
                      :post (fn [ctx] nil)})}}})
       (tag ::user-api))]))

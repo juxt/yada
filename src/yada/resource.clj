@@ -27,9 +27,9 @@
   (content-length [_ ctx] "Return the content length, if possible.")
 
   ;; TODO: Misnomer. If content-type is a parameter, then it isn't state, it's representation. Perhaps rename simply to 'get-representation' or even just 'get'
-  (get-state [_ content-type ctx] "Return the state, formatted to a representation of the given content-type and charset. Returning nil results in a 404. Get the charset from the context [:request :charset], if you can support different charsets. A nil charset at [:request :charset] means the user-agent can support all charsets, so just pick one.")
+  (get-state [_ media-type ctx] "Return the state, formatted to a representation of the given media-type and charset. Returning nil results in a 404. Get the charset from the context [:request :charset], if you can support different charsets. A nil charset at [:request :charset] means the user-agent can support all charsets, so just pick one.")
 
-  (put-state! [_ content content-type ctx] "Overwrite the state with the data. To avoid inefficiency in abstraction, satisfying types are required to manage the parsing of the representation in the request body. If a deferred is returned, the HTTP response status is set to 202")
+  (put-state! [_ content media-type ctx] "Overwrite the state with the data. To avoid inefficiency in abstraction, satisfying types are required to manage the parsing of the representation in the request body. If a deferred is returned, the HTTP response status is set to 202")
 
   (post-state! [_ ctx] "Insert a new sub-resource. See write! for semantics.")
 
@@ -58,9 +58,9 @@
   (fetch [s ctx] s)
   (exists? [s ctx] true)
   (last-modified [s _] nil)
-  (get-state [s content-type ctx] s)
+  (get-state [s media-type ctx] s)
   ;; Without attempting to actually parse it (which isn't completely
-  ;; impossible) we're not able to guess the content-type of this
+  ;; impossible) we're not able to guess the media-type of this
   ;; string, so we return nil.
   (produces [s] nil)
   (produces [s ctx] nil)
@@ -74,7 +74,7 @@
   nil
   ;; last-modified of 'nil' means we don't consider last-modified
   (last-modified [_ _] nil)
-  (get-state [_ content-type ctx] nil)
+  (get-state [_ media-type ctx] nil)
   (content-length [_ _] nil)
   (produces [_] nil)
   (produces [_ _] nil)

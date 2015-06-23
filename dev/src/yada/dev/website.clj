@@ -60,7 +60,7 @@
     ["/"
      [["index.html" (-> (index component)
                         (tag ::index))]
-      ["dir" (-> (yada.bidi/resource (io/file "dev/resources"))
+      ["dir" (-> (yada.bidi/resource-branch (io/file "dev/resources"))
                  (tag ::dir))]]]))
 
 (defn new-website [& {:as opts}]
