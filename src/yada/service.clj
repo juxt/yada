@@ -77,12 +77,6 @@
 
   (request-uri-too-long? [f uri] (request-uri-too-long? (f uri) uri))
 
-  #_(state [f ctx]
-    (let [res (f ctx)]
-      (if (deferrable? res)
-        (d/chain res #(state % ctx))
-        (state res ctx))))
-
   (body [f ctx]
     (let [res (f ctx)]
       (if (deferrable? res)
@@ -106,7 +100,6 @@
 
   String
   (body [s _] s)
-  #_(state [s ctx] s)
   (interpret-post-result [s ctx]
     (assoc-in ctx [:response :body] s))
   (format-event [ev] [(format "data: %s\n" ev)])
@@ -162,7 +155,6 @@
   (service-available? [_ _] true)
   (request-uri-too-long? [_ uri]
     (request-uri-too-long? 4096 uri))
-  #_(state [_ _] nil)
   (body [_ _] nil)
   (post [_ _] nil)
   (produces [_] nil)
@@ -174,13 +166,9 @@
   (allow-origin [_ _] nil)
 
   ReadPort
-  #_(state [port ctx] (->source port))
   (body [port ctx] (->source port))
 
   Object
   (authorization [o] o)
-  ;; Default is to return the value as-is and leave to subsequent
-  ;; processing to determine how to manage or represent it
-  #_(state [o ctx] o)
 
   )

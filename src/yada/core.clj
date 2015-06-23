@@ -198,27 +198,7 @@
 
           (-> ctx
               (merge
-               {:request
-                req
-                ;; The next form is commented because we want to provide
-                ;; access from individual State protocol implementations
-                ;; to raw ByteBufers. You can only read the body stream
-                ;; once, when it is required. Subsequent calls to :body
-                ;; will yield nil. There's no way round this short of
-                ;; temporarily storing the whole (potentially huge) body
-                ;; somewhere.
-                #_(assoc req
-                         ;; We assoc in a 'delayed' body to the context's
-                         ;; version of the request. The first caller to
-                         ;; deref causes the slurp (which to do ahead of
-                         ;; time might be unnecessarily wasteful).
-                         :body (delay
-                                (if-let [body (:body req)]
-                                  ;; TODO Don't slurp, read into a byte array
-                                  ;; Does aleph provide access to the underlying javax.nio.ByteBuffer(s)?
-                                  ;; (yes - provided option raw-stream? is true)
-                                  (slurp body :encoding (or (character-encoding req) "utf8"))
-                                  nil)))
+               {:request req
                 :options options})
 
               (d/chain
@@ -652,32 +632,7 @@
                    (throw (ex-info "Unimplemented method"
                                    {:status 501
                                     ::method method
-                                    ::http-response true})))
-
-                 #_(cond
-                     ;; 'Exists' flow
-                     ;; TODO: Not sure that exists-flow is what we're doing here - exists-flow has all kinds of things complected in it. Break up into individual cases, perhaps based on method. We are only using this to avoid the 404 of the 'not exists' flow. Perhaps check for existence and throw the 404 now if necessary.
-                     (or resource body (#{:post :put} method))
-                     (d/chain
-                      ctx
-                      ;; Not sure we should use exists-flow for CORS pre-flight requests, should handle further above
-                      (exists-flow method resource req status headers body post! allow-origin)
-                      (cors allow-origin)
-
-                      (fn [ctx]
-                        (merge
-                         {:status (or (get-in ctx [:response :status])
-                                      (service/status status ctx)
-                                      200)
-                          :headers (merge
-                                    (get-in ctx [:response :headers])
-                                    (service/headers headers ctx))
-                          ;; TODO :status and :headers should be implemented like this in all cases
-                          :body (get-in ctx [:response :body])})))
-
-                     ;; 'Not exists' flow
-                     :otherwise
-                     (d/chain ctx (constantly {:status 404}))))
+                                    ::http-response true}))))
 
                #_(fn [ctx]
                    (if-let [origin (service/allow-origin allow-origin ctx)]

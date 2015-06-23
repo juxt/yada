@@ -84,9 +84,6 @@
   (produces [_ ctx]
     [(ext-mime-type (.getName f))])
   (produces-charsets [_ ctx] nil)
-  #_(content-length [_ ctx]
-    (when (.isFile f)
-      (.length f)))
   (get-state [_ content-type ctx] f)
   (put-state! [_ content content-type ctx]
     ;; The reason to use bs/transfer is to allow an efficient copy of byte buffers
@@ -128,7 +125,6 @@
     (when-let [path-info (-> ctx :request :path-info)]
       (when (.endsWith path-info "/")
         ["UTF-8" "US-ASCII;q=0.9"])))
-  #_(content-length [_ ctx] nil)
   (get-state [_ content-type ctx]
 
 

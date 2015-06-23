@@ -25,7 +25,6 @@
 ;; Representation means the representation of state, for the purposes of network communication.
 
 (defprotocol Representation
-  #_(content [_ content-type] "Get representation data, given the content-type")
   (content-length [_] "Return the size of the resource's represenation, if this can possibly be known up-front (return nil if this is unknown)"))
 
 (defmulti render-map (fn [resource content-type] content-type))
@@ -37,32 +36,19 @@
 
 (extend-protocol Representation
 
-  java.util.Map
-  #_(content [resource content-type] (render-map resource content-type))
-
-  clojure.lang.Sequential
-  #_(content [resource content-type] (render-seq resource content-type))
-
   String
-  #_(content [resource _] resource)
   (content-length [s] (.length s))
 
   CoreAsyncSource
-  #_(content [resource content-type] (render-seq resource content-type))
   (content-length [_] nil)
 
   File
-  #_(content [f content-type] f)
   (content-length [f] (.length f))
-
-  URL
-  #_(content [url content-type] (.openStream url))
 
   Object
   (content-length [_] nil)
 
   nil
-  #_(content [_ content-type] nil)
   (content-length [_] nil))
 
 (defmethod render-map "application/json"

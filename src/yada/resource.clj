@@ -66,24 +66,13 @@
   (produces [s ctx] nil)
   (produces-charsets [_ ctx] platform-charsets)
 
-  ;;(content-length [_ _] nil)
-
-  #_Date
-  #_(last-modified [d _] d)
-
   nil
   ;; last-modified of 'nil' means we don't consider last-modified
   (last-modified [_ _] nil)
   (get-state [_ media-type ctx] nil)
-;;  (content-length [_ _] nil)
   (produces [_] nil)
   (produces [_ _] nil)
   (produces-charsets [_ _] nil)
-
-  #_Object
-  #_(last-modified [_ _] nil)
-;;  #_(content-length [_ _] nil)
-  #_(produces-charsets [_ _] nil)
 
   )
 
