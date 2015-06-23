@@ -6,6 +6,7 @@
    [cheshire.core :as json]
    [clojure.java.io :as io]
    [hiccup.core :refer [html]]
+   [hiccup.page :refer (html5)]
    [manifold.stream :refer [->source transform]]
    [ring.swagger.schema :as rs]
    [yada.mime :as mime]
@@ -84,19 +85,19 @@
 
 (defmethod render-map "application/json"
   [m _]
-  (json/encode m))
+  (str (json/encode m) \newline))
 
 (defmethod render-map "application/edn"
   [m _]
-  (pr-str m))
+  (prn-str m))
 
 (defmethod render-seq "application/json"
   [s _]
-  (json/encode s))
+  (str (json/encode s) \newline))
 
 (defmethod render-seq "application/edn"
   [s _]
-  (pr-str s))
+  (prn-str s))
 
 (defmethod render-seq "text/event-stream"
   [s _]
@@ -105,4 +106,7 @@
 
 (defmethod render-map "text/html"
   [m _]
-  (jh/edn->html m))
+  (str (html5
+        [:head [:style (-> "json.human.css" clojure.java.io/resource slurp)]]
+        (jh/edn->html m))
+       \newline))
