@@ -10,6 +10,7 @@
    [yada.test.util :refer (given)]
    [manifold.deferred :as d]
    [modular.test :refer (with-system-fixture *system*)]
+   [cheshire.core :as json]
    [ring.mock.request :as mock]
    [yada.dev.user-api :refer (new-user-api)]
    [yada.dev.database :refer (new-database)]
@@ -35,72 +36,33 @@
     (let [res (h (assoc req :route-params rp))]
       (if (d/deferrable? res) @res res))))
 
-;; First get this API integration test working, then build a proper swagger_test suite
-
 (deftest api-test
   (let [h (make-handler (routes (:api *system*)))
-        req (mock/request :get "/api/swagger.json")]
-    (given @(h req)
+        req (mock/request :get "/api/swagger.json")
+        response @(h req)]
+    (given response
       :status := 200
-      :headers :> {"content-type" "application/json"})))
+      :headers :> {"content-type" "application/json"}
+;;      [:body json/decode] := ""
+      )
+    (given (-> response :body json/decode)
+      "swagger" := "2.0"
+      ["info" "title"] := "User API"
+      ["info" "version"] := "0.0.1"
+      ["info" "description"] := "Example user API"
+      "produces" := ["application/json"]
+      "consumes" := ["application/json"]
+      "basePath" := "/api"
 
+      ["paths" "/users"] := {}
 
-#_(deftest handlers
-  (testing "Service Unavailable"
+      ["paths" "/users/{username}" "get" "parameters" first "in"] := "path"
+      ["paths" "/users/{username}" "get" "parameters" first "name"] := "username"
+      ["paths" "/users/{username}" "get" "parameters" first "description"] := ""
+      ["paths" "/users/{username}" "get" "parameters" first "required"] := true
+      ["paths" "/users/{username}" "get" "parameters" first "type"] := "string"
+      ["paths" "/users/{username}" "get" "responses" "default" "description"] := ""
 
-    (let [response (get-op-response
-                    (get-api) (mock/request :get "/pets") :service-available? false)]
-      (is (= (-> response :status) 503)))
+      ["paths" "/users/{username}/posts"] := {}
 
-    (let [response (get-op-response
-                    (get-api) (mock/request :get "/pets") :service-available? true)]
-      (is (not= (-> response :status) 503)))
-
-    (testing "Deferred"
-      (let [response
-            (get-op-response
-             (get-api) (mock/request :get "/pets")
-             ;; Check status of slow backend system without blocking this thread.
-             :service-available? #(future (Thread/sleep 1) false))]
-        (is (= (-> response :status) 503)))))
-
-  (testing "Not Implemented"
-    (let [response (get-op-response (get-api) (mock/request :play "/pets"))]
-      (is (= (-> response :status) 501)))
-    (let [response (get-op-response (get-api) (mock/request :play "/pets")
-                                    :known-method? (fn [x] (= x :play)))]
-      (is (not= (-> response :status) 501))))
-
-  (testing "Request URI Too Long"
-    (let [response (get-op-response (get-api) (mock/request :get "/pets")
-                                    :request-uri-too-long? 4)]
-      (is (= (-> response :status) 414))))
-
-  ;; TODO Reinstate - can't do this without knowledge of other operations
-  #_(testing "Method Not Allowed"
-      (let [response (get-op-response (get-api) (mock/request :put "/pets"))]
-        (is (= (-> response :status) 405))))
-
-  (testing "OK"
-    (let [response (get-op-response (get-api) (-> (mock/request :get "/pets")
-                                                (mock/header "Accept" "text/html")))]
-      (is (= (-> response :status) 200))
-      ;; Some default exists
-      (is (not (nil? (-> response :body))))
-      (is (string? (-> response :body)))))
-
-  (testing "Not found"
-    (let [response (get-op-response
-                    (get-api)
-                    (mock/request :get "/pets/100")
-                    :find-resource false)]
-      (is (= (-> response :status) 404)))))
-
-
-;; TODO: Response body coercion
-;; TODO: Auth
-;; TODO: Conneg
-;; TODO: CORS/OPTIONS
-;; TODO: CSRF
-;; TODO: Cache-headers
-;; TODO: Vary
+      "definitions" := {})))
