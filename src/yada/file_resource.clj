@@ -84,7 +84,7 @@
   (produces [_ ctx]
     [(ext-mime-type (.getName f))])
   (produces-charsets [_ ctx] nil)
-  (content-length [_ ctx]
+  #_(content-length [_ ctx]
     (when (.isFile f)
       (.length f)))
   (get-state [_ content-type ctx] f)
@@ -128,7 +128,7 @@
     (when-let [path-info (-> ctx :request :path-info)]
       (when (.endsWith path-info "/")
         ["UTF-8" "US-ASCII;q=0.9"])))
-  (content-length [_ ctx] nil)
+  #_(content-length [_ ctx] nil)
   (get-state [_ content-type ctx]
 
 

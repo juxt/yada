@@ -24,7 +24,7 @@
     "Return the mime types that can be produced from this resource. The first form is request-context independent, suitable for up-front consumption by introspectng tools such as swagger. The second form can be more sensitive to the request context. Return a string or strings, such as text/html. If text, and multiple charsets are possible, return charset information. e.g. [\"text/html;charset=utf8\" \"text/html;charset=unicode-1-1\"]")
   (produces-charsets [_ ctx] "Return the charsets that can be produced from this resource.")
 
-  (content-length [_ ctx] "Return the content length, if possible.")
+  ;;(content-length [_ ctx] "Return the content length, if possible.")
 
   ;; TODO: Misnomer. If content-type is a parameter, then it isn't state, it's representation. Perhaps rename simply to 'get-representation' or even just 'get'
   (get-state [_ media-type ctx] "Return the state, formatted to a representation of the given media-type and charset. Returning nil results in a 404. Get the charset from the context [:request :charset], if you can support different charsets. A nil charset at [:request :charset] means the user-agent can support all charsets, so just pick one.")
@@ -66,7 +66,7 @@
   (produces [s ctx] nil)
   (produces-charsets [_ ctx] platform-charsets)
 
-  (content-length [_ _] nil)
+  ;;(content-length [_ _] nil)
 
   #_Date
   #_(last-modified [d _] d)
@@ -75,14 +75,14 @@
   ;; last-modified of 'nil' means we don't consider last-modified
   (last-modified [_ _] nil)
   (get-state [_ media-type ctx] nil)
-  (content-length [_ _] nil)
+;;  (content-length [_ _] nil)
   (produces [_] nil)
   (produces [_ _] nil)
   (produces-charsets [_ _] nil)
 
   #_Object
   #_(last-modified [_ _] nil)
-  #_(content-length [_ _] nil)
+;;  #_(content-length [_ _] nil)
   #_(produces-charsets [_ _] nil)
 
   )

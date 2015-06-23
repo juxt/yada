@@ -12,7 +12,9 @@
    [camel-snake-kebab :as csk]
    [cheshire.core :as json]
    [ring.swagger.swagger2 :as rs]
-   [schema.core :as s])
+   [schema.core :as s]
+   [json-html.core :as jh]
+   [hiccup.page :refer (html5)])
   (:import (clojure.lang PersistentVector Keyword)))
 
 (defprotocol SwaggerPath
@@ -38,14 +40,17 @@
 
 (defrecord SwaggerSpec [spec created-at]
   Resource
-  (produces [_ ctx] #{"application/json"})
+  (produces [_ ctx] #{"application/json" "text/html;q=0.9"})
   (produces-charsets [_ ctx] #{"UTF-8"})
   (exists? [_ ctx] true)
   (last-modified [_ ctx] created-at)
   (get-state [_ content-type ctx]
-    (when (= (mime/media-type content-type) "application/json")
-      (json/encode (rs/swagger-json spec))))
-  (content-length [_ ctx] nil))
+    (case (mime/media-type content-type)
+      "application/json" (json/encode (rs/swagger-json spec))
+      "text/html" (html5
+                   [:head [:style (-> "json.human.css" clojure.java.io/resource slurp)]]
+                   (jh/edn->html (rs/swagger-json spec))))))
+
 
 (defrecord Swagger [spec routes handler]
   Matched

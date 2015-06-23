@@ -556,16 +556,11 @@
                                                      ::http-response true}))))
 
                            (fn [body]
-                             (assoc-in ctx [:response :body] body))
-
-                           (link ctx
-                             (when content-type
-                               (update-in ctx [:response :headers] assoc "content-type" (mime/media-type->string content-type))))
-
-                           (link ctx
-                             (when-let [content-length (res/content-length (:resource ctx) ctx)]
-                               (update-in ctx [:response :headers] assoc "content-length" content-length))))))))
-
+                             (let [content-length (rep/content-length body)]
+                               (cond-> ctx
+                                 true (assoc-in [:response :body] body)
+                                 content-length (update-in [:response :headers] assoc "content-length" content-length)
+                                 content-type (update-in [:response :headers] assoc "content-type" (mime/media-type->string content-type))))))))))
 
                    :put
                    (d/chain
