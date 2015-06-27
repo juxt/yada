@@ -29,6 +29,7 @@
 (defn chapter? [h] (instance? Chapter h))
 
 (defprotocol Example
+  (title [_] "Return example title, where not defaulted")
   (resource [_] "Return handler")
   (options [_] "Return resource options")
   (request [_] "Return the example request that should be sent to handler")
@@ -47,6 +48,7 @@
 
 (defrecord HelloWorld []
   Example
+  (title [_] "Hello World!" )
   (resource [_] "Hello World!")
   (request [_] {:method :get})
   (expected-response [_] {:status 200}))
@@ -643,8 +645,10 @@
   (expected-response [_] {:status 200})
   (test-function [_] "tryItEvents"))
 
-(defn title [ex]
-  (last (string/split (.getName (type ex)) #"\.")))
+(defn get-title [ex]
+  (or
+   (try (title ex) (catch AbstractMethodError e))
+   (last (string/split (.getName (type ex)) #"\."))))
 
 (defn get-resource [ex]
   (try (resource ex) (catch AbstractMethodError e)))
@@ -671,12 +675,12 @@
 (defn get-test-function [ex]
   (try (test-function ex) (catch AbstractMethodError e)))
 
-(defn description [ex]
-  (when-let [s (io/resource (str "examples/pre/" (title ex) ".md"))]
+(defn get-description [ex]
+  (when-let [s (io/resource (str "examples/pre/" (get-title ex) ".md"))]
     (markdown/md-to-html-string (slurp s))))
 
 (defn post-description [ex]
-  (when-let [s (io/resource (str "examples/post/" (title ex) ".md"))]
+  (when-let [s (io/resource (str "examples/post/" (get-title ex) ".md"))]
     (markdown/md-to-html-string (slurp s))))
 
 (defn external? [ex]

@@ -17,7 +17,7 @@
    [modular.bidi :refer (path-for)]
    [modular.template :as template :refer (render-template)]
    [modular.component.co-dependency :refer (co-using)]
-   [yada.dev.examples :refer (get-resource get-options get-path get-path-args get-query-string get-request expected-response get-test-function external? make-example-handler encode-data)]
+   [yada.dev.examples :refer (get-title get-resource get-options get-path get-path-args get-query-string get-request expected-response get-test-function external? make-example-handler encode-data)]
    [yada.yada :refer (yada)]
    [yada.mime :as mime]
 ))
@@ -226,7 +226,7 @@
             :content
             (concat
              [{:tag :a :attrs {:name (str "example-" exname)} :content []}
-              {:tag :h3 :content [(title exname)]}]
+              {:tag :h3 :content [(get-title ex)]}]
              (remove nil? [(post-process-example
                             user-guide
                             ex
