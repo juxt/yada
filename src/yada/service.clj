@@ -166,6 +166,7 @@
   (service-available? [_ _] true)
   (request-uri-too-long? [_ uri]
     (request-uri-too-long? 4096 uri))
+  (last-modified [_ ctx] nil)
   (body [_ _] nil)
   (post [_ _] nil)
   (produces [_] nil)
