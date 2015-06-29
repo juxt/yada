@@ -28,25 +28,6 @@ a contributor!
 
 <toc drop="0"/>
 
-## Forward
-
-With the emergence and dominance of HTTP, and the increasing importance
-to the world's economy of APIs built on it, building robust APIs
-rapidly has never been so important.
-
-Clojure makes an ideal choice for writing solid software. Fundamentally,
-web APIs must share state with multiple actors. The Clojure language
-guarantees that concurrent access to shared state is safe - removing the
-role of the developer from checking that their code does not suffer from
-side-effects, deadlocks, race conditions and bottlenecks.
-
-But more importantly, Clojure shares many of the values and much of the
-philosophy behind the dominant architectural style of today's web APIs:
-[REST](https://www.ics.uci.edu/~fielding/pubs/dissertation/rest_arch_style.htm)
-(Representational State Transfer).
-
-[more to follow]
-
 ## Introduction
 
 A web API is a set of web resources that are accessed by clients, called
