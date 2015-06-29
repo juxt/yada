@@ -23,7 +23,8 @@
    [clj-time "0.9.0"]
    [metosin/ring-swagger "0.20.2" :exclusions [potemkin]]
    ;;[ring/ring-core "1.3.2" :exclusions [org.clojure/tools.reader]]
-   [byte-streams "0.2.0-alpha8"]]
+   [byte-streams "0.2.0-alpha8"]
+   [json-html "0.3.1"]]
 
   :repl-options {:init-ns user
                  :welcome (println "Type (dev) to start")}
@@ -62,7 +63,7 @@
           [org.webjars/swagger-ui "2.1.8-M1"]
           [org.webjars/jquery "2.1.3"]
           [org.webjars/bootstrap "3.3.2"]
-          [json-html "0.3.1"]
+
           ]
 
          :source-paths ["dev/src"]

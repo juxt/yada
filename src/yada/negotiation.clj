@@ -3,7 +3,6 @@
    [yada.mime :as mime]
    [yada.charset :as cs]
    [clojure.tools.logging :refer :all :exclude [trace]]
-   [clojure.tools.trace :refer :all]
    [clojure.string :as str])
   (:import [yada.charset CharsetMap]))
 
