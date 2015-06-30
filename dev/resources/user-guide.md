@@ -170,7 +170,7 @@ lein run
 
 ## Parameters
 
-Many web requests contain parameters, which affect how a resource behaves. Often parameters are specified at the end of a URI, in the query string. But parameters can also be inferred from the path.
+Many web requests contain parameters, which affect how a resource behaves. Often parameters are specified as part of the URI's query string. But parameters can also be inferred from the URI's path. It's also possible for a request to contain parameters in its headers or body, as we'll see later.
 
 For example, let's imagine we have a fictional URI to access the transactions of a bank account.
 
