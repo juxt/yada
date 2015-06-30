@@ -290,13 +290,10 @@
                         ;; instead? It's virtually the same logic for
                         ;; url encoded forms
                         (when-let [schema (get-in parameters [method :form])]
-                          (infof "Decoding form...")
                           (when (urlencoded-form? req)
-                            (infof "Decoding urlencoded form...")
                             (let [fp (keywordize-keys
                                       (form-decode (read-body (-> ctx :request))
                                                    (character-encoding req)))]
-                              (infof "fp is %s" fp)
                               (rs/coerce schema fp :json))))
 
                         :header
