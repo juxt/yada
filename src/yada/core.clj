@@ -612,6 +612,7 @@
 
                           (assoc-in ctx [:response :status]
                                     (cond
+                                      ;; TODO A 202 may be not what the developer wants!
                                       (d/deferred? res) 202
                                       exists? 204
                                       :otherwise 201))))))
@@ -636,18 +637,14 @@
                               :otherwise (throw (ex-info "No implementation of put!" {})))]
 
                         ;; TODO: what if error?
-
-                        (assoc ctx :post-result result)
-
-                        ))
+                        (assoc ctx :post-result result)))
 
                     (fn [ctx]
                       (service/interpret-post-result (:post-result ctx) ctx))
 
-
                     (fn [ctx]
                       (-> ctx
-                          (assoc-in [:response :status] 200))))
+                          (update-in [:response] (partial merge {:status 200})))))
 
                    :delete
                    (d/chain

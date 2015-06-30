@@ -149,8 +149,23 @@
     (when-let [delegate (get m (get-in ctx [:response :content-type]))]
       (body delegate ctx)))
   (headers [m _] m)
-  ;;(interpret-post-result [m _] m)
-  (format-event [ev] )
+  (post! [m ctx] m)
+  (interpret-post-result [m ctx]
+    ;; TODO: Factor out hm (header-merge) so it can be tested independently
+    (letfn [(hm [x y]
+              (cond
+                (and (nil? x) (nil? y)) nil
+                (or (nil? x) (nil? y)) (or x y)
+                (and (coll? x) (coll? y)) (concat x y)
+                (and (coll? x) (not (coll? y))) (concat x [y])
+                (and (not (coll? x)) (coll? y)) (concat [x] y)
+                :otherwise (throw (ex-info "Unexpected headers case" {:x x :y y}))))]
+      (cond-> ctx
+        (:status m) (assoc-in [:response :status] (:status m))
+        (:headers m) (update-in [:response :headers] #(merge-with hm % (:headers m)))
+        (:body m) (assoc-in [:response :body] (:body m)))))
+
+  (format-event [ev] ev)
 
   clojure.lang.PersistentVector
   (produces [v] v)
