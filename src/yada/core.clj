@@ -18,7 +18,7 @@
    [manifold.deferred :as d]
    [manifold.stream :refer (->source transform)]
    [ring.middleware.basic-authentication :as ba]
-   [ring.middleware.params :refer (params-request)]
+   [ring.middleware.params :refer (assoc-query-params)]
    [ring.swagger.coerce :as rc]
    [ring.swagger.schema :as rs]
    [ring.util.codec :refer (form-decode)]
@@ -118,7 +118,8 @@
         d))))
 
 (defn read-body [req]
-  (convert (:body req) String {:encoding (or (character-encoding req) "utf8")}))
+  (when-let [body (:body req)]
+    (convert body String {:encoding (or (character-encoding req) "UTF-8")})))
 
 ;; Allowed methods
 
@@ -258,7 +259,11 @@
                                {:status 405
                                 ::http-response true})))))
 
+
                ;; Malformed
+
+               ;; Perhaps this should happen after content negotiation
+               ;; so we know how to return any schema errors
                (fn [ctx]
                  (let [keywordize (fn [m] (into {} (for [[k v] m] [(keyword k) v])))
                        parameters
@@ -268,7 +273,12 @@
 
                         :query
                         (when-let [schema (get-in parameters [method :query])]
-                          (rs/coerce schema (-> req params-request :query-params keywordize) :query))
+                          ;; We'll call assoc-query-params with UTF-8
+                          ;; for now, but when we move conneg to before
+                          ;; this link we'll use the negotiated charset.
+                          ;; Also, read this:
+                          ;; http://www.w3.org/TR/html5/forms.html#application/x-www-form-urlencoded-encoding-algorithm
+                          (rs/coerce schema (-> req (assoc-query-params "UTF-8") :query-params keywordize) :query))
 
                         :body
                         (when-let [schema (get-in parameters [method :body])]
@@ -276,11 +286,17 @@
                             (rep/from-representation body (content-type req) schema)))
 
                         :form
+                        ;; TODO: Can we use rep:from-representation
+                        ;; instead? It's virtually the same logic for
+                        ;; url encoded forms
                         (when-let [schema (get-in parameters [method :form])]
+                          (infof "Decoding form...")
                           (when (urlencoded-form? req)
+                            (infof "Decoding urlencoded form...")
                             (let [fp (keywordize-keys
                                       (form-decode (read-body (-> ctx :request))
                                                    (character-encoding req)))]
+                              (infof "fp is %s" fp)
                               (rs/coerce schema fp :json))))
 
                         :header

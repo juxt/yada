@@ -9,7 +9,9 @@
    [hiccup.page :refer (html5)]
    [manifold.stream :refer [->source transform]]
    [ring.swagger.schema :as rs]
+   [ring.util.codec :as codec]
    [yada.mime :as mime]
+   [clojure.walk :refer (keywordize-keys)]
    [json-html.core :as jh])
   (:import [clojure.core.async.impl.channels ManyToManyChannel]
            [java.io File]
@@ -25,6 +27,19 @@
    (rs/coerce schema (from-representation representation media-type) :json))
   ([representation media-type]
    (json/decode representation keyword)))
+
+(defmethod from-representation nil
+  ([representation media-type schema]
+   nil)
+  ([representation media-type]
+   nil))
+
+(defmethod from-representation "application/x-www-form-urlencoded"
+  ([representation media-type schema]
+   (rs/coerce schema (from-representation representation media-type) :query))
+  ([representation media-type]
+   (keywordize-keys (codec/form-decode representation))
+   ))
 
 ;; Representation means the representation of state, for the purposes of network communication.
 
