@@ -30,19 +30,55 @@ a contributor!
 
 ## Introduction
 
-A web API is a set of web resources that are accessed by clients, called
-_user agents_, using the HTTP protocol. Typically, a developer will
-build a web API to make information available to users and machines
-across the web.
+State is everywhere. The world is moving and we need to keep up. We need our computers to do the same, keeping up-to-date with the latest information, trends, stock-prices, news and weather updates, and other important 'stuff'.
 
-HTTP is a large and powerful protocol — yada is a library that helps
-reduce the amount of coding required for meeting its requirements, while
-leaving you as the developer in full control.
+To understand yada you first need to understand about state, and the importance of copying it from place to place, because that's really what yada is all about.
+
+You have some state here, and you want it over there. Or it's over
+there, but you want it over here.
+
+Semantically, yada aligns with HTTP, the protocol that binds the web
+together. Because that's really what the web is, lots of digital state
+moving around the world.
+
+Practically, yada helps developers take some state on a computer and expose it to web browsers and other programs.
+
+### yada is a level up
+
+When developing websites and APIs, developers usually write software that implements in one part of a conversation (or protocol) between computers. With HTTP it is common for developers be familiar with the idea of receiving a 'request' to which the code must return a 'response'. Most developers that write so-called 'server-side' logic work at the _same level of abstraction_ as the HTTP protocol. This fact is true, regardless of whether the developer chooses to learn all about the HTTP protocol or is ignorant of much of the details (as is more often the case).
+
+Writing code at the level of the HTTP protocol is hard work, whatever you're doing. If you're doing REST, there's a lot of code to write. If you're doing microservices, that's even more coding. For Clojure developers, yada offers a layer of abstaction above Ring which improves the productivity of writing websites and providing API services. Crucially, however, yada does not ask the developer to trade too much control in return for this productivity. Well, that's the design goal.
+
+### My first yada
+
+Let's illustrate yada in practice by writing some code. Let's imagine we have some state. A string. The string is this: "Hello World!". We want to move this state across the web somehow - say, between my web server and that {computer you're sitting at}{tablet you're holding}{phone you're holding}{watch you're reading from}.
+
+We start with our state
+
+```clojure
+"Hello World!"
+```
+
+and wrap it with a call to yada.
+
+```clojure
+(yada "Hello World!")
+```
+
+This expression returns us a handler we can use in conjunction with the
+aleph HTTP server.
+
+Let's try it out
+
+[add normal request, returns 200 and body]
+[add normal request with If-Modified-Since header, returns 304, so we don't go off to Google Translate again]
+
+[Now change the logic a little, to add the Google Translate logic on fetch-state. Add a fetch-state option overriding the default fetch-state of the String]
+
+[add normal request with language, returns a Google Translated body, using async to Google translate, use a language that contains Chinese characters]
+[add normal request with charset, returns 200 with Ascii body, show our Chinese characters in ASCII, or Shift_JIS]
 
 ### Where yada fits
-
-There is a great number of libraries available to Clojure programmers to
-help develop web applications. Let's explain where yada fits.
 
 During a web request, a browser (or other user agent) establishes a
 connection with a web server and sends a request encoded according to
