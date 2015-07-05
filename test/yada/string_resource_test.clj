@@ -1,5 +1,9 @@
 (ns yada.string-resource-test
   (:require
+   [clj-time.core :as time]
+   [clj-time.coerce :refer (to-date)]
+   [ring.util.time :refer (format-date)]
+   yada.string-resource
    [clojure.test :refer :all]
    [clojure.java.io :as io]
    [yada.core :refer [yada]]
@@ -29,3 +33,42 @@
     ;; the :produces entry should be honored and used when writing the
     ;; String.
     ))
+
+
+(deftest hello-world-test
+  (testing "hello-world"
+    (let [resource "Hello World!"
+          handler (yada resource)
+          request (request :get "/")
+          response @(handler request)]
+
+      (given response
+        :status := 200
+        :headers :> {"content-length" (count "Hello World!")}
+        :body :? string?)
+
+      ))
+
+  (testing "if-last-modified"
+    (time/do-at (time/minus (time/now) (time/days 6))
+      (let [resource "Hello World!"
+            handler (yada resource)]
+
+        (time/do-at (time/minus (time/now) (time/days 3))
+
+          (let [request (request :get "/")
+                response @(handler request)]
+
+            (given response
+              :status := 200
+              :headers :> {"content-length" (count "Hello World!")}
+              :body :? string?)))
+
+        (time/do-at (time/minus (time/now) (time/days 2))
+
+          (let [request (merge-with merge (request :get "/")
+                                    {:headers {"if-modified-since" (format-date (to-date (time/minus (time/now) (time/days 2))))}})
+                response @(handler request)]
+
+            (given response
+              :status := 304)))))))
