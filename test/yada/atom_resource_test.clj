@@ -11,15 +11,15 @@
 
 (deftest atom-test
   (testing "atom"
-      (let [resource (atom {:name "Frank"})
-            handler (yada resource)
-            request (request :get "/")
-            response @(handler request)]
+    (let [resource (atom {:name "Frank"})
+          handler (yada resource)
+          request (request :get "/")
+          response @(handler request)]
 
-        (given response
-          :status := 200
-          :headers :> {"content-length" 16
-                       "content-type" "application/edn"}
-          :body :? string?)
+      (given response
+        :status := 200
+        :headers :> {"content-length" 16
+                     "content-type" "application/edn"}
+        :body :? string?)
 
-        )))
+      )))
