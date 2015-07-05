@@ -20,9 +20,6 @@
     ;; default Resource implementation (above)
     f)
 
-  String
-  (make-resource [s] s)
-
   #_Object
   #_(make-resource [o] o)
 
@@ -80,18 +77,6 @@
   (fetch [o ctx] o))
 
 (extend-protocol Resource
-
-  String
-  (fetch [s ctx] s)
-  (exists? [s ctx] true)
-  (last-modified [s _] nil)
-  (get-state [s media-type ctx] s)
-  ;; Without attempting to actually parse it (which isn't completely
-  ;; impossible) we're not able to guess the media-type of this
-  ;; string, so we return nil.
-  (produces [s] nil)
-  (produces [s ctx] nil)
-  (produces-charsets [_ ctx] platform-charsets)
 
   nil
   ;; last-modified of 'nil' means we don't consider last-modified

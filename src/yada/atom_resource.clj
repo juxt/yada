@@ -1,5 +1,7 @@
 (ns yada.atom-resource
   (:require
+   [clj-time.core :refer [now]]
+   [clj-time.coerce :refer [to-date]]
    [yada.resource :refer (ResourceConstructor Resource platform-charsets)]))
 
 (defprotocol StateWrapper
@@ -15,7 +17,7 @@
 
   (last-modified [_ ctx]
     (when-let [lm @*last-mod]
-      (java.util.Date. lm)))
+      lm))
 
   (get-state [_ _ ctx] @*a))
 
@@ -28,7 +30,7 @@
           ;; modified.
           (add-watch :last-modified
                      (fn [_ _ _ _]
-                       (reset! *last-mod (System/currentTimeMillis))))
+                       (reset! *last-mod (to-date (now)))))
           (->AtomicMapResource *last-mod)))))
 
 (extend-protocol ResourceConstructor
