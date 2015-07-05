@@ -3,6 +3,8 @@
 (ns yada.collection-resource
   (:require
    [clojure.tools.logging :refer :all]
+   [clj-time.core :refer (now)]
+   [clj-time.coerce :refer (to-date)]
    [yada.mime :refer (media-type)]
    [yada.resource :refer (Resource ResourceConstructor platform-charsets)]
    [cheshire.core :as json]
@@ -20,4 +22,4 @@
 (extend-protocol ResourceConstructor
   APersistentMap
   (make-resource [m]
-    (->MapResource m (java.util.Date.))))
+    (->MapResource m (to-date (now)))))

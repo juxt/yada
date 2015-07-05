@@ -3,6 +3,8 @@
 (ns yada.swagger
   (:require
    [clojure.pprint :refer (pprint)]
+   [clj-time.core :refer (now)]
+   [clj-time.coerce :refer (to-date)]
    [bidi.bidi :refer (Matched resolve-handler unresolve-handler route-seq succeed)]
    [bidi.ring :refer (Ring)]
    [ring.util.response :refer (redirect)]
@@ -78,4 +80,4 @@
 
 (defn swaggered [spec routes]
   (let [spec (merge spec {:paths (into {} (map to-path (route-seq ["" routes])))})]
-    (->Swagger spec routes (resource-leaf (->SwaggerSpec spec (java.util.Date.))))))
+    (->Swagger spec routes (resource-leaf (->SwaggerSpec spec (to-date (now)))))))
