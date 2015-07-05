@@ -51,7 +51,13 @@ Writing code at the level of the HTTP protocol is hard work, whatever you're doi
 
 ### My first yada
 
-Let's illustrate yada in practice by writing some code. Let's imagine we have some state. A string. The string is this: "Hello World!". We want to move this state across the web somehow - say, between my web server and that {computer you're sitting at}{tablet you're holding}{phone you're holding}{watch you're reading from}.
+Let's illustrate yada in practice by writing some code.
+
+Let's imagine we have some state. A string.
+
+The string is simply: `Hello World!`.
+
+We want to move this state across the web somehow - say, between my web server and that {computer you're sitting at}{tablet you're holding}{phone you're holding}{watch you're reading from}.
 
 We start with our state
 
@@ -65,8 +71,7 @@ and wrap it with a call to yada.
 (yada "Hello World!")
 ```
 
-This expression returns us a handler we can use in conjunction with the
-aleph HTTP server.
+This expression returns us a Ring handler.
 
 Let's try it out
 
