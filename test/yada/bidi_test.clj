@@ -4,6 +4,7 @@
   (:require
    [clojure.test :refer :all]
    [yada.yada :refer (yada) :as yada]
+   [yada.test.util :refer (given)]
    [yada.bidi :refer (resource-leaf)]
    [bidi.bidi :as bidi :refer (Matched compile-route succeed context)]
    [bidi.ring :refer (make-handler Ring)]
@@ -30,7 +31,9 @@
 
 (deftest api-tests
   (let [h (make-handler api)
-        send (comp (juxt :status :headers :body) deref h)]
+        response @(h (request :get "/api/status"))]
     (testing "hello"
-      (is (= (send (request :get "/api/status"))
-             [200 {"content-length" 12} "API working!"])))))
+      (given response
+        :status := 200
+        :headers :> {"content-length" 12}
+        :body := "API working!"))))
