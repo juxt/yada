@@ -45,9 +45,8 @@
       (given response
         :status := 200
         :headers :> {"content-length" (count "Hello World!")}
-        :body :? string?)
+        :body :? string?)))
 
-      ))
 
   (testing "if-last-modified"
     (time/do-at (time/minus (time/now) (time/days 6))
@@ -71,4 +70,17 @@
                 response @(handler request)]
 
             (given response
-              :status := 304)))))))
+              :status := 304))))))
+
+  (testing "safe-by-default"
+    (let [resource "Hello World!"
+          handler (yada resource)]
+
+      (given @(handler (request :put "/"))
+        :status := 405)
+      (given @(handler (request :post "/"))
+        :status := 405)))
+
+  ;; OPTIONS
+
+  )
