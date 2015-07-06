@@ -49,33 +49,72 @@ When developing websites and APIs, developers usually write software that implem
 
 Writing code at the level of the HTTP protocol is hard work, whatever you're doing. If you're doing REST, there's a lot of code to write. If you're doing microservices, that's even more coding. For Clojure developers, yada offers a layer of abstaction above Ring which improves the productivity of writing websites and providing API services. Crucially, however, yada does not ask the developer to trade too much control in return for this productivity. Well, that's the design goal.
 
-### My first yada
+### My first yada: __Hello World!__
 
-Let's illustrate yada in practice by writing some code.
+Let's illustrate yada in practice by writing some code. Let's imagine we have some state: a string. The string is simply: `Hello World!`.
 
-Let's imagine we have some state. A string.
+We want to move this state across the web somehow - say, between my web server and your browser.
 
-The string is simply: `Hello World!`.
-
-We want to move this state across the web somehow - say, between my web server and that {computer you're sitting at}{tablet you're holding}{phone you're holding}{watch you're reading from}.
-
-We start with our state
-
-```clojure
-"Hello World!"
-```
-
-and wrap it with a call to yada.
+We pass the string as a single argument to yada's `yada` function.
 
 ```clojure
 (yada "Hello World!")
 ```
 
-This expression returns us a Ring handler.
+This expression simply returns a Ring handler. We have bound this handler to the path `/hello`, so we're able to make the following HTTP request :-
 
-Let's try it out
+```http
+curl -i http://localhost:8090/hello
+```
 
-[add normal request, returns 200 and body]
+and receive something similar to the following response :-
+
+```http
+HTTP/1.1 200 OK
+Last-Modified: Mon, 06 Jul 2015 07:00:00 GMT
+Server: Aleph/0.4.0
+Connection: Keep-Alive
+Date: Mon, 06 Jul 2015 07:30:00 GMT
+Content-Length: 13
+
+Hello World!
+```
+
+Note the following.
+
+` The status code is set to __200__
+- The __Last-Modified__ date is set.
+- The __Content-Length__ header is set to the length of the string (including the newline).
+
+It has been possible to deduce these elements of the response from the
+properties of a `java.lang.String`. Specifically, we can efficiently
+determine the length of a `java.lang.String`. We can also use the fact
+that `java.lang.String` instances are immutable to infer that the time
+when the instance was constructed is the last possible moment that the
+string could have been modified.
+
+This gives a good example of yada's design philosophy, which is that in
+the absence of explicit code, yada will deduce what it can. However, the
+developer should always in control.
+
+The fact that yada knows the last modified date of the string means that
+the user-agent can cache the content of the resource by setting the
+__If-Modified_Since__ header in the request.
+
+```
+curl -i http://localhost:8090/hello -H "If-Modified-Since: Mon, 06 Jul 2015 07:15:00 GMT"
+```
+
+```
+HTTP/1.1 304 Not Modified
+Server: Aleph/0.4.0
+Connection: Keep-Alive
+Date: Mon, 06 Jul 2015 07:22:52 GMT
+Content-Length: 0
+```
+
+Of course, in our example of "Hello World!" this is moot. But
+
 [add normal request with If-Modified-Since header, returns 304, so we don't go off to Google Translate again]
 
 [Now change the logic a little, to add the Google Translate logic on fetch-state. Add a fetch-state option overriding the default fetch-state of the String]

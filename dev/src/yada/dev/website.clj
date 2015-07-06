@@ -61,7 +61,8 @@
      [["index.html" (-> (index component)
                         (tag ::index))]
       ["dir/" (-> (yada.bidi/resource-branch (io/file "dev/resources"))
-                  (tag ::dir))]]]))
+                  (tag ::dir))]
+      ["hello" (yada "Hello World!\n")]]]))
 
 (defn new-website [& {:as opts}]
   (-> (->> opts
