@@ -257,6 +257,7 @@
                      (d/error-deferred
                       (ex-info (format "Method not allowed: %s" method)
                                {:status 405
+                                :headers {"allow" (str/join ", " (set (map (comp str/upper-case name) am)))}
                                 ::http-response true})))))
 
 

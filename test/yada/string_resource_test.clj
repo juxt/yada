@@ -1,5 +1,6 @@
 (ns yada.string-resource-test
   (:require
+   [clojure.string :as str]
    [clj-time.core :as time]
    [clj-time.coerce :refer (to-date)]
    [ring.util.time :refer (format-date)]
@@ -34,6 +35,9 @@
     ;; String.
     ))
 
+(defn parse-allow [s]
+  (is s)
+  (set (str/split s #"\s*,\s*")))
 
 (deftest hello-world-test
   (testing "hello-world"
@@ -76,11 +80,10 @@
     (let [resource "Hello World!"
           handler (yada resource)]
 
-      (given @(handler (request :put "/"))
-        :status := 405)
-      (given @(handler (request :post "/"))
-        :status := 405)))
-
-  ;; OPTIONS
+      (doseq [method [:put :post]]
+        (given @(handler (request method "/"))
+          :status := 405
+          [:headers "allow" parse-allow] := #{"GET" "HEAD" "OPTIONS" "TRACE"}
+          ))))
 
   )
