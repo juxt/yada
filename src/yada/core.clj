@@ -195,8 +195,8 @@
       trace                             ; async-supported
 
       ;; Service overrides
-      body                              ; async-supported
-      last-modified                     ; async-supported (in the future)
+      body                             ; async-supported
+      last-modified                    ; async-supported (in the future)
 
       produces
       produces-charsets
@@ -241,6 +241,105 @@
                       (ex-info "" (merge {:status 503
                                           ::http-response true}
                                          (when-let [retry-after (service/retry-after res)] {:headers {"retry-after" retry-after}})))))))
+
+
+               ;; Content-type and charset negotiation - done here to throw back to the client any errors
+               ;; conneg is done just after service availability, which is done first to allow attack mitigation
+               ;; We want to know the user-agent's capabilities early on in order to throw back errors, if they occur, in the correct format.
+               (fn [ctx]
+                 (let [available-content-types
+                       (map mime/string->media-type (remove nil?
+                                                            (or (service/produces produces ctx)
+                                                                (res/produces resource ctx))))]
+
+                   ;; Check to see if the server-specified charset is
+                   ;; recognized (registered with IANA). If it isn't we
+                   ;; throw a 500, as this is a server error. (It might be
+                   ;; necessary to disable this check in future but a
+                   ;; balance should be struck between giving the
+                   ;; developer complete control to dictate charsets, and
+                   ;; error-proofing. It might be possible to disable
+                   ;; this check for advanced users if a reasonable case
+                   ;; is made.)
+                   (when-let [bad-charset
+                              (some (fn [mt] (when-let [charset (some-> mt :parameters (get "charset"))]
+                                              (when-not (charset/valid-charset? charset) charset)))
+                                    available-content-types)]
+                     (throw (ex-info (format "Resource or service declares it produces an unknown charset: %s" bad-charset) {:charset bad-charset})))
+
+
+                   ;; Negotiate the content type
+                   (if-let [content-type
+                            (conneg/negotiate-content-type
+                             ;; TODO: Check, if no Accept header, does it really default to */* ?
+                             (or (get-in req [:headers "accept"]) "*/*")
+                             available-content-types)]
+
+                     (assoc-in ctx [:response :content-type] content-type)
+
+                     ;; No content type negotiated means a 406
+                     (if (not-empty available-content-types)
+                       ;; If there is a produces specification, but not
+                       ;; matched content-type, it's a 406.
+                       (d/error-deferred
+                        (ex-info ""
+                                 {:status 406
+                                  ::debug {:message "No acceptable content-type"
+                                           :available-content-types available-content-types}
+                                  ::http-response true}))
+                       ;; Otherwise return the context unchanged
+                       ctx))))
+
+               (link ctx
+                 ;; Check there is no incompatible Accept-Charset header.
+
+                 ;; A request without any Accept-Charset header field
+                 ;; implies that the user agent will accept any
+                 ;; charset in response.  Most general-purpose user
+                 ;; agents do not send Accept-Charset.
+                 ;; rfc7231.html#section-5.3.3
+
+                 (let [available-charsets
+
+                       (remove nil?
+                               (or (service/produces-charsets produces-charsets ctx)
+                                   (res/produces-charsets resource ctx)
+                                   ;;[(charset/to-charset-map (.name (java.nio.charset.Charset/defaultCharset)))]
+                                   ))
+                       accept-charset (get-in req [:headers "accept-charset"])]
+
+                   (if-let [charset (conneg/negotiate-charset accept-charset available-charsets)]
+
+                     (-> ctx
+                         (assoc-in [:response :charset] charset)
+                         ;; Update charset in ctx content-type
+                         (update-in [:response :content-type]
+                                    (fn [ct] (if (and ct
+                                                     ;; Only for text media-types
+                                                     (= (:type ct) "text")
+                                                     ;; But don't overwrite an existing charset
+                                                     (not (some-> ct :parameters (get "charset"))))
+                                              (assoc-in ct [:parameters "charset"] (first charset))
+                                              ct))))
+
+                     ;; We should support the case where a resource or
+                     ;; service declares charset parameters in the
+                     ;; content-types they declare in :produces.
+
+                     ;; If no charset (usually only if there's an
+                     ;; explicit Accept-Charset header sent, or the
+                     ;; resource really declares that it provides no
+                     ;; charsets), then send a 406, a per the
+                     ;; specification.
+
+                     (when accept-charset
+                       (d/error-deferred
+                        (ex-info ""
+                                 {:status 406
+                                  ::debug {:message "No acceptable charset"}
+                                  ::http-response true}))))))
+
+
 
                (link ctx
                  (when-not
@@ -401,98 +500,7 @@
 
 
 
-               ;; Content-type and charset negotiation - done here to throw back to the client any errors
-               (fn [ctx]
-                 (let [available-content-types
-                       (map mime/string->media-type (remove nil?
-                                                            (or (service/produces produces ctx)
-                                                                (res/produces resource ctx))))]
 
-                   ;; Check to see if the server-specified charset is
-                   ;; recognized (registered with IANA). If it isn't we
-                   ;; throw a 500, as this is a server error. (It might be
-                   ;; necessary to disable this check in future but a
-                   ;; balance should be struck between giving the
-                   ;; developer complete control to dictate charsets, and
-                   ;; error-proofing. It might be possible to disable
-                   ;; this check for advanced users if a reasonable case
-                   ;; is made.)
-                   (when-let [bad-charset
-                              (some (fn [mt] (when-let [charset (some-> mt :parameters (get "charset"))]
-                                              (when-not (charset/valid-charset? charset) charset)))
-                                    available-content-types)]
-                     (throw (ex-info (format "Resource or service declares it produces an unknown charset: %s" bad-charset) {:charset bad-charset})))
-
-
-                   ;; Negotiate the content type
-                   (if-let [content-type
-                            (conneg/negotiate-content-type
-                             ;; TODO: Check, if no Accept header, does it really default to */* ?
-                             (or (get-in req [:headers "accept"]) "*/*")
-                             available-content-types)]
-
-                     (assoc-in ctx [:response :content-type] content-type)
-
-                     ;; No content type negotiated means a 406
-                     (if (not-empty available-content-types)
-                       ;; If there is a produces specification, but not
-                       ;; matched content-type, it's a 406.
-                       (d/error-deferred
-                        (ex-info ""
-                                 {:status 406
-                                  ::debug {:message "No acceptable content-type"
-                                           :available-content-types available-content-types}
-                                  ::http-response true}))
-                       ;; Otherwise return the context unchanged
-                       ctx))))
-
-               (link ctx
-                 ;; Check there is no incompatible Accept-Charset header.
-
-                 ;; A request without any Accept-Charset header field
-                 ;; implies that the user agent will accept any
-                 ;; charset in response.  Most general-purpose user
-                 ;; agents do not send Accept-Charset.
-                 ;; rfc7231.html#section-5.3.3
-
-                 (let [available-charsets
-                       (remove nil?
-                               (or (service/produces-charsets produces-charsets ctx)
-                                   (res/produces-charsets resource ctx)
-                                   ;;[(charset/to-charset-map (.name (java.nio.charset.Charset/defaultCharset)))]
-                                   ))
-                       accept-charset (get-in req [:headers "accept-charset"])]
-
-                   (if-let [charset (conneg/negotiate-charset accept-charset available-charsets)]
-
-                     (-> ctx
-                         (assoc-in [:response :charset] charset)
-                         ;; Update charset in ctx content-type
-                         (update-in [:response :content-type]
-                                    (fn [ct] (if (and ct
-                                                     ;; Only for text media-types
-                                                     (= (:type ct) "text")
-                                                     ;; But don't overwrite an existing charset
-                                                     (not (some-> ct :parameters (get "charset"))))
-                                              (assoc-in ct [:parameters "charset"] (first charset))
-                                              ct))))
-
-                     ;; We should support the case where a resource or
-                     ;; service declares charset parameters in the
-                     ;; content-types they declare in :produces.
-
-                     ;; If no charset (usually only if there's an
-                     ;; explicit Accept-Charset header sent, or the
-                     ;; resource really declares that it provides no
-                     ;; charsets), then send a 406, a per the
-                     ;; specification.
-
-                     (when accept-charset
-                       (d/error-deferred
-                        (ex-info ""
-                                 {:status 406
-                                  ::debug {:message "No acceptable charset"}
-                                  ::http-response true}))))))
 
                ;; Do the fetch here
                ;; The pre-fetch can return a deferred result. (TODO think
