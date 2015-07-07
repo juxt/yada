@@ -71,7 +71,8 @@
       ;; TODO
       )
 
-    (testing "/users/{username}"
+    ;; TODO Reinstate when we know what functions in place of resources are for
+    #_(testing "/users/{username}"
       (let [response @(handler (mock/request :get "/api/users/bob"))]
 
         (given response

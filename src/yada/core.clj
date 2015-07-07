@@ -399,19 +399,11 @@
                ;; of the state. For example, if it's a stream, it would
                ;; be returned on get-state.
 
-               ;; The pre-fetch can return a deferred result. (TODO think
-               ;; about this) ; yes it can because the implementation can
-               ;; check it's deferred and then place it in a chain
-               (fn [ctx]
-                 (d/chain
-                  (res/fetch resource ctx)
-                  (fn [res]
-                    (assoc ctx :resource res))))
+
 
                ;; Content-type and charset negotiation - done here to throw back to the client any errors
                (fn [ctx]
-                 (let [resource (:resource ctx)
-                       available-content-types
+                 (let [available-content-types
                        (map mime/string->media-type (remove nil?
                                                             (or (service/produces produces ctx)
                                                                 (res/produces resource ctx))))]
@@ -463,8 +455,7 @@
                  ;; agents do not send Accept-Charset.
                  ;; rfc7231.html#section-5.3.3
 
-                 (let [resource (:resource ctx)
-                       available-charsets
+                 (let [available-charsets
                        (remove nil?
                                (or (service/produces-charsets produces-charsets ctx)
                                    (res/produces-charsets resource ctx)
@@ -503,6 +494,16 @@
                                   ::debug {:message "No acceptable charset"}
                                   ::http-response true}))))))
 
+               ;; Do the fetch here
+               ;; The pre-fetch can return a deferred result. (TODO think
+               ;; about this) ; yes it can because the implementation can
+               ;; check it's deferred and then place it in a chain
+               (fn [ctx]
+                 (d/chain
+                  (res/fetch resource ctx)
+                  (fn [res]
+                    (assoc ctx :resource res))))
+
                (fn [ctx]
                  (case method
                    (:get :head)
@@ -517,6 +518,10 @@
                                                          ::http-response true})))))
 
                     ;; Conditional request
+
+                    ;; TODO: Don't all methods (not just GET/HEAD)
+                    ;; support conditional requests? Where does it say
+                    ;; that it's just for GET/HEAD methods?
                     (fn [ctx]
 
                       (if-let [last-modified (round-seconds-up

@@ -45,6 +45,9 @@
 
          ["/" :username]
          {"" (resource-leaf
+              ;; TODO What does this function even mean?  Looks like the
+              ;; intent is the final fetch, but this means that all the
+              ;; methods, produces, etc. need to be defined up front.
               (fn [ctx]
                 (when-let [user (get {"bob" {:name "Bob"}}
                                      (-> ctx :parameters :username))]
