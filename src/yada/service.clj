@@ -112,6 +112,7 @@
   (format-event [ev] [(format "data: %s\n" ev)])
   (produces [s] [s])
   (produces [s ctx] [s])
+  (produces-charsets [s ctx] [s])
   (post! [s ctx] s)
 
   MediaTypeMap

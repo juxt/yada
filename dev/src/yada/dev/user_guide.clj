@@ -372,6 +372,7 @@
                      ;; The 'resource' could be the source markdown, and we create a body renderer?
                      (body component (post-process-doc component xbody (into {} examples) config) config))
                    :produces "text/html"
+                   :produces-charsets "utf-8"
                    :last-modified (fn [ctx] (.lastModified (io/file "dev/resources/user-guide.md"))))
              (tag ::user-guide))))]
 
@@ -386,7 +387,8 @@
                              (keyword (basename ex))))]))]
         ["/tests.html"
          (-> (yada (fn [ctx] (tests component examples))
-                   :produces "text/html")
+                   :produces "text/html"
+                   :produces-charsets "utf-8")
              (tag ::tests))]]])))
 
 (defmethod clojure.core/print-method UserGuide

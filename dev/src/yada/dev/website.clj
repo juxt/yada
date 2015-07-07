@@ -53,7 +53,8 @@
                               )}
                   "Swagger UI"]
              " - to demonstrate Swagger integration"]]]))}))
-   {:produces #{"text/html"}}))
+   {:produces "text/html"
+    :produces-charsets "utf-8"}))
 
 (defrecord Website [*router templater]
   RouteProvider
