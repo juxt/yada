@@ -37,6 +37,8 @@
 
   (last-modified [_ ctx] "Return the date that the resource was last modified.")
 
+  (supported-methods [_ ctx] "Methods that the resource, by default, supports.")
+
   (produces [_] [_ ctx]
     "Return the mime types that can be produced from this resource. The first form is request-context independent, suitable for up-front consumption by introspectng tools such as swagger. The second form can be more sensitive to the request context. Return a string or strings, such as text/html. If text, and multiple charsets are possible, return charset information. e.g. [\"text/html;charset=utf8\" \"text/html;charset=unicode-1-1\"]")
   (produces-charsets [_ ctx] "Return the charsets that can be produced from this resource.")
@@ -77,10 +79,21 @@
   (fetch [o ctx] o))
 
 (extend-protocol Resource
+  clojure.lang.Fn
+  ;; supported-methods return nil for a function, to allow for the
+  ;; defaults. However, the intent of a function used in the place of a
+  ;; resource needs to be confirmed. Currently it is a function which
+  ;; the resource. So perhaps the fetch needs to happen prior to the
+  ;; Method Not Allowed (405) check.
+  ;;
+  ;; TODO: This is method negotiation, which should form part of content
+  ;; negotiation.
+  (supported-methods [_ ctx] nil)
 
   nil
   ;; last-modified of 'nil' means we don't consider last-modified
   (last-modified [_ _] nil)
+  (supported-methods [_ _] nil) ; means revert to defaults
   (get-state [_ media-type ctx] nil)
   (produces [_] nil)
   (produces [_ _] nil)

@@ -13,6 +13,7 @@
 
 (defrecord MapResource [m last-modified]
   Resource
+  (supported_methods [_ ctx] #{:get :head})
   (produces [_ ctx] #{"application/edn" "application/json;q=0.9" "text/html;q=0.8"})
   (produces-charsets [_ ctx] platform-charsets)
   (exists? [_ ctx] true)

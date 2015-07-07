@@ -46,6 +46,7 @@
   (produces-charsets [_ ctx] platform-charsets)
   (exists? [_ ctx] true)
   (last-modified [_ ctx] created-at)
+  (supported-methods [_ _] #{:get :head})
   (get-state [_ content-type ctx] (rs/swagger-json spec)))
 
 (defrecord Swagger [spec routes handler]

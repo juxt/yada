@@ -16,6 +16,7 @@
     (let [f (io/file (.getFile u))]
       (when (.exists f)
         (Date. (.lastModified f)))))
+  (supported-methods [this _] #{:get :head})
   (get-state [u media-type ctx]
     (.openStream u)
     )

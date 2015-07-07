@@ -68,6 +68,7 @@
   (fetch [this ctx] this)
 
   Resource
+  (supported-methods [_ ctx] #{:get :head :put :delete})
   (exists? [_ ctx] (.exists f))
   (last-modified [_ ctx] (Date. (.lastModified f)))
   (produces [_ ctx]
@@ -100,6 +101,7 @@
   (fetch [this ctx] this)
 
   Resource
+  (supported-methods [_ ctx] #{:get :head :put :delete})
   (exists? [_ ctx] (.exists dir))
   (last-modified [_ ctx] (Date. (.lastModified dir)))
   (produces [_ ctx]

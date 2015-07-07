@@ -29,6 +29,7 @@
 (defn index [{:keys [*router templater]}]
   (yada
    (fn [ctx]
+     ;; TODO: Replace with template resource
      (render-template
       templater
       "templates/page.html.mustache"

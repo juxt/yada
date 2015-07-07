@@ -80,10 +80,20 @@
     (let [resource "Hello World!"
           handler (yada resource)]
 
-      (doseq [method [:put :post]]
+      (doseq [method [:put :post :delete]]
         (given @(handler (request method "/"))
           :status := 405
           [:headers "allow" parse-allow] := #{"GET" "HEAD" "OPTIONS" "TRACE"}
           ))))
+
+  #_(testing "wrap-in-atom"
+    (let [resource (atom "Hello World!")
+          handler (yada resource)]
+
+      (given @(handler (request :put "/"))
+        :status := 200
+        )))
+
+
 
   )

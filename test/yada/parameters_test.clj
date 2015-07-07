@@ -19,7 +19,8 @@
     (let [response (handler (mock/request :post "/"))]
       (given @response
         :status := 200
-        [:body bs/to-string edn/read-string] := nil))
+        [:body bs/to-string edn/read-string] := nil
+        ))
 
     ;; Form post body
     (let [response (handler (mock/request :post "/"

@@ -11,15 +11,18 @@
   ResourceFetch
   (fetch [this ctx] this)
   Resource
-  (exists? [this ctx] true)
-  (last-modified [this _] last-modified)
-  (get-state [this media-type ctx] s)
+  (supported-methods [this ctx] #{:get :head})
+
   ;; Without attempting to actually parse it (which isn't completely
   ;; impossible) we're not able to guess the media-type of this
   ;; string, so we return nil.
   (produces [this] nil)
   (produces [this ctx] nil)
-  (produces-charsets [_ ctx] platform-charsets))
+  (produces-charsets [_ ctx] platform-charsets)
+
+  (exists? [this ctx] true)
+  (last-modified [this _] last-modified)
+  (get-state [this media-type ctx] s))
 
 (extend-protocol ResourceConstructor
   String

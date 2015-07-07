@@ -145,17 +145,24 @@
 (defn idempotent? [method]
   (contains? #{:delete :get :head :options :put :trace} method))
 
-(defn allowed-methods [ctx]
+(defn allowed-methods [ctx resource]
   (let [options (:options ctx)]
     (if-let [methods (:methods options)]
       (set (service/allowed-methods methods))
-      (set
-       (remove nil?
-               (conj
-                (filter safe? known-methods)
-                (when (:put! options) :put)
-                (when (:post! options) :post)
-                (when (:delete! options) :delete)))))))
+      (conj
+       (set
+        (or
+         (res/supported-methods resource ctx)
+         (remove nil?
+                 (conj
+                  (filter safe? known-methods)
+                  (when (:put! options) :put)
+                  (when (:post! options) :post)
+                  (when (:delete! options) :delete)
+                  ))))
+       ;; Always allowed (because they're a bit special)
+       :options :trace
+       ))))
 
 (defn make-endpoint
   "Create a yada endpoint (Ring handler)"
@@ -252,8 +259,8 @@
 
                ;; Method Not Allowed
                (link ctx
-                 (let [am (allowed-methods ctx)]
-                   (when-not (contains? (allowed-methods ctx) method)
+                 (let [am (allowed-methods ctx resource)]
+                   (when-not (contains? am method)
                      (d/error-deferred
                       (ex-info (format "Method not allowed: %s" method)
                                {:status 405
