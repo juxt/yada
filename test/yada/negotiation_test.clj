@@ -1,3 +1,5 @@
+;; Copyright © 2015, JUXT LTD.
+
 (ns yada.negotiation-test
   (:require [yada.negotiation :refer :all]
             [yada.mime :as mime]
