@@ -1,11 +1,13 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.negotiation-test
-  (:require [yada.negotiation :refer :all]
+  (:require [clojure.test :refer :all]
+            [yada.negotiation :refer :all]
             [yada.mime :as mime]
-            [clojure.test :refer :all]
             [yada.test.util :refer [given]]
-            ))
+            [schema.core :as s]
+            [schema.test :as st])
+  (:import [yada.mime MediaTypeMap]))
 
 (deftest content-type-test
   (is (= (print-str (mime/string->media-type "text/html;level=1.0")) "#yada.media-type[text/html;q=1.0;level=1.0]"))
@@ -43,3 +45,106 @@
     nil yada.resource/platform-charsets ["UTF-8" "UTF-8"]
     "dummyfox" ["utf-8;q=0.8" "Shift_JIS;q=1.0"] nil
     ))
+
+
+
+(st/deftest method-test
+  (testing "single option matches"
+    (given (first (negotiate {:method :get} [{:method #{:get :head}}]))
+      :method := :get
+      :content-type := nil
+      :charset := nil
+      [interpret-negotiation :status] := 406))
+  (testing "single option not acceptable"
+    (given (first (negotiate {:method :post} [{:method #{:get :head}}]))
+      :method :? nil?
+      :content-type := nil
+      :charset := nil
+      [interpret-negotiation :status] := 405))
+  (testing "second option works"
+    (given (first (negotiate {:method :post} [{:method #{:get :head}}{:method #{:post :put}}]))
+      :method := :post
+      :content-type := nil
+      :charset := nil
+      [interpret-negotiation :status] := 406)))
+
+(st/deftest content-type-test
+  (testing "no charset"
+    (given (interpret-negotiation
+            (first (negotiate {:method :get :accept "text/html"}
+                              [{:method #{:get :head}
+                                :content-type #{"text/html"}
+                                }])))
+      :status := nil
+      :content-type := "text/html"))
+
+  (testing "charset applied"
+    (given (interpret-negotiation
+            (first (negotiate {:method :get :accept "text/html"}
+                              [{:method #{:get :head}
+                                :content-type #{"text/html"}}
+
+                               {:method #{:get :head}
+                                :content-type #{"text/html"}
+                                :charset #{"UTF-8"}
+                                }])))
+      :status := nil
+      :content-type := "text/html;charset=utf-8")))
+
+(st/deftest charset-preferred-over-none
+  "Ensure that an option with a charset is preferred over an option with
+  no charset"
+  (is (= (:charset
+          (first
+           (negotiate {:method :get :accept "text/html"}
+
+                      [{:method #{:get :head}
+                        :content-type #{"text/html"}}
+
+                       {:method #{:get :head}
+                        :content-type #{"text/html"}
+                        :charset #{"utf-8"}
+                        }])))
+         ["utf-8" "utf-8"])))
+
+(st/deftest content-type-weight-removed []
+  (is (= (:content-type (interpret-negotiation
+                         (first
+                          (negotiate {:method :get :accept "text/html"}
+
+                                     [{:method #{:get}
+                                       :content-type #{"text/html;q=0.9"}}
+                                      ]))))
+         "text/html"
+         )))
+
+
+;; TODO: Add accept-language, accept-encoding, content-type & content-encoding
+
+;; TODO: what about charsets on receiving?
+
+;; TODO: Research Transfer-Encoding and TE
+
+
+;; An example set of server-provided options
+#_[{:method #{:get :head}
+    :content-type #{"text/html;q=1.0" "text/html"}
+    :charset #{"UTF-8" "Shift_JIS;q=0.2"}
+    :encoding #{"compress" "gzip" "deflate"}
+    :language #{"jp-JP"}
+    }
+   {:method #{:get :head}
+    :content-type #{"text/html;q=1.0"}
+    :language #{"en-GB" "en-US;q=0.9"}
+    }
+   {:method #{:post}
+    :accept #{"application/edn"}        ; the server accepts
+    :accept-language #{"en-US"}         ; the server accepts
+    :content-type #{"application/edn"}  ; the server produces
+
+    ;; rfc7231.html#section-3.1.3.2
+    ;; "Content-Language MAY be applied to any media type -- it is not limited to textual documents."
+    :language #{"en-GB" "en-US;q=0.9"}
+
+
+    }]
