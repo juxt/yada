@@ -107,6 +107,8 @@
      (map cs/to-charset-map (map str/trim (str/split accept-charset-header #"\s*,\s*"))))
    (map cs/to-charset-map candidates)))
 
+;; Unified negotiation
+
 (s/defschema NegotiationResult
   {:method s/Keyword
    (s/optional-key :content-type)
@@ -176,3 +178,17 @@
                         {:client-charset (first charset)
                          :server-charset (second charset)
                          }))))
+
+;; TODO: see rfc7231.html#section-3.4.1
+
+;; "including both the explicit
+;; negotiation fields of Section 5.3 and implicit characteristics, such
+;; as the client's network address or parts of the User-Agent field."
+
+;; selection of representation can be made based on the User-Agent header, IP address, other 'implicit' data in the request, etc., so this needs to be extensible and overrideable
+
+;; "In order to improve the server's guess, a user agent MAY send request header fields that describe its preferences."
+
+;;    "A Vary header field (Section 7.1.4) is often sent in a response
+;;    subject to proactive negotiation to indicate what parts of the
+;;    request information were used in the selection algorithm."
