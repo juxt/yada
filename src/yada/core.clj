@@ -30,7 +30,7 @@
    [yada.coerce :refer (coercion-matcher)]
    [yada.charset :as charset]
    [yada.representation :as rep]
-   [yada.negotiation :as conneg]
+   [yada.negotiation :as negotiation]
    [yada.service :as service]
    [yada.resource :as res]
    [yada.trace]
@@ -145,7 +145,8 @@
 (defn idempotent? [method]
   (contains? #{:delete :get :head :options :put :trace} method))
 
-(defn allowed-methods [ctx resource]
+;; This used to be used, but still has some useful ideas in it.
+#_(defn allowed-methods [ctx resource]
   (let [options (:options ctx)]
     (if-let [methods (:methods options)]
       (set (service/allowed-methods methods))
@@ -215,7 +216,31 @@
    (let [security (as-sequential security)
          ;; Note that the resource is constructed during the yada call,
          ;; not during the request. If you want per-request, see res/fetch.
-         resource (res/make-resource resource)]
+         resource (res/make-resource resource)
+         capabilities (res/capabilities resource)
+         ;; TODO Now parse the content-types in the capabilities into
+         ;; mime/MediaTypeMap records, because this doesn't need to be
+         ;; done on a per-request basis given that the capabilities
+         ;; function isn't context-sensitive. But this will require that
+         ;; the negotiation algorithm accepts/expects MediaTypeMap
+         ;; records rather than strings, so will have to be modified
+         ;; first.
+
+         ;; Check to see if the server-specified charset is
+         ;; recognized (registered with IANA). If it isn't we
+         ;; throw a 500, as this is a server error. (It might be
+         ;; necessary to disable this check in future but a
+         ;; balance should be struck between giving the
+         ;; developer complete control to dictate charsets, and
+         ;; error-proofing. It might be possible to disable
+         ;; this check for advanced users if a reasonable case
+         ;; is made.) - TODO Move this check into negotiation logic
+         #_(when-let [bad-charset
+                      (some (fn [mt] (when-let [charset (some-> mt :parameters (get "charset"))]
+                                      (when-not (charset/valid-charset? charset) charset)))
+                            available-content-types)]
+             (throw (ex-info (format "Resource or service declares it produces an unknown charset: %s" bad-charset) {:charset bad-charset})))
+         ]
 
      (->Endpoint
       resource
@@ -243,105 +268,8 @@
                                          (when-let [retry-after (service/retry-after res)] {:headers {"retry-after" retry-after}})))))))
 
 
-               ;; Content-type and charset negotiation - done here to throw back to the client any errors
-               ;; conneg is done just after service availability, which is done first to allow attack mitigation
-               ;; We want to know the user-agent's capabilities early on in order to throw back errors, if they occur, in the correct format.
-               (fn [ctx]
-                 (let [available-content-types
-                       (map mime/string->media-type (remove nil?
-                                                            (or (service/produces produces ctx)
-                                                                (res/produces resource ctx))))]
-
-                   ;; Check to see if the server-specified charset is
-                   ;; recognized (registered with IANA). If it isn't we
-                   ;; throw a 500, as this is a server error. (It might be
-                   ;; necessary to disable this check in future but a
-                   ;; balance should be struck between giving the
-                   ;; developer complete control to dictate charsets, and
-                   ;; error-proofing. It might be possible to disable
-                   ;; this check for advanced users if a reasonable case
-                   ;; is made.)
-                   (when-let [bad-charset
-                              (some (fn [mt] (when-let [charset (some-> mt :parameters (get "charset"))]
-                                              (when-not (charset/valid-charset? charset) charset)))
-                                    available-content-types)]
-                     (throw (ex-info (format "Resource or service declares it produces an unknown charset: %s" bad-charset) {:charset bad-charset})))
-
-
-                   ;; Negotiate the content type
-                   (if-let [content-type
-                            (conneg/negotiate-content-type
-                             ;; TODO: Check, if no Accept header, does it really default to */* ?
-                             (or (get-in req [:headers "accept"]) "*/*")
-                             available-content-types)]
-
-                     (assoc-in ctx [:response :content-type] content-type)
-
-                     ;; No content type negotiated means a 406
-                     (if (not-empty available-content-types)
-                       ;; If there is a produces specification, but not
-                       ;; matched content-type, it's a 406.
-                       (d/error-deferred
-                        (ex-info ""
-                                 {:status 406
-                                  ::debug {:message "No acceptable content-type"
-                                           :available-content-types available-content-types}
-                                  ::http-response true}))
-                       ;; Otherwise return the context unchanged
-                       ctx))))
-
-               (link ctx
-                 ;; Check there is no incompatible Accept-Charset header.
-
-                 ;; A request without any Accept-Charset header field
-                 ;; implies that the user agent will accept any
-                 ;; charset in response.  Most general-purpose user
-                 ;; agents do not send Accept-Charset.
-                 ;; rfc7231.html#section-5.3.3
-
-                 (let [available-charsets
-
-                       (remove nil?
-                               (or (service/produces-charsets produces-charsets ctx)
-                                   (res/produces-charsets resource ctx)
-                                   ;;[(charset/to-charset-map (.name (java.nio.charset.Charset/defaultCharset)))]
-                                   ))
-                       accept-charset (get-in req [:headers "accept-charset"])]
-
-                   (if-let [charset (conneg/negotiate-charset accept-charset available-charsets)]
-
-                     (-> ctx
-                         (assoc-in [:response :charset] charset)
-                         ;; Update charset in ctx content-type
-                         (update-in [:response :content-type]
-                                    (fn [ct] (if (and ct
-                                                     ;; Only for text media-types
-                                                     (= (:type ct) "text")
-                                                     ;; But don't overwrite an existing charset
-                                                     (not (some-> ct :parameters (get "charset"))))
-                                              (assoc-in ct [:parameters "charset"] (first charset))
-                                              ct))))
-
-                     ;; We should support the case where a resource or
-                     ;; service declares charset parameters in the
-                     ;; content-types they declare in :produces.
-
-                     ;; If no charset (usually only if there's an
-                     ;; explicit Accept-Charset header sent, or the
-                     ;; resource really declares that it provides no
-                     ;; charsets), then send a 406, a per the
-                     ;; specification.
-
-                     (when accept-charset
-                       (d/error-deferred
-                        (ex-info ""
-                                 {:status 406
-                                  ::debug {:message "No acceptable charset"}
-                                  ::http-response true}))))))
-
-
-
-               (link ctx
+               ;; TODO: Restore this when we know what we're doing wrt. method registration (per resource)
+               #_(link ctx
                  (when-not
                      (if known-method?
                        (service/known-method? known-method? method)
@@ -351,20 +279,38 @@
                                                   ::method method
                                                   ::http-response true}))))
 
+               ;; Content-type and charset negotiation - done here to throw back to the client any errors
+               ;; conneg is done just after service availability, which is done first to allow attack mitigation
+               ;; We want to know the user-agent's capabilities early on in order to throw back errors, if they occur, in the correct format.
+
+               (fn [ctx]
+
+                 ;; TODO Use yada.resource/Negotiable, cache the
+                 ;; satisfies? on the resource first, it's expensive to
+                 ;; do on every request
+
+                 (let [negotiated
+                       (negotiation/interpret-negotiation
+                        (first
+                         (negotiation/negotiate
+                          ;; TODO Move this merge logic to yada.negotiation
+                          (merge {:method (:request-method req)}
+                                 (when-let [header (get-in req [:headers "accept"])]
+                                   {:accept header})
+                                 (when-let [header (get-in req [:headers "accept-charset"])]
+                                   {:accept-charset header}))
+                          capabilities)))]
+
+                   (when (:status negotiated)
+                     (d/error-deferred (ex-info "" (merge negotiated {::http-response true}))))
+
+                   (merge ctx negotiated)))
+
+               ;; Request uri too long
                (link ctx
                  (when (service/request-uri-too-long? request-uri-too-long? (:uri req))
                    (d/error-deferred (ex-info "" {:status 414
                                                   ::http-response true}))))
-
-               ;; Method Not Allowed
-               (link ctx
-                 (let [am (allowed-methods ctx resource)]
-                   (when-not (contains? am method)
-                     (d/error-deferred
-                      (ex-info (format "Method not allowed: %s" method)
-                               {:status 405
-                                :headers {"allow" (str/join ", " (set (map (comp str/upper-case name) am)))}
-                                ::http-response true})))))
 
 
                ;; Malformed
@@ -490,17 +436,13 @@
 
                ;; TODO: OPTIONS
 
-               ;; Prior to conneg we do a pre-fetch, so the resource has
-               ;; a chance to load any metadata it may need to answer the
-               ;; questions to follow. It can also load state in this
-               ;; step, if it wants, but can defer this to the get-state
-               ;; call if it wants. This would usually depend on the size
-               ;; of the state. For example, if it's a stream, it would
-               ;; be returned on get-state.
-
-
-
-
+               ;; Now we do a pre-fetch, so the resource has a chance to
+               ;; load any metadata it may need to answer the questions
+               ;; to follow. It can also load state in this step, if it
+               ;; wants, but can defer this to the get-state call if it
+               ;; wants. This would usually depend on the size of the
+               ;; state. For example, if it's a stream, it would be
+               ;; returned on get-state.
 
                ;; Do the fetch here
                ;; The pre-fetch can return a deferred result. (TODO think

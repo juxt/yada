@@ -161,8 +161,10 @@
   the server) content-types yield 415- Unsupported Media Type"
   [{:keys [method content-type charset] :as result} :- (s/maybe NegotiationResult)]
   (cond
-    (nil? method) {:status 405}
-    (nil? content-type) {:status 406}
+    (nil? method) {:status 405 :message "Method Not Allowed"}
+    (nil? content-type) {:status 406 :message "Not Acceptable (content-type)"}
+    (nil? charset) {:status 406 :message "Not Acceptable (charset)"}
+
     :otherwise (merge {}
                       (when content-type
                         {:content-type
@@ -192,3 +194,11 @@
 ;;    "A Vary header field (Section 7.1.4) is often sent in a response
 ;;    subject to proactive negotiation to indicate what parts of the
 ;;    request information were used in the selection algorithm."
+
+
+;; TODO Should also allow re-negotiation for errors, and allow a special type
+;; of capabilities that declares its just for errors, so users can say
+;; they can provide content in both text/html and application/csv but
+;; errors must be in text/plain.
+
+;; TODO A capability that doesn't supply a method guard /should/ mean ALL methods.

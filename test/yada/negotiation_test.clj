@@ -148,3 +148,9 @@
 
 
     }]
+
+;; If no charset (usually only if there's an
+;; explicit Accept-Charset header sent, or the
+;; resource really declares that it provides no
+;; charsets), then send a 406, a per the
+;; specification.

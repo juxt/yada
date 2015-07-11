@@ -9,7 +9,7 @@
             [ring.util.mime-type :refer (ext-mime-type)]
             [ring.util.response :refer (redirect)]
             [ring.util.time :refer (format-date)]
-            [yada.resource :refer [Resource ResourceFetch ResourceConstructor]]
+            [yada.resource :refer [Resource ResourceCapabilities ResourceFetch ResourceConstructor]]
             [yada.mime :as mime])
   (:import [java.io File]
            [java.util Date TimeZone]
@@ -68,12 +68,8 @@
   (fetch [this ctx] this)
 
   Resource
-  (supported-methods [_ ctx] #{:get :head :put :delete})
   (exists? [_ ctx] (.exists f))
   (last-modified [_ ctx] (Date. (.lastModified f)))
-  (produces [_ ctx]
-    [(ext-mime-type (.getName f))])
-  (produces-charsets [_ ctx] nil)
   (get-state [_ content-type ctx] f)
   (put-state! [_ content content-type ctx]
     ;; The reason to use bs/transfer is to allow an efficient copy of byte buffers
@@ -94,14 +90,21 @@
     (bs/transfer (-> ctx :request :body) f))
 
   (delete-state! [_ ctx]
-    (.delete f)))
+    (.delete f))
 
-(defrecord DirectoryResource [dir]
+  ResourceCapabilities
+  (capabilities [_] [{:method #{:get :head}
+                      :content-type #{(ext-mime-type (.getName f))}}
+                     {:method #{:put}}
+                     {:method #{:delete}}])
+  )
+
+#_(defrecord DirectoryResource [dir]
   ResourceFetch
   (fetch [this ctx] this)
 
   Resource
-  (supported-methods [_ ctx] #{:get :head :put :delete})
+  #_(supported-methods [_ ctx] #{:get :head :put :delete})
   (exists? [_ ctx] (.exists dir))
   (last-modified [_ ctx] (Date. (.lastModified dir)))
   (produces [_ ctx]
@@ -164,5 +167,6 @@
   File
   (make-resource [f]
     (if (.isDirectory f)
-      (->DirectoryResource f)
+      #_(->DirectoryResource f)
+      (throw (ex-info "TODO: Directory resource" {}))
       (->FileResource f))))
