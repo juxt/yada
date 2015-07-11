@@ -6,7 +6,7 @@
    [clj-time.core :refer (now)]
    [clj-time.coerce :refer (to-date)]
    [yada.mime :refer (media-type)]
-   [yada.resource :refer (Resource ResourceCapabilities ResourceConstructor platform-charsets)]
+   [yada.resource :refer (Resource ResourceRepresentations ResourceConstructor platform-charsets)]
    [cheshire.core :as json]
    [json-html.core :as jh])
   (:import [clojure.lang APersistentMap]))
@@ -17,8 +17,8 @@
   (last-modified [_ ctx] last-modified)
   (get-state [_ content-type ctx] m)
 
-  ResourceCapabilities
-  (capabilities [_]
+  ResourceRepresentations
+  (representations [_]
     [{:method #{:get :head}
       :content-type #{"application/edn" "application/json;q=0.9" "text/html;q=0.8"}
       :charset platform-charsets}]))

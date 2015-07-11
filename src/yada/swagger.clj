@@ -9,7 +9,7 @@
    [bidi.ring :refer (Ring)]
    [ring.util.response :refer (redirect)]
    [yada.bidi :refer (resource-leaf)]
-   [yada.resource :refer (Resource ResourceCapabilities ResourceConstructor platform-charsets)]
+   [yada.resource :refer (Resource ResourceRepresentations ResourceConstructor platform-charsets)]
    [yada.mime :as mime]
    [clojure.tools.logging :refer :all]
    [camel-snake-kebab :as csk]
@@ -47,8 +47,8 @@
   (last-modified [_ ctx] created-at)
   (get-state [_ content-type ctx] (rs/swagger-json spec))
 
-  ResourceCapabilities
-  (capabilities [_]
+  ResourceRepresentations
+  (representations [_]
     [{:method #{:get :head}
        :content-type #{"application/json" "text/html;q=0.9" "application/edn;q=0.8"}
        :charset platform-charsets}]))

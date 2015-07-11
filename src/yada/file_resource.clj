@@ -9,7 +9,7 @@
             [ring.util.mime-type :refer (ext-mime-type)]
             [ring.util.response :refer (redirect)]
             [ring.util.time :refer (format-date)]
-            [yada.resource :refer [Resource ResourceCapabilities ResourceFetch ResourceConstructor]]
+            [yada.resource :refer [Resource ResourceRepresentations ResourceFetch ResourceConstructor]]
             [yada.mime :as mime])
   (:import [java.io File]
            [java.util Date TimeZone]
@@ -92,11 +92,12 @@
   (delete-state! [_ ctx]
     (.delete f))
 
-  ResourceCapabilities
-  (capabilities [_] [{:method #{:get :head}
-                      :content-type #{(ext-mime-type (.getName f))}}
-                     {:method #{:put}}
-                     {:method #{:delete}}])
+  ResourceRepresentations
+  (representations [_]
+    [{:method #{:get :head}
+      :content-type #{(ext-mime-type (.getName f))}}
+     {:method #{:put}}
+     {:method #{:delete}}])
   )
 
 #_(defrecord DirectoryResource [dir]

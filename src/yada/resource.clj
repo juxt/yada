@@ -48,10 +48,10 @@
   (delete-state! [_ ctx] "Delete the state. If a deferred is returned, the HTTP response status is set to 202"))
 
 (defprotocol Negotiable
-  (negotiate [_ ctx] "Negotiate the resource's capabilities. Return a yada.negotiation/NegotiationResult. Optional protocol, falls back to default negotiation."))
+  (negotiate [_ ctx] "Negotiate the resource's representations. Return a yada.negotiation/NegotiationResult. Optional protocol, falls back to default negotiation."))
 
-(defprotocol ResourceCapabilities
-  (capabilities [_] "Declare the resource's capabilities. Return a sequence, each item of which specifies the methods, content-types, charsets, languages and encodings that the resource is capable of. Each of these dimensions may be specified as a set, meaning 'one of'. Drives the default negotiation algorithm."))
+(defprotocol ResourceRepresentations
+  (representations [_] "Declare the resource's capabilities. Return a sequence, each item of which specifies the methods, content-types, charsets, languages and encodings that the resource is capable of. Each of these dimensions may be specified as a set, meaning 'one of'. Drives the default negotiation algorithm."))
 
 (def platform-charsets
   (concat
@@ -84,8 +84,8 @@
   (get-state [_ media-type ctx] nil))
 
 ;; Temporary while in transition, TODO remove this
-(extend-protocol ResourceCapabilities
+(extend-protocol ResourceRepresentations
   clojure.lang.Fn
-  (capabilities [_] [])
+  (representations [_] [])
   nil
-  (capabilities [_] []))
+  (representations [_] []))

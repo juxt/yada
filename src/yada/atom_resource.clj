@@ -2,7 +2,7 @@
   (:require
    [clj-time.core :refer [now]]
    [clj-time.coerce :refer [to-date]]
-   [yada.resource :refer (ResourceConstructor ResourceCapabilities Resource platform-charsets make-resource)]
+   [yada.resource :refer (ResourceConstructor ResourceRepresentations Resource platform-charsets make-resource)]
    yada.string-resource)
   (:import [yada.string_resource StringResource]))
 
@@ -25,8 +25,8 @@
 
   (put-state! [_ content media-type ctx] (throw (ex-info "TODO" {})))
 
-  ResourceCapabilities
-  (capabilities [_] [])
+  ResourceRepresentations
+  (representations [_] [])
   )
 
 (defn wrap-with-watch [wrapper *a]

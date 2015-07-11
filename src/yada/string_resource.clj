@@ -4,7 +4,7 @@
   (:require
    [clj-time.core :refer (now)]
    [clj-time.coerce :refer (to-date)]
-   [yada.resource :refer [Resource ResourceCapabilities ResourceConstructor ResourceFetch platform-charsets]]
+   [yada.resource :refer [Resource ResourceRepresentations ResourceConstructor ResourceFetch platform-charsets]]
    [yada.representation :refer [Representation]]))
 
 (defrecord StringResource [s last-modified]
@@ -16,8 +16,8 @@
   (last-modified [this _] last-modified)
   (get-state [this media-type ctx] s)
 
-  ResourceCapabilities
-  (capabilities [_]
+  ResourceRepresentations
+  (representations [_]
     [{:method #{:get :head}
        ;; Without attempting to actually parse it (which isn't completely
        ;; impossible) we're not able to guess the media-type of this

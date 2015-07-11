@@ -217,10 +217,10 @@
          ;; Note that the resource is constructed during the yada call,
          ;; not during the request. If you want per-request, see res/fetch.
          resource (res/make-resource resource)
-         capabilities (res/capabilities resource)
-         ;; TODO Now parse the content-types in the capabilities into
+         representations (res/representations resource)
+         ;; TODO Now parse the content-types in the representations into
          ;; mime/MediaTypeMap records, because this doesn't need to be
-         ;; done on a per-request basis given that the capabilities
+         ;; done on a per-request basis given that the representations
          ;; function isn't context-sensitive. But this will require that
          ;; the negotiation algorithm accepts/expects MediaTypeMap
          ;; records rather than strings, so will have to be modified
@@ -299,7 +299,7 @@
                                    {:accept header})
                                  (when-let [header (get-in req [:headers "accept-charset"])]
                                    {:accept-charset header}))
-                          capabilities)))]
+                          representations)))]
 
                    (when (:status negotiated)
                      (d/error-deferred (ex-info "" (merge negotiated {::http-response true}))))

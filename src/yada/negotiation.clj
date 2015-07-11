@@ -197,7 +197,7 @@
 
 
 ;; TODO Should also allow re-negotiation for errors, and allow a special type
-;; of capabilities that declares its just for errors, so users can say
+;; of representations that declares its just for errors, so users can say
 ;; they can provide content in both text/html and application/csv but
 ;; errors must be in text/plain.
 
