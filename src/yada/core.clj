@@ -312,7 +312,9 @@
 
                    (if (:status negotiated)
                      (d/error-deferred (ex-info "" (merge negotiated {::http-response true})))
-                     (merge ctx negotiated))
+                     (cond-> ctx
+                       true (merge negotiated)
+                       (:content-type negotiated) (assoc-in [:response :headers "content-type"] (:content-type negotiated))))
 
                    ))
 
