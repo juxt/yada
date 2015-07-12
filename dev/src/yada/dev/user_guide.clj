@@ -405,8 +405,8 @@
                              (keyword (basename ex))))]))]
         ["/tests.html"
          (-> (yada (fn [ctx] (tests component examples))
-                   :produces "text/html"
-                   :produces-charsets "utf-8")
+                   :representations [{:content-type #{"text/html"}
+                                      :charset #{"utf-8"}}])
              (tag ::tests))]]])))
 
 (defmethod clojure.core/print-method UserGuide
