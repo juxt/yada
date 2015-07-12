@@ -388,8 +388,7 @@
             ;; a better design.
             (->
              (yada (fn [ctx] (body component (post-process-doc component xbody (into {} examples) config) config))
-                   :representations [{:method #{:get :head}
-                                      :content-type #{"text/html"}
+                   :representations [{:content-type #{"text/html"}
                                       :charset #{"utf-8"}
                                       }]
 

@@ -121,8 +121,10 @@
 (s/defn acceptable?
   [request server-acceptable]
   :- NegotiationResult
-  (assert (:method server-acceptable) (format "Option must have :method, %s" server-acceptable))
-  (let [method ((:method server-acceptable) (:method request))
+  (let [;; If server-acceptable specifies a set of methods, find a
+        ;; match, otherwise match on the request method so that
+        ;; server-acceptable method guards are strictly optional.
+        method ((or (:method server-acceptable) identity) (:method request))
         content-type (when method
                        (when-let [cts (:content-type server-acceptable)]
                          (negotiate-content-type (or (:accept request) "*/*") (map mime/string->media-type cts))))
@@ -145,7 +147,7 @@
   preference (client first, then server). The request and each
   server-acceptable is presumed to have been pre-validated."
   [request :- Request
-   server-acceptables :- [{:method #{s/Keyword}
+   server-acceptables :- [{(s/optional-key :method) #{s/Keyword}
                            (s/optional-key :content-type) #{s/Str}
                            (s/optional-key :charset) #{s/Str}}]]
   :- [NegotiationResult]

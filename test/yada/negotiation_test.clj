@@ -123,6 +123,17 @@
                                         ]))))
            "text/html"))))
 
+(st/deftest method-optional []
+  (let [request {:method :get :accept "text/html"}]
+    (is (= (:content-type
+            (interpret-negotiation
+             request
+             (first
+              (negotiate request
+                         [{:content-type #{"text/html"}}
+                          ]))))
+           "text/html"))))
+
 ;; TODO: Add accept-language, accept-encoding, content-type & content-encoding
 
 ;; TODO: what about charsets on receiving?
