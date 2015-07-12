@@ -101,14 +101,16 @@
 
 (defn round-seconds-up
   "Round up to the nearest second. The rationale here is that
-  last-modified times from resources are to the nearest millisecond, but
-  HTTP dates have a granularity of a second. This makes testing 304
+  last-modified times from resources have a resolution of a millisecond,
+  but HTTP dates have a resolution of a second. This makes testing 304
   harder. By ceiling every date to the nearest (future) second, we
-  side-step this problem. If an update happens a split-second after the
+  side-step this problem, constructing a 'weak' validator. See
+  rfc7232.html 2.1. If an update happens a split-second after the
   previous update, it's possible that a client might miss an
   update. However, the point is that user agents using dates don't
   generally care about having the very latest if they're using
-  If-Modified-Since, otherwise they'd omit the header completely."
+  If-Modified-Since, otherwise they'd omit the header completely. In the
+  spec. this is allowable semantics under the rules of weak validators."
   [d]
   (when d
     (let [n (.getTime d)
