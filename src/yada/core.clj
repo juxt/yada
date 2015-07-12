@@ -475,59 +475,55 @@
                    (d/error-deferred (ex-info "" {:status 404
                                                   ::http-response true}))))
 
+               ;; Conditional request
+
+               (fn [ctx]
+
+                 (if-let [last-modified (round-seconds-up
+                                         (or
+                                          (service/last-modified last-modified ctx)
+                                          (res/last-modified (:resource ctx) ctx)))]
+
+                   (if-let [if-modified-since (some-> req
+                                                      (get-in [:headers "if-modified-since"])
+                                                      parse-date)]
+                     ;; TODO: Hang on, we can't deref in the
+                     ;; middle of a handler like this, we need to
+                     ;; build a chain (I think)
+
+                     (let [last-modified
+                           (if (d/deferrable? last-modified) @last-modified last-modified)]
+
+                       (if (<=
+                            (.getTime last-modified)
+                            (.getTime if-modified-since))
+
+                         ;; exit with 304
+                         (d/error-deferred
+                          (ex-info "" (merge {:status 304
+                                              ::http-response true}
+                                             ctx)))
+
+                         (assoc-in ctx [:response :headers "last-modified"] (format-date last-modified))))
+
+                     (or
+                      ;; TODO: Hang on, we can't deref in the
+                      ;; middle of a handler like this, we need to
+                      ;; build a chain (I think)
+
+                      ;; TODO: Also, haven't we already calculated last-modified?
+
+                      (some->> (if (d/deferrable? last-modified) @last-modified last-modified)
+                               format-date
+                               (assoc-in ctx [:response :headers "last-modified"]))
+                      ctx))
+                   ctx))
+
                (fn [ctx]
                  (case method
                    (:get :head)
                    (d/chain
                     ctx
-
-
-
-                    ;; Conditional request
-
-                    ;; TODO: Don't all methods (not just GET/HEAD)
-                    ;; support conditional requests? Where does it say
-                    ;; that it's just for GET/HEAD methods?
-                    (fn [ctx]
-
-                      (if-let [last-modified (round-seconds-up
-                                              (or
-                                               (service/last-modified last-modified ctx)
-                                               (res/last-modified (:resource ctx) ctx)))]
-
-                        (if-let [if-modified-since (some-> req
-                                                           (get-in [:headers "if-modified-since"])
-                                                           parse-date)]
-                          ;; TODO: Hang on, we can't deref in the
-                          ;; middle of a handler like this, we need to
-                          ;; build a chain (I think)
-                          (let [last-modified
-                                (if (d/deferrable? last-modified) @last-modified last-modified)]
-
-                            (if (<=
-                                 (.getTime last-modified)
-                                 (.getTime if-modified-since))
-
-                              ;; exit with 304
-                              (d/error-deferred
-                               (ex-info "" (merge {:status 304
-                                                   ::http-response true}
-                                                  ctx)))
-
-                              (assoc-in ctx [:response :headers "last-modified"] (format-date last-modified))))
-
-                          (or
-                           ;; TODO: Hang on, we can't deref in the
-                           ;; middle of a handler like this, we need to
-                           ;; build a chain (I think)
-
-                           ;; TODO: Also, haven't we already calculated last-modified?
-
-                           (some->> (if (d/deferrable? last-modified) @last-modified last-modified)
-                                    format-date
-                                    (assoc-in ctx [:response :headers "last-modified"]))
-                           ctx))
-                        ctx))
 
                     ;; Get body
                     (fn [ctx]
