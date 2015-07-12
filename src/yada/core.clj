@@ -99,6 +99,8 @@
       (java.io.ByteArrayInputStream.)
       (slurp :encoding encoding)))
 
+;; TODO: Read and understand the date algo presented in RFC7232 2.2.1
+
 (defn round-seconds-up
   "Round up to the nearest second. The rationale here is that
   last-modified times from resources have a resolution of a millisecond,
@@ -110,7 +112,11 @@
   update. However, the point is that user agents using dates don't
   generally care about having the very latest if they're using
   If-Modified-Since, otherwise they'd omit the header completely. In the
-  spec. this is allowable semantics under the rules of weak validators."
+  spec. this is allowable semantics under the rules of weak validators.
+
+  TODO: This violates this part of the spec. Need an alternative implementation
+  \"An origin server with a clock MUST NOT send a Last-Modified date that
+   is later than the server's time of message origination (Date).\" — RFC7232 2.2.1 "
   [d]
   (when d
     (let [n (.getTime d)
