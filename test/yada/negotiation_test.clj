@@ -46,50 +46,55 @@
     "dummyfox" ["utf-8;q=0.8" "Shift_JIS;q=1.0"] nil
     ))
 
-
-
 (st/deftest method-test
   (testing "single option matches"
-    (given (first (negotiate {:method :get} [{:method #{:get :head}}]))
-      :method := :get
-      :content-type := nil
-      :charset := nil
-      [interpret-negotiation :status] := 406))
+    (let [request {:method :get}]
+      (given (first (negotiate request [{:method #{:get :head}}]))
+        :method := :get
+        :content-type := nil
+        :charset := nil
+        [(partial interpret-negotiation request) :status] := 406)))
   (testing "single option not acceptable"
-    (given (first (negotiate {:method :post} [{:method #{:get :head}}]))
-      :method :? nil?
-      :content-type := nil
-      :charset := nil
-      [interpret-negotiation :status] := 405))
+    (let [request {:method :post}]
+      (given (first (negotiate request [{:method #{:get :head}}]))
+        :method :? nil?
+        :content-type := nil
+        :charset := nil
+        [(partial interpret-negotiation request) :status] := 405)))
   (testing "second option works"
-    (given (first (negotiate {:method :post} [{:method #{:get :head}}{:method #{:post :put}}]))
-      :method := :post
-      :content-type := nil
-      :charset := nil
-      [interpret-negotiation :status] := 406)))
+    (let [request {:method :post}]
+      (given (first (negotiate request [{:method #{:get :head}}{:method #{:post :put}}]))
+        :method := :post
+        :content-type := nil
+        :charset := nil
+        [(partial interpret-negotiation request) :status] := 406))))
 
 (st/deftest content-type-test
   (testing "no charset"
-    (given (interpret-negotiation
-            (first (negotiate {:method :get :accept "text/html"}
-                              [{:method #{:get :head}
-                                :content-type #{"text/html"}
-                                }])))
-      :status := nil
-      :content-type := "text/html"))
+    (let [request {:method :get :accept "text/html"}]
+      (given (interpret-negotiation
+              request
+              (first (negotiate request
+                                [{:method #{:get :head}
+                                  :content-type #{"text/html"}
+                                  }])))
+        :status := nil
+        :content-type := "text/html")))
 
   (testing "charset applied"
-    (given (interpret-negotiation
-            (first (negotiate {:method :get :accept "text/html"}
-                              [{:method #{:get :head}
-                                :content-type #{"text/html"}}
+    (let [request {:method :get :accept "text/html"}]
+      (given (interpret-negotiation
+              request
+              (first (negotiate request
+                                [{:method #{:get :head}
+                                  :content-type #{"text/html"}}
 
-                               {:method #{:get :head}
-                                :content-type #{"text/html"}
-                                :charset #{"UTF-8"}
-                                }])))
-      :status := nil
-      :content-type := "text/html;charset=utf-8")))
+                                 {:method #{:get :head}
+                                  :content-type #{"text/html"}
+                                  :charset #{"UTF-8"}
+                                  }])))
+        :status := nil
+        :content-type := "text/html;charset=utf-8"))))
 
 (st/deftest charset-preferred-over-none
   "Ensure that an option with a charset is preferred over an option with
@@ -108,16 +113,15 @@
          ["utf-8" "utf-8"])))
 
 (st/deftest content-type-weight-removed []
-  (is (= (:content-type (interpret-negotiation
-                         (first
-                          (negotiate {:method :get :accept "text/html"}
-
-                                     [{:method #{:get}
-                                       :content-type #{"text/html;q=0.9"}}
-                                      ]))))
-         "text/html"
-         )))
-
+  (let [request {:method :get :accept "text/html"}]
+    (is (= (:content-type (interpret-negotiation
+                           request
+                           (first
+                            (negotiate request
+                                       [{:method #{:get}
+                                         :content-type #{"text/html;q=0.9"}}
+                                        ]))))
+           "text/html"))))
 
 ;; TODO: Add accept-language, accept-encoding, content-type & content-encoding
 

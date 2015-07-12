@@ -134,14 +134,17 @@
        (when content-type {:content-type content-type})
        (when charset {:charset charset})))))
 
+(s/defschema Request
+  {:method s/Keyword
+   (s/optional-key :accept) s/Str       ; Accept header value
+   (s/optional-key :accept-charset) s/Str ; Accept-Charset header value
+   })
+
 (s/defn negotiate
   "Return a sequence of negotiation results, ordered by
   preference (client first, then server). The request and each
   server-acceptable is presumed to have been pre-validated."
-  [request :- {:method s/Keyword
-               (s/optional-key :accept) s/Str ; Accept header value
-               (s/optional-key :accept-charset) s/Str ; Accept-Charset header value
-               }
+  [request :- Request
    server-acceptables :- [{:method #{s/Keyword}
                            (s/optional-key :content-type) #{s/Str}
                            (s/optional-key :charset) #{s/Str}}]]
@@ -154,6 +157,7 @@
 
 (s/defn interpret-negotiation
   :- {(s/optional-key :status) s/Int
+      (s/optional-key :message) s/Str
       (s/optional-key :content-type) s/Str
       (s/optional-key :client-charset) s/Str
       (s/optional-key :server-charset) s/Str}
@@ -161,11 +165,12 @@
   result means no methods match, which yields status 405. Otherwise,
   unacceptable (to the client) content-types yield 406. Unacceptable (to
   the server) content-types yield 415- Unsupported Media Type"
-  [{:keys [method content-type charset] :as result} :- (s/maybe NegotiationResult)]
+  [request :- Request
+   {:keys [method content-type charset] :as result} :- (s/maybe NegotiationResult)]
   (cond
     (nil? method) {:status 405 :message "Method Not Allowed"}
     (nil? content-type) {:status 406 :message "Not Acceptable (content-type)"}
-    (nil? charset) {:status 406 :message "Not Acceptable (charset)"}
+    (and (:accept-charset request) (nil? charset)) {:status 406 :message "Not Acceptable (charset)"}
 
     :otherwise (merge {}
                       (when content-type

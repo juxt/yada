@@ -295,16 +295,19 @@
                  ;; satisfies? on the resource first, it's expensive to
                  ;; do on every request
 
-                 (let [negotiated
+                 (let [request
+                       ;; TODO Move this merge logic to yada.negotiation
+                       (merge {:method (:request-method req)}
+                              (when-let [header (get-in req [:headers "accept"])]
+                                {:accept header})
+                              (when-let [header (get-in req [:headers "accept-charset"])]
+                                {:accept-charset header}))
+                       negotiated
                        (negotiation/interpret-negotiation
+                        request
                         (first
                          (negotiation/negotiate
-                          ;; TODO Move this merge logic to yada.negotiation
-                          (merge {:method (:request-method req)}
-                                 (when-let [header (get-in req [:headers "accept"])]
-                                   {:accept header})
-                                 (when-let [header (get-in req [:headers "accept-charset"])]
-                                   {:accept-charset header}))
+                          request
                           (or
                            ;; TODO We might need a shorthand for representations one day
                            (res/representations (:representations options))
