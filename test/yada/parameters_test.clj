@@ -9,7 +9,6 @@
    [ring.util.codec :as codec]
    [schema.core :as s]))
 
-
 (deftest post-test
   (let [handler (yada nil
                       :parameters {:post {:form {:foo s/Str}}}

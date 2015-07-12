@@ -34,28 +34,28 @@
       :status := 200
       :body := "Hello World!")))
 
-#_(deftest DynamicHelloWorld-test
+(deftest DynamicHelloWorld-test
   (let [{:keys [handler request path]}
         (ex-handler (->DynamicHelloWorld))]
     (given @(handler request)
       :status := 200
       :body := "Hello World!")))
 
-#_(deftest AsyncHelloWorld-test
+(deftest AsyncHelloWorld-test
   (let [{:keys [handler request path]}
         (ex-handler (->AsyncHelloWorld))]
     (given @(handler request)
       :status := 200
       :body := "Hello World!")))
 
-#_(deftest PathParameterUndeclared-test
+(deftest PathParameterUndeclared-test
   (let [{:keys [handler request path]}
         (ex-handler (->PathParameterUndeclared))]
     (given @(handler request)
       :status := 200
       :body := "Account number is 1234")))
 
-#_(deftest ParameterDeclaredPathQueryWithGet-test
+(deftest ParameterDeclaredPathQueryWithGet-test
   (let [{:keys [handler request path]}
         (ex-handler (->ParameterDeclaredPathQueryWithGet))]
     (given @(handler request)
