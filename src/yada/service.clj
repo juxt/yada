@@ -26,11 +26,12 @@
 
   (allowed-methods [_] "Return a set of the allowed methods. Must be determined at compile time (for purposes of introspection by tools). No async support.")
 
+  (exists? [_ ctx] "Return whether the resource exists")
   (last-modified [_ ctx] "Return the last modified time, as a date or long, of the resource.")
   (body [_ ctx] "Return the response body. Supply a function which can return a deferred, if necessary.")
 
-  (produces [_] [_ ctx] "Return the content-types that the service can produce")
-  (produces-charsets [_ ctx] "Return the charsets that the service can produce")
+  (produces [_] [_ ctx] "Return the content-types that the service can produce. Deprecated.")
+  (produces-charsets [_ ctx] "Return the charsets that the service can produce. Deprecated.")
 
   (status [_ ctx] "Override the response status")
   (headers [_ ctx] "Override the response headers")
@@ -62,6 +63,7 @@
   (authorize [b ctx] b)
   (authorization [b] nil)
   (allow-origin [b _] (when b "*"))
+  (exists? [b _] b)
 
   clojure.lang.Fn
   (service-available? [f ctx]
@@ -104,6 +106,9 @@
   manifold.deferred.Deferred
   (interpret-service-available [v]
     (d/chain v (fn [v] (interpret-service-available v))))
+
+  File
+  (last-modified [f ctx] (new Date (.lastModified f)))
 
   String
   (body [s _] s)
@@ -183,6 +188,7 @@
   (service-available? [_ _] true)
   (request-uri-too-long? [_ uri]
     (request-uri-too-long? 4096 uri))
+  (exists? [_ ctx] nil)
   (last-modified [_ ctx] nil)
   (body [_ _] nil)
   (post [_ _] nil)

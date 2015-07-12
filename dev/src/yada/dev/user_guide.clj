@@ -367,12 +367,33 @@
             ;; The problem now is that yada knows neither this string's
             ;; content-type (nor its charset), so can't produce the
             ;; correct Content-Type for the response. So we must specify it.
+
+            ;; Given that we are providing a function (which is only
+            ;; called relatively late, in the 'fetch' phase of the
+            ;; resource/request life-cycle, we must provide the
+            ;; negotiation data explicitly as an option.
+
+            ;; NB: The reason we are using a function here, rather than a
+            ;; 'static' string, is to ensure template expansion happens
+            ;; outside the component's start phase, so that the *router
+            ;; is bound, which means we can use path-for to generate
+            ;; hrefs.
+
+            ;; Using a function as a resource (to fetch state) is
+            ;; expensive in this case - the string is generated from the
+            ;; template on every request, even on conditional
+            ;; requests. A better implementation is needed in this
+            ;; case. But it works OK for the "Hello World!" example. But
+            ;; perhaps the use of 'fetch functions' is a placeholder for
+            ;; a better design.
             (->
-             (yada (body component (post-process-doc component xbody (into {} examples) config) config)
-                   ;;:method #{:get :head}
-                   ;;:content-type "text/html"
-                   ;;:charset "utf-8"
-                   ;;:last-modified (fn [ctx] (.lastModified (io/file "dev/resources/user-guide.md")))
+             (yada (fn [ctx] (body component (post-process-doc component xbody (into {} examples) config) config))
+                   :representations [{:method #{:get :head}
+                                      :content-type #{"text/html"}
+                                      :charset #{"utf-8"}
+                                      }]
+
+                   :last-modified (io/file "dev/resources/user-guide.md")
                    )
              (tag ::user-guide))))]
 

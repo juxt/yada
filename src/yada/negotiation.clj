@@ -146,6 +146,8 @@
                            (s/optional-key :content-type) #{s/Str}
                            (s/optional-key :charset) #{s/Str}}]]
   :- [NegotiationResult]
+  (infof "Request is %s" request)
+  (infof "SA are %s" server-acceptables)
   (->> server-acceptables
        (keep (partial acceptable? request))
        (sort-by (juxt (comp :weight :content-type) (comp :charset)) (comp - compare))))

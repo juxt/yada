@@ -47,16 +47,19 @@
 
   (delete-state! [_ ctx] "Delete the state. If a deferred is returned, the HTTP response status is set to 202"))
 
-(defprotocol Negotiable
-  (negotiate [_ ctx] "Negotiate the resource's representations. Return a yada.negotiation/NegotiationResult. Optional protocol, falls back to default negotiation."))
+(extend-protocol Resource
+  nil
+  ;; last-modified of 'nil' means we don't consider last-modified
+  (last-modified [_ _] nil)
+  (get-state [_ media-type ctx] nil))
 
-(defprotocol ResourceRepresentations
-  (representations [_] "Declare the resource's capabilities. Return a sequence, each item of which specifies the methods, content-types, charsets, languages and encodings that the resource is capable of. Each of these dimensions may be specified as a set, meaning 'one of'. Drives the default negotiation algorithm."))
+;; Fetch
 
-(def platform-charsets
-  (concat
-   [(to-charset-map (.name (java.nio.charset.Charset/defaultCharset)))]
-   (map #(assoc % :weight 0.9) (map to-charset-map (keys (java.nio.charset.Charset/availableCharsets))))))
+;; Fetch happens before negotiation, so must only return resource data,
+;; nothing to do with the representation itself. Negotiation information
+;; will not be present in the context, which is provided primarily to
+;; give the resource fetch access to the Ring request and it's own
+;; resource definition.
 
 (extend-protocol ResourceFetch
   clojure.lang.Fn
@@ -77,15 +80,31 @@
   Object
   (fetch [o ctx] o))
 
-(extend-protocol Resource
-  nil
-  ;; last-modified of 'nil' means we don't consider last-modified
-  (last-modified [_ _] nil)
-  (get-state [_ media-type ctx] nil))
+;; Negotiation
 
-;; Temporary while in transition, TODO remove this
+(defprotocol Negotiable
+  (negotiate [_ ctx] "Negotiate the resource's representations. Return a yada.negotiation/NegotiationResult. Optional protocol, falls back to default negotiation."))
+
+(defprotocol ResourceRepresentations
+  (representations [_] "Declare the resource's capabilities. Return a sequence, each item of which specifies the methods, content-types, charsets, languages and encodings that the resource is capable of. Each of these dimensions may be specified as a set, meaning 'one of'. Drives the default negotiation algorithm."))
+
+;; One idea is to combine 'static' representations with 'dynamic'
+;; ones. Swagger can use the static representations, but these can be
+;; augmented by content-specific ones. DirectoryResource, for example,
+;; would be able to provide some static representations to explain to
+;; swagger that it could be posted to with particular content, but would
+;; change these on a request containing a path-info. The dynamic version
+;; would have access to the static result, via the context, and could
+;; choose how to augment these (override completely, concat, etc.)
+
 (extend-protocol ResourceRepresentations
-  clojure.lang.Fn
-  (representations [_] [])
+  clojure.lang.PersistentVector
+  (representations [v] v)
+
   nil
-  (representations [_] []))
+  (representations [_] nil))
+
+(def platform-charsets
+  (concat
+   [(to-charset-map (.name (java.nio.charset.Charset/defaultCharset)))]
+   (map #(assoc % :weight 0.9) (map to-charset-map (keys (java.nio.charset.Charset/availableCharsets))))))

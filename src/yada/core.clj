@@ -217,7 +217,7 @@
          ;; Note that the resource is constructed during the yada call,
          ;; not during the request. If you want per-request, see res/fetch.
          resource (res/make-resource resource)
-         representations (res/representations resource)
+
          ;; TODO Now parse the content-types in the representations into
          ;; mime/MediaTypeMap records, because this doesn't need to be
          ;; done on a per-request basis given that the representations
@@ -267,22 +267,26 @@
                                           ::http-response true}
                                          (when-let [retry-after (service/retry-after res)] {:headers {"retry-after" retry-after}})))))))
 
+               ;; Do the fetch here
+               ;; The pre-fetch can return a deferred result.
+               (fn [ctx]
+                 (d/chain
+                  (res/fetch resource ctx)
+                  (fn [res]
+                    (assoc ctx :resource res))))
 
                ;; TODO: Restore this when we know what we're doing wrt. method registration (per resource)
                #_(link ctx
-                 (when-not
-                     (if known-method?
-                       (service/known-method? known-method? method)
-                       (contains? known-methods method)
-                       )
-                   (d/error-deferred (ex-info "" {:status 501
-                                                  ::method method
-                                                  ::http-response true}))))
+                   (when-not
+                       (if known-method?
+                         (service/known-method? known-method? method)
+                         (contains? known-methods method)
+                         )
+                     (d/error-deferred (ex-info "" {:status 501
+                                                    ::method method
+                                                    ::http-response true}))))
 
-               ;; Content-type and charset negotiation - done here to throw back to the client any errors
-               ;; conneg is done just after service availability, which is done first to allow attack mitigation
-               ;; We want to know the user-agent's capabilities early on in order to throw back errors, if they occur, in the correct format.
-
+               ;; Negotiation
                (fn [ctx]
 
                  ;; TODO Use yada.resource/Negotiable, cache the
@@ -299,12 +303,18 @@
                                    {:accept header})
                                  (when-let [header (get-in req [:headers "accept-charset"])]
                                    {:accept-charset header}))
-                          representations)))]
+                          (or
+                           ;; TODO We might need a shorthand for representations one day
+                           (res/representations (:representations options))
+                           (res/representations (:resource ctx))))))]
 
-                   (when (:status negotiated)
-                     (d/error-deferred (ex-info "" (merge negotiated {::http-response true}))))
+                   (infof "Negotiated: %s" negotiated)
 
-                   (merge ctx negotiated)))
+                   (if (:status negotiated)
+                     (d/error-deferred (ex-info "" (merge negotiated {::http-response true})))
+                     (merge ctx negotiated))
+
+                   ))
 
                ;; Request uri too long
                (link ctx
@@ -316,7 +326,7 @@
                ;; Malformed
 
                ;; Perhaps this should happen after content negotiation
-               ;; so we know how to return any schema errors
+               ;; so we know how to return any schema errors -
                (fn [ctx]
                  (let [keywordize (fn [m] (into {} (for [[k v] m] [(keyword k) v])))
                        parameters
@@ -326,12 +336,10 @@
 
                         :query
                         (when-let [schema (get-in parameters [method :query])]
-                          ;; We'll call assoc-query-params with UTF-8
-                          ;; for now, but when we move conneg to before
-                          ;; this link we'll use the negotiated charset.
+                          ;; We'll call assoc-query-params with the negotiated charset, falling back to UTF-8.
                           ;; Also, read this:
                           ;; http://www.w3.org/TR/html5/forms.html#application/x-www-form-urlencoded-encoding-algorithm
-                          (rs/coerce schema (-> req (assoc-query-params "UTF-8") :query-params keywordize) :query))
+                          (rs/coerce schema (-> req (assoc-query-params (or (:charset ctx) "UTF-8")) :query-params keywordize) :query))
 
                         :body
                         (when-let [schema (get-in parameters [method :body])]
@@ -365,7 +373,6 @@
                                                   (when body {:body body}))]
                          (cond-> ctx
                            (not-empty merged-params) (assoc :parameters merged-params)))))))
-
 
                ;; Authentication
                (fn [ctx]
@@ -444,15 +451,16 @@
                ;; state. For example, if it's a stream, it would be
                ;; returned on get-state.
 
-               ;; Do the fetch here
-               ;; The pre-fetch can return a deferred result. (TODO think
-               ;; about this) ; yes it can because the implementation can
-               ;; check it's deferred and then place it in a chain
-               (fn [ctx]
-                 (d/chain
-                  (res/fetch resource ctx)
-                  (fn [res]
-                    (assoc ctx :resource res))))
+
+               ;; Perhaps the resource doesn't exist
+               (link ctx
+                 (when (or
+                        (false? (service/exists? (:exists? options) ctx))
+                        (when-let [resource (:resource ctx)]
+                          (false? (res/exists? resource ctx))))
+                   (infof "Returning 404")
+                   (d/error-deferred (ex-info "" {:status 404
+                                                  ::http-response true}))))
 
                (fn [ctx]
                  (case method
@@ -460,12 +468,7 @@
                    (d/chain
                     ctx
 
-                    ;; Perhaps the resource doesn't exist
-                    (link ctx
-                      (when-let [resource (:resource ctx)]
-                        (when-not (res/exists? resource ctx)
-                          (d/error-deferred (ex-info "" {:status 404
-                                                         ::http-response true})))))
+
 
                     ;; Conditional request
 
