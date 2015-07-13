@@ -34,12 +34,22 @@
   updated, how to change it, etc. A resource may hold its state, or be
   able to educe the state on demand (via get-state)."
 
-  (exists? [_ ctx] "Whether the resource actually exists")
+  ;; Context-agnostic
+  (parameters [_] "Return the parameters, by method.")
 
+  ;; Context-sensitive
+  (exists? [_ ctx] "Whether the resource actually exists")
   (last-modified [_ ctx] "Return the date that the resource was last modified.")
 
-  ;; TODO: Misnomer. If media-type is a parameter, then it isn't state, it's representation. Perhaps rename simply to 'get-representation' or even just 'get'
+  ;; TODO: Misnomer. If media-type is a parameter, then it isn't state,
+  ;; it's representation. Perhaps rename simply to 'get-representation'
+  ;; or even just 'get'. Perhaps put into ResourceRepresentations
+  ;; protocol (see below)
+
+  ;; TODO: Need language too, so perhaps just provide the context
   (get-state [_ media-type ctx] "Return the state. Can be formatted to a representation of the given media-type and charset. Returning nil results in a 404. Get the charset from the context [:request :charset], if you can support different charsets. A nil charset at [:request :charset] means the user-agent can support all charsets, so just pick one. If you don't return a String, a representation will be attempted from whatever you do return.")
+
+  ;; TODO: Perhaps fold these last three into a single 'unsafe' mutation function
 
   (put-state! [_ content media-type ctx] "Overwrite the state with the data. To avoid inefficiency in abstraction, satisfying types are required to manage the parsing of the representation in the request body. If a deferred is returned, the HTTP response status is set to 202")
 
@@ -48,10 +58,14 @@
   (delete-state! [_ ctx] "Delete the state. If a deferred is returned, the HTTP response status is set to 202"))
 
 (extend-protocol Resource
+  clojure.lang.Fn
+  (parameters [_] nil)
   nil
   ;; last-modified of 'nil' means we don't consider last-modified
+  (parameters [_] nil)
   (last-modified [_ _] nil)
-  (get-state [_ media-type ctx] nil))
+  (get-state [_ media-type ctx] nil)
+  )
 
 ;; Fetch
 
@@ -86,6 +100,7 @@
   (negotiate [_ ctx] "Negotiate the resource's representations. Return a yada.negotiation/NegotiationResult. Optional protocol, falls back to default negotiation."))
 
 (defprotocol ResourceRepresentations
+  ;; Context-agnostic
   (representations [_] "Declare the resource's capabilities. Return a sequence, each item of which specifies the methods, content-types, charsets, languages and encodings that the resource is capable of. Each of these dimensions may be specified as a set, meaning 'one of'. Drives the default negotiation algorithm."))
 
 ;; One idea is to combine 'static' representations with 'dynamic'

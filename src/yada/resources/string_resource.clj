@@ -15,6 +15,7 @@
   (exists? [this ctx] true)
   (last-modified [this _] last-modified)
   (get-state [this media-type ctx] s)
+  (parameters [_] nil)
 
   ResourceRepresentations
   (representations [_]

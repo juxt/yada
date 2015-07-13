@@ -161,11 +161,6 @@
       authorization                     ; async-supported
       security
 
-      ;; Service overrides
-      last-modified                    ; async-supported (in the future)
-
-      parameters
-
       ;; CORS
       allow-origin
 
@@ -183,6 +178,7 @@
                     (res/make-resource resource)
                     resource)
 
+         parameters (res/parameters resource)
          methods (methods/methods)
 
          ;; TODO Now parse the content-types in the representations into
@@ -254,48 +250,51 @@
                (fn [ctx]
                  (let [keywordize (fn [m] (into {} (for [[k v] m] [(keyword k) v])))
                        parameters
-                       {:path
-                        (when-let [schema (get-in parameters [method :path])]
-                          (rs/coerce schema (:route-params req) :query))
+                       (when parameters
+                         {:path
+                          (when-let [schema (get-in parameters [method :path])]
+                            (rs/coerce schema (:route-params req) :query))
 
-                        :query
-                        (when-let [schema (get-in parameters [method :query])]
-                          ;; We'll call assoc-query-params with the negotiated charset, falling back to UTF-8.
-                          ;; Also, read this:
-                          ;; http://www.w3.org/TR/html5/forms.html#application/x-www-form-urlencoded-encoding-algorithm
-                          (rs/coerce schema (-> req (assoc-query-params (or (:charset ctx) "UTF-8")) :query-params keywordize) :query))
+                          :query
+                          (when-let [schema (get-in parameters [method :query])]
+                            ;; We'll call assoc-query-params with the negotiated charset, falling back to UTF-8.
+                            ;; Also, read this:
+                            ;; http://www.w3.org/TR/html5/forms.html#application/x-www-form-urlencoded-encoding-algorithm
+                            (rs/coerce schema (-> req (assoc-query-params (or (:charset ctx) "UTF-8")) :query-params keywordize) :query))
 
-                        :body
-                        (when-let [schema (get-in parameters [method :body])]
-                          (let [body (read-body (-> ctx :request))]
-                            (rep/from-representation body (content-type req) schema)))
+                          :body
+                          (when-let [schema (get-in parameters [method :body])]
+                            (let [body (read-body (-> ctx :request))]
+                              (rep/from-representation body (content-type req) schema)))
 
-                        :form
-                        ;; TODO: Can we use rep:from-representation
-                        ;; instead? It's virtually the same logic for
-                        ;; url encoded forms
-                        (when-let [schema (get-in parameters [method :form])]
-                          (when (urlencoded-form? req)
-                            (let [fp (keywordize-keys
-                                      (form-decode (read-body (-> ctx :request))
-                                                   (character-encoding req)))]
-                              (rs/coerce schema fp :json))))
+                          :form
+                          ;; TODO: Can we use rep:from-representation
+                          ;; instead? It's virtually the same logic for
+                          ;; url encoded forms
+                          (when-let [schema (get-in parameters [method :form])]
+                            (when (urlencoded-form? req)
+                              (let [fp (keywordize-keys
+                                        (form-decode (read-body (-> ctx :request))
+                                                     (character-encoding req)))]
+                                (rs/coerce schema fp :json))))
 
-                        :header
-                        (when-let [schema (get-in parameters [method :header])]
-                          (let [params (select-keys (-> req :headers keywordize-keys) (keys schema))]
-                            (rs/coerce schema params :query)))}]
+                          :header
+                          (when-let [schema (get-in parameters [method :header])]
+                            (let [params (select-keys (-> req :headers keywordize-keys) (keys schema))]
+                              (rs/coerce schema params :query)))})]
 
                    (let [errors (filter (comp error? second) parameters)]
                      (if (not-empty errors)
                        (d/error-deferred (ex-info "" {:status 400
                                                       :body errors
                                                       ::http-response true}))
-                       (let [body (:body parameters)
-                             merged-params (merge (apply merge (vals (dissoc parameters :body)))
-                                                  (when body {:body body}))]
-                         (cond-> ctx
-                           (not-empty merged-params) (assoc :parameters merged-params)))))))
+                       (if parameters
+                         (let [body (:body parameters)
+                               merged-params (merge (apply merge (vals (dissoc parameters :body)))
+                                                    (when body {:body body}))]
+                           (cond-> ctx
+                             (not-empty merged-params) (assoc :parameters merged-params)))
+                         ctx)))))
 
                ;; Authentication
                (fn [ctx]

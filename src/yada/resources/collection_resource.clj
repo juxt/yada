@@ -15,6 +15,7 @@
   Resource
   (exists? [_ ctx] true)
   (last-modified [_ ctx] last-modified)
+  (parameters [_] nil)
   (get-state [_ content-type ctx] m)
 
   ResourceRepresentations
