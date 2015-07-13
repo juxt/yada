@@ -1,5 +1,8 @@
 ;; Copyright © 2015, JUXT LTD.
 
+;; TODO No longer just service options, so either rename to options (or
+;; similar) or fold into core.
+
 (ns yada.service
   (:require [clojure.core.async.impl.protocols :as aip]
             [clojure.set :as set]
