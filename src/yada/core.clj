@@ -12,7 +12,6 @@
    [clojure.set :as set]
    [clojure.string :as str]
    [clojure.tools.logging :refer :all :exclude [trace]]
-   #_[clojure.tools.trace :refer (deftrace)]
    [clojure.walk :refer (keywordize-keys)]
    [hiccup.core :refer (html h)]
    [manifold.deferred :as d]
@@ -91,11 +90,7 @@
 (defn as-sequential [s]
   (if (sequential? s) s [s]))
 
-(defn to-encoding [s encoding]
-  (-> s
-      (.getBytes)
-      (java.io.ByteArrayInputStream.)
-      (slurp :encoding encoding)))
+
 
 ;; TODO: Read and understand the date algo presented in RFC7232 2.2.1
 
@@ -401,43 +396,10 @@
                        true (merge negotiated)
                        (:content-type negotiated) (assoc-in [:response :headers "content-type"] (:content-type negotiated))))))
 
-               ;; TRACE
+               ;; TRACE (TODO: Is this link in the right place?)
                (link ctx
-                 (if (= method :trace)
-                   (d/error-deferred
-                    (ex-info "TRACE"
-                             (merge
-                              {::http-response true}
-                              (if trace
-                                ;; custom user-supplied implementation
-                                (-> (merge
-                                     {:status 200}
-                                     (merge-with
-                                      merge
-                                      {:headers {"content-type" "message/http;charset=utf8"}}
-                                      ;; Custom code /can/ override (but really shouldn't)
-                                      (service/trace trace req ctx)))
-                                    (update-in [:body] to-encoding "utf8"))
-
-                                ;; otherwise default implementation
-                                (let [body (-> ctx
-                                               :request
-                                               ;; A client MUST NOT generate header fields in a TRACE request containing sensitive
-                                               ;; data that might be disclosed by the response. For example, it would be foolish for
-                                               ;; a user agent to send stored user credentials [RFC7235] or cookies [RFC6265] in a
-                                               ;; TRACE request.
-                                               (update-in [:headers] dissoc "authorization" "cookie")
-                                               yada.trace/print-request
-                                               with-out-str
-                                               ;; only "7bit", "8bit", or "binary" are permitted (RFC 7230 8.3.1)
-                                               (to-encoding "utf8"))]
-
-                                  {:status 200
-                                   :headers {"content-type" "message/http;charset=utf8"
-                                             "content-length" (.length body)}
-                                   :body body
-                                   ::http-response true})))))))
-
+                 (if (#{:trace} method)
+                   (methods/request (:method-instance ctx) ctx)))
 
                ;; Resource exists?
                (link ctx

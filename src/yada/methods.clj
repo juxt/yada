@@ -185,3 +185,51 @@
                            "access-control-allow-methods"
                            (apply str
                                   (interpose ", " ["GET" "POST" "PUT" "DELETE"]))}))))))
+
+(deftype Trace [])
+
+(defn to-encoding [s encoding]
+  (-> s
+      (.getBytes)
+      (java.io.ByteArrayInputStream.)
+      (slurp :encoding encoding)))
+
+(extend-protocol Method
+  Trace
+  (keyword-binding [_] :trace)
+  (safe? [_] true)
+  (idempotent? [_] true)
+  (request [_ ctx]
+    (d/error-deferred
+     (ex-info "TRACE"
+              (merge
+               {::http-response true}
+               (if-let [trace (-> ctx :options :trace)]
+                 ;; custom user-supplied implementation
+                 (-> (merge
+                      {:status 200}
+                      (merge-with
+                       merge
+                       {:headers {"content-type" "message/http;charset=utf8"}}
+                       ;; Custom code /can/ override (but really shouldn't)
+                       (service/trace trace (-> ctx :request) ctx)))
+                     (update-in [:body] to-encoding "utf8"))
+
+                 ;; otherwise default implementation
+                 (let [body (-> ctx
+                                :request
+                                ;; A client MUST NOT generate header fields in a TRACE request containing sensitive
+                                ;; data that might be disclosed by the response. For example, it would be foolish for
+                                ;; a user agent to send stored user credentials [RFC7235] or cookies [RFC6265] in a
+                                ;; TRACE request.
+                                (update-in [:headers] dissoc "authorization" "cookie")
+                                yada.trace/print-request
+                                with-out-str
+                                ;; only "7bit", "8bit", or "binary" are permitted (RFC 7230 8.3.1)
+                                (to-encoding "utf8"))]
+
+                   {:status 200
+                    :headers {"content-type" "message/http;charset=utf8"
+                              "content-length" (.length body)}
+                    :body body
+                    ::http-response true})))))))
