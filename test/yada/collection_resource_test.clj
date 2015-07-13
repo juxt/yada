@@ -9,7 +9,7 @@
    [ring.util.time :refer (parse-date format-date)]
    [yada.test.util :refer (given)]
    [yada.yada :refer [yada]]
-   yada.collection-resource))
+   yada.resources.collection-resource))
 
 ;; Collections can be resources too, we should test them
 

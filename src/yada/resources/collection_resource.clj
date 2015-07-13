@@ -1,6 +1,6 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(ns yada.collection-resource
+(ns yada.resources.collection-resource
   (:require
    [clojure.tools.logging :refer :all]
    [clj-time.core :refer (now)]

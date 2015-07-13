@@ -15,7 +15,7 @@
    [ring.mock.request :as mock]
    [yada.dev.user-api :refer (new-verbose-user-api)]
    [yada.dev.database :refer (new-database)]
-   yada.collection-resource
+   yada.resources.collection-resource
    ))
 
 (defn new-system

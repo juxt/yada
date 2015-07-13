@@ -33,7 +33,6 @@
    [yada.negotiation :as negotiation]
    [yada.service :as service]
    [yada.resource :as res]
-   [yada.trace]
    [yada.mime :as mime]
    [yada.util :refer (link)])
   (:import (clojure.lang IPending)

@@ -12,7 +12,7 @@
    [yada.bidi :as yb]
    [yada.core :refer [yada]]
    [clojure.tools.logging :refer :all]
-   [yada.file-resource :refer :all]
+   [yada.resources.file-resource :refer :all]
    [yada.resource :as yst]
    [yada.test.util :refer [given]])
   (:import [java.io File ByteArrayInputStream]

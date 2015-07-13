@@ -1,6 +1,6 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(ns yada.file-resource
+(ns yada.resources.file-resource
   (:require [byte-streams :as bs]
             [clojure.java.io :as io]
             [clojure.string :as str]

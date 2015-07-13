@@ -1,4 +1,6 @@
-(ns yada.url-resource
+;; Copyright © 2015, JUXT LTD.
+
+(ns yada.resources.url-resource
   (:require
    [clojure.java.io :as io]
    [yada.resource :refer (Resource ResourceConstructor)]

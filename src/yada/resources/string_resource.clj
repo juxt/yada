@@ -1,6 +1,6 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(ns yada.string-resource
+(ns yada.resources.string-resource
   (:require
    [clj-time.core :refer (now)]
    [clj-time.coerce :refer (to-date)]

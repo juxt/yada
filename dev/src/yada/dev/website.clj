@@ -10,7 +10,7 @@
             [modular.template :as template :refer (render-template)]
             [schema.core :as s]
             yada.bidi
-            yada.file-resource
+            yada.resources.file-resource
             [yada.yada :refer (yada)]))
 
 (def titles

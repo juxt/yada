@@ -4,7 +4,7 @@
    [clj-time.core :as time]
    [clj-time.coerce :refer (to-date)]
    [ring.util.time :refer (format-date)]
-   yada.string-resource
+   yada.resources.string-resource
    [clojure.test :refer :all]
    [clojure.java.io :as io]
    [yada.core :refer [yada]]

@@ -7,7 +7,7 @@
    [clojure.java.io :as io]
    [yada.test.util :refer (given)]
    [yada.yada :refer [yada]]
-   yada.atom-resource))
+   yada.resources.atom-resource))
 
 ;; TODO: Restore this test once atoms can wrap maps (and other collections)
 

@@ -20,7 +20,7 @@
    [yada.dev.examples :refer (get-title get-resource get-options get-path get-path-args get-query-string get-request expected-response get-test-function external? make-example-handler encode-data)]
    [yada.yada :refer (yada)]
    [yada.mime :as mime]
-   yada.string-resource
+   yada.resources.string-resource
 ))
 
 (defn emit-element

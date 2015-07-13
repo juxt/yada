@@ -1,10 +1,12 @@
-(ns yada.atom-resource
+;; Copyright © 2015, JUXT LTD.
+
+(ns yada.resources.atom-resource
   (:require
    [clj-time.core :refer [now]]
    [clj-time.coerce :refer [to-date]]
    [yada.resource :refer (ResourceConstructor ResourceRepresentations Resource platform-charsets make-resource)]
-   yada.string-resource)
-  (:import [yada.string_resource StringResource]))
+   yada.resources.string-resource)
+  (:import [yada.resources.string_resource StringResource]))
 
 (defprotocol StateWrapper
   (wrap-atom [init-state a] "Given the initial value on derefencing an atom, construct a record which will manage the reference."))

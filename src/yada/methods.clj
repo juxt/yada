@@ -1,6 +1,7 @@
 (ns yada.methods
   (:refer-clojure :exclude [methods])
   (:require
+   [clojure.string :as str]
    [manifold.deferred :as d]
    [yada.mime :as mime]
    [yada.representation :as rep]
@@ -194,6 +195,25 @@
       (java.io.ByteArrayInputStream.)
       (slurp :encoding encoding)))
 
+(defn to-title-case [s]
+  (when s
+    (str/replace s #"(\w+)" (comp str/capitalize second))))
+
+(defn print-request
+  "Print the request. Used for TRACE."
+  [req]
+  (letfn [(println [& x]
+            (apply print x)
+            (print "\r\n"))]
+    (println (format "%s %s %s"
+                     (str/upper-case (name (:request-method req)))
+                     (:uri req)
+                     "HTTP/1.1"))
+    (doseq [[h v] (:headers req)] (println (format "%s: %s" (to-title-case h) v)))
+    (println)
+    (when-let [body (:body req)]
+      (print (slurp body)))))
+
 (extend-protocol Method
   Trace
   (keyword-binding [_] :trace)
@@ -223,7 +243,7 @@
                                 ;; a user agent to send stored user credentials [RFC7235] or cookies [RFC6265] in a
                                 ;; TRACE request.
                                 (update-in [:headers] dissoc "authorization" "cookie")
-                                yada.trace/print-request
+                                print-request
                                 with-out-str
                                 ;; only "7bit", "8bit", or "binary" are permitted (RFC 7230 8.3.1)
                                 (to-encoding "utf8"))]
