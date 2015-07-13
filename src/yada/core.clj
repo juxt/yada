@@ -162,19 +162,9 @@
       authorization                     ; async-supported
       security
 
-      ;; Actions
-      put!   ; async-supported
-      ;;      post!                             ; async-supported
-      delete!                           ; async-supported
-      patch!                            ; async-supported
-      trace                             ; async-supported
-
       ;; Service overrides
-      body                             ; async-supported
       last-modified                    ; async-supported (in the future)
 
-      produces
-      produces-charsets
       parameters
 
       ;; CORS
