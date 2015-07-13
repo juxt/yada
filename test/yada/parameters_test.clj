@@ -4,15 +4,18 @@
    [clojure.edn :as edn]
    [clojure.test :refer :all]
    [yada.yada :refer (yada)]
+   [yada.resource :as res]
    [yada.test.util :refer (given)]
    [ring.mock.request :as mock]
    [ring.util.codec :as codec]
    [schema.core :as s]))
 
 (deftest post-test
-  (let [handler (yada nil
+  (let [handler (yada (reify
+                        res/Resource)
                       :parameters {:post {:form {:foo s/Str}}}
-                      :post! (fn [ctx] (pr-str (:parameters ctx))))]
+                      ;;:post! (fn [ctx] (pr-str (:parameters ctx)))
+                      )]
 
     ;; Nil post body
     (let [response (handler (mock/request :post "/"))]

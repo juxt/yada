@@ -30,6 +30,7 @@
    [yada.coerce :refer (coercion-matcher)]
    [yada.charset :as charset]
    [yada.representation :as rep]
+   [yada.methods :as methods]
    [yada.negotiation :as negotiation]
    [yada.service :as service]
    [yada.resource :as res]
@@ -69,9 +70,6 @@
 
 ;; "It is better to have 100 functions operate on one data structure
 ;; than 10 functions on 10 data structures." — Alan Perlis
-
-(defn- not* [[result m]]
-  [(not result) m])
 
 (defn spyctx [label & [korks]]
   (fn [ctx]
@@ -129,30 +127,6 @@
   (when-let [body (:body req)]
     (convert body String {:encoding (or (character-encoding req) "UTF-8")})))
 
-;; Allowed methods
-
-;; RFC 7231 - 8.1.3.  Registrations
-
-;; | Method  | Safe | Idempotent | Reference     |
-;; +---------+------+------------+---------------+
-;; | CONNECT | no   | no         | Section 4.3.6 |
-;; | DELETE  | no   | yes        | Section 4.3.5 |
-;; | GET     | yes  | yes        | Section 4.3.1 |
-;; | HEAD    | yes  | yes        | Section 4.3.2 |
-;; | OPTIONS | yes  | yes        | Section 4.3.7 |
-;; | POST    | no   | no         | Section 4.3.3 |
-;; | PUT     | no   | yes        | Section 4.3.4 |
-;; | TRACE   | yes  | yes        | Section 4.3.8 |
-
-
-(def known-methods #{:connect :delete :get :head :options :post :put :trace})
-
-(defn safe? [method]
-  (contains? #{:get :head :options :trace} method))
-
-(defn idempotent? [method]
-  (contains? #{:delete :get :head :options :put :trace} method))
-
 ;; This used to be used, but still has some useful ideas in it.
 #_(defn allowed-methods [ctx resource]
   (let [options (:options ctx)]
@@ -184,10 +158,7 @@
      [resource                          ; async-supported
 
       service-available?                ; async-supported
-      known-method?                     ; async-supported
       request-uri-too-long?
-
-      methods
 
       status                            ; async-supported
       headers                           ; async-supported
@@ -197,8 +168,8 @@
       security
 
       ;; Actions
-      put!                              ; async-supported
-      post!                             ; async-supported
+      put!   ; async-supported
+      ;;      post!                             ; async-supported
       delete!                           ; async-supported
       patch!                            ; async-supported
       trace                             ; async-supported
@@ -223,8 +194,12 @@
 
    (let [security (as-sequential security)
          ;; Note that the resource is constructed during the yada call,
-         ;; not during the request. If you want per-request, see res/fetch.
-         resource (res/make-resource resource)
+         ;; not during the request.
+         resource (if (satisfies? res/ResourceConstructor resource)
+                    (res/make-resource resource)
+                    resource)
+
+         methods (methods/methods)
 
          ;; TODO Now parse the content-types in the representations into
          ;; mime/MediaTypeMap records, because this doesn't need to be
@@ -260,13 +235,16 @@
               debug (boolean (get-in req [:headers "x-yada-debug"]))]
 
           (-> ctx
+
               (merge
-               {:request req
+               {:method method
+                :method-instance (get methods method)
+                :request req
                 :options options})
 
               (d/chain
-               ;; TODO Inline these macros, they don't buy much for their complexity
 
+               ;; Available?
                (link ctx
                  (let [res (service/service-available? service-available? ctx)]
                    (if-not (service/interpret-service-available res)
@@ -275,71 +253,20 @@
                                           ::http-response true}
                                          (when-let [retry-after (service/retry-after res)] {:headers {"retry-after" retry-after}})))))))
 
-               ;; Do the fetch here
-               ;; The pre-fetch can return a deferred result.
-               (fn [ctx]
-                 (d/chain
-                  (res/fetch resource ctx)
-                  (fn [res]
-                    (assoc ctx :resource res))))
+               ;; Known method?
+               (link ctx
+                 (when-not (:method-instance ctx)
+                   (d/error-deferred (ex-info "" {:status 501 ::method method ::http-response true}))))
 
-               ;; TODO: Restore this when we know what we're doing wrt. method registration (per resource)
-               #_(link ctx
-                   (when-not
-                       (if known-method?
-                         (service/known-method? known-method? method)
-                         (contains? known-methods method)
-                         )
-                     (d/error-deferred (ex-info "" {:status 501
-                                                    ::method method
-                                                    ::http-response true}))))
-
-               ;; Negotiation
-               (fn [ctx]
-
-                 ;; TODO Use yada.resource/Negotiable, cache the
-                 ;; satisfies? on the resource first, it's expensive to
-                 ;; do on every request
-
-                 (let [request
-                       ;; TODO Move this merge logic to yada.negotiation
-                       (merge {:method (:request-method req)}
-                              (when-let [header (get-in req [:headers "accept"])]
-                                {:accept header})
-                              (when-let [header (get-in req [:headers "accept-charset"])]
-                                {:accept-charset header}))
-                       negotiated
-                       (negotiation/interpret-negotiation
-                        request
-                        (first
-                         (negotiation/negotiate
-                          request
-                          (or
-                           ;; TODO We might need a shorthand for representations one day
-                           (res/representations (:representations options))
-                           (res/representations (:resource ctx))))))]
-
-                   (infof "Negotiated: %s" negotiated)
-
-                   (if (:status negotiated)
-                     (d/error-deferred (ex-info "" (merge negotiated {::http-response true})))
-                     (cond-> ctx
-                       true (merge negotiated)
-                       (:content-type negotiated) (assoc-in [:response :headers "content-type"] (:content-type negotiated))))
-
-                   ))
-
-               ;; Request uri too long
+               ;; URI too long?
                (link ctx
                  (when (service/request-uri-too-long? request-uri-too-long? (:uri req))
                    (d/error-deferred (ex-info "" {:status 414
                                                   ::http-response true}))))
 
+               ;; TODO: Is method allowed on this resource? See comment about 405 in negotiation
 
-               ;; Malformed
-
-               ;; Perhaps this should happen after content negotiation
-               ;; so we know how to return any schema errors -
+               ;; Malformed?
                (fn [ctx]
                  (let [keywordize (fn [m] (into {} (for [[k v] m] [(keyword k) v])))
                        parameters
@@ -410,6 +337,70 @@
                    (d/error-deferred (ex-info "" {:status 403
                                                   ::http-response true}))))
 
+               ;; Now we do a fetch, so the resource has a chance to
+               ;; load any metadata it may need to answer the questions
+               ;; to follow. It can also load state in this step, if it
+               ;; wants, but can defer this to the get-state call if it
+               ;; wants. This would usually depend on the size of the
+               ;; state. For example, if it's a stream, it would be
+               ;; returned on get-state.
+
+               ;; Do the fetch here - this is intended to allow
+               ;; resources to prepare to answer questions about
+               ;; themselves. This has to happen _after_ the request
+               ;; parameters have been established because the fetch
+               ;; might depend on them in some way. The fetch may
+               ;; involve a database trip, to load context based on the
+               ;; request parameters.
+
+               ;; The fetch can return a deferred result.
+               (fn [ctx]
+                 (d/chain
+                  (res/fetch resource ctx)
+                  (fn [res]
+                    (assoc ctx :resource res))))
+
+               ;; TODO: Unknown or unsupported Content-* header
+
+               ;; TODO: Request entity too large - shouldn't we do this later,
+               ;; when we determine we actually need to read the request body?
+
+               ;; TODO: OPTIONS
+
+               ;; Content negotiation
+               ;; TODO: Unknown Content-Type? (incorporate this into conneg)
+
+               (fn [ctx]
+
+                 ;; TODO Use yada.resource/Negotiable, cache the
+                 ;; satisfies? on the resource first, it's expensive to
+                 ;; do on every request
+
+                 (let [request
+                       ;; TODO Move this merge logic to yada.negotiation
+                       (merge {:method (:request-method req)}
+                              (when-let [header (get-in req [:headers "accept"])]
+                                {:accept header})
+                              (when-let [header (get-in req [:headers "accept-charset"])]
+                                {:accept-charset header}))
+                       negotiated
+                       (negotiation/interpret-negotiation
+                        request
+                        (first
+                         (negotiation/negotiate
+                          request
+                          (or
+                           ;; TODO We might need a shorthand for representations one day
+                           (res/representations (:representations options))
+                           (when (satisfies? res/ResourceRepresentations (:resource ctx)))
+                           (res/representations (:resource ctx))))))]
+
+                   (if (:status negotiated)
+                     (d/error-deferred (ex-info "" (merge negotiated {::http-response true})))
+                     (cond-> ctx
+                       true (merge negotiated)
+                       (:content-type negotiated) (assoc-in [:response :headers "content-type"] (:content-type negotiated))))))
+
                ;; TRACE
                (link ctx
                  (if (= method :trace)
@@ -447,25 +438,8 @@
                                    :body body
                                    ::http-response true})))))))
 
-               ;; TODO: Not implemented (if unknown Content-* header)
 
-               ;; TODO: Unsupported media type
-
-               ;; TODO: Request entity too large - shouldn't we do this later,
-               ;; when we determine we actually need to read the request body?
-
-               ;; TODO: OPTIONS
-
-               ;; Now we do a pre-fetch, so the resource has a chance to
-               ;; load any metadata it may need to answer the questions
-               ;; to follow. It can also load state in this step, if it
-               ;; wants, but can defer this to the get-state call if it
-               ;; wants. This would usually depend on the size of the
-               ;; state. For example, if it's a stream, it would be
-               ;; returned on get-state.
-
-
-               ;; Perhaps the resource doesn't exist
+               ;; Resource exists?
                (link ctx
                  (when (or
                         (false? (service/exists? (:exists? options) ctx))
@@ -475,9 +449,16 @@
                    (d/error-deferred (ex-info "" {:status 404
                                                   ::http-response true}))))
 
-               ;; Conditional request
-
+               ;; Conditional requests - put this in own ns
                (fn [ctx]
+
+                 ;; TODO Rethink etags now we have protocols
+                 (when-let [etag (get-in req [:headers "if-match"])]
+                   (when (not= etag (get-in ctx [:resource :etag]))
+                     (throw
+                      (ex-info "Precondition failed"
+                               {:status 412
+                                ::http-response true}))))
 
                  (d/chain
 
@@ -520,134 +501,10 @@
 
                ;; Methods
                (fn [ctx]
-                 (case method
-                   (:get :head)
-                   (d/chain
-                    ctx
+                 (methods/request (:method-instance ctx) ctx))
 
-                    ;; Get body
-                    (fn [ctx]
-                      (let [content-type (get-in ctx [:response :content-type])]
-
-                        (case method
-                          :head (if content-type
-                                  ;; We don't need to add Content-Length,
-                                  ;; Content-Range, Trailer or Tranfer-Encoding, as
-                                  ;; per rfc7231.html#section-3.3
-                                  (update-in ctx [:response :headers]
-                                             assoc "content-type" (mime/media-type->string content-type))
-                                  ctx)
-
-                          :get
-                          (d/chain
-
-                           ;; the resource here can still be deferred
-                           (:resource ctx)
-
-                           (fn [resource]
-                             (or (rep/to-representation
-                                  (res/get-state resource content-type ctx)
-                                  content-type)
-                                 (service/body body ctx)
-                                 (throw (ex-info "" {:status 404
-                                                     ;; TODO: Do something nice for developers here
-                                                     :body "Not Found\n"
-                                                     ::http-response true}))))
-
-                           (fn [body]
-                             (let [content-length (rep/content-length body)]
-                               (cond-> ctx
-                                 true (assoc-in [:response :body] body)
-                                 content-length (update-in [:response :headers] assoc "content-length" content-length)
-                                 content-type (update-in [:response :headers] assoc "content-type" (mime/media-type->string content-type))))))))))
-
-                   :put
-                   (d/chain
-                    ctx
-                    (link ctx
-                      (when-let [etag (get-in req [:headers "if-match"])]
-                        (when (not= etag (get-in ctx [:resource :etag]))
-                          (throw
-                           (ex-info "Precondition failed"
-                                    {:status 412
-                                     ::http-response true})))))
-
-                    ;; Do the put!
-                    (fn [ctx]
-                      (let [exists? (res/exists? resource ctx)]
-                        (let [res
-                              (cond
-                                put! (service/put! put! ctx)
-                                ;; TODO: Add content and content-type
-                                resource (res/put-state! resource nil nil ctx)
-                                :otherwise (throw (ex-info "No implementation of put!" {})))]
-
-                          (assoc-in ctx [:response :status]
-                                    (cond
-                                      ;; TODO A 202 may be not what the developer wants!
-                                      (d/deferred? res) 202
-                                      exists? 204
-                                      :otherwise 201))))))
-
-                   :post
-                   (d/chain
-                    ctx
-
-                    (link ctx
-                      (when-let [etag (get-in req [:headers "if-match"])]
-                        (when (not= etag (get-in ctx [:resource :etag]))
-                          (throw
-                           (ex-info "Precondition failed"
-                                    {:status 412
-                                     ::http-response true})))))
-
-                    (fn [ctx]
-                      (let [result
-                            (cond
-                              post! (service/post! post! ctx)
-                              resource (res/post-state! resource ctx)
-                              :otherwise (throw (ex-info "No implementation of put!" {})))]
-
-                        ;; TODO: what if error?
-                        (assoc ctx :post-result result)))
-
-                    (fn [ctx]
-                      (service/interpret-post-result (:post-result ctx) ctx))
-
-                    (fn [ctx]
-                      (-> ctx
-                          (update-in [:response] (partial merge {:status 200})))))
-
-                   :delete
-                   (d/chain
-                    ctx
-                    (fn [ctx]
-                      (if-not (res/exists? resource ctx)
-                        (assoc-in ctx [:response :status] 404)
-                        (let [res
-                              (cond
-                                delete! (service/delete! delete! ctx)
-                                resource (res/delete-state! resource ctx)
-                                :otherwise (throw (ex-info "No implementation of delete!" {})))]
-                          (assoc-in ctx [:response :status] (if (d/deferred? res) 202 204))))))
-
-                   :options
-                   (d/chain
-                    ctx
-                    (link ctx
-                      (if-let [origin (service/allow-origin allow-origin ctx)]
-                        (update-in ctx [:response :headers]
-                                   merge {"access-control-allow-origin"
-                                          origin
-                                          "access-control-allow-methods"
-                                          (apply str
-                                                 (interpose ", " ["GET" "POST" "PUT" "DELETE"]))}))))
-
-                   (throw (ex-info "Unimplemented method"
-                                   {:status 501
-                                    ::method method
-                                    ::http-response true}))))
-
+               ;; CORS
+               ;; TODO: Reinstate
                #_(fn [ctx]
                    (if-let [origin (service/allow-origin allow-origin ctx)]
                      (update-in ctx [:response :headers]
@@ -658,7 +515,7 @@
                                               (interpose ", " ["Server" "Date" "Content-Length" "Access-Control-Allow-Origin"]))})
                      ctx))
 
-               ;; Response generation
+               ;; Response
                (fn [ctx]
                  (let [response
                        (merge
@@ -672,11 +529,7 @@
                          ;; TODO :status and :headers should be implemented like this in all cases
                          :body (get-in ctx [:response :body])})]
                    (debugf "Returning response: %s" (dissoc response :body))
-                   response
-                   ))
-
-               ;; End of chain
-               )
+                   response)))
 
               ;; Handle exits
               (d/catch clojure.lang.ExceptionInfo

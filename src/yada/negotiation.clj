@@ -151,8 +151,6 @@
                            (s/optional-key :content-type) #{s/Str}
                            (s/optional-key :charset) #{s/Str}}]]
   :- [NegotiationResult]
-  (infof "Request is %s" request)
-  (infof "SA are %s" server-acceptables)
   (->> server-acceptables
        (keep (partial acceptable? request))
        (sort-by (juxt (comp :weight :content-type) (comp :charset)) (comp - compare))))
@@ -163,6 +161,10 @@
       (s/optional-key :content-type) s/Str
       (s/optional-key :client-charset) s/Str
       (s/optional-key :server-charset) s/Str}
+  ;; TODO: I'm not sure negotiation should handle the 405 Method Not
+  ;; Allowed case. Method guards are not for determining which methods
+  ;; are allowed on a resource, rather to help determine which
+  ;; representations are possible.
   "Take a negotiated result and determine status code and message. A nil
   result means no methods match, which yields status 405. Otherwise,
   unacceptable (to the client) content-types yield 406. Unacceptable (to
