@@ -287,7 +287,6 @@
                             (rs/coerce schema params :query)))}]
 
                    (let [errors (filter (comp error? second) parameters)]
-
                      (if (not-empty errors)
                        (d/error-deferred (ex-info "" {:status 400
                                                       :body errors
@@ -392,13 +391,10 @@
 
                ;; Resource exists?
                (link ctx
-                 (when (or
-                        (false? (service/exists? (:exists? options) ctx))
-                        (when-let [resource (:resource ctx)]
-                          (false? (res/exists? resource ctx))))
-                   (infof "Returning 404")
-                   (d/error-deferred (ex-info "" {:status 404
-                                                  ::http-response true}))))
+                 (when-let [resource (:resource ctx)]
+                   (when (false? (res/exists? resource ctx))
+                     (d/error-deferred (ex-info "" {:status 404
+                                                    ::http-response true})))))
 
                ;; Conditional requests - put this in own ns
                (fn [ctx]
@@ -413,9 +409,7 @@
 
                  (d/chain
 
-                  (or
-                   (service/last-modified last-modified ctx)
-                   (res/last-modified (:resource ctx) ctx))
+                  (res/last-modified (:resource ctx) ctx)
 
                   (fn [last-modified]
                     (if-let [last-modified (round-seconds-up last-modified)]

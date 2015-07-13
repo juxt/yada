@@ -123,6 +123,34 @@
 
 (deftype Post [])
 
+(defprotocol PostResult
+  (interpret-post-result [_ ctx]))
+
+(extend-protocol PostResult
+  Boolean
+  (interpret-post-result [b ctx]
+    (if b ctx (throw (ex-info "Failed to process POST" {}))))
+  String
+  (interpret-post-result [s ctx]
+    (assoc-in ctx [:response :body] s))
+  java.util.Map
+  (interpret-post-result [m ctx]
+    ;; TODO: Factor out hm (header-merge) so it can be tested independently
+    (letfn [(hm [x y]
+              (cond
+                (and (nil? x) (nil? y)) nil
+                (or (nil? x) (nil? y)) (or x y)
+                (and (coll? x) (coll? y)) (concat x y)
+                (and (coll? x) (not (coll? y))) (concat x [y])
+                (and (not (coll? x)) (coll? y)) (concat [x] y)
+                :otherwise (throw (ex-info "Unexpected headers case" {:x x :y y}))))]
+      (cond-> ctx
+        (:status m) (assoc-in [:response :status] (:status m))
+        (:headers m) (update-in [:response :headers] #(merge-with hm % (:headers m)))
+        (:body m) (assoc-in [:response :body] (:body m)))))
+  nil
+  (interpret-post-result [_ ctx] ctx))
+
 (extend-protocol Method
   Post
   (keyword-binding [_] :post)
@@ -147,7 +175,7 @@
          (assoc ctx :post-result result)))
 
      (fn [ctx]
-       (service/interpret-post-result (:post-result ctx) ctx))
+       (interpret-post-result (:post-result ctx) ctx))
 
      (fn [ctx]
        (-> ctx
@@ -179,7 +207,7 @@
     (d/chain
      ctx
      (link ctx
-       (if-let [origin (service/allow-origin (-> ctx :options :allow-origin) ctx)]
+       (if-let [origin (service/allow-origin (:resource ctx) ctx)]
          (update-in ctx [:response :headers]
                     merge {"access-control-allow-origin"
                            origin
@@ -224,32 +252,20 @@
      (ex-info "TRACE"
               (merge
                {::http-response true}
-               (if-let [trace (-> ctx :options :trace)]
-                 ;; custom user-supplied implementation
-                 (-> (merge
-                      {:status 200}
-                      (merge-with
-                       merge
-                       {:headers {"content-type" "message/http;charset=utf8"}}
-                       ;; Custom code /can/ override (but really shouldn't)
-                       (service/trace trace (-> ctx :request) ctx)))
-                     (update-in [:body] to-encoding "utf8"))
+               (let [body (-> ctx
+                              :request
+                              ;; A client MUST NOT generate header fields in a TRACE request containing sensitive
+                              ;; data that might be disclosed by the response. For example, it would be foolish for
+                              ;; a user agent to send stored user credentials [RFC7235] or cookies [RFC6265] in a
+                              ;; TRACE request.
+                              (update-in [:headers] dissoc "authorization" "cookie")
+                              print-request
+                              with-out-str
+                              ;; only "7bit", "8bit", or "binary" are permitted (RFC 7230 8.3.1)
+                              (to-encoding "utf8"))]
 
-                 ;; otherwise default implementation
-                 (let [body (-> ctx
-                                :request
-                                ;; A client MUST NOT generate header fields in a TRACE request containing sensitive
-                                ;; data that might be disclosed by the response. For example, it would be foolish for
-                                ;; a user agent to send stored user credentials [RFC7235] or cookies [RFC6265] in a
-                                ;; TRACE request.
-                                (update-in [:headers] dissoc "authorization" "cookie")
-                                print-request
-                                with-out-str
-                                ;; only "7bit", "8bit", or "binary" are permitted (RFC 7230 8.3.1)
-                                (to-encoding "utf8"))]
-
-                   {:status 200
-                    :headers {"content-type" "message/http;charset=utf8"
-                              "content-length" (.length body)}
-                    :body body
-                    ::http-response true})))))))
+                 {:status 200
+                  :headers {"content-type" "message/http;charset=utf8"
+                            "content-length" (.length body)}
+                  :body body
+                  ::http-response true}))))))
