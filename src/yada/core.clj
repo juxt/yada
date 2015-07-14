@@ -385,7 +385,8 @@
                      (d/error-deferred (ex-info "" (merge negotiated {::http-response true})))
                      (cond-> ctx
                        true (update-in [:response] merge negotiated)
-                       (:content-type negotiated) (assoc-in [:response :headers "content-type"] (:content-type negotiated))))))
+                       ;; TODO: Would be useful to have the raw mime-type in the ctx, not just the string version
+                       (:content-type negotiated) (assoc-in [:response :headers "content-type"] (mime/media-type->string (:content-type negotiated)))))))
 
                ;; TRACE (TODO: Is this link in the right place?)
                (link ctx
@@ -412,7 +413,9 @@
 
                  (d/chain
 
-                  (res/last-modified (:resource ctx) ctx)
+                  (or
+                   (res/last-modified (:last-modified options) ctx)
+                   (res/last-modified (:resource ctx) ctx))
 
                   (fn [last-modified]
                     (if-let [last-modified (round-seconds-up last-modified)]
@@ -465,20 +468,21 @@
                                               (interpose ", " ["Server" "Date" "Content-Length" "Access-Control-Allow-Origin"]))})
                      ctx))
 
+
+
                ;; Response
                (fn [ctx]
                  (let [response
-                       (merge
-                        {:status (or (get-in ctx [:response :status])
-                                     (service/status status ctx)
-                                     200)
-                         :headers (merge
-                                   (get-in ctx [:response :headers])
-                                   (service/headers headers ctx))
+                       {:status (or (get-in ctx [:response :status])
+                                    (service/status status ctx)
+                                    200)
+                        :headers (merge
+                                  (get-in ctx [:response :headers])
+                                  (service/headers headers ctx))
 
-                         ;; TODO :status and :headers should be implemented like this in all cases
-                         :body (get-in ctx [:response :body])})]
-                   (debugf "Returning response: %s" (dissoc response :body))
+                        ;; TODO :status and :headers should be implemented like this in all cases
+                        :body (get-in ctx [:response :body])}]
+                   (infof "Returning response: %s" (dissoc response :body))
                    response)))
 
               ;; Handle exits

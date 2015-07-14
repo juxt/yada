@@ -36,6 +36,7 @@
 ;; TODO: Replace memoize with cache to avoid memory exhaustion attacks
 (memoize
  (defn media-type->string [mt]
+   (assert (instance? MediaTypeMap mt))
    (.toLowerCase
     (str (media-type mt)
          (apply str (for [[k v] (:parameters mt)]

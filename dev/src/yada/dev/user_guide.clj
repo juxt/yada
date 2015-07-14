@@ -387,7 +387,9 @@
             ;; perhaps the use of 'fetch functions' is a placeholder for
             ;; a better design.
             (->
-             (yada (fn [ctx] (body component (post-process-doc component xbody (into {} examples) config) config))
+             (yada (fn [ctx]
+                     (body component (post-process-doc component xbody (into {} examples) config) config))
+
                    :representations [{:content-type #{"text/html"}
                                       :charset #{"utf-8"}
                                       }]

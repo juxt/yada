@@ -45,21 +45,21 @@
 (defprotocol Resource
   "A protocol for describing a resource: where it is, when it was last
   updated, how to change it, etc. A resource may hold its state, or be
-  able to educe the state on demand (via get-state)."
+  able to educe the state on fetch or during the request call."
 
   ;; Context-agnostic - can be introspected by tools (e.g. swagger)
-  (parameters [_] "Return the parameters, by method.")
+  (parameters [_] "Return the parameters, by method. Must not return a deferred value.")
 
   ;; Context-sensitive
-  (exists? [_ ctx] "Whether the resource actually exists")
+  (exists? [_ ctx] "Whether the resource actually exists. Can return a deferred value.")
 
   (last-modified [_ ctx] "Return the date that the resource was last
-  modified.")
+  modified. Can return a deferred value.")
 
   (request [_ method ctx] "Perform request. Context contains
   content-type, charset, language, content-encoding etc. in
   the :response map. Method as keyword is in context's :method
-  entry. The returned value is interpretted according to the its type,
+  entry. The returned value is interpreted according to the its type,
   and the request method. Side-effects are permissiable. Can return a
   deferred result.
 
@@ -82,11 +82,21 @@
 (extend-protocol Resource
   clojure.lang.Fn
   (parameters [_] nil)
+  ;; We assume the resource exists, the request can force a 404 by
+  ;; returning nil.
+  (exists? [_ ctx] true)
+  (last-modified [_ ctx] nil)
+  (request [f method ctx] (f ctx))
+
+  java.io.File
+  (last-modified [f ctx]
+    (Date. (.lastModified f)))
+
   nil
   ;; last-modified of 'nil' means we don't consider last-modified
   (parameters [_] nil)
   (last-modified [_ _] nil)
-  (get-state [_ media-type ctx] nil)
+  (request [f method ctx] nil)
   )
 
 ;; Fetch
@@ -98,8 +108,8 @@
 ;; resource definition.
 
 (extend-protocol ResourceFetch
-  clojure.lang.Fn
-  (fetch [f ctx]
+  #_clojure.lang.Fn
+  #_(fetch [f ctx]
     (let [res (f ctx)]
       ;; We call make-resource on dynamic fetch functions, to ensure the
       ;; result they return are treated just the same as if they were

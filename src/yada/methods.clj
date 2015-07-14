@@ -60,15 +60,10 @@
     ;; request function will not be added here. There may be a need to
     ;; revise this design decision later.
 
-    (let [content-type (get-in ctx [:response :content-type])]
-
-      ;; We don't need to add Content-Length,
-      ;; Content-Range, Trailer or Tranfer-Encoding, as
-      ;; per rfc7231.html#section-3.3
-
-      (cond-> ctx
-        content-type (update-in [:response :headers]
-                                assoc "content-type" (mime/media-type->string content-type))))))
+    ;; We don't need to add Content-Length,
+    ;; Content-Range, Trailer or Tranfer-Encoding, as
+    ;; per rfc7231.html#section-3.3
+    ctx))
 
 (deftype Get [])
 
@@ -100,8 +95,8 @@
            content-length
            (update-in [:response :headers] assoc "content-length" content-length)
 
-           (get-in ctx [:response :content-type])
-           (update-in [:response :headers] assoc "content-type" (mime/media-type->string (get-in ctx [:response :content-type])))))))))
+           #_(get-in ctx [:response :content-type])
+           #_(update-in [:response :headers] assoc "content-type" (mime/media-type->string (get-in ctx [:response :content-type])))))))))
 
 (deftype Put [])
 

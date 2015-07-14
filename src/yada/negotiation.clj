@@ -6,7 +6,8 @@
    [clojure.string :as str]
    [schema.core :as s]
    )
-  (:import [yada.charset CharsetMap]))
+  (:import [yada.charset CharsetMap]
+           [yada.mime MediaTypeMap]))
 
 ;; ------------------------------------------------------------------------
 ;; Content types
@@ -158,35 +159,28 @@
 (s/defn interpret-negotiation
   :- {(s/optional-key :status) s/Int
       (s/optional-key :message) s/Str
-      (s/optional-key :content-type) s/Str
+      (s/optional-key :content-type) MediaTypeMap
       (s/optional-key :client-charset) s/Str
       (s/optional-key :server-charset) s/Str}
-  ;; TODO: I'm not sure negotiation should handle the 405 Method Not
-  ;; Allowed case. Method guards are not for determining which methods
-  ;; are allowed on a resource, rather to help determine which
-  ;; representations are possible.
-  "Take a negotiated result and determine status code and message. A nil
-  result means no methods match, which yields status 405. Otherwise,
+  "Take a negotiated result and determine status code and message. If
   unacceptable (to the client) content-types yield 406. Unacceptable (to
   the server) content-types yield 415- Unsupported Media Type"
   [request :- Request
    {:keys [method content-type charset] :as result} :- (s/maybe NegotiationResult)]
   (cond
-    (nil? method) {:status 405 :message "Method Not Allowed"}
     (nil? content-type) {:status 406 :message "Not Acceptable (content-type)"}
     (and (:accept-charset request) (nil? charset)) {:status 406 :message "Not Acceptable (charset)"}
 
     :otherwise (merge {}
                       (when content-type
                         {:content-type
-                         (mime/media-type->string
-                          (if (and charset
-                                   ;; Only for text media-types
-                                   (= (:type content-type) "text")
-                                   ;; But don't overwrite an existing charset
-                                   (not (some-> content-type :parameters (get "charset"))))
-                            (assoc-in content-type [:parameters "charset"] (first charset))
-                            content-type))})
+                         (if (and charset
+                                  ;; Only for text media-types
+                                  (= (:type content-type) "text")
+                                  ;; But don't overwrite an existing charset
+                                  (not (some-> content-type :parameters (get "charset"))))
+                           (assoc-in content-type [:parameters "charset"] (first charset))
+                           content-type)})
                       (when charset
                         {:client-charset (first charset)
                          :server-charset (second charset)
