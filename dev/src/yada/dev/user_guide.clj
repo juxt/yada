@@ -389,13 +389,8 @@
             (->
              (yada (fn [ctx]
                      (body component (post-process-doc component xbody (into {} examples) config) config))
-
-                   :representations [{:content-type #{"text/html"}
-                                      :charset #{"utf-8"}
-                                      }]
-
-                   :last-modified (io/file "dev/resources/user-guide.md")
-                   )
+                   :representations [{:content-type #{"text/html"} :charset #{"utf-8"}}]
+                   :last-modified (io/file "dev/resources/user-guide.md"))
              (tag ::user-guide))))]
 
         ["/examples/"

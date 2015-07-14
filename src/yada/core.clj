@@ -1,6 +1,7 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.core
+  (:refer-clojure :exclude [methods])
   (:require
    [byte-streams :refer (convert)]
    [bidi.bidi :refer (Matched succeed)]
@@ -149,6 +150,8 @@
                     options)))
 
   ([{:keys
+     ;; TODO: Replace these with inline extracts from options to reduce
+     ;; scope complexity
      [resource                          ; async-supported
 
       service-available?                ; async-supported
@@ -163,7 +166,6 @@
 
       ;; CORS
       allow-origin
-
       ] ;; :or {resource {}}
 
      :as options
@@ -182,6 +184,7 @@
                       (res/parameters resource)
                       (catch AbstractMethodError e
                         (throw (ex-info "No parameters implementation" {:resource resource}))))
+
          methods (methods/methods)
 
          ;; TODO Now parse the content-types in the representations into
@@ -247,7 +250,15 @@
                    (d/error-deferred (ex-info "" {:status 414
                                                   ::http-response true}))))
 
-               ;; TODO: Is method allowed on this resource? See comment about 405 in negotiation
+               ;; Is method allowed on this resource?
+               (link ctx
+                 (when-let [methods
+                            (or (:methods options)
+                                (res/methods (:resource ctx)))]
+                   (when-not (contains? (set methods) method)
+                     (d/error-deferred (ex-info "Method Not Allowed"
+                                                {:status 405
+                                                 ::http-response true})))))
 
                ;; Malformed?
                (fn [ctx]

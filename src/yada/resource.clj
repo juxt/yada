@@ -1,6 +1,7 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.resource
+  (:refer-clojure :exclude [methods])
   (:require [clojure.tools.logging :refer :all]
             [manifold.deferred :as d]
             [yada.charset :refer (to-charset-map)]
@@ -48,6 +49,7 @@
   able to educe the state on fetch or during the request call."
 
   ;; Context-agnostic - can be introspected by tools (e.g. swagger)
+  (methods [_] "Return the allowed methods.")
   (parameters [_] "Return the parameters, by method. Must not return a deferred value.")
 
   ;; Context-sensitive
@@ -81,6 +83,7 @@
 
 (extend-protocol Resource
   clojure.lang.Fn
+  (methods [_] #{:get :head})
   (parameters [_] nil)
   ;; We assume the resource exists, the request can force a 404 by
   ;; returning nil.
@@ -94,10 +97,10 @@
 
   nil
   ;; last-modified of 'nil' means we don't consider last-modified
+  (methods [_] nil)
   (parameters [_] nil)
   (last-modified [_ _] nil)
-  (request [f method ctx] nil)
-  )
+  (request [f method ctx] nil))
 
 ;; Fetch
 
