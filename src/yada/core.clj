@@ -178,7 +178,10 @@
                     (res/make-resource resource)
                     resource)
 
-         parameters (res/parameters resource)
+         parameters (try
+                      (res/parameters resource)
+                      (catch AbstractMethodError e
+                        (throw (ex-info "No parameters implementation" {:resource resource}))))
          methods (methods/methods)
 
          ;; TODO Now parse the content-types in the representations into
@@ -374,13 +377,14 @@
                           (or
                            ;; TODO We might need a shorthand for representations one day
                            (res/representations (:representations options))
-                           (when (satisfies? res/ResourceRepresentations (:resource ctx)))
-                           (res/representations (:resource ctx))))))]
+                           (when (satisfies? res/ResourceRepresentations (:resource ctx))
+                             (res/representations (:resource ctx)))
+                           ))))]
 
                    (if (:status negotiated)
                      (d/error-deferred (ex-info "" (merge negotiated {::http-response true})))
                      (cond-> ctx
-                       true (merge negotiated)
+                       true (update-in [:response] merge negotiated)
                        (:content-type negotiated) (assoc-in [:response :headers "content-type"] (:content-type negotiated))))))
 
                ;; TRACE (TODO: Is this link in the right place?)
@@ -390,10 +394,10 @@
 
                ;; Resource exists?
                (link ctx
-                 (when-let [resource (:resource ctx)]
-                   (when (false? (res/exists? resource ctx))
-                     (d/error-deferred (ex-info "" {:status 404
-                                                    ::http-response true})))))
+                 (d/chain
+                  (res/exists? resource ctx)
+                  (fn [exists?]
+                    (assoc ctx :exists? exists?))))
 
                ;; Conditional requests - put this in own ns
                (fn [ctx]
@@ -416,24 +420,18 @@
                       (if-let [if-modified-since (some-> req
                                                          (get-in [:headers "if-modified-since"])
                                                          parse-date)]
-                        ;; TODO: Hang on, we can't deref in the
-                        ;; middle of a handler like this, we need to
-                        ;; build a chain (I think)
 
-                        (let [last-modified
-                              (if (d/deferrable? last-modified) @last-modified last-modified)]
+                        (if (<=
+                             (.getTime last-modified)
+                             (.getTime if-modified-since))
 
-                          (if (<=
-                               (.getTime last-modified)
-                               (.getTime if-modified-since))
+                          ;; exit with 304
+                          (d/error-deferred
+                           (ex-info "" (merge {:status 304
+                                               ::http-response true}
+                                              ctx)))
 
-                            ;; exit with 304
-                            (d/error-deferred
-                             (ex-info "" (merge {:status 304
-                                                 ::http-response true}
-                                                ctx)))
-
-                            (assoc-in ctx [:response :headers "last-modified"] (format-date last-modified))))
+                          (assoc-in ctx [:response :headers "last-modified"] (format-date last-modified)))
 
                         (or
                          (some->> last-modified
@@ -442,6 +440,14 @@
                          ctx))
 
                       ctx))))
+
+               (link ctx
+                 (when-let [etag (get-in ctx [:request :headers "if-match"])]
+                   (when (not= etag (get-in ctx [:resource :etag]))
+                     (throw
+                      (ex-info "Precondition failed"
+                               {:status 412
+                                ::http-response true})))))
 
                ;; Methods
                (fn [ctx]

@@ -10,12 +10,21 @@
    [ring.util.codec :as codec]
    [schema.core :as s]))
 
+(defrecord JustMethods []
+  res/Resource
+  (parameters [_ ] {:post {:form {:foo s/Str}}})
+  (exists? [_ ctx] true)
+  (last-modified [_ ctx] (java.util.Date.))
+  res/ResourceRepresentations
+  (representations [_] [{:content-type #{"text/plain"}}])
+  )
+
+(defn just-methods [] (->JustMethods))
+
 (deftest post-test
-  (let [handler (yada (reify
-                        res/Resource)
-                      :parameters {:post {:form {:foo s/Str}}}
-                      ;;:post! (fn [ctx] (pr-str (:parameters ctx)))
-                      )]
+  (let [handler (yada (just-methods)
+                 ;;:post! (fn [ctx] (pr-str (:parameters ctx)))
+                 )]
 
     ;; Nil post body
     (let [response (handler (mock/request :post "/"))]

@@ -70,8 +70,7 @@
   Resource
   (exists? [_ ctx] (.exists f))
   (last-modified [_ ctx] (Date. (.lastModified f)))
-  (get-state [_ content-type ctx] f)
-  (put-state! [_ content content-type ctx]
+  (request [_ method ctx]
     ;; The reason to use bs/transfer is to allow an efficient copy of byte buffers
     ;; should the following be true:
 
@@ -87,18 +86,17 @@
     ;; The analog of this is the ability to return a java.io.File as the
     ;; response body and have aleph efficiently stream it via NIO. This
     ;; code allows the same efficiency for file uploads.
-    (bs/transfer (-> ctx :request :body) f))
-
-  (delete-state! [_ ctx]
-    (.delete f))
+    (case method
+      :get f
+      :put (bs/transfer (-> ctx :request :body) f)
+      :delete (.delete f)))
 
   ResourceRepresentations
   (representations [_]
     [{:method #{:get :head}
       :content-type #{(ext-mime-type (.getName f))}}
      {:method #{:put}}
-     {:method #{:delete}}])
-  )
+     {:method #{:delete}}]))
 
 #_(defrecord DirectoryResource [dir]
   ResourceFetch

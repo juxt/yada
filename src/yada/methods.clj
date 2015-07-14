@@ -29,7 +29,7 @@
   (keyword-binding [_] "Return the keyword this method is for")
   (safe? [_] "Is the method considered safe? Return a boolean")
   (idempotent? [_] "Is the method considered safe? Return a boolean")
-  (request [_ ctx] "Call the method"))
+  (request [_ ctx] "Apply the method to the resource"))
 
 (defn methods
   "Return a map of method instances"
@@ -41,39 +41,6 @@
              [(keyword-binding i) i]))
          (extenders Method))))
 
-(deftype Get [])
-
-(extend-protocol Method
-  Get
-  (keyword-binding [_] :get)
-  (safe? [_] true)
-  (idempotent? [_] true)
-  (request [this ctx]
-    (d/chain
-     ctx
-
-     ;; Get body
-     (fn [ctx]
-       (let [content-type (get-in ctx [:response :content-type])]
-
-         (d/chain
-
-          ;; the resource here can still be deferred (TODO: test this)
-          (:resource ctx)
-
-          (fn [resource]
-            (rep/to-representation
-             (res/get-state resource content-type ctx)
-             content-type))
-
-          (fn [body]
-            (let [content-length (rep/content-length body)]
-              (cond-> ctx
-                true (assoc-in [:response :body] body)
-                content-length (update-in [:response :headers] assoc "content-length" content-length)
-                content-type (update-in [:response :headers] assoc "content-type" (mime/media-type->string content-type)))))))))))
-
-
 (deftype Head [])
 
 (extend-protocol Method
@@ -82,21 +49,59 @@
   (safe? [_] true)
   (idempotent? [_] true)
   (request [this ctx]
+
+    (when (false? (:exists? ctx))
+      (d/error-deferred (ex-info "" {:status 404
+                                     ::http-response true})))
+
+    ;; HEAD is implemented without delegating to the resource.
+
+    ;; TODO: This means that any headers normally set by the resource's
+    ;; request function will not be added here. There may be a need to
+    ;; revise this design decision later.
+
+    (let [content-type (get-in ctx [:response :content-type])]
+
+      ;; We don't need to add Content-Length,
+      ;; Content-Range, Trailer or Tranfer-Encoding, as
+      ;; per rfc7231.html#section-3.3
+
+      (cond-> ctx
+        content-type (update-in [:response :headers]
+                                assoc "content-type" (mime/media-type->string content-type))))))
+
+(deftype Get [])
+
+(extend-protocol Method
+  Get
+  (keyword-binding [_] :get)
+  (safe? [_] true)
+  (idempotent? [_] true)
+  (request [this ctx]
+
+    (when (false? (:exists? ctx))
+      (d/error-deferred (ex-info "" {:status 404
+                                     ::http-response true})))
+
     (d/chain
-     ctx
 
-     ;; Get body
-     (fn [ctx]
-       (let [content-type (get-in ctx [:response :content-type])]
+     ;; GET request returns (possibly deferred) body.
+     (res/request (:resource ctx) :get ctx)
 
-         (if content-type
-           ;; We don't need to add Content-Length,
-           ;; Content-Range, Trailer or Tranfer-Encoding, as
-           ;; per rfc7231.html#section-3.3
-           (update-in ctx [:response :headers]
-                      assoc "content-type" (mime/media-type->string content-type))
-           ctx))))))
+     (fn [body]
+       ;; If request does not return a String, we can try to encode one
+       (rep/to-representation body (get-in ctx [:response :content-type])))
 
+     (fn [^String body]
+       (let [content-length (rep/content-length body)]
+         (cond-> ctx
+           true (assoc-in [:response :body] body)
+
+           content-length
+           (update-in [:response :headers] assoc "content-length" content-length)
+
+           (get-in ctx [:response :content-type])
+           (update-in [:response :headers] assoc "content-type" (mime/media-type->string (get-in ctx [:response :content-type])))))))))
 
 (deftype Put [])
 
@@ -106,20 +111,13 @@
   (safe? [_] false)
   (idempotent? [_] true)
   (request [_ ctx]
-    (d/chain
-     ctx
-
-     ;; Do the put!
-     (fn [ctx]
-       (let [exists? (res/exists? (:resource ctx) ctx)]
-         (let [res (res/put-state! (:resource ctx) nil nil ctx)]
-
-           (assoc-in ctx [:response :status]
-                     (cond
-                       ;; TODO A 202 may be not what the developer wants!
-                       (d/deferred? res) 202
-                       exists? 204
-                       :otherwise 201))))))))
+    (let [res (res/request (:resource ctx) :put ctx)]
+      (assoc-in ctx [:response :status]
+                (cond
+                  ;; TODO A 202 may be not what the developer wants!
+                  (d/deferred? res) 202
+                  (:exists? ctx) 204
+                  :otherwise 201)))))
 
 (deftype Post [])
 
@@ -157,30 +155,14 @@
   (safe? [_] false)
   (idempotent? [_] false)
   (request [_ ctx]
+
     (d/chain
-     ctx
-
-     (link ctx
-       (when-let [etag (get-in ctx [:request :headers "if-match"])]
-         (when (not= etag (get-in ctx [:resource :etag]))
-           (throw
-            (ex-info "Precondition failed"
-                     {:status 412
-                      ::http-response true})))))
-
-     (fn [ctx]
-       (let [result (res/post-state! (:resource ctx) ctx)]
-
-         ;; TODO: what if error?
-         (assoc ctx :post-result result)))
-
-     (fn [ctx]
-       (interpret-post-result (:post-result ctx) ctx))
-
+     (res/request (:resource ctx) :post ctx)
+     (fn [res]
+       (interpret-post-result res ctx))
      (fn [ctx]
        (-> ctx
            (update-in [:response] (partial merge {:status 200})))))))
-
 
 (deftype Delete [])
 
@@ -191,10 +173,9 @@
   (idempotent? [_] true)
   (request [_ ctx]
     (d/chain
-     ctx
-     (fn [ctx]
-       (let [res (res/delete-state! (:resource ctx) ctx)]
-         (assoc-in ctx [:response :status] (if (d/deferred? res) 202 204)))))))
+     (res/request (:resource ctx) :delete ctx)
+     (fn [res]
+       (assoc-in ctx [:response :status] (if (d/deferred? res) 202 204))))))
 
 (deftype Options [])
 
@@ -204,9 +185,14 @@
   (safe? [_] true)
   (idempotent? [_] true)
   (request [_ ctx]
+    ;; TODO: Build in explicit support for CORS pre-flight requests
     (d/chain
-     ctx
-     (link ctx
+     (res/request (:resource ctx) :options ctx)
+     (fn [res]
+       (update-in ctx [:response]
+                  merge res))
+     ;; For example, for a resource supporting CORS
+     #_(link ctx
        (if-let [origin (service/allow-origin (:resource ctx) ctx)]
          (update-in ctx [:response :headers]
                     merge {"access-control-allow-origin"

@@ -13,8 +13,6 @@
 
 (defrecord AtomicMapResource [*a wrapper *last-mod]
   Resource
-  #_(produces [_ ctx] ["application/edn" "text/html;q=0.9" "application/json;q=0.9"])
-  #_(produces-charsets [_ ctx] platform-charsets)
   #_(supported-methods [_ ctx] (conj (set (supported-methods wrapper ctx)) :put :post :delete))
 
   (exists? [_ ctx] true)
@@ -23,12 +21,12 @@
     (when-let [lm @*last-mod]
       lm))
 
-  (get-state [_ _ ctx] @*a)
-
-  (put-state! [_ content media-type ctx] (throw (ex-info "TODO" {})))
+  (request [_ method ctx] (case method :get @*a :put (throw (ex-info "TODO" {}))))
 
   ResourceRepresentations
-  (representations [_] [])
+  (representations [_] [{:method #{:get :head}
+                         :content-type #{"application/edn" "text/html;q=0.9" "application/json;q=0.9"}
+                         :charset platform-charsets}])
   )
 
 (defn wrap-with-watch [wrapper *a]

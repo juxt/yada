@@ -10,7 +10,13 @@
            [java.util Date]))
 
 (defprotocol ResourceConstructor
-  (make-resource [_] "Make a resource. Often, resources need to be constructed rather than simply extending types with the Resource protocol. For example, we sometimes need to know the exact time that a resource is constructed, to support time-based conditional requests. For example, a simple StringResource is immutable, so by knowing the time of construction, we can precisely state its Last-Modified-Date."))
+  (make-resource [_] "Make a resource. Often, resources need to be
+  constructed rather than simply extending types with the Resource
+  protocol. For example, we sometimes need to know the exact time that a
+  resource is constructed, to support time-based conditional
+  requests. For example, a simple StringResource is immutable, so by
+  knowing the time of construction, we can precisely state its
+  Last-Modified-Date."))
 
 (extend-protocol ResourceConstructor
   clojure.lang.Fn
@@ -27,35 +33,51 @@
   (make-resource [_] nil))
 
 (defprotocol ResourceFetch
-  (fetch [this ctx] "Fetch the resource, such that questions can be answered about it. Anything you return from this function will be available in the :resource entry of ctx and will form the type that will be used to dispatch other functions in this protocol. You can return a deferred if necessary (indeed, you should do so if you have to perform some IO in this function). Often, you will return 'this', perhaps augmented with some additional state. Sometimes you will return something else."))
+  (fetch [this ctx] "Fetch the resource, such that questions can be
+  answered about it. Anything you return from this function will be
+  available in the :resource entry of ctx and will form the type that
+  will be used to dispatch other functions in this protocol. You can
+  return a deferred if necessary (indeed, you should do so if you have
+  to perform some IO in this function). Often, you will return 'this',
+  perhaps augmented with some additional state. Sometimes you will
+  return something else."))
 
 (defprotocol Resource
   "A protocol for describing a resource: where it is, when it was last
   updated, how to change it, etc. A resource may hold its state, or be
   able to educe the state on demand (via get-state)."
 
-  ;; Context-agnostic
+  ;; Context-agnostic - can be introspected by tools (e.g. swagger)
   (parameters [_] "Return the parameters, by method.")
 
   ;; Context-sensitive
   (exists? [_ ctx] "Whether the resource actually exists")
-  (last-modified [_ ctx] "Return the date that the resource was last modified.")
 
-  ;; TODO: Misnomer. If media-type is a parameter, then it isn't state,
-  ;; it's representation. Perhaps rename simply to 'get-representation'
-  ;; or even just 'get'. Perhaps put into ResourceRepresentations
-  ;; protocol (see below)
+  (last-modified [_ ctx] "Return the date that the resource was last
+  modified.")
 
-  ;; TODO: Need language too, so perhaps just provide the context
-  (get-state [_ media-type ctx] "Return the state. Can be formatted to a representation of the given media-type and charset. Returning nil results in a 404. Get the charset from the context [:request :charset], if you can support different charsets. A nil charset at [:request :charset] means the user-agent can support all charsets, so just pick one. If you don't return a String, a representation will be attempted from whatever you do return.")
+  (request [_ method ctx] "Perform request. Context contains
+  content-type, charset, language, content-encoding etc. in
+  the :response map. Method as keyword is in context's :method
+  entry. The returned value is interpretted according to the its type,
+  and the request method. Side-effects are permissiable. Can return a
+  deferred result.
 
-  ;; TODO: Perhaps fold these last three into a single 'unsafe' mutation function
+  GET: Return the state. Can be formatted to a representation of the
+  given media-type and charset. Returning nil results in a 404. Get the
+  charset from the context [:request :charset], if you can support
+  different charsets. A nil charset at [:request :charset] means the
+  user-agent can support all charsets, so just pick one. If you don't
+  return a String, a representation will be attempted from whatever you
+  do return.
 
-  (put-state! [_ content media-type ctx] "Overwrite the state with the data. To avoid inefficiency in abstraction, satisfying types are required to manage the parsing of the representation in the request body. If a deferred is returned, the HTTP response status is set to 202")
+  PUT: Overwrite the state with the data. To avoid inefficiency in
+  abstraction, satisfying types are required to manage the parsing of
+  the representation in the request body. If a deferred is returned, the
+  HTTP response status is set to 202.
 
-  (post-state! [_ ctx] "Insert a new sub-resource. See write! for semantics.")
-
-  (delete-state! [_ ctx] "Delete the state. If a deferred is returned, the HTTP response status is set to 202"))
+  DELETE: Delete the state. If a deferred is returned, the HTTP response
+  status is set to 202"))
 
 (extend-protocol Resource
   clojure.lang.Fn
@@ -97,11 +119,17 @@
 ;; Negotiation
 
 (defprotocol Negotiable
-  (negotiate [_ ctx] "Negotiate the resource's representations. Return a yada.negotiation/NegotiationResult. Optional protocol, falls back to default negotiation."))
+  (negotiate [_ ctx] "Negotiate the resource's representations. Return a
+  yada.negotiation/NegotiationResult. Optional protocol, falls back to
+  default negotiation."))
 
 (defprotocol ResourceRepresentations
   ;; Context-agnostic
-  (representations [_] "Declare the resource's capabilities. Return a sequence, each item of which specifies the methods, content-types, charsets, languages and encodings that the resource is capable of. Each of these dimensions may be specified as a set, meaning 'one of'. Drives the default negotiation algorithm."))
+  (representations [_] "Declare the resource's capabilities. Return a
+  sequence, each item of which specifies the methods, content-types,
+  charsets, languages and encodings that the resource is capable
+  of. Each of these dimensions may be specified as a set, meaning 'one
+  of'. Drives the default negotiation algorithm."))
 
 ;; One idea is to combine 'static' representations with 'dynamic'
 ;; ones. Swagger can use the static representations, but these can be

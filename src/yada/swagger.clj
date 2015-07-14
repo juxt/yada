@@ -45,7 +45,7 @@
   Resource
   (exists? [_ ctx] true)
   (last-modified [_ ctx] created-at)
-  (get-state [_ content-type ctx] (rs/swagger-json spec))
+  (request [_ method ctx] (case method :get (rs/swagger-json spec)))
 
   ResourceRepresentations
   (representations [_]

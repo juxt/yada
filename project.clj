@@ -62,9 +62,7 @@
 
           [org.webjars/swagger-ui "2.1.8-M1"]
           [org.webjars/jquery "2.1.3"]
-          [org.webjars/bootstrap "3.3.2"]
-
-          ]
+          [org.webjars/bootstrap "3.3.2"]]
 
          :source-paths ["dev/src"]
          :resource-paths ["dev/resources"]}

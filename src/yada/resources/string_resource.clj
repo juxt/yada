@@ -14,7 +14,7 @@
   Resource
   (exists? [this ctx] true)
   (last-modified [this _] last-modified)
-  (get-state [this media-type ctx] s)
+  (request [this method ctx] (case method :get s))
   (parameters [_] nil)
 
   ResourceRepresentations
