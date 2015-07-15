@@ -263,6 +263,7 @@
                ;; Malformed?
                (fn [ctx]
                  (let [keywordize (fn [m] (into {} (for [[k v] m] [(keyword k) v])))
+
                        parameters
                        (when parameters
                          {:path
@@ -302,6 +303,7 @@
                        (d/error-deferred (ex-info "" {:status 400
                                                       :body errors
                                                       ::http-response true}))
+
                        (if parameters
                          (let [body (:body parameters)
                                merged-params (merge (apply merge (vals (dissoc parameters :body)))
@@ -493,7 +495,7 @@
 
                         ;; TODO :status and :headers should be implemented like this in all cases
                         :body (get-in ctx [:response :body])}]
-                   (infof "Returning response: %s" (dissoc response :body))
+                   (debugf "Returning response: %s" (dissoc response :body))
                    response)))
 
               ;; Handle exits

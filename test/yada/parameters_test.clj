@@ -8,23 +8,39 @@
    [yada.test.util :refer (given)]
    [ring.mock.request :as mock]
    [ring.util.codec :as codec]
-   [schema.core :as s]))
+   [schema.core :as s]
+   [clojure.tools.logging :refer :all]))
 
 (defrecord JustMethods []
   res/Resource
-  (parameters [_ ] {:post {:form {:foo s/Str}}})
+  (methods [this] (keys this))
+  (parameters [this]
+    (infof "this is %s" (seq this))
+    (let [res
+          (reduce-kv (fn [acc k v]
+                       (infof "associng %s: %s = %s" acc k v)
+                       (assoc acc k (:parameters v))) {} this)]
+      (infof "res is %s" res)
+      res
+      ))
   (exists? [_ ctx] true)
   (last-modified [_ ctx] (java.util.Date.))
+  (request [this method ctx]
+    (when-let [f (get-in this [method :function])]
+      (f ctx)))
   res/ResourceRepresentations
-  (representations [_] [{:content-type #{"text/plain"}}])
-  )
+  (representations [_] [{:content-type #{"text/plain"}}]))
 
-(defn just-methods [] (->JustMethods))
+(defn just-methods [& {:as args}]
+  (infof "args is %s" args)
+  (map->JustMethods args))
 
 (deftest post-test
-  (let [handler (yada (just-methods)
-                 ;;:post! (fn [ctx] (pr-str (:parameters ctx)))
-                 )]
+  (let [handler (yada (just-methods
+                       :post {:function
+                              (fn [ctx]
+                                (pr-str (:parameters ctx)))
+                              :parameters {:form {:foo s/Str}}}))]
 
     ;; Nil post body
     (let [response (handler (mock/request :post "/"))]
@@ -41,13 +57,14 @@
         [:body bs/to-string edn/read-string] := {:foo "bar"}))))
 
 (deftest post-test-with-query-params
-  (let [handler (yada nil
-                      :parameters {:post {:query {:foo s/Str}
-                                          :form {:bar s/Str}}}
-                      :post! (fn [ctx] (pr-str (:parameters ctx))))]
+  (let [handler (yada (just-methods
+                       :post {:function
+                              (fn [ctx] (pr-str (:parameters ctx)))
+                              :parameters {:query {:foo s/Str}
+                                          :form {:bar s/Str}}}))]
 
     ;; Nil post body
-    #_(let [response (handler (mock/request :post "/?foo=123"))]
+    (let [response (handler (mock/request :post "/?foo=123"))]
       (given @response
         :status := 200
         [:body bs/to-string edn/read-string] := {:foo "123"}))
