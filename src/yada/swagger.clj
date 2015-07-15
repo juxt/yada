@@ -43,6 +43,8 @@
   (make-resource [o] o)
 
   Resource
+  (methods [_] #{:get :head})
+  (parameters [_] nil)
   (exists? [_ ctx] true)
   (last-modified [_ ctx] created-at)
   (request [_ method ctx] (case method :get (rs/swagger-json spec)))
