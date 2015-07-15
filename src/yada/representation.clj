@@ -64,7 +64,9 @@
        (when-let [encoding (some-> media-type :parameters (get "charset"))]
          (bs/convert s java.nio.ByteBuffer {:encoding encoding})))
      s))
-  (content-length [s] (.length s))
+  (content-length [s]
+    ;; The content-length is NOT the length of the string, but the "decimal number of octets, for a potential payload body".
+    nil)
 
   clojure.lang.APersistentMap
   (to-representation [m media-type] (render-map m (mime/media-type media-type)))
@@ -82,7 +84,7 @@
 
   java.nio.ByteBuffer
   (to-representation [b _] b)
-  (content-length [_] nil)
+  (content-length [b] (.remaining b))
 
   java.io.BufferedInputStream
   (to-representation [b _] b)

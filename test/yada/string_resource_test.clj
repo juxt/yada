@@ -22,7 +22,14 @@
     ;; case. We know the Java platform stores Strings as Unicode utf-16, and
     ;; that it can output these strings in utf-8.
     (let [resource "Hello World"
-          handler (yada resource :produces "text/html")
+          handler
+          (yada resource
+                :representations [{:content-type #{"text/html"}
+                                   ;; TODO: See comment above, this
+                                   ;; should not be necessary, somehow
+                                   ;; the charset should default to
+                                   ;; UTF-8 on strings, not sure how.
+                                   :charset #{"UTF-8"}}])
           request (request :get "/")
           response @(handler request)]
       (given response
@@ -35,7 +42,8 @@
 
 (defn parse-allow [s]
   (is s)
-  (set (str/split s #"\s*,\s*")))
+  (when s
+    (set (str/split s #"\s*,\s*"))))
 
 (deftest hello-world-test
   (testing "hello-world"
@@ -46,9 +54,9 @@
 
       (given response
         :status := 200
-        :headers :> {"content-length" (count "Hello World!")}
-        :body :? string?)))
-
+        :headers :> {"content-length" (count "Hello World!")
+                     "content-type" "text/plain;charset=utf-8"}
+        :body :? (partial instance? java.nio.ByteBuffer))))
 
   (testing "if-last-modified"
     (time/do-at (time/minus (time/now) (time/days 6))
@@ -63,7 +71,7 @@
             (given response
               :status := 200
               :headers :> {"content-length" (count "Hello World!")}
-              :body :? string?)))
+              :body :? (partial instance? java.nio.ByteBuffer))))
 
         (time/do-at (time/minus (time/now) (time/days 2))
 
@@ -75,23 +83,20 @@
               :status := 304))))))
 
   (testing "safe-by-default"
-    (let [resource "Hello World!"
-          handler (yada resource)]
+      (let [resource "Hello World!"
+            handler (yada resource)]
 
-      (doseq [method [:put :post :delete]]
-        (given @(handler (request method "/"))
-          :status := 405
-          [:headers "allow" parse-allow] := #{"GET" "HEAD" "OPTIONS" "TRACE"}
-          ))))
+        (doseq [method [:put :post :delete]]
+          (given @(handler (request method "/"))
+            :status := 405
+            [:headers "allow"] :!? nil?
+            [:headers "allow" parse-allow] := #{"GET" "HEAD"}
+            ))))
 
   #_(testing "wrap-in-atom"
-    (let [resource (atom "Hello World!")
-          handler (yada resource)]
+      (let [resource (atom "Hello World!")
+            handler (yada resource)]
 
-      (given @(handler (request :put "/"))
-        :status := 200
-        )))
-
-
-
-  )
+        (given @(handler (request :put "/"))
+          :status := 200
+          ))))

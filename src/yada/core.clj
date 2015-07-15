@@ -252,13 +252,15 @@
                (link ctx
                  (when-let [methods
                             (or (:methods options)
-                                (res/methods (:resource ctx)))]
+                                (res/methods resource))]
+
                    (when-not (contains? (set methods) method)
                      (d/error-deferred (ex-info "Method Not Allowed"
                                                 {:status 405
+                                                 :headers {"allow" (str/join ", " (map (comp (memfn toUpperCase) name) methods))}
                                                  ::http-response true})))))
 
-               ;; Malformed?
+               ;; Malformed? (parameters)
                (fn [ctx]
                  (let [keywordize (fn [m] (into {} (for [[k v] m] [(keyword k) v])))
 

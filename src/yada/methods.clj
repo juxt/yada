@@ -89,15 +89,14 @@
        (rep/to-representation body (get-in ctx [:response :content-type])))
 
      (fn [^String body]
+       (infof "body is now %s" body)
+       (infof "cl is now %s" (rep/content-length body))
        (let [content-length (rep/content-length body)]
          (cond-> ctx
            true (assoc-in [:response :body] body)
 
            content-length
-           (update-in [:response :headers] assoc "content-length" content-length)
-
-           #_(get-in ctx [:response :content-type])
-           #_(update-in [:response :headers] assoc "content-type" (mime/media-type->string (get-in ctx [:response :content-type])))))))))
+           (update-in [:response :headers] assoc "content-length" content-length)))))))
 
 (deftype Put [])
 
@@ -129,13 +128,10 @@
     (assoc-in ctx [:response :body] s))
   clojure.lang.Fn
   (interpret-post-result [f ctx]
-    (infof "interpret-post-result: fn")
     (interpret-post-result (f ctx) ctx))
   java.util.Map
   (interpret-post-result [m ctx]
     ;; TODO: Factor out hm (header-merge) so it can be tested independently
-    (infof "interpret-post-result: m = %s" m)
-
     (letfn [(hm [x y]
               (cond
                 (and (nil? x) (nil? y)) nil

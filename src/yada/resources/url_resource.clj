@@ -10,12 +10,11 @@
            [java.io BufferedReader InputStreamReader]))
 
 ;; A UrlResource is a Java resource.
-(extend-protocol Resource
-  URL
+
+(extend-type URL
+  Resource
   (methods [_] #{:get :head})
   (parameters [_] nil)
-  #_(produces [u ctx] [(ext-mime-type (.getPath u))])
-  #_(produces-charsets [u ctx] nil)
   (exists? [_ ctx] true)
   (last-modified [u ctx]
     (let [f (io/file (.getFile u))]
@@ -27,16 +26,12 @@
       (if (= (get-in ctx [:response :content-type :type]) "text")
         (BufferedReader.
          (InputStreamReader. (.openStream u) (or (get-in ctx [:response :server-charset]) "UTF-8")))
-        (.openStream u)))))
+        (.openStream u))))
 
-(extend-protocol ResourceRepresentations
-  URL
+  ResourceRepresentations
   (representations [u]
     [{:content-type #{(ext-mime-type (.getPath u))}
-      :charset platform-charsets}]))
+      :charset platform-charsets}])
 
-(extend-protocol ResourceConstructor
-  URL
+  ResourceConstructor
   (make-resource [url] url))
-
-;; TODO: Try refactoring to use extend-type instead of extend-protocol

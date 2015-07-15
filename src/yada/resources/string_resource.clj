@@ -12,10 +12,11 @@
   (fetch [this ctx] this)
 
   Resource
+  (methods [this] #{:get :head})
+  (parameters [_] nil)
   (exists? [this ctx] true)
   (last-modified [this _] last-modified)
   (request [this method ctx] (case method :get s))
-  (parameters [_] nil)
 
   ResourceRepresentations
   (representations [_]
