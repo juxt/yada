@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [methods])
   (:require
    [clojure.string :as str]
+   [clojure.tools.logging :refer :all]
    [manifold.deferred :as d]
    [yada.mime :as mime]
    [yada.representation :as rep]
@@ -126,9 +127,15 @@
   String
   (interpret-post-result [s ctx]
     (assoc-in ctx [:response :body] s))
+  clojure.lang.Fn
+  (interpret-post-result [f ctx]
+    (infof "interpret-post-result: fn")
+    (interpret-post-result (f ctx) ctx))
   java.util.Map
   (interpret-post-result [m ctx]
     ;; TODO: Factor out hm (header-merge) so it can be tested independently
+    (infof "interpret-post-result: m = %s" m)
+
     (letfn [(hm [x y]
               (cond
                 (and (nil? x) (nil? y)) nil

@@ -88,6 +88,10 @@
   (to-representation [b _] b)
   (content-length [_] nil)
 
+  java.io.Reader
+  (to-representation [r _] r)
+  (content-length [_] nil)
+
   Object
   ;; We could implement to-representation here as a pass-through, but it
   ;; is currently useful to have yada fail on types it doesn't know how to

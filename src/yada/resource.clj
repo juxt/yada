@@ -78,6 +78,12 @@
   the representation in the request body. If a deferred is returned, the
   HTTP response status is set to 202.
 
+  POST: Post the new data. Return a result. If a Ring response map is
+  returned, it is returned to the client. If a function can be
+  reeturned, it is invoked with the context as the only parameter. If a
+  string is returned, it is assumed to be the body. See
+  yada.methods/PostResult for full details of what can be returned.
+
   DELETE: Delete the state. If a deferred is returned, the HTTP response
   status is set to 202"))
 

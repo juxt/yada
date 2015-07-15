@@ -8,7 +8,7 @@
             [yada.test.util :refer [given]]
             [ring.mock.request :as mock]
             )
-  (:import [java.io BufferedInputStream]))
+  (:import [java.io BufferedReader]))
 
 ;; Test a single Java resource. Note that this isn't a particularly useful
 ;; resource, because it contains no knowledge of when it was modified,
@@ -23,6 +23,6 @@
     (given response
       identity :? some?
       :status := 200
-      [:headers "content-type"] := "text/css"
+      [:headers "content-type"] := "text/css;charset=utf-8"
       [:headers "content-length"] :? nil?
-      :body :? (partial instance? BufferedInputStream))))
+      :body :? (partial instance? BufferedReader))))

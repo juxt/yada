@@ -11,8 +11,7 @@
   (exists? [_ ctx] true)
   (last-modified [_ ctx] (java.util.Date.))
   (request [this method ctx]
-    (when-let [f (get-in this [method :function])]
-      (f ctx)))
+    (get-in this [method :response]))
   res/ResourceRepresentations
   (representations [_] [{:content-type #{"text/plain"}}]))
 

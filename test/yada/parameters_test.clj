@@ -13,11 +13,11 @@
    [clojure.tools.logging :refer :all]))
 
 (deftest post-test
-  (let [handler (yada (just-methods
-                       :post {:function
-                              (fn [ctx]
-                                (pr-str (:parameters ctx)))
-                              :parameters {:form {:foo s/Str}}}))]
+  (let [handler (yada
+                 (just-methods
+                  :post {:parameters {:form {:foo s/Str}}
+                         :response (fn [ctx]
+                                     (pr-str (:parameters ctx)))}))]
 
     ;; Nil post body
     (let [response (handler (mock/request :post "/"))]
@@ -34,11 +34,10 @@
         [:body bs/to-string edn/read-string] := {:foo "bar"}))))
 
 (deftest post-test-with-query-params
-  (let [handler (yada (just-methods
-                       :post {:function
-                              (fn [ctx] (pr-str (:parameters ctx)))
-                              :parameters {:query {:foo s/Str}
-                                          :form {:bar s/Str}}}))]
+  (let [handler (yada
+                 (just-methods
+                  :post {:parameters {:query {:foo s/Str} :form {:bar s/Str}}
+                         :response (fn [ctx] (pr-str (:parameters ctx)))}))]
 
     ;; Nil post body
     (let [response (handler (mock/request :post "/?foo=123"))]
