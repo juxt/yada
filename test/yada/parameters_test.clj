@@ -9,31 +9,8 @@
    [ring.mock.request :as mock]
    [ring.util.codec :as codec]
    [schema.core :as s]
+   [yada.resources.misc :refer (just-methods)]
    [clojure.tools.logging :refer :all]))
-
-(defrecord JustMethods []
-  res/Resource
-  (methods [this] (keys this))
-  (parameters [this]
-    (infof "this is %s" (seq this))
-    (let [res
-          (reduce-kv (fn [acc k v]
-                       (infof "associng %s: %s = %s" acc k v)
-                       (assoc acc k (:parameters v))) {} this)]
-      (infof "res is %s" res)
-      res
-      ))
-  (exists? [_ ctx] true)
-  (last-modified [_ ctx] (java.util.Date.))
-  (request [this method ctx]
-    (when-let [f (get-in this [method :function])]
-      (f ctx)))
-  res/ResourceRepresentations
-  (representations [_] [{:content-type #{"text/plain"}}]))
-
-(defn just-methods [& {:as args}]
-  (infof "args is %s" args)
-  (map->JustMethods args))
 
 (deftest post-test
   (let [handler (yada (just-methods
