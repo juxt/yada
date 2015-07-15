@@ -34,22 +34,28 @@
                ;; Equals?
                := `(is (= ((as-test-function ~a) ~t) ~c))
                :!= `(is (not= ((as-test-function ~a) ~t) ~c))
+
                ;; Schema checks
                :- `(is (nil? (s/check ~c ((as-test-function ~a) ~t))))
+               :!- `(is (not (nil? (s/check ~c ((as-test-function ~a) ~t)))))
+
                ;; Is?
                :? `(is (~c ((as-test-function ~a) ~t)))
                :!? `(is (not (~c ((as-test-function ~a) ~t))))
+
                ;; Matches regex?
                :# `(is (re-matches (re-pattern ~c) ((as-test-function ~a) ~t)))
                :!# `(is (not (re-matches (re-pattern ~c) ((as-test-function ~a) ~t))))
-               ;; Is superset?
-               :> `(is (set/superset? (set ((as-test-function ~a) ~t)) (set ~c)))
-               :!> `(is (not (set/superset? (set ((as-test-function ~a) ~t)) (set ~c))))
-               ;; Is subset?
-               :< `(is (set/subset? (set ((as-test-function ~a) ~t)) (set ~c)))
-               :!< `(is (not (set/subset? (set ((as-test-function ~a) ~t)) (set ~c))))
 
-               ;; Is instanceof
+               ;; Is superset?
+               (:> :⊃) `(is (set/superset? (set ((as-test-function ~a) ~t)) (set ~c)))
+               (:!> :⊅) `(is (not (set/superset? (set ((as-test-function ~a) ~t)) (set ~c))))
+
+               ;; Is subset?
+               (:< :⊂) `(is (set/subset? (set ((as-test-function ~a) ~t)) (set ~c)))
+               (:!< :⊄) `(is (not (set/subset? (set ((as-test-function ~a) ~t)) (set ~c))))
+
+               ;; Is an instance of
                :instanceof `(is (instance? ~c ((as-test-function ~a) ~t)))
                :!instanceof `(is (not (instance? ~c ((as-test-function ~a) ~t))))
                ))))))
