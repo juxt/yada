@@ -47,4 +47,9 @@
                :!> `(is (not (set/superset? (set ((as-test-function ~a) ~t)) (set ~c))))
                ;; Is subset?
                :< `(is (set/subset? (set ((as-test-function ~a) ~t)) (set ~c)))
-               :!< `(is (not (set/subset? (set ((as-test-function ~a) ~t)) (set ~c))))))))))
+               :!< `(is (not (set/subset? (set ((as-test-function ~a) ~t)) (set ~c))))
+
+               ;; Is instanceof
+               :instanceof `(is (instance? ~c ((as-test-function ~a) ~t)))
+               :!instanceof `(is (not (instance? ~c ((as-test-function ~a) ~t))))
+               ))))))
