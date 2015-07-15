@@ -90,8 +90,6 @@
 (defn as-sequential [s]
   (if (sequential? s) s [s]))
 
-
-
 ;; TODO: Read and understand the date algo presented in RFC7232 2.2.1
 
 (defn round-seconds-up
