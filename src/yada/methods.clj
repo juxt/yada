@@ -89,7 +89,7 @@
        (rep/to-representation body (get-in ctx [:response :content-type])))
 
      (fn [^String body]
-       (infof "body is now %s" body)
+       (infof "body is now %s type %s" body (type body))
        (infof "cl is now %s" (rep/content-length body))
        (let [content-length (rep/content-length body)]
          (cond-> ctx

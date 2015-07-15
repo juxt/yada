@@ -2,6 +2,7 @@
 
 (ns yada.representation
   (:require
+   [clojure.tools.logging :refer :all]
    [byte-streams :as bs]
    [cheshire.core :as json]
    [clojure.java.io :as io]
@@ -59,8 +60,10 @@
   String
   ;; A String is already its own representation, all we must do now is encode it to a char buffer
   (to-representation [s media-type]
+    (infof "s is %s, media-type is %s" s (mime/media-type->string media-type))
     (or
-     (when (= (:type media-type) "text")
+     ;; TODO: Not exactly sure whether charset encoding should be reserved only for text types or whether it also applies to application types (e.g. application/edn, application/json)
+     (when true #_(= (:type media-type) "text")
        (when-let [encoding (some-> media-type :parameters (get "charset"))]
          (bs/convert s java.nio.ByteBuffer {:encoding encoding})))
      s))
@@ -69,7 +72,10 @@
     nil)
 
   clojure.lang.APersistentMap
-  (to-representation [m media-type] (render-map m (mime/media-type media-type)))
+  (to-representation [m media-type]
+    (to-representation
+     (render-map m (mime/media-type media-type))
+     media-type))
 
   CoreAsyncSource
   (content-length [_] nil)

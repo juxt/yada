@@ -14,7 +14,7 @@
 ;; Collections can be resources too, we should test them
 
 (deftest map-resource-test
-  (testing "atom"
+  (testing "map"
     (let [resource {:name "Frank"}
           handler (yada resource)
           request (mock/request :get "/")
@@ -25,17 +25,14 @@
 
       (given response
         :status := 200
-        :headers :> {"content-type" "application/edn"
+        :headers :⊃ {"content-type" "application/edn;charset=utf-8"
                      "content-length" 16}
-        :body :? string?)
+        :body :instanceof java.nio.HeapByteBuffer)
 
       (let [request (merge (mock/request :get "/")
                            {:headers {"if-modified-since" (format-date last-modified)}})
-            response @(handler request)
-            ]
+            response @(handler request)]
         (given response
-          :status := 304))
-
-      )))
+          :status := 304)))))
 
 ;; For tests we need to round-up to seconds given that HTTP formats are to the nearest second

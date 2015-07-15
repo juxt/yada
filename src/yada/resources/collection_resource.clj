@@ -13,9 +13,10 @@
 
 (defrecord MapResource [m last-modified]
   Resource
+  (methods [_] #{:get :head})
+  (parameters [_] nil)
   (exists? [_ ctx] true)
   (last-modified [_ ctx] last-modified)
-  (parameters [_] nil)
   (request [_ method ctx] (case method :get m))
 
   ResourceRepresentations

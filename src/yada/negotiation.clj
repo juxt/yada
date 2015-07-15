@@ -175,8 +175,8 @@
                       (when content-type
                         {:content-type
                          (if (and charset
-                                  ;; Only for text media-types
-                                  (= (:type content-type) "text")
+                                  ;; Only for text media-types ?? where does it say this in the spec.? TODO: Resolve this question
+                                  ;; (= (:type content-type) "text")
                                   ;; But don't overwrite an existing charset
                                   (not (some-> content-type :parameters (get "charset"))))
                            (assoc-in content-type [:parameters "charset"] (first charset))
