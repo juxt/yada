@@ -53,21 +53,14 @@
         :method := :get
         :content-type := nil
         :charset := nil
-        [(partial interpret-negotiation request) :status] := 406)))
-  #_(testing "single option not acceptable"
-    (let [request {:method :post}]
-      (given (first (negotiate request [{:method #{:get :head}}]))
-        :method :? nil?
-        :content-type := nil
-        :charset := nil
-        [(partial interpret-negotiation request) :status] := 405)))
+        [(partial interpret-negotiation request) :status] := nil)))
   (testing "second option works"
     (let [request {:method :post}]
       (given (first (negotiate request [{:method #{:get :head}}{:method #{:post :put}}]))
         :method := :post
         :content-type := nil
         :charset := nil
-        [(partial interpret-negotiation request) :status] := 406))))
+        [(partial interpret-negotiation request) :status] := nil))))
 
 (st/deftest content-type-test
   (testing "no charset"
@@ -177,3 +170,39 @@
 ;; resource really declares that it provides no
 ;; charsets), then send a 406, a per the
 ;; specification.
+
+(deftest no-representations []
+  (let [req {:method :put :accept "text/html"}]
+    (given (first
+            (negotiate
+             {:method :put :accept "text/html"}
+             [{:method #{:get :head}
+               :content-type #{"image/png"}}
+              {:method #{:put :delete}}
+              ]))
+      identity := {:method :put}
+      (partial interpret-negotiation req) := {}
+      )))
+
+#_(let [req {:method :get :accept "text/html"}]
+  (interpret-negotiation
+   req
+   (first
+    (negotiate
+     req
+     [{:method #{:get :head}
+       :content-type #{"image/png"}}
+      {:method #{:put :delete}}
+      ]))))
+
+
+#_(let [req {:method :put :accept "text/html"}]
+  (interpret-negotiation
+   req
+   (first
+    (negotiate
+     req
+     [{:method #{:get :head}
+       :content-type #{"image/png"}}
+      {:method #{:put :delete}}
+      ]))))

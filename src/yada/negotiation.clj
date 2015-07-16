@@ -112,30 +112,32 @@
 
 (s/defschema NegotiationResult
   {:method s/Keyword
-   (s/optional-key :content-type)
-   {:type s/Str
-    :subtype s/Str
-    :parameters {s/Str s/Str}
-    :weight s/Num}
-   (s/optional-key :charset) (s/pair s/Str "known-by-client" s/Str "known-by-server")})
+   ;; There is a subtle distinction between a missing entry and a nil
+   ;; entry.  If content-type/charset is nil, it means no acceptable
+   ;; content-type, whereas if the content-type/charset entry is missing
+   ;; it means no content-type/charset is required (no resource
+   ;; representation). These differences affect whether a 406 status is
+   ;; returned.
+   (s/optional-key :content-type) (s/maybe {:type s/Str
+                                            :subtype s/Str
+                                            :parameters {s/Str s/Str}
+                                            :weight s/Num})
+   (s/optional-key :charset) (s/maybe (s/pair s/Str "known-by-client" s/Str "known-by-server"))})
 
 (s/defn acceptable?
   [request server-acceptable]
   :- NegotiationResult
-  (let [;; If server-acceptable specifies a set of methods, find a
-        ;; match, otherwise match on the request method so that
-        ;; server-acceptable method guards are strictly optional.
-        method ((or (:method server-acceptable) identity) (:method request))
-        content-type (when method
-                       (when-let [cts (:content-type server-acceptable)]
-                         (negotiate-content-type (or (:accept request) "*/*") (map mime/string->media-type cts))))
-        charset (when (and method content-type)
-                  (negotiate-charset (:accept-charset request) (:charset server-acceptable)))]
-    (when method
-      (merge
-       {:method method}
-       (when content-type {:content-type content-type})
-       (when charset {:charset charset})))))
+  (when-let [method ((or (:method server-acceptable) identity) (:method request))]
+    (merge
+     {:method method}
+     ;; If server-acceptable specifies a set of methods, find a
+     ;; match, otherwise match on the request method so that
+     ;; server-acceptable method guards are strictly optional.
+     (when (and method (:content-type server-acceptable))
+       (let [content-type (negotiate-content-type (or (:accept request) "*/*") (map mime/string->media-type (:content-type server-acceptable)))]
+         (merge
+          {:content-type content-type}
+          (when content-type {:charset (negotiate-charset (:accept-charset request) (:charset server-acceptable))})))))))
 
 (s/defschema Request
   {:method s/Keyword
@@ -168,8 +170,8 @@
   [request :- Request
    {:keys [method content-type charset] :as result} :- (s/maybe NegotiationResult)]
   (cond
-    (nil? content-type) {:status 406 :message "Not Acceptable (content-type)"}
-    (and (:accept-charset request) (nil? charset)) {:status 406 :message "Not Acceptable (charset)"}
+    (and (contains? result :content-type) (nil? content-type)) {:status 406 :message "Not Acceptable (content-type)"}
+    (and (:accept-charset request) (contains? result :charset) (nil? charset)) {:status 406 :message "Not Acceptable (charset)"}
 
     :otherwise (merge {}
                       (when content-type
