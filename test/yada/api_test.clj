@@ -2,6 +2,7 @@
 
 (ns yada.api-test
   (:require
+   [byte-streams :as bs]
    [clojure.edn :as edn]
    [com.stuartsierra.component :refer (system-using system-map)]
    [bidi.bidi :refer (match-route routes)]
@@ -36,9 +37,10 @@
 
         (given response
           :status := 200
-          :headers :> {"content-type" "application/json"})
+          ;; TODO: Check whether charsets are applicable to application/json
+          :headers :> {"content-type" "application/json;charset=utf-8"})
 
-        (given (-> response :body json/decode)
+        (given (-> response :body (bs/convert String) json/decode)
           "swagger" := "2.0"
           ["info" "title"] := "User API"
           ["info" "version"] := "0.0.1"
