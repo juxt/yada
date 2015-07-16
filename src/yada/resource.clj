@@ -60,10 +60,10 @@
 
   (request [_ method ctx] "Perform request. Context contains
   content-type, charset, language, content-encoding etc. in
-  the :response map. Method as keyword is in context's :method
-  entry. The returned value is interpreted according to the its type,
-  and the request method. Side-effects are permissiable. Can return a
-  deferred result.
+  the :response map. Method as keyword is in context's :method entry,
+  but is provided as a parameter for convenience only. The returned
+  value is interpreted according to the its type, and the request
+  method. Side-effects are permissiable. Can return a deferred result.
 
   GET: Return the state. Can be formatted to a representation of the
   given media-type and charset. Returning nil results in a 404. Get the
@@ -90,6 +90,8 @@
 (extend-protocol Resource
   clojure.lang.Fn
   (methods [_] #{:get :head})
+  ;; TODO: Many resources don't have parameters - let's put this in its
+  ;; own protocol (ResourceParameters)
   (parameters [_] nil)
   ;; We assume the resource exists, the request can force a 404 by
   ;; returning nil.
