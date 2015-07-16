@@ -39,8 +39,8 @@
     "text/plain"
     (apply str
            (for [child (sort (.listFiles dir))]
-             (str (.getName child) \newline)
-             ))
+             (str (.getName child) \newline)))
+
     "text/html"
     (html
      [:html
@@ -64,10 +64,9 @@
                   (java.util.Date. (.lastModified child)))]])]]]])))
 
 (defrecord FileResource [f]
-  ResourceFetch
-  (fetch [this ctx] this)
-
   Resource
+  (methods [_] #{:get :head :put :delete})
+  (parameters [_] nil)
   (exists? [_ ctx] (.exists f))
   (last-modified [_ ctx] (Date. (.lastModified f)))
   (request [_ method ctx]
@@ -95,55 +94,59 @@
   (representations [_]
     [{:method #{:get :head}
       :content-type #{(ext-mime-type (.getName f))}}
-     {:method #{:put}}
-     {:method #{:delete}}]))
+     {:method #{:put :delete}}
+     ]))
 
-#_(defrecord DirectoryResource [dir]
-  ResourceFetch
-  (fetch [this ctx] this)
+(defrecord DirectoryResource [dir]
 
   Resource
-  #_(supported-methods [_ ctx] #{:get :head :put :delete})
+  (methods [_] #{:get :head :put :delete})
+  (parameters [_] nil)
   (exists? [_ ctx] (.exists dir))
   (last-modified [_ ctx] (Date. (.lastModified dir)))
-  (produces [_ ctx]
-    (when-let [path-info (-> ctx :request :path-info)]
-      (if (or (= path-info "") (.endsWith path-info "/"))
-        ;; We can deliver directory contents in numerous types
-        ["text/html" "text/plain"]
-        ;; Otherwise, it's the child-file
-        (let [child (child-file dir path-info)]
-          (when (.isFile child)
-            [(ext-mime-type (.getName child))])))))
-  (produces-charsets [_ ctx]
-    (when-let [path-info (-> ctx :request :path-info)]
-      (when (or (= path-info "") (.endsWith path-info "/"))
-        ["UTF-8" "US-ASCII;q=0.9"])))
-  (get-state [_ content-type ctx]
-    (if-let [path-info (-> ctx :request :path-info)]
-      (if (= path-info "")
-        ;; TODO: The content-type indicates the format. Use support in
-        ;; yada.representation to help format the response body.
-        ;; This will have to do for now
-        (dir-index dir content-type)
 
+  #_(produces [_ ctx]
+      (when-let [path-info (-> ctx :request :path-info)]
+        (if (or (= path-info "") (.endsWith path-info "/"))
+          ;; We can deliver directory contents in numerous types
+          ["text/html" "text/plain"]
+          ;; Otherwise, it's the child-file
+          (let [child (child-file dir path-info)]
+            (when (.isFile child)
+              [(ext-mime-type (.getName child))])))))
+  #_(produces-charsets [_ ctx]
+      (when-let [path-info (-> ctx :request :path-info)]
+        (when (or (= path-info "") (.endsWith path-info "/"))
+          ["UTF-8" "US-ASCII;q=0.9"])))
+
+  (request [_ method ctx]
+    (case method
+      :get
+      (if-let [path-info (-> ctx :request :path-info)]
+        (if (= path-info "")
+          ;; TODO: The content-type indicates the format. Use support in
+          ;; yada.representation to help format the response body.
+          ;; This will have to do for now
+          (dir-index dir (-> ctx :response :content-type))
+
+          (let [f (child-file dir path-info)]
+            (cond
+              (.isFile f) f
+              (.isDirectory f) (dir-index f (-> ctx :response :content-type))
+              :otherwise (throw (ex-info "File not found" {:status 404 :yada.core/http-response true})))))
+
+        ;; Redirect so that path-info is not nil - there is a case for this being done in the bidi handler
+        (throw (ex-info "" {:status 302 :headers {"location" (str (-> ctx :request :uri) "/")}
+                            :yada.core/http-response true})))
+
+      :put
+      (if-let [path-info (-> ctx :request :path-info)]
         (let [f (child-file dir path-info)]
-          (cond
-            (.isFile f) f
-            (.isDirectory f) (dir-index f content-type)
-            :otherwise (throw (ex-info "File not found" {:status 404 :yada.core/http-response true})))))
+          (bs/transfer (-> ctx :request :body) f))
+        (throw (ex-info "TODO: Directory creation from archive stream is not yet implemented" {})))
 
-      ;; Redirect so that path-info is not nil - there is a case for this being done in the bidi handler
-      (throw (ex-info "" {:status 302 :headers {"location" (str (-> ctx :request :uri) "/")}
-                          :yada.core/http-response true}))))
-  (put-state! [_ content content-type ctx]
-    (if-let [path-info (-> ctx :request :path-info)]
-      (let [f (child-file dir path-info)]
-        (bs/transfer (-> ctx :request :body) f))
-      (throw (ex-info "TODO: Directory creation from archive stream is not yet implemented" {}))))
-
-  (delete-state! [_ ctx]
-    (let [path-info (-> ctx :request :path-info)]
+      :delete
+      (let [path-info (-> ctx :request :path-info)]
       ;; TODO: We must be ensure that the path-info points to a file
       ;; within the directory tree, otherwise this is an attack vector -
       ;; we should return 403 in this case - same above with PUTs and POSTs
@@ -158,14 +161,11 @@
           ;; f is not certain to exist
           (if (.exists f)
             (.delete f)
-            (throw (ex-info {:status 404 :yada.core/http-response true}))))
-
-        ))))
+            (throw (ex-info {:status 404 :yada.core/http-response true})))))))))
 
 (extend-protocol ResourceConstructor
   File
   (make-resource [f]
     (if (.isDirectory f)
-      #_(->DirectoryResource f)
-      (throw (ex-info "TODO: Directory resource" {}))
+      (->DirectoryResource f)
       (->FileResource f))))
