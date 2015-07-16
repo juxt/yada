@@ -181,7 +181,10 @@
          parameters (try
                       (res/parameters resource)
                       (catch AbstractMethodError e
-                        (throw (ex-info "No parameters implementation" {:resource resource}))))
+                        ;; This is while we're in transition and so many
+                        ;; resources don't have a parameters
+                        ;; function. TODO: Remove me
+                        (throw (ex-info "No parameters implementation" {:resource (type resource)}))))
 
          methods (methods/methods)
 
