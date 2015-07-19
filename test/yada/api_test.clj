@@ -38,7 +38,7 @@
         (given response
           :status := 200
           ;; TODO: Check whether charsets are applicable to application/json
-          :headers :> {"content-type" "application/json;charset=utf-8"})
+          :headers :> {"content-type" "application/json"})
 
         (given (-> response :body (bs/convert String) json/decode)
           "swagger" := "2.0"

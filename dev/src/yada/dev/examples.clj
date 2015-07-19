@@ -105,10 +105,14 @@
 
 (defrecord ParameterDeclaredPathQueryWithPost []
   Example
+  (resource [_]
+    '(fn [ctx]
+       (case (:method ctx)
+         :post
+         (format "Description is '%s'" (-> ctx :parameters :body :description)))))
   (options [_]
     {:parameters common-params
-     :post! '(fn [ctx]
-               (format "Description is '%s'" (-> ctx :parameters :body :description)))})
+     :methods #{:post}})
   (path [r] [(basename r) "/" :account])
   (path-args [_] [:account 1234])
   (request [_] {:method :post

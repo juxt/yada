@@ -4,6 +4,8 @@
   (:require [clojure.test :refer :all]
             [yada.negotiation :refer :all]
             [yada.mime :as mime]
+            [yada.charset :as charset]
+            [yada.resource :as res]
             [yada.test.util :refer [given]]
             [schema.core :as s]
             [schema.test :as st])
@@ -48,51 +50,77 @@
 
 (st/deftest method-test
   (testing "single option matches"
-    (let [request {:method :get}]
-      (given (first (negotiate request [{:method #{:get :head}}]))
-        :method := :get
-        :content-type := nil
-        :charset := nil
-        [(partial interpret-negotiation request) :status] := nil)))
+    (given (first (negotiate {:method :get} [{:method #{:get :head}}]))
+      :method := :get
+      :content-type := nil
+      :charset := nil
+      [interpret-negotiation :status] := nil))
   (testing "second option works"
-    (let [request {:method :post}]
-      (given (first (negotiate request [{:method #{:get :head}}{:method #{:post :put}}]))
-        :method := :post
-        :content-type := nil
-        :charset := nil
-        [(partial interpret-negotiation request) :status] := nil))))
+    (given (first (negotiate {:method :post} [{:method #{:get :head}}{:method #{:post :put}}]))
+      :method := :post
+      :content-type := nil
+      :charset := nil
+      [interpret-negotiation :status] := nil)))
 
 (st/deftest content-type-test
   (testing "no charset"
-    (let [request {:method :get :accept "text/html"}]
-      (given (interpret-negotiation
-              request
-              (first (negotiate request
-                                [{:method #{:get :head}
-                                  :content-type #{"text/html"}
-                                  }])))
-        :status := nil
-        [:content-type :type] := "text"
-        [:content-type :subtype] := "html"
-        [:content-type :parameters] := {})))
+    (given (interpret-negotiation
+            (first (negotiate {:method :get :accept "text/html"}
+                              (res/parse-representations
+                               [{:method #{:get :head}
+                                 :content-type #{"text/html"}
+                                 }]))))
+      :status := nil
+      [:content-type :type] := "text"
+      [:content-type :subtype] := "html"
+      [:content-type :parameters] := {}))
 
-  (testing "charset applied"
-    (let [request {:method :get :accept "text/html"}]
-      (given (interpret-negotiation
-              request
-              (first (negotiate request
-                                [{:method #{:get :head}
-                                  :content-type #{"text/html"}}
+  (testing "charset applied when necessary"
+    (given (interpret-negotiation
+            (first (negotiate {:method :get :accept "text/plain"}
+                              (res/parse-representations
+                               [{:method #{:get :head}
+                                 :content-type #{"text/plain"}}
 
-                                 {:method #{:get :head}
-                                  :content-type #{"text/html"}
-                                  :charset #{"UTF-8"}
-                                  }])))
-        :status := nil
-        [:content-type :type] := "text"
-        [:content-type :subtype] := "html"
-        [:content-type :parameters] := {"charset" "UTF-8"}
-        ))))
+                                {:method #{:get :head}
+                                 :content-type #{"text/plain"}
+                                 :charset #{"UTF-8"}
+                                 }]))))
+      :status := nil
+      [:content-type :type] := "text"
+      [:content-type :subtype] := "plain"
+      [:content-type :parameters] := {"charset" "UTF-8"}
+      ))
+
+  (testing "charset not applied when it shouldn't be"
+    ;; according to http://tools.ietf.org/html/rfc6657
+    (given (interpret-negotiation
+            (first (negotiate {:method :get :accept "text/html"}
+                              (res/parse-representations
+                               [{:method #{:get :head}
+                                 :content-type #{"text/html"}}
+
+                                {:method #{:get :head}
+                                 :content-type #{"text/html"}
+                                 :charset #{"UTF-8"}
+                                 }]))))
+      :status := nil
+      [:content-type :type] := "text"
+      [:content-type :subtype] := "html"
+      [:content-type :parameters] := {}
+      )))
+
+#_(let [rep {:method #{:get :head}
+           :content-type #{"text/html"}}]
+  (merge
+   (select-keys rep [:method])
+   (when-let [ct (:content-type rep)]
+     {:content-type (set (map mime/string->media-type ct))})
+   (when-let [cs (:charset rep)]
+     {:content-type (set (map charset/to-charset-map cs))})))
+
+;;   (update-in [:content-type] #(set (map mime/string->media-type %)))
+;;   (update-in [:charset] #(set (map charset/to-charset-map %)))
 
 (st/deftest charset-preferred-over-none
   "Ensure that an option with a charset is preferred over an option with
@@ -100,40 +128,37 @@
   (is (= (:charset
           (first
            (negotiate {:method :get :accept "text/html"}
+                      (res/parse-representations
+                       [{:method #{:get :head}
+                         :content-type #{"text/html"}}
 
-                      [{:method #{:get :head}
-                        :content-type #{"text/html"}}
-
-                       {:method #{:get :head}
-                        :content-type #{"text/html"}
-                        :charset #{"utf-8"}
-                        }])))
+                        {:method #{:get :head}
+                         :content-type #{"text/html"}
+                         :charset #{"utf-8"}
+                         }]))))
          ["utf-8" "utf-8"])))
 
 (st/deftest content-type-weight-removed []
-  (let [request {:method :get :accept "text/html"}]
-    (given (:content-type (interpret-negotiation
-                           request
-                           (first
-                            (negotiate request
-                                       [{:method #{:get}
-                                         :content-type #{"text/html;q=0.9"}}
-                                        ]))))
-      identity :> {:type "text", :subtype "html", :parameters {}})
-    ))
+  (given (:content-type (interpret-negotiation
+                         (first
+                          (negotiate {:method :get :accept "text/html"}
+                                     (res/parse-representations
+                                      [{:method #{:get}
+                                        :content-type #{"text/html;q=0.9"}}
+                                       ])))))
+    identity :> {:type "text", :subtype "html", :parameters {}}))
 
 (st/deftest method-optional []
-  (let [request {:method :get :accept "text/html"}]
-    (given (:content-type
-            (interpret-negotiation
-             request
-             (first
-              (negotiate request
-                         [{:content-type #{"text/html"}}
-                          ]))))
-      identity :> {:type "text", :subtype "html", :parameters {}}
+  (given (:content-type
+          (interpret-negotiation
+           (first
+            (negotiate {:method :get :accept "text/html"}
+                       (res/parse-representations
+                        [{:content-type #{"text/html"}}
+                         ])))))
+    identity :> {:type "text", :subtype "html", :parameters {}}
 
-      )))
+    ))
 
 ;; TODO: Add accept-language, accept-encoding, content-type & content-encoding
 
@@ -172,37 +197,32 @@
 ;; specification.
 
 (deftest no-representations []
-  (let [req {:method :put :accept "text/html"}]
-    (given (first
-            (negotiate
-             {:method :put :accept "text/html"}
-             [{:method #{:get :head}
-               :content-type #{"image/png"}}
-              {:method #{:put :delete}}
-              ]))
-      identity := {:method :put}
-      (partial interpret-negotiation req) := {}
-      )))
+  (given (first
+          (negotiate
+           {:method :put :accept "text/html"}
+           [{:method #{:get :head}
+             :content-type #{"image/png"}}
+            {:method #{:put :delete}}
+            ]))
+    [identity #(dissoc % :request)] := {:method :put}
+    interpret-negotiation := {}
+    ))
 
-#_(let [req {:method :get :accept "text/html"}]
-  (interpret-negotiation
-   req
+#_(interpret-negotiation
    (first
     (negotiate
-     req
+     {:method :get :accept "text/html"}
      [{:method #{:get :head}
        :content-type #{"image/png"}}
       {:method #{:put :delete}}
-      ]))))
+      ])))
 
 
-#_(let [req {:method :put :accept "text/html"}]
-  (interpret-negotiation
-   req
+#_(interpret-negotiation
    (first
     (negotiate
-     req
+     {:method :put :accept "text/html"}
      [{:method #{:get :head}
        :content-type #{"image/png"}}
       {:method #{:put :delete}}
-      ]))))
+      ])))

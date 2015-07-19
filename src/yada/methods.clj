@@ -1,14 +1,20 @@
+;; Copyright © 2015, JUXT LTD.
+
 (ns yada.methods
   (:refer-clojure :exclude [methods])
   (:require
    [clojure.string :as str]
    [clojure.tools.logging :refer :all]
    [manifold.deferred :as d]
+   [yada.context :as ctx]
    [yada.mime :as mime]
    [yada.representation :as rep]
    [yada.resource :as res]
    [yada.service :as service]
-   [yada.util :refer (link)]))
+   [yada.util :refer (link)])
+  (:import
+   [yada.context Context]
+   [java.io File]))
 
 ;; Allowed methods
 
@@ -68,35 +74,45 @@
 
 (deftype Get [])
 
+(defprotocol GetResult
+  (interpret-get-result [_ ctx]))
+
+(extend-protocol GetResult
+  Context
+  (interpret-get-result [ctx _]
+    ctx)
+  Object
+  (interpret-get-result [o ctx]
+    (assoc-in ctx [:response :body] o))
+  ;; TODO: Support return of context
+  nil ;; TODO: throw 404?
+  (interpret-post-result [_ ctx] ctx))
+
 (extend-protocol Method
   Get
   (keyword-binding [_] :get)
   (safe? [_] true)
   (idempotent? [_] true)
   (request [this ctx]
-
     (when (false? (:exists? ctx))
       (d/error-deferred (ex-info "" {:status 404
                                      ::http-response true})))
-
     (d/chain
-
-     ;; GET request returns (possibly deferred) body.
+     ;; GET request normally returns (possibly deferred) body.
      (res/request (:resource ctx) :get ctx)
 
-     (fn [body]
-       ;; If request does not return a String, we can try to encode one
-       (rep/to-representation body (get-in ctx [:response :content-type])))
+     (fn [res]
+       (interpret-get-result res ctx))
 
-     (fn [^String body]
-       (infof "body is now %s type %s" body (type body))
-       (infof "cl is now %s" (rep/content-length body))
-       (let [content-length (rep/content-length body)]
-         (cond-> ctx
-           true (assoc-in [:response :body] body)
+     (fn [ctx]
+       (let [representation (get-in ctx [:response :representation])]
 
-           content-length
-           (update-in [:response :headers] assoc "content-length" content-length)))))))
+         ;; representation could be nil, for example, resource could be a java.io.File
+         (update-in ctx [:response :body] rep/to-body representation)))
+
+     (fn [ctx]
+       (let [content-length (rep/content-length (get-in ctx [:response :body]))]
+         (cond-> ctx content-length (assoc-in [:response :content-length] content-length)))))))
 
 (deftype Put [])
 
@@ -153,7 +169,6 @@
   (safe? [_] false)
   (idempotent? [_] false)
   (request [_ ctx]
-
     (d/chain
      (res/request (:resource ctx) :post ctx)
      (fn [res]
@@ -173,7 +188,8 @@
     (d/chain
      (res/request (:resource ctx) :delete ctx)
      (fn [res]
-       (assoc-in ctx [:response :status] (if (d/deferred? res) 202 204))))))
+       ;; TODO: Could we support 202 somehow?
+       (assoc-in ctx [:response :status] 204)))))
 
 (deftype Options [])
 
@@ -232,10 +248,10 @@
   (safe? [_] true)
   (idempotent? [_] true)
   (request [_ ctx]
-    (d/error-deferred
+    (throw
      (ex-info "TRACE"
               (merge
-               {::http-response true}
+               {:yada.core/http-response true}
                (let [body (-> ctx
                               :request
                               ;; A client MUST NOT generate header fields in a TRACE request containing sensitive
@@ -250,6 +266,7 @@
 
                  {:status 200
                   :headers {"content-type" "message/http;charset=utf8"
+                            ;; TODO: Whoops! http://mark.koli.ch/remember-kids-an-http-content-length-is-the-number-of-bytes-not-the-number-of-characters
                             "content-length" (.length body)}
                   :body body
                   ::http-response true}))))))

@@ -25,7 +25,7 @@
 
       (given response
         :status := 200
-        :headers :⊃ {"content-type" "application/edn;charset=utf-8"
+        :headers :⊃ {"content-type" "application/edn"
                      "content-length" 16}
         :body :instanceof java.nio.HeapByteBuffer)
 

@@ -12,6 +12,8 @@
    [ring.swagger.schema :as rs]
    [ring.util.codec :as codec]
    [yada.mime :as mime]
+   [yada.negotiation :as negotiation]
+   [yada.resource :as res]
    [clojure.walk :refer (keywordize-keys)]
    [json-html.core :as jh])
   (:import [clojure.core.async.impl.channels ManyToManyChannel]
@@ -45,43 +47,46 @@
 ;; Representation means the representation of state, for the purposes of network communication.
 
 (defprotocol Representation
-  (to-representation [state ^mime/MediaTypeMap media-type] "Represent the state. The me")
+  (to-body [resource representation] "Construct the reponse body for the given resource, given the negotiated representation (metadata)")
   (content-length [_] "Return the size of the resource's representation, if this can possibly be known up-front (return nil if this is unknown)"))
 
-(defmulti render-map (fn [resource media-type] media-type))
-(defmulti render-seq (fn [resource media-type] media-type))
-
-;; TODO: what does it mean to have a default content type? Perhaps, this
-;; should be a list of content types that the representation can adapt
-;; to
+(defmulti render-map (fn [resource representation] (-> representation :content-type mime/media-type)))
+(defmulti render-seq (fn [resource representation] (-> representation :content-type mime/media-type)))
 
 (extend-protocol Representation
 
   String
   ;; A String is already its own representation, all we must do now is encode it to a char buffer
-  (to-representation [s media-type]
-    (infof "s is %s, media-type is %s" s (mime/media-type->string media-type))
+  (to-body [s representation]
     (or
-     ;; TODO: Not exactly sure whether charset encoding should be reserved only for text types or whether it also applies to application types (e.g. application/edn, application/json)
-     (when true #_(= (:type media-type) "text")
-       (when-let [encoding (some-> media-type :parameters (get "charset"))]
-         (bs/convert s java.nio.ByteBuffer {:encoding encoding})))
-     s))
+     ;; We need to understand what is the negotiated encoding of the
+     ;; string.
+
+     ;; TODO: This actually requires that the implementation has access
+     ;; to the negotiated, or server presented, charset. First, the
+     ;; parameter needs to be the negotiation result, not just the
+     ;; media-type (it might also need transfer encoding
+     ;; transformations)
+
+     (bs/convert s java.nio.ByteBuffer
+                 {:encoding (or (:server-charset representation)
+                                res/default-platform-charset)})))
+
+  ;; The content-length is NOT the length of the string, but the
+  ;; "decimal number of octets, for a potential payload body".
+  ;; See  http://mark.koli.ch/remember-kids-an-http-content-length-is-the-number-of-bytes-not-the-number-of-characters
   (content-length [s]
-    ;; The content-length is NOT the length of the string, but the "decimal number of octets, for a potential payload body".
     nil)
 
   clojure.lang.APersistentMap
-  (to-representation [m media-type]
-    (to-representation
-     (render-map m (mime/media-type media-type))
-     media-type))
+  (to-body [m representation]
+    (to-body (render-map m representation) representation))
 
   CoreAsyncSource
   (content-length [_] nil)
 
   File
-  (to-representation [f media-type]
+  (to-body [f _]
     ;; The file can simply go into the body of the Ring response. We
     ;; could transcode it according to the charset if only we knew what
     ;; the file's initial encoding was. (We can't know this.)
@@ -89,15 +94,15 @@
   (content-length [f] (.length f))
 
   java.nio.ByteBuffer
-  (to-representation [b _] b)
+  (to-body [b _] b)
   (content-length [b] (.remaining b))
 
   java.io.BufferedInputStream
-  (to-representation [b _] b)
+  (to-body [b _] b)
   (content-length [_] nil)
 
   java.io.Reader
-  (to-representation [r _] r)
+  (to-body [r _] r)
   (content-length [_] nil)
 
   Object
@@ -107,7 +112,7 @@
   (content-length [_] nil)
 
   nil
-  (to-representation [_ _] nil)
+  (to-body [_ _] nil)
   (content-length [_] nil))
 
 (defmethod render-map "application/json"
@@ -132,10 +137,10 @@
   (transform (map (partial format "data: %s\n\n")) (->source s)))
 
 (defmethod render-map "text/html"
-  [m mt]
+  [m representation]
   (-> (html5
          [:head [:style (-> "json.human.css" clojure.java.io/resource slurp)]]
          (jh/edn->html m))
       (str \newline) ; annoying on the command-line otherwise
-      (to-representation mt) ; for potential charset encoding if 'text' media-type
+      (to-body representation) ; for string encoding
       ))

@@ -9,13 +9,14 @@
             [ring.util.mime-type :refer (ext-mime-type)]
             [ring.util.response :refer (redirect)]
             [ring.util.time :refer (format-date)]
-            [yada.resource :refer [Resource ResourceRepresentations ResourceFetch ResourceConstructor]]
+            [yada.resource :refer [Resource ResourceRepresentations ResourceFetch ResourceConstructor representations platform-charsets parse-representations]]
+            [yada.representation :as rep]
+            [yada.negotiation :as negotiation]
             [yada.mime :as mime])
   (:import [java.io File]
            [java.util Date TimeZone]
            [java.text SimpleDateFormat]
            [java.nio.charset Charset]))
-
 
 ;; TODO: Fix this to ensure that ascending a directory is completely
 ;; impossible, and test.
@@ -35,6 +36,7 @@
   (io/file dir name))
 
 (defn dir-index [dir content-type]
+  (assert content-type)
   (case (mime/media-type content-type)
     "text/plain"
     (apply str
@@ -63,6 +65,19 @@
                     (.setTimeZone (TimeZone/getTimeZone "UTC")))
                   (java.util.Date. (.lastModified child)))]])]]]])))
 
+(defn negotiate-file-info [f ctx]
+  (let [neg
+        (negotiation/interpret-negotiation
+         (first (negotiation/negotiate
+                 (negotiation/extract-request-info (:request ctx))
+                 (parse-representations
+                  [{:content-type (set (remove nil? [(ext-mime-type (.getName f))]))}]))))]
+
+    (when-let [status (:status neg)]
+      (throw (ex-info "" {:status status :yada.core/http-response true})))
+
+    neg))
+
 (defrecord FileResource [f]
   Resource
   (methods [_] #{:get :head :put :delete})
@@ -85,19 +100,36 @@
     ;; The analog of this is the ability to return a java.io.File as the
     ;; response body and have aleph efficiently stream it via NIO. This
     ;; code allows the same efficiency for file uploads.
+    ;;(throw (ex-info "here 2" {}))
     (case method
-      :get f
+      :get
+      (if (.exists f)
+        ;; We need to return the file, but also we need to neg content-type
+        (let [neg (negotiate-file-info f ctx)]
+          (cond-> ctx
+            f (assoc-in [:response :body] f)
+            (:content-type neg) (assoc-in [:response :content-type] (:content-type neg))))
+
+        ;; Otherwise if file doesn't exist
+        (throw (ex-info "Not found" {:status 404 :yada.core/http-response true})))
+
       :put (bs/transfer (-> ctx :request :body) f)
+
       :delete (.delete f)))
 
   ResourceRepresentations
   (representations [_]
     [{:method #{:get :head}
-      :content-type #{(ext-mime-type (.getName f))}}
-     {:method #{:put :delete}}
-     ]))
+      :content-type (set (remove nil? [(ext-mime-type (.getName f))]))}]))
 
 (defrecord DirectoryResource [dir]
+
+  ResourceRepresentations
+  (representations [_]
+    ;; For when path-info is nil
+    [{:method #{:get :head}
+      :content-type #{"text/html" "text/plain"}
+      :charset platform-charsets}])
 
   Resource
   (methods [_] #{:get :head :put :delete})
@@ -119,21 +151,44 @@
         (when (or (= path-info "") (.endsWith path-info "/"))
           ["UTF-8" "US-ASCII;q=0.9"])))
 
-  (request [_ method ctx]
+  (request [this method ctx]
     (case method
       :get
       (if-let [path-info (-> ctx :request :path-info)]
         (if (= path-info "")
-          ;; TODO: The content-type indicates the format. Use support in
-          ;; yada.representation to help format the response body.
-          ;; This will have to do for now
-          (dir-index dir (-> ctx :response :content-type))
+          (let [neg (negotiation/interpret-negotiation
+                     (first (negotiation/negotiate
+                             (negotiation/extract-request-info (:request ctx))
+                             (parse-representations (representations this)))))
+                ct (:content-type neg)]
+            (cond-> (assoc-in ctx [:response :body] (rep/to-body (dir-index dir ct) neg))
+              ct (assoc-in [:response :content-type] ct)))
 
           (let [f (child-file dir path-info)]
             (cond
-              (.isFile f) f
-              (.isDirectory f) (dir-index f (-> ctx :response :content-type))
-              :otherwise (throw (ex-info "File not found" {:status 404 :yada.core/http-response true})))))
+
+              (.isFile f)
+              ;; If it's a file, we must negotiate the content-type
+              (let [neg (negotiate-file-info f ctx)]
+                (cond-> ctx
+                  f (assoc-in [:response :body] f)
+                  (:content-type neg) (assoc-in [:response :content-type] (:content-type neg))))
+
+              (.isDirectory f)
+              ;; This is sub-directory, with path-info, so no
+              ;; negotiation has been done (see yada.core which explains
+              ;; why negotiation is not done when there's a path-info in
+              ;; the request)
+              (let [neg (negotiation/interpret-negotiation
+                         (first (negotiation/negotiate
+                                 (negotiation/extract-request-info (:request ctx))
+                                 (parse-representations (representations this)))))
+                    ct (:content-type neg)]
+                (cond-> (assoc-in [:response :body] (rep/to-body (dir-index f ct) neg))
+                  ct (assoc-in [:response :content-type] ct)))
+
+              :otherwise
+              (throw (ex-info "File not found" {:status 404 :yada.core/http-response true})))))
 
         ;; Redirect so that path-info is not nil - there is a case for this being done in the bidi handler
         (throw (ex-info "" {:status 302 :headers {"location" (str (-> ctx :request :uri) "/")}
@@ -146,22 +201,23 @@
         (throw (ex-info "TODO: Directory creation from archive stream is not yet implemented" {})))
 
       :delete
-      (let [path-info (-> ctx :request :path-info)]
-      ;; TODO: We must be ensure that the path-info points to a file
-      ;; within the directory tree, otherwise this is an attack vector -
-      ;; we should return 403 in this case - same above with PUTs and POSTs
+      (do
+        (let [path-info (-> ctx :request :path-info)]
+          ;; TODO: We must be ensure that the path-info points to a file
+          ;; within the directory tree, otherwise this is an attack vector -
+          ;; we should return 403 in this case - same above with PUTs and POSTs
 
-      (if (= path-info "")
-        (if (seq (.listFiles dir))
-          (throw (ex-info "By default, the policy is not to delete a non-empty directory" {:files (.listFiles dir)}))
-          (io/delete-file dir)
-          )
+          (if (= path-info "")
+            (if (seq (.listFiles dir))
+              (throw (ex-info "By default, the policy is not to delete a non-empty directory" {:files (.listFiles dir)}))
+              (io/delete-file dir)
+              )
 
-        (let [f (child-file dir path-info)]
-          ;; f is not certain to exist
-          (if (.exists f)
-            (.delete f)
-            (throw (ex-info {:status 404 :yada.core/http-response true})))))))))
+            (let [f (child-file dir path-info)]
+              ;; f is not certain to exist
+              (if (.exists f)
+                (.delete f)
+                (throw (ex-info {:status 404 :yada.core/http-response true}))))))))))
 
 (extend-protocol ResourceConstructor
   File

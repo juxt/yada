@@ -34,6 +34,10 @@
   (invoke [this req]
     ((yada resource options) req))
 
+  ;; TODO: We should be cafeful calling the (yada) fn unless absolutely
+  ;; necessary, would be better to call it up-front - or pre-compile the
+  ;; whole route structure aot.
+
   Ring
   (request [_ req match-context]
     (let [handler (yada resource (merge (get match-context k-options) options))]

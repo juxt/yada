@@ -1,5 +1,6 @@
 (ns yada.examples-test
   (:require [yada.dev.examples :refer :all]
+            [byte-streams :as bs]
             [clojure.test :refer :all]
             [ring.mock.request :as mock]
             [bidi.bidi :refer (path-for)]
@@ -32,42 +33,42 @@
         (ex-handler (->HelloWorld))]
     (given @(handler request)
       :status := 200
-      :body := "Hello World!")))
+      [:body #(bs/convert % String)] := "Hello World!")))
 
 (deftest DynamicHelloWorld-test
   (let [{:keys [handler request path]}
         (ex-handler (->DynamicHelloWorld))]
     (given @(handler request)
       :status := 200
-      :body := "Hello World!")))
+      [:body #(bs/convert % String)] := "Hello World!")))
 
 (deftest AsyncHelloWorld-test
   (let [{:keys [handler request path]}
         (ex-handler (->AsyncHelloWorld))]
     (given @(handler request)
       :status := 200
-      :body := "Hello World!")))
+      [:body #(bs/convert % String)] := "Hello World!")))
 
 (deftest PathParameterUndeclared-test
   (let [{:keys [handler request path]}
         (ex-handler (->PathParameterUndeclared))]
     (given @(handler request)
       :status := 200
-      :body := "Account number is 1234")))
+      [:body #(bs/convert % String)] := "Account number is 1234")))
 
 (deftest ParameterDeclaredPathQueryWithGet-test
   (let [{:keys [handler request path]}
         (ex-handler (->ParameterDeclaredPathQueryWithGet))]
     (given @(handler request)
       :status := 200
-      :body := (format "List transactions since %s from account number %s" "tuesday" 1234))))
+      [:body #(bs/convert % String)] := (format "List transactions since %s from account number %s" "tuesday" 1234))))
 
 (deftest ParameterDeclaredPathQueryWithPost-test
   (let [{:keys [handler request path]}
         (ex-handler (->ParameterDeclaredPathQueryWithPost))]
     (given @(handler request)
       :status := 200
-      :body := "Description is 'Gas for last year'")))
+      [:body #(bs/convert % String)] := "Description is 'Gas for last year'")))
 
 ;; Get all examples
 

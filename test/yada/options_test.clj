@@ -12,7 +12,7 @@
 ;; these tests
 
 (deftest options-test []
-  (testing "Server capabilities"
+  #_(testing "Server capabilities"
     (let [resource "Hello World!"
           handler (yada resource)
           request (request :options "*")

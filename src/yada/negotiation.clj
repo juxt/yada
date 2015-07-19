@@ -18,7 +18,10 @@
   sortable vector [acceptable candidate weight1 weight2]. Weight1
   prefers specificity, e.g. prefers text/html over text/* over
   */*. Weight2 gives preference to candidates with a greater number of
-  parameters, which preferes text/html;level=1 over text/html. This meets the criteria in the HTTP specifications. Although the preference that should result with multiple parameters is not specified formally, candidates that "
+  parameters, which preferes text/html;level=1 over text/html. This
+  meets the criteria in the HTTP specifications. Although the preference
+  that should result with multiple parameters is not specified formally,
+  candidates that "
   [acceptable candidate]
   (when
       (= (:parameters acceptable)
@@ -79,7 +82,11 @@
     (some #(acceptable-charset? % candidate) acceptables)))
 
 (defn- negotiate-charset*
-  "Returns a pair. The first is the charset alias used in the Accept header by the user-agent, the second is the charset alias declared by the server. Often these are the same, but if they differ, use the first alias when talking with the user-agent, while using the second alias while asking the resource/service to encode the representation"
+  "Returns a pair. The first is the charset alias used in the Accept
+  header by the user-agent, the second is the charset alias declared by
+  the server. Often these are the same, but if they differ, use the
+  first alias when talking with the user-agent, while using the second
+  alias while asking the resource/service to encode the representation"
   [acceptables candidates]
   (let [winner
         (->> candidates
@@ -110,6 +117,12 @@
 
 ;; Unified negotiation
 
+(s/defschema RequestInfo
+  {:method s/Keyword
+   (s/optional-key :accept) s/Str       ; Accept header value
+   (s/optional-key :accept-charset) s/Str ; Accept-Charset header value
+   })
+
 (s/defschema NegotiationResult
   {:method s/Keyword
    ;; There is a subtle distinction between a missing entry and a nil
@@ -122,53 +135,63 @@
                                             :subtype s/Str
                                             :parameters {s/Str s/Str}
                                             :weight s/Num})
-   (s/optional-key :charset) (s/maybe (s/pair s/Str "known-by-client" s/Str "known-by-server"))})
+   (s/optional-key :charset) (s/maybe (s/pair s/Str "known-by-client" s/Str "known-by-server"))
+   :request RequestInfo})
+
+(s/defschema ServerAcceptable
+  {(s/optional-key :method) #{s/Keyword}
+   (s/optional-key :content-type) #{MediaTypeMap}
+   (s/optional-key :charset) #{CharsetMap}})
 
 (s/defn acceptable?
-  [request server-acceptable]
+  [request :- RequestInfo
+   server-acceptable :- ServerAcceptable]
   :- NegotiationResult
   (when-let [method ((or (:method server-acceptable) identity) (:method request))]
     (merge
-     {:method method}
+     {:method method
+      :request request}
      ;; If server-acceptable specifies a set of methods, find a
      ;; match, otherwise match on the request method so that
      ;; server-acceptable method guards are strictly optional.
-     (when (and method (:content-type server-acceptable))
-       (let [content-type (negotiate-content-type (or (:accept request) "*/*") (map mime/string->media-type (:content-type server-acceptable)))]
-         (merge
-          {:content-type content-type}
-          (when content-type {:charset (negotiate-charset (:accept-charset request) (:charset server-acceptable))})))))))
-
-(s/defschema Request
-  {:method s/Keyword
-   (s/optional-key :accept) s/Str       ; Accept header value
-   (s/optional-key :accept-charset) s/Str ; Accept-Charset header value
-   })
+     (when method
+       (when-let [cts (:content-type server-acceptable)]
+         (let [content-type (negotiate-content-type (or (:accept request) "*/*") cts)]
+           (merge
+            {:content-type content-type}
+            (when content-type {:charset (negotiate-charset (:accept-charset request) (:charset server-acceptable))}))))))))
 
 (s/defn negotiate
   "Return a sequence of negotiation results, ordered by
   preference (client first, then server). The request and each
   server-acceptable is presumed to have been pre-validated."
-  [request :- Request
-   server-acceptables :- [{(s/optional-key :method) #{s/Keyword}
-                           (s/optional-key :content-type) #{s/Str}
-                           (s/optional-key :charset) #{s/Str}}]]
+  [request :- RequestInfo
+   server-acceptables :- [ServerAcceptable]]
   :- [NegotiationResult]
   (->> server-acceptables
        (keep (partial acceptable? request))
        (sort-by (juxt (comp :weight :content-type) (comp :charset)) (comp - compare))))
 
+(defn add-charset? [mt]
+  (and (= (:type mt) "text")
+       ;; See http://tools.ietf.org/html/rfc6657 TODO: This list is not
+       ;; very comprehensive, go through 'text/*' IANA registrations
+       ;; http://www.iana.org/assignments/media-types/media-types.xhtml
+       (not (contains? #{"text/html"
+                         "text/xml"} (mime/media-type mt)))))
+
 (s/defn interpret-negotiation
+  "Take a negotiated result and determine status code and message. If
+  unacceptable (to the client) content-types yield 406. Unacceptable (to
+  the server) content-types yield 415- Unsupported Media Type"
+  ;; TODO: Result should not be s/maybe
+  [{:keys [method content-type charset request] :as result} :- (s/maybe NegotiationResult)]
   :- {(s/optional-key :status) s/Int
       (s/optional-key :message) s/Str
       (s/optional-key :content-type) MediaTypeMap
       (s/optional-key :client-charset) s/Str
       (s/optional-key :server-charset) s/Str}
-  "Take a negotiated result and determine status code and message. If
-  unacceptable (to the client) content-types yield 406. Unacceptable (to
-  the server) content-types yield 415- Unsupported Media Type"
-  [request :- Request
-   {:keys [method content-type charset] :as result} :- (s/maybe NegotiationResult)]
+
   (cond
     (and (contains? result :content-type) (nil? content-type)) {:status 406 :message "Not Acceptable (content-type)"}
     (and (:accept-charset request) (contains? result :charset) (nil? charset)) {:status 406 :message "Not Acceptable (charset)"}
@@ -177,9 +200,7 @@
                       (when content-type
                         {:content-type
                          (if (and charset
-                                  ;; Only for text media-types ?? where does it say this in the spec.? TODO: Resolve this question
-                                  ;; (= (:type content-type) "text")
-                                  ;; But don't overwrite an existing charset
+                                  (add-charset? content-type)
                                   (not (some-> content-type :parameters (get "charset"))))
                            (assoc-in content-type [:parameters "charset"] (first charset))
                            content-type)})
@@ -187,6 +208,14 @@
                         {:client-charset (first charset)
                          :server-charset (second charset)
                          }))))
+
+
+(s/defn extract-request-info [req] :- RequestInfo
+  (merge {:method (:request-method req)}
+         (when-let [header (get-in req [:headers "accept"])]
+           {:accept header})
+         (when-let [header (get-in req [:headers "accept-charset"])]
+           {:accept-charset header})))
 
 ;; TODO: see rfc7231.html#section-3.4.1
 

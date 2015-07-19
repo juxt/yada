@@ -179,15 +179,22 @@
                     (res/make-resource resource)
                     resource)
 
-         parameters (try
-                      (res/parameters resource)
-                      (catch AbstractMethodError e
-                        ;; This is while we're in transition and so many
-                        ;; resources don't have a parameters
-                        ;; function. TODO: Remove me
-                        (throw (ex-info "No parameters implementation" {:resource (type resource)}))))
+         parameters (or (:parameters options)
+                        (res/parameters resource))
 
          methods (methods/methods)
+
+         ;; This fact is established now for performance reasons, rather
+         ;; than on every HTTP request. satisfies? is relatively expensive.
+         resource-representations? (satisfies? res/ResourceRepresentations resource)
+
+         representations
+         (res/parse-representations
+          (or
+           ;; TODO We might need a shorthand for representations one day
+           (res/representations (:representations options))
+           (when resource-representations?
+             (res/representations resource))))
 
          ;; TODO Now parse the content-types in the representations into
          ;; mime/MediaTypeMap records, because this doesn't need to be
@@ -251,6 +258,15 @@
                  (when (service/request-uri-too-long? request-uri-too-long? (:uri req))
                    (d/error-deferred (ex-info "" {:status 414
                                                   ::http-response true}))))
+
+               ;; TRACE
+               (link ctx
+                 (when (#{:trace} method)
+                   (if (false? (:trace options))
+                     (d/error-deferred (ex-info "Method Not Allowed"
+                                                {:status 405
+                                                 ::http-response true}))
+                     (methods/request (:method-instance ctx) ctx))))
 
                ;; Is method allowed on this resource?
                (link ctx
@@ -339,6 +355,9 @@
                    (d/error-deferred (ex-info "" {:status 403
                                                   ::http-response true}))))
 
+
+
+
                ;; Now we do a fetch, so the resource has a chance to
                ;; load any metadata it may need to answer the questions
                ;; to follow. It can also load state in this step, if it
@@ -372,43 +391,38 @@
                ;; Content negotiation
                ;; TODO: Unknown Content-Type? (incorporate this into conneg)
 
-               (fn [ctx]
-
-                 ;; TODO Use yada.resource/Negotiable, cache the
-                 ;; satisfies? on the resource first, it's expensive to
-                 ;; do on every request
-
-                 (let [request
-                       ;; TODO Move this merge logic to yada.negotiation
-                       (merge {:method (:request-method req)}
-                              (when-let [header (get-in req [:headers "accept"])]
-                                {:accept header})
-                              (when-let [header (get-in req [:headers "accept-charset"])]
-                                {:accept-charset header}))
-                       negotiated
-                       (negotiation/interpret-negotiation
-                        request
-                        (first
-                         (negotiation/negotiate
-                          request
-                          (or
-                           ;; TODO We might need a shorthand for representations one day
-                           (res/representations (:representations options))
-                           (when (satisfies? res/ResourceRepresentations (:resource ctx))
-                             (res/representations (:resource ctx)))
-                           ))))]
-
-                   (if (:status negotiated)
-                     (d/error-deferred (ex-info "" (merge negotiated {::http-response true})))
-                     (cond-> ctx
-                       true (update-in [:response] merge negotiated)
-                       ;; TODO: Would be useful to have the raw mime-type in the ctx, not just the string version
-                       (:content-type negotiated) (assoc-in [:response :headers "content-type"] (mime/media-type->string (:content-type negotiated)))))))
-
-               ;; TRACE (TODO: Is this link in the right place?)
                (link ctx
-                 (if (#{:trace} method)
-                   (methods/request (:method-instance ctx) ctx)))
+
+                 ;; We do not do negotiation for representations if the
+                 ;; request has some path-info - that makes it
+                 ;; context-sensitive and negotiation must be done
+                 ;; dynamically in the resource implementation.
+
+                 ;; (TODO: We should apply the same rationale to methods
+                 ;; and parameters)
+
+                 ;; TODO: It is better that we simply filter out
+                 ;; representations that are guarded by a path-info
+                 ;; pattern in the representations.
+                 (when (nil? (:path-info req))
+
+                   ;; TODO Use yada.resource/Negotiable, cache the
+                   ;; satisfies? on the resource first, it's expensive to
+                   ;; do on every request
+
+                   (let [negotiated
+                         (negotiation/interpret-negotiation
+                          (first
+                           (negotiation/negotiate
+                            (negotiation/extract-request-info req)
+                            representations)))]
+
+                     (if (:status negotiated)
+                       (d/error-deferred (ex-info "" (merge negotiated {::http-response true})))
+                       (-> ctx
+                           (update-in [:response] merge negotiated)
+                           (assoc-in [:response :representation] negotiated))
+                       ))))
 
                ;; Resource exists?
                (link ctx
@@ -485,8 +499,6 @@
                                               (interpose ", " ["Server" "Date" "Content-Length" "Access-Control-Allow-Origin"]))})
                      ctx))
 
-
-
                ;; Response
                (fn [ctx]
                  (let [response
@@ -495,6 +507,10 @@
                                     200)
                         :headers (merge
                                   (get-in ctx [:response :headers])
+                                  (when-let [ct (get-in ctx [:response :content-type])]
+                                    {"content-type" (mime/media-type->string ct)})
+                                  (when-let [cl (get-in ctx [:response :content-length])]
+                                    {"content-length" cl})
                                   (service/headers headers ctx))
 
                         ;; TODO :status and :headers should be implemented like this in all cases

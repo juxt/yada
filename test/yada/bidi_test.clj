@@ -3,6 +3,7 @@
 (ns yada.bidi-test
   (:require
    [clojure.test :refer :all]
+   [byte-streams :as bs]
    [yada.yada :refer (yada) :as yada]
    [yada.test.util :refer (given)]
    [yada.bidi :refer (resource-leaf)]
@@ -36,4 +37,4 @@
       (given response
         :status := 200
         :headers :> {"content-length" 12}
-        :body := "API working!"))))
+        [:body #(bs/convert % String)] := "API working!"))))

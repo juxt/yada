@@ -8,7 +8,7 @@
 
 (defrecord MediaTypeMap [type subtype parameters weight])
 
-(defn media-type [mt] (str (:type mt) "/" (:subtype mt)))
+(defn media-type [mt] (when mt (str (:type mt) "/" (:subtype mt))))
 
 (def media-type-pattern
   (re-pattern (str "(" http-token ")"
@@ -19,6 +19,7 @@
 ;; TODO: Replace memoize with cache to avoid memory exhaustion attacks
 (memoize
  (defn string->media-type [s]
+   (assert s)
    (let [g (rest (re-matches media-type-pattern s))
          params (into {} (map vec (map rest (re-seq (re-pattern (str ";(" http-token ")=(" http-token ")"))
                                                     (last g)))))]
@@ -36,11 +37,12 @@
 ;; TODO: Replace memoize with cache to avoid memory exhaustion attacks
 (memoize
  (defn media-type->string [mt]
-   (assert (instance? MediaTypeMap mt))
-   (.toLowerCase
-    (str (media-type mt)
-         (apply str (for [[k v] (:parameters mt)]
-                      (str ";" k "=" v)))))))
+   (when mt
+     (assert (instance? MediaTypeMap mt))
+     (.toLowerCase
+      (str (media-type mt)
+           (apply str (for [[k v] (:parameters mt)]
+                        (str ";" k "=" v))))))))
 
 (defmethod clojure.core/print-method MediaTypeMap
   [mt ^java.io.Writer writer]

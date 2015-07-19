@@ -24,7 +24,7 @@
     (let [resource "Hello World"
           handler
           (yada resource
-                :representations [{:content-type #{"text/html"}
+                :representations [{:content-type #{"text/plain"}
                                    ;; TODO: See comment above, this
                                    ;; should not be necessary, somehow
                                    ;; the charset should default to
@@ -33,7 +33,7 @@
           request (request :get "/")
           response @(handler request)]
       (given response
-        [:headers "content-type"] := "text/html;charset=utf-8"))
+        [:headers "content-type"] := "text/plain;charset=utf-8"))
 
     ;; TODO: If strings are used, then an explicit charset provided in
     ;; the :produces entry should be honored and used when writing the
