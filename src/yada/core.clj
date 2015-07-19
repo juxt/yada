@@ -189,7 +189,7 @@
          resource-representations? (satisfies? res/ResourceRepresentations resource)
 
          representations
-         (res/parse-representations
+         (negotiation/parse-representations
           (or
            ;; TODO We might need a shorthand for representations one day
            (res/representations (:representations options))

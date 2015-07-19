@@ -5,7 +5,6 @@
             [yada.negotiation :refer :all]
             [yada.mime :as mime]
             [yada.charset :as charset]
-            [yada.resource :as res]
             [juxt.iota :refer [given]]
             [schema.core :as s]
             [schema.test :as st])
@@ -66,7 +65,7 @@
   (testing "no charset"
     (given (interpret-negotiation
             (first (negotiate {:method :get :accept "text/html"}
-                              (res/parse-representations
+                              (parse-representations
                                [{:method #{:get :head}
                                  :content-type #{"text/html"}
                                  }]))))
@@ -78,7 +77,7 @@
   (testing "charset applied when necessary"
     (given (interpret-negotiation
             (first (negotiate {:method :get :accept "text/plain"}
-                              (res/parse-representations
+                              (parse-representations
                                [{:method #{:get :head}
                                  :content-type #{"text/plain"}}
 
@@ -96,7 +95,7 @@
     ;; according to http://tools.ietf.org/html/rfc6657
     (given (interpret-negotiation
             (first (negotiate {:method :get :accept "text/html"}
-                              (res/parse-representations
+                              (parse-representations
                                [{:method #{:get :head}
                                  :content-type #{"text/html"}}
 
@@ -128,7 +127,7 @@
   (is (= (:charset
           (first
            (negotiate {:method :get :accept "text/html"}
-                      (res/parse-representations
+                      (parse-representations
                        [{:method #{:get :head}
                          :content-type #{"text/html"}}
 
@@ -142,7 +141,7 @@
   (given (:content-type (interpret-negotiation
                          (first
                           (negotiate {:method :get :accept "text/html"}
-                                     (res/parse-representations
+                                     (parse-representations
                                       [{:method #{:get}
                                         :content-type #{"text/html;q=0.9"}}
                                        ])))))
@@ -153,7 +152,7 @@
           (interpret-negotiation
            (first
             (negotiate {:method :get :accept "text/html"}
-                       (res/parse-representations
+                       (parse-representations
                         [{:content-type #{"text/html"}}
                          ])))))
     identity :> {:type "text", :subtype "html", :parameters {}}

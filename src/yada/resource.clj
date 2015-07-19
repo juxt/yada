@@ -6,7 +6,6 @@
             [manifold.deferred :as d]
             [yada.charset :refer (to-charset-map)]
             [yada.mime :as mime]
-            [yada.charset :as charset]
             [yada.util :refer (deferrable?)])
   (:import [clojure.core.async.impl.protocols ReadPort]
            [java.io File InputStream]
@@ -162,20 +161,6 @@
 ;; change these on a request containing a path-info. The dynamic version
 ;; would have access to the static result, via the context, and could
 ;; choose how to augment these (override completely, concat, etc.)
-
-(defn parse-representations
-  "For performance reasons it is sensible to parse the representations ahead of time, rather than on each request. mapv this function onto the result of representations"
-  [reps]
-  (when reps
-    (mapv
-     (fn [rep]
-       (merge
-        (select-keys rep [:method])
-        (when-let [ct (:content-type rep)]
-          {:content-type (set (map mime/string->media-type ct))})
-        (when-let [cs (:charset rep)]
-          {:charset (set (map charset/to-charset-map cs))})))
-     reps)))
 
 (extend-protocol ResourceRepresentations
   clojure.lang.PersistentVector

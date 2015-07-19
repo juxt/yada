@@ -180,6 +180,10 @@
        (not (contains? #{"text/html"
                          "text/xml"} (mime/media-type mt)))))
 
+(s/defn vary [server-acceptables :- [ServerAcceptable]]
+  (throw (ex-info "TODO" {}))
+  )
+
 (s/defn interpret-negotiation
   "Take a negotiated result and determine status code and message. If
   unacceptable (to the client) content-types yield 406. Unacceptable (to
@@ -216,6 +220,22 @@
            {:accept header})
          (when-let [header (get-in req [:headers "accept-charset"])]
            {:accept-charset header})))
+
+(defn parse-representations
+  "For performance reasons it is sensible to parse the representations ahead of time, rather than on each request. mapv this function onto the result of representations"
+  [reps]
+  (when reps
+    (mapv
+     (fn [rep]
+       (merge
+        (select-keys rep [:method])
+        (when-let [ct (:content-type rep)]
+          {:content-type (set (map mime/string->media-type ct))})
+        (when-let [cs (:charset rep)]
+          {:charset (set (map cs/to-charset-map cs))})))
+     reps)))
+
+
 
 ;; TODO: see rfc7231.html#section-3.4.1
 

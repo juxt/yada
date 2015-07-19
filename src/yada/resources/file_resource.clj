@@ -9,7 +9,7 @@
             [ring.util.mime-type :refer (ext-mime-type)]
             [ring.util.response :refer (redirect)]
             [ring.util.time :refer (format-date)]
-            [yada.resource :refer [Resource ResourceRepresentations ResourceFetch ResourceConstructor representations platform-charsets parse-representations]]
+            [yada.resource :refer [Resource ResourceRepresentations ResourceFetch ResourceConstructor representations platform-charsets]]
             [yada.representation :as rep]
             [yada.negotiation :as negotiation]
             [yada.mime :as mime])
@@ -70,7 +70,7 @@
         (negotiation/interpret-negotiation
          (first (negotiation/negotiate
                  (negotiation/extract-request-info (:request ctx))
-                 (parse-representations
+                 (negotiation/parse-representations
                   [{:content-type (set (remove nil? [(ext-mime-type (.getName f))]))}]))))]
 
     (when-let [status (:status neg)]
@@ -159,7 +159,7 @@
           (let [neg (negotiation/interpret-negotiation
                      (first (negotiation/negotiate
                              (negotiation/extract-request-info (:request ctx))
-                             (parse-representations (representations this)))))
+                             (negotiation/parse-representations (representations this)))))
                 ct (:content-type neg)]
             (cond-> (assoc-in ctx [:response :body] (rep/to-body (dir-index dir ct) neg))
               ct (assoc-in [:response :content-type] ct)))
@@ -182,7 +182,7 @@
               (let [neg (negotiation/interpret-negotiation
                          (first (negotiation/negotiate
                                  (negotiation/extract-request-info (:request ctx))
-                                 (parse-representations (representations this)))))
+                                 (negotiation/parse-representations (representations this)))))
                     ct (:content-type neg)]
                 (cond-> (assoc-in [:response :body] (rep/to-body (dir-index f ct) neg))
                   ct (assoc-in [:response :content-type] ct)))
