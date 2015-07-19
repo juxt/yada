@@ -13,10 +13,10 @@
 (deftest content-type-test
   (is (= (print-str (mime/string->media-type "text/html;level=1.0")) "#yada.media-type[text/html;q=1.0;level=1.0]"))
 
-  (are [accept candidates => expected] (= (negotiate-content-type accept (map mime/string->media-type candidates)) (dissoc (mime/string->media-type expected) :weight))
+  (are [accept candidates => expected] (= (negotiate-content-type accept (map mime/string->media-type candidates)) (mime/string->media-type expected))
     "text/*" ["text/html"] => "text/html"
     "text/*" ["image/png" "text/html"] => "text/html"
-    "image/*,text/*" ["image/png;q=0.8" "text/jpeg;q=0.9"] => "text/jpeg"
+    "image/*,text/*" ["image/png;q=0.8" "image/jpeg;q=0.9"] => "image/jpeg;q=0.9"
     "text/*;q=0.3, text/html;q=0.7, text/html;level=1, text/html;level=2;q=0.4, */*;q=0.5  " ["text/html;level=1" "text/html"] => "text/html;level=1"
     "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
     ["text/html;charset=utf-8"] => "text/html;charset=utf-8"
@@ -49,19 +49,21 @@
 
 (st/deftest method-test
   (testing "single option matches"
-    (given (first (negotiate {:method :get} [{:method #{:get :head}}]))
+    (given (first (negotiate {:method :get}
+                             [{:method #{:get :head}}]))
       :method := :get
       :content-type := nil
       :charset := nil
       [interpret-negotiation :status] := nil))
   (testing "second option works"
-    (given (first (negotiate {:method :post} [{:method #{:get :head}}{:method #{:post :put}}]))
+    (given (first (negotiate {:method :post}
+                             [{:method #{:get :head}}{:method #{:post :put}}]))
       :method := :post
       :content-type := nil
       :charset := nil
       [interpret-negotiation :status] := nil)))
 
-(st/deftest content-type-test
+(st/deftest interpreted-content-type-test
   (testing "no charset"
     (given (interpret-negotiation
             (first (negotiate {:method :get :accept "text/html"}
