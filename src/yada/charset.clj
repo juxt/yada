@@ -44,17 +44,18 @@
 
 (memoize
  (defn- string->charset* [s]
-   (let [g (rest (re-matches charset-pattern s))
-         params (into {} (map vec (map rest (re-seq (re-pattern (str ";(" http-token ")=(" http-token ")"))
+   (let [g (rest (re-matches charset-pattern s))]
+     (when (last g)
+       (let [params (into {} (map vec (map rest (re-seq (re-pattern (str ";(" http-token ")=(" http-token ")"))
                                                     (last g)))))]
-     (->CharsetMap
-      (first g)
-      (if-let [q (get params "q")]
-        (try
-          (Float/parseFloat q)
-          (catch java.lang.NumberFormatException e
-            1.0))
-        1.0)))))
+         (->CharsetMap
+          (first g)
+          (if-let [q (get params "q")]
+            (try
+              (Float/parseFloat q)
+              (catch java.lang.NumberFormatException e
+                1.0))
+            1.0)))))))
 
 (defn- string->charsetmap [s]
   (string->charset* (str/trim s)))

@@ -5,6 +5,7 @@
    [clojure.tools.logging :refer :all :exclude [trace]]
    [clojure.string :as str]
    [schema.core :as s]
+   [clojure.set :as set]
    )
   (:import [yada.charset CharsetMap]
            [yada.mime MediaTypeMap]))
@@ -180,9 +181,17 @@
        (not (contains? #{"text/html"
                          "text/xml"} (mime/media-type mt)))))
 
-(s/defn vary [server-acceptables :- [ServerAcceptable]]
-  (throw (ex-info "TODO" {}))
-  )
+(s/defn vary [method :- s/Keyword
+              server-acceptables :- [ServerAcceptable]]
+  (let [server-acceptables (filter #((or (:method %) identity) method) server-acceptables)]
+    (set
+     (remove nil?
+             (list
+              (when-let [ct (apply set/union (map :content-type server-acceptables))]
+                (when (> (count ct) 1) :content-type))
+              (when-let [cs (apply set/union (map :charset server-acceptables))]
+                (when (> (count cs) 1) :charset)
+                ))))))
 
 (s/defn interpret-negotiation
   "Take a negotiated result and determine status code and message. If
@@ -221,6 +230,8 @@
          (when-let [header (get-in req [:headers "accept-charset"])]
            {:accept-charset header})))
 
+;; TODO: Should also allow non-set specifications: {:method :get :content-type "text/html}
+;; TODO: Should also pre-parsed specifications: {:method :get :content-type MimeTypeMap}
 (defn parse-representations
   "For performance reasons it is sensible to parse the representations ahead of time, rather than on each request. mapv this function onto the result of representations"
   [reps]

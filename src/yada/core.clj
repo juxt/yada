@@ -355,9 +355,6 @@
                    (d/error-deferred (ex-info "" {:status 403
                                                   ::http-response true}))))
 
-
-
-
                ;; Now we do a fetch, so the resource has a chance to
                ;; load any metadata it may need to answer the questions
                ;; to follow. It can also load state in this step, if it
@@ -419,9 +416,13 @@
 
                      (if (:status negotiated)
                        (d/error-deferred (ex-info "" (merge negotiated {::http-response true})))
-                       (-> ctx
-                           (update-in [:response] merge negotiated)
-                           (assoc-in [:response :representation] negotiated))
+
+                       (let [vary (negotiation/vary method representations)]
+                         (cond-> ctx
+                           negotiated (update-in [:response] merge negotiated)
+                           negotiated (assoc-in [:response :representation] negotiated)
+                           vary (assoc-in [:response :vary] vary)
+                           ))
                        ))))
 
                ;; Resource exists?
@@ -511,6 +512,10 @@
                                     {"content-type" (mime/media-type->string ct)})
                                   (when-let [cl (get-in ctx [:response :content-length])]
                                     {"content-length" cl})
+                                  (when-let [vary (get-in ctx [:response :vary])]
+                                    {"vary" (str/join ", " (filter string? (map {:charset "accept-charset"
+                                                                                 :content-length "accept"}
+                                                                                vary)))})
                                   (service/headers headers ctx))
 
                         ;; TODO :status and :headers should be implemented like this in all cases
