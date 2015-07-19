@@ -6,7 +6,7 @@
    [clojure.test :refer :all]
    [ring.mock.request :refer [request]]
    [yada.core :refer [yada]]
-   [yada.test.util :refer (given)]))
+   [juxt.iota :refer (given)]))
 
 ;; TODO: OPTIONS needs to be documented and implemented, then re-enable
 ;; these tests

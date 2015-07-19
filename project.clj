@@ -24,7 +24,8 @@
    [metosin/ring-swagger "0.20.2" :exclusions [potemkin]]
    ;;[ring/ring-core "1.3.2" :exclusions [org.clojure/tools.reader]]
    [byte-streams "0.2.0-alpha8"]
-   [json-html "0.3.1"]]
+   [json-html "0.3.1"]
+   [juxt/iota "0.1.2"]]
 
   :repl-options {:init-ns user
                  :welcome (println "Type (dev) to start")}

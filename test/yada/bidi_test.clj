@@ -5,7 +5,7 @@
    [clojure.test :refer :all]
    [byte-streams :as bs]
    [yada.yada :refer (yada) :as yada]
-   [yada.test.util :refer (given)]
+   [juxt.iota :refer (given)]
    [yada.bidi :refer (resource-leaf)]
    [bidi.bidi :as bidi :refer (Matched compile-route succeed context)]
    [bidi.ring :refer (make-handler Ring)]

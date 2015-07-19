@@ -5,7 +5,7 @@
             [ring.mock.request :as mock]
             [bidi.bidi :refer (path-for)]
             [bidi.ring :as br]
-            [yada.test.util :refer [given]]))
+            [juxt.iota :refer [given]]))
 
 (defn ex-handler [ex]
   (let [h (make-example-handler ex)

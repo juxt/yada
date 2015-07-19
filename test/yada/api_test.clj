@@ -9,7 +9,7 @@
    [bidi.ring :refer (make-handler)]
    [clojure.test :refer :all]
    [yada.yada :refer (yada) :as yada]
-   [yada.test.util :refer (given)]
+   [juxt.iota :refer (given)]
    [manifold.deferred :as d]
    [modular.test :refer (with-system-fixture *system*)]
    [cheshire.core :as json]

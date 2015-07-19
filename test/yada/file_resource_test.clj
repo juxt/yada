@@ -15,7 +15,7 @@
    [yada.core :refer [yada]]
    [yada.resource :as yst]
    [yada.resources.file-resource :refer :all]
-   [yada.test.util :refer [given]])
+   [juxt.iota :refer [given]])
   (:import [java.io File ByteArrayInputStream]
            [java.util Date]))
 

@@ -5,7 +5,7 @@
             [clojure.test :refer :all]
             [clojure.java.io :as io]
             [yada.core :refer (yada)]
-            [yada.test.util :refer [given]]
+            [juxt.iota :refer [given]]
             [ring.mock.request :as mock]
             )
   (:import [java.io BufferedReader]))

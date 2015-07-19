@@ -3,7 +3,7 @@
    [byte-streams :as bs]
    [clojure.test :refer :all]
    [yada.yada :refer (yada)]
-   [yada.test.util :refer (given)]
+   [juxt.iota :refer (given)]
    [ring.mock.request :as mock]
    [ring.util.codec :as codec]
    [yada.resources.misc :refer (just-methods)]

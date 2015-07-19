@@ -7,7 +7,7 @@
    [ring.mock.request :as mock]
    [clojure.java.io :as io]
    [ring.util.time :refer (parse-date format-date)]
-   [yada.test.util :refer (given)]
+   [juxt.iota :refer (given)]
    [yada.yada :refer [yada]]
    yada.resources.collection-resource))
 

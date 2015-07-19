@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [type])
   (:require [yada.mime :refer :all]
             [clojure.test :refer :all]
-            [yada.test.util :refer (given)]))
+            [juxt.iota :refer (given)]))
 
 (deftest media-type-test
   (are [x y] (= (into {} (string->media-type x)) y)

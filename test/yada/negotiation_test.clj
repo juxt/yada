@@ -6,7 +6,7 @@
             [yada.mime :as mime]
             [yada.charset :as charset]
             [yada.resource :as res]
-            [yada.test.util :refer [given]]
+            [juxt.iota :refer [given]]
             [schema.core :as s]
             [schema.test :as st])
   (:import [yada.mime MediaTypeMap]))

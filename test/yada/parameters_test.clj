@@ -5,7 +5,7 @@
    [clojure.test :refer :all]
    [yada.yada :refer (yada)]
    [yada.resource :as res]
-   [yada.test.util :refer (given)]
+   [juxt.iota :refer (given)]
    [ring.mock.request :as mock]
    [ring.util.codec :as codec]
    [schema.core :as s]

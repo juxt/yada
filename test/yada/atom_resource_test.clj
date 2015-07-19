@@ -5,7 +5,7 @@
    [clojure.test :refer :all]
    [ring.mock.request :refer [request]]
    [clojure.java.io :as io]
-   [yada.test.util :refer (given)]
+   [juxt.iota :refer (given)]
    [yada.yada :refer [yada]]
    yada.resources.atom-resource))
 

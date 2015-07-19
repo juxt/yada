@@ -9,7 +9,7 @@
    [clojure.java.io :as io]
    [yada.core :refer [yada]]
    [ring.mock.request :refer [request]]
-   [yada.test.util :refer [given]]))
+   [juxt.iota :refer [given]]))
 
 
 (deftest string-test
