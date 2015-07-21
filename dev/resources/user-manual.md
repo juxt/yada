@@ -1,8 +1,8 @@
-# The yada user guide
+# The yada user manual
 
-Welcome to the yada user guide!
+Welcome to the yada user manual!
 
-This guide is ideal if you are new to yada and is suitable for anyone
+This manual is ideal if you are new to yada and is suitable for anyone
 who is interested in building robust RESTful web APIs with Clojure
 quickly and easily.
 
@@ -17,7 +17,7 @@ questions you might have.
 
 If you spot a typo, misspelling, grammar problem, confusing text, or
 anything you feel you could improve, please go-ahead and
-[edit the source](https://github.com/juxt/yada/edit/master/dev/resources/user-guide.md). If
+[edit the source](https://github.com/juxt/yada/edit/master/dev/resources/user-manual.md). If
 your contribution is accepted you will have our eternal gratitude, help
 future readers and be forever acknowledged in the yada documentation as
 a contributor!
@@ -970,7 +970,7 @@ Ring middleware is remarkably simple and powerful.
 
 ## Concluding remarks
 
-In this user-guide we have seen how yada can help create powerful
+In this user-manual we have seen how yada can help create powerful
 RESTful APIs with a declarative data-centric syntax, and how the
 adoption of a declarative data format (rather than functional
 composition) allows us to easily extend yada's functionality in various

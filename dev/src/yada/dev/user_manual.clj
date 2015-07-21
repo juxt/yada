@@ -1,6 +1,6 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(ns yada.dev.user-guide
+(ns yada.dev.user-manual
   (:require
    [bidi.bidi :refer (tag RouteProvider alts)]
    [bidi.ring :refer (redirect)]
@@ -58,7 +58,7 @@
 
 (defn get-source []
   (xml-parse (enclose (md-to-html-string
-                       (slurp (io/resource "user-guide.md"))))))
+                       (slurp (io/resource "user-manual.md"))))))
 
 (defn title [s]
   (letfn [(lower [x]
@@ -82,15 +82,15 @@
   [m]
   (str/upper-case (name m)))
 
-(defn example-instance [user-guide example]
+(defn example-instance [user-manual example]
   (when-let [v (find-var (symbol "yada.dev.examples" (str "map->" (namespace-munge example))))]
-    (v user-guide)))
+    (v user-manual)))
 
-(defn post-process-example [user-guide ex xml {:keys [prefix ext-prefix]}]
+(defn post-process-example [user-manual ex xml {:keys [prefix ext-prefix]}]
   (when xml
     (let [url (str
                (when (external? ex) ext-prefix)
-               (apply path-for @(:*router user-guide) (keyword (basename ex)) (get-path-args ex))
+               (apply path-for @(:*router user-manual) (keyword (basename ex)) (get-path-args ex))
                (when-let [qs (get-query-string ex)] (str "?" qs)))
           {:keys [method headers data] :as req} (get-request ex)
           ]
@@ -206,7 +206,7 @@
                            :attrs {:href (str "#" (chapter ch))}
                            :content [ch]}]}))})
 
-(defn post-process-doc [user-guide xml examples config]
+(defn post-process-doc [user-manual xml examples config]
   (postwalk
    (fn [{:keys [tag attrs content] :as el}]
      (cond
@@ -229,7 +229,7 @@
              [{:tag :a :attrs {:name (str "example-" exname)} :content []}
               {:tag :h3 :content [(get-title ex)]}]
              (remove nil? [(post-process-example
-                            user-guide
+                            user-manual
                             ex
                             (some-> (format "examples/%s.md" exname)
                                     io/resource slurp md-to-html-string enclose xml-parse)
@@ -257,9 +257,9 @@
        :otherwise el))
    xml))
 
-(defn extract-examples [user-guide xml]
+(defn extract-examples [user-manual xml]
   (let [xf (comp (filter #(= (:tag %) :example)) (map :attrs) (map :ref))]
-    (map (juxt identity (partial example-instance user-guide)) (sequence xf (xml-seq xml)))))
+    (map (juxt identity (partial example-instance user-manual)) (sequence xf (xml-seq xml)))))
 
 (defn post-process-body
   "Some whitespace reduction"
@@ -272,7 +272,7 @@
       (str/replace #"(yada)(?![-/])" "<span class='yada'>yada</span>")
       ))
 
-(defn body [{:keys [*router templater] :as user-guide} doc {:keys [prefix]}]
+(defn body [{:keys [*router templater] :as user-manual} doc {:keys [prefix]}]
   (render-template
    templater
    "templates/page.html.mustache"
@@ -315,7 +315,7 @@
                [:tr {:id (str "test-" (link ex))}
                 [:td (inc ix)]
                 [:td [:a {:href (format "%s#example-%s"
-                                        (path-for @*router ::user-guide)
+                                        (path-for @*router ::user-manual)
                                         (link ex))}
                       exname]]
                 [:td (:status (try (expected-response ex) (catch AbstractMethodError e)))]
@@ -340,10 +340,10 @@
            examples)]]]))
     :scripts ["/static/js/tests.js"]}))
 
-(defrecord UserGuide [*router templater prefix ext-prefix]
+(defrecord UserManual [*router templater prefix ext-prefix]
   Lifecycle
   (start [component]
-    (infof "Starting user-guide")
+    (infof "Starting user-manual")
     (assert prefix)
     (let [xbody (get-source)
           component (assoc
@@ -359,7 +359,7 @@
   (routes [component]
     (let [xbody (:xbody component)
           examples (:examples component)]
-      ["/user-guide"
+      ["/user-manual"
        [[".html"
          (->
           (let [config {:prefix prefix :ext-prefix ext-prefix}]
@@ -390,8 +390,8 @@
              (yada (fn [ctx]
                      (body component (post-process-doc component xbody (into {} examples) config) config))
                    :representations [{:content-type #{"text/html"} :charset #{"utf-8"}}]
-                   :last-modified (io/file "dev/resources/user-guide.md"))
-             (tag ::user-guide))))]
+                   :last-modified (io/file "dev/resources/user-manual.md"))
+             (tag ::user-manual))))]
 
         ["/examples/"
          (vec
@@ -406,13 +406,13 @@
                                       :charset #{"utf-8"}}])
              (tag ::tests))]]])))
 
-(defmethod clojure.core/print-method UserGuide
+(defmethod clojure.core/print-method UserManual
   [o ^java.io.Writer writer]
-  (.write writer "<userguide>"))
+  (.write writer "<usermanual>"))
 
-(defn new-user-guide [& {:as opts}]
+(defn new-user-manual [& {:as opts}]
   (-> (->> opts
            (merge {})
-           map->UserGuide)
+           map->UserManual)
       (using [:templater])
       (co-using [:router])))

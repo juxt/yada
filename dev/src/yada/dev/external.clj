@@ -5,17 +5,17 @@
    [bidi.bidi :refer (RouteProvider tag)]
    [clojure.tools.logging :refer :all]
    [com.stuartsierra.component :refer (using)]
-   [yada.dev.user-guide :refer (basename)]
+   [yada.dev.user-manual :refer (basename)]
    [yada.dev.examples :refer (make-example-handler get-path)]))
 
-(defrecord ExternalResources [user-guide]
+(defrecord ExternalResources [user-manual]
   RouteProvider
   (routes [component]
-    ["/user-guide/examples"
+    ["/user-manual/examples"
      [["" (fn [req] {:body "examples"})]
       ["/"
        (vec
-        (for [[_ ex] (:examples user-guide)]
+        (for [[_ ex] (:examples user-manual)]
           [(get-path ex)
            (make-example-handler ex)]))]]]))
 
@@ -28,4 +28,4 @@
    (->> opts
         (merge {})
         map->ExternalResources)
-   (using [:user-guide])))
+   (using [:user-manual])))

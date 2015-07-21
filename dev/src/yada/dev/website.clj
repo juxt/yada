@@ -39,7 +39,7 @@
           [:div.container
            [:h2 "Welcome to " [:span.yada "yada"] "!"]
            [:ol
-            [:li [:a {:href (path-for @*router :yada.dev.user-guide/user-guide)} "User guide"] " (and " [:a {:href (path-for @*router :yada.dev.user-guide/tests)} "tests"] ")"]
+            [:li [:a {:href (path-for @*router :yada.dev.user-manual/user-manual)} "User manual"] " (and " [:a {:href (path-for @*router :yada.dev.user-manual/tests)} "tests"] ")"]
             [:li "HTTP and related specifications"
              [:ul
               [:li [:a {:href "/static/spec/rfc2616.html"} "RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1"]]

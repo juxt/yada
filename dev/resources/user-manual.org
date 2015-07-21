@@ -1,0 +1,28 @@
+* Forward
+
+* Introduction
+
+[State (about the web being about state)]
+
+But for almost the last 2 decades we've ignored the fact that web is about state and built upon a programming model we'll term the 'servlet' model where
+
+- every developer starts with having to implement _most_ of the HTTP specification for _every_ endpoint she writes.
+
+Ring doesn't not challenge this assumption. Hence, most Ring services are implemented as minimally as the developer can get away with. The service 'works', the test passes, the developer moves on.
+
+This state of affairs means that none of the significant features in HTTP for scale, performance, system evolution, diversity, etc. go unexploited.
+
+[Take content negotiation for example - when something new like EDN comes out, content negotiation gives our systems as migration path - we can update certain clients to use EDN while serving JSON from those same services to clients that haven't yet upgraded.]
+
+** [Async]
+
+Rather than give the possibility of async, like [Pedestal], yada was built from the ground-up to allow async everywhere you may need it, and make it trivial to exploit. (shout-out to manifold here)
+
+- futures (trip to the database)
+- channel (chunking a large file, or where we're layering on a service that only gives us one page at a time, and we're trying to concat)
+- promise (on a channel)- service available? rate-limiting
+
+
+** [Re-use]
+
+Build a single resource type for your preferred style of endpoint, and use it for all the endpoints you want. (while still having Ring compatibility and being able to mix-and-match Ring services where you need the extra flexibility - pareto (80/20) principle applies)

@@ -13,7 +13,7 @@
    [modular.bidi :refer (new-router new-web-resources new-archived-web-resources new-redirect)]
    [modular.clostache :refer (new-clostache-templater)]
    [yada.dev.website :refer (new-website)]
-   [yada.dev.user-guide :refer (new-user-guide)]
+   [yada.dev.user-manual :refer (new-user-manual)]
    [yada.dev.database :refer (new-database)]
    [yada.dev.user-api :refer (new-verbose-user-api)]
    [modular.aleph :refer (new-webserver)]
@@ -69,7 +69,7 @@
   (assoc
    system
    :clostache-templater (make new-clostache-templater config)
-   :user-guide (make new-user-guide config
+   :user-manual (make new-user-manual config
                      :prefix "http://localhost:8090"
                      :ext-prefix "http://localhost:8091")
    :website (make new-website config)
@@ -122,7 +122,7 @@
    :external-server (using
                      (new-webserver :port 8091)
                      {:request-handler :external-router
-                      :user-guide :user-guide})))
+                      :user-manual :user-manual})))
 
 (defn new-system-map
   [config]
@@ -143,9 +143,9 @@
   []
   {:http-server {:request-handler :router}
    :external-server {:request-handler :external-router}
-   :user-guide {:templater :clostache-templater}
+   :user-manual {:templater :clostache-templater}
    :router [:user-api
-            :user-guide
+            :user-manual
             :swagger-ui
             :website
             :jquery :bootstrap
@@ -157,7 +157,7 @@
 (defn new-co-dependency-map
   []
   {:website {:router :router}
-   :user-guide {:router :router}})
+   :user-manual {:router :router}})
 
 (defn new-production-system
   "Create the production system"
