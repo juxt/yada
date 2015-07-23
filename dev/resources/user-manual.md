@@ -1,10 +1,19 @@
-# The yada user manual
+# The yada manual
 
-Welcome to the yada user manual!
+Welcome to the yada manual!
 
-This manual is ideal if you are new to yada and is suitable for anyone
-who is interested in building robust RESTful web APIs with Clojure
-quickly and easily.
+This manual corresponds with version {{yada.version}}.
+
+### Table of Contents
+
+<toc drop="0"/>
+
+### Audience
+
+This manual is the authoritative documentation to yada. As such, it is
+intended for a wide audience of developers, from beginners to experts.
+
+### Get involved
 
 If you are a more experienced Clojure or REST developer and would like
 to get involved in influencing yada's future, please join our
@@ -24,201 +33,262 @@ a contributor!
 
 [Back to index](/)
 
-### Table of Contents
-
-<toc drop="0"/>
-
-## Introduction
+## Forward
 
 State is everywhere. The world is moving and we need to keep up. We need our computers to do the same, keeping up-to-date with the latest information, trends, stock-prices, news and weather updates, and other important 'stuff'.
 
-To understand yada you first need to understand about state, and the importance of copying it from place to place, because that's really what yada is all about.
+The web is primarily a means to move state around. You have some state
+here, and you want it over there. Or it's over there, but you want it
+over here.
 
-You have some state here, and you want it over there. Or it's over
-there, but you want it over here.
+For two decades or more, the pre-dominant model for web programming has ignored state, instead requiring developers to work at the level of the HTTP protocol itself.
 
-Semantically, yada aligns with HTTP, the protocol that binds the web
-together. Because that's really what the web is, lots of digital state
-moving around the world.
+For example, in Java...
 
-Practically, yada helps developers take some state on a computer and expose it to web browsers and other programs.
+```java
+public void handleRequest(HttpServletRequest request,
+                          HttpServletResponse response)
+{
+    response.setStatus(200);
+}
+```
 
-### yada is a level up
+or in Clojure
 
-When developing websites and APIs, developers usually write software that implements in one part of a conversation (or protocol) between computers. With HTTP it is common for developers be familiar with the idea of receiving a 'request' to which the code must return a 'response'. Most developers that write so-called 'server-side' logic work at the _same level of abstraction_ as the HTTP protocol. This fact is true, regardless of whether the developer chooses to learn all about the HTTP protocol or is ignorant of much of the details (as is more often the case).
+```clojure
+(fn [request] {:status 200})
+```
 
-Writing code at the level of the HTTP protocol is hard work, whatever you're doing. If you're doing REST, there's a lot of code to write. If you're doing microservices, that's even more coding. For Clojure developers, yada offers a layer of abstaction above Ring which improves the productivity of writing websites and providing API services. Crucially, however, yada does not ask the developer to trade too much control in return for this productivity. Well, that's the design goal.
+This programming model puts the HTTP request and response at centre
+stage. The concept of state is missing entirely - the resource is seen
+merely as an _operation_ (or set of operations) available for remote
+invocation.
 
-### My first yada: __Hello World!__
+For years, the same RPC-centered approach has been copied by web
+frameworks in most other languages, old and new (Python, Ruby, Go,
+Clojure...). It has survived because it is so flexible, as most
+low-level programming models are. But there are significant downsides to
+this model too. HTTP is a big specification, and it is unreasonable to
+expect developers to have the time to implement all the relevant pieces
+of it. What's more, many developers tend to implement much the same code
+over and over again, for each and every 'operation' they write.
 
-Let's illustrate yada in practice by writing some code. Let's imagine we have some state: a string. The string is simply: `Hello World!`.
+A notable variation on this programming model can be found in Erlang's
+WebMachine and Clojure's Liberator. To a degree, these libraries ease
+the burden on the developer by orchestrating the steps required to build
+a response to a web request. However, developers are still required to
+understand the state transition diagram underlying this orchestration if
+they are to successfully exploit these libraries to the maximum
+extent. Fundamentally, the programming model is the same: the developer
+is still writing code with a view to forming a response at the protocol
+level.
 
-We want to move this state across the web somehow - say, between my web server and your browser.
+It is time for a fresh approach, one that replaces the 'operational'
+view of web 'services' with a strong _data-oriented_ approach,
+emphasising the view of _state_ at the heart of a web _resource_.
 
-We pass the string as a single argument to yada's `yada` function.
+## Introduction
+
+### What is yada?
+
+yada is a Clojure library that lets you expose state to the web over HTTP.
+
+With yada, many things you would expect to have to code yourself and
+taken care of automatically, leaving you time to focus on other aspects
+of your application. And you end up with less networking code to write
+and maintain.
+
+It gives you the option to exploit the asynchronous features of modern web servers, to achieve greater scaleability for Clojure-powered your websites and APIs.
+
+Above all, yada is data-centric, letting you specify your web resources
+as data. This has some compelling advantages, such as being able to
+transform that data into other formats, such as
+[Swagger](http://swagger.io) specifications for API documentation.
+
+## A tutorial: Hello World!
+
+Let's introduce yada properly by writing some code. Let's start with some state, a string: `Hello World!`. We'll be able to give an overview of many of yada's features using this simple example.
+
+We pass the string as a single argument to yada's `yada` function, and yada returns a web _resource_.
 
 ```clojure
 (yada "Hello World!")
 ```
 
-This expression simply returns a Ring handler. We have bound this handler to the path `/hello`, so we're able to make the following HTTP request :-
+This web resource can be used as a Ring handler, for example, in a
+Compojure route defintion.
 
-```http
+```clojure
+(use 'compojure.core
+     'ring.adapter.jetty)
+
+(run-jetty
+  (GET "/hello" []
+    (yada "Hello World!")))
+```
+
+Once we have bound this handler to the path `/hello`, we're able to make the following HTTP request :-
+
+```nohighlight
 curl -i http://localhost:8090/hello
 ```
 
-and receive something similar to the following response :-
+and receive a response like this :-
 
 ```http
 HTTP/1.1 200 OK
-Last-Modified: Mon, 06 Jul 2015 07:00:00 GMT
 Server: Aleph/0.4.0
 Connection: Keep-Alive
-Date: Mon, 06 Jul 2015 07:30:00 GMT
+Date: {{now.date}}
+Last-Modified: {{hello.date}}
+Content-Type: text/plain;charset=utf-8
+Vary: accept-charset
 Content-Length: 13
 
 Hello World!
 ```
 
-Note the following.
+Let's examine this response in detail.
 
-` The status code is set to __200__
-- The __Last-Modified__ date is set.
-- The __Content-Length__ header is set to the length of the string (including the newline).
+The status code is `200 OK`. We didn't have to set it explicitly in
+code, yada inferred the status from the request and the resource.
 
-It has been possible to deduce these elements of the response from the
-properties of a `java.lang.String`. Specifically, we can efficiently
-determine the length of a `java.lang.String`. We can also use the fact
-that `java.lang.String` instances are immutable to infer that the time
-when the instance was constructed is the last possible moment that the
-string could have been modified.
+The first three response headers are added by our webserver, [Aleph](https://github.com/ztellman/aleph).
 
-This gives a good example of yada's design philosophy, which is that in
-the absence of explicit code, yada will deduce what it can. However, the
-developer should always in control.
-
-The fact that yada knows the last modified date of the string means that
-the user-agent can cache the content of the resource by setting the
-__If-Modified_Since__ header in the request.
-
-```
-curl -i http://localhost:8090/hello -H "If-Modified-Since: Mon, 06 Jul 2015 07:15:00 GMT"
+```http
+Server: Aleph/0.4.0
+Connection: Keep-Alive
+Date: {{now.date}}
 ```
 
+(Note that currently, __Aleph is the only web server that yada supports__.)
+
+Next we have another date.
+
+```http
+Last-Modified: {{hello.date}}
 ```
+
+The __Last-Modified__ header shows when the string `Hello World!` was
+created. As Java strings are immutable, yada is able to deduce that the
+string's creation date is also the last time it could have been
+modified.
+
+Next we have a header telling us the media-type of the string's
+state. yada is able to determine that the media-type is text, but
+without more clues it must default to
+`text/plain`.
+
+It is, however, able to offer the body in numerous character set
+encodings, thanks to the Java platform. The default character set of the
+Java platform serving this resource is UTF-8, so yada inherits that as a
+default.
+
+```http
+Content-Type: text/plain;charset=utf-8
+```
+
+Since the Java platform can encode a string in other charsets, yada uses the _Vary_ header to signal to the user-agent (and caches) that the body could change if a request contained an _Accept-Charset_ header.
+
+```http
+Vary: accept-charset
+```
+
+Next we are given the length of the body, in bytes.
+
+```http
+Content-Length: 13
+```
+
+In this case, the count includes a newline.
+
+Finally we see our response body.
+
+```nohighlight
+Hello World!
+```
+
+### A conditional request
+
+In HTTP, a conditional request is one where a user-agent (like a
+browser) can ask a server for the state of the resource but only if a
+particular condition holds. A common condition is whether the resource
+has been modified since a particular date, usually because the
+user-agent already has a copy of the resource's state which it can use
+if possible. If the resource hasn't been modified since this date, the
+server can tell the user-agent that there is no new version of the
+state.
+
+We can test this by setting the __If-Modified-Since__ header in the
+request.
+
+```nohighlight
+curl -i http://localhost:8090/hello -H "If-Modified-Since: {{hello.date}}"
+```
+
+The server responds with
+
+```http
 HTTP/1.1 304 Not Modified
 Server: Aleph/0.4.0
 Connection: Keep-Alive
-Date: Mon, 06 Jul 2015 07:22:52 GMT
+Date: Tue, 21 Jul 2015 20:17:51 GMT
 Content-Length: 0
 ```
 
-Of course, in our example of "Hello World!" this is moot. But
+### A HEAD request
 
-[add normal request with If-Modified-Since header, returns 304, so we don't go off to Google Translate again]
+[todo]
 
-[Now change the logic a little, to add the Google Translate logic on fetch-state. Add a fetch-state option overriding the default fetch-state of the String]
+### Mutation
 
-[add normal request with language, returns a Google Translated body, using async to Google translate, use a language that contains Chinese characters]
-[add normal request with charset, returns 200 with Ascii body, show our Chinese characters in ASCII, or Shift_JIS]
+Let's try to overwrite the string by using a PUT.
 
-### Where yada fits
-
-During a web request, a browser (or other user agent) establishes a
-connection with a web server and sends a request encoded according to
-the HTTP standard. The server decodes the request and builds a ordinary
-Clojure map, called a _request map_, which it passes as an argument to a
-Clojure function, called a _handler_. The
-[Ring](https://github.com/ring) project establishes a standard set of
-keywords so that numerous compatible web servers can fulfill this rôle,
-either natively (e.g. aleph, http-kit) or via a bridge (e.g. Jetty, or
-any Java servlet container).
-
-#### First we route to the target handler...
-
-Typically, the handler that the web server calls looks at the URI
-contained in the request and delegates the request to another
-handler. We say that the handler _dispatches_ the request, based on the
-URI. While this routing function can be written by the Clojure
-developer, there exist a number of libraries dedicated to this task
-which can be used with yada.
-
-The target handler is responsible for returning a ordinary Clojure map,
-called a _response map_. The Ring standard states that such responses should contain a __:status__ entry indicating the HTTP response code, an optional __:headers__ entry containing the response headers, and an optional __:body__ entry containing the response's entity body.
-
-#### Then we code the response...
-
-Usually, the target handler is developed by the application developer. But with yada, the application developer passes a ordinary Clojure map, called a _resource description_ to a special yada function, `yada/handler`, which returns the target handler.
-
-If you are unfamiliar with web development in Clojure, let's explain
-that again using some basic Clojure code. Here is a simple Ring-compatible handler function :-
-
-```clojure
-(defn hello "A handler to greet the world!" [req]
-  {:status 200, :body "Hello World!"})
+```nohighlight
+curl -i http://localhost:8090/hello -X PUT -d "Hello Dolly!"
 ```
 
-This declares a function (in the var `hello`) that accepts a single argument (`req`) known as the _request map_. The implementation of the function returns a literal map, using Clojure's `{}` syntax. (By the way, commas are optional in Clojure).
+The response is as follows (we'll omit the Aleph contributed headers from now on).
 
-Compare this with using yada to create a handler :-
-
-```clojure
-(require '[yada.yada :refer (yada)])
-
-(def ^{:doc "A handler to greet the world!"}
-  hello
-  (yada {:body "Hello World!"}))
+```http
+HTTP/1.1 405 Method Not Allowed
+Allow: GET, HEAD, OPTIONS
+Server: Aleph/0.4.0
+Connection: Keep-Alive
+Date: {{now.date}}
+Content-Length: 0
 ```
 
-### Resource descriptions
+The response status is `405 Method Not Allowed`, telling us that our
+request was unacceptable. The is also a __Allow__ header, telling us
+which methods are allowed.
 
-The code above calls a function built-in to yada called `yada`, with a
-single argument known as a _resource description_. In this case, the resource
-description looks strikingly similar to a Ring response but don't be
-deceived — there is a lot more going on under the hood as we shall soon
-see.
+### An attempt to get the string gzip compressed
 
-<include type="note" ref="modular-template-intro"/>
+[todo]
 
-<example ref="HelloWorld"/>
+### An attempt to get the string in Chinese
 
-<include type="note" ref="liberator"/>
+[todo - well, yada isn't _that_ clever, at least not from just a string. But let's see how we would code it using Google Translate - defer this to another chapter introducing async, and we can offer the Chinese version in Shift_JIS encoding too!]
 
-Resources descriptions are the key to understanding yada. They are used to
-define all the ways that a handler should respond to a web request.
+### An OPTIONS request
 
-### Dynamic responses
+[todo]
 
-The values in resource description can be constant values, as we have already seen. But typically the body of a response will be created dynamically, on a per-request basis, depending on the current state of the resource and/or parameters passed in the request. In this case, a Clojure function is used.
+### Swagger
 
-```clojure
-(def ^{:doc "A handler to greet the world!"}
-  hello
-  (yada {:body (fn [ctx] "Hello World!")}))
-```
+[todo]
 
-The function takes a single argument known as the _request context_. It is an ordinary Clojure map containing various data relating to the request. Request contexts will be covered in more detail later on.
+### Summary
 
-<example ref="DynamicHelloWorld"/>
+This simple example demonstrated how a rich and functional HTTP resource
+was created with a tiny amount of code.
 
-### Feature list
+We get so much behaviour for free, simply by raising our programming
+model abstraction.
 
-Here is a list of yada's features :-
-
-- Easy to create RESTful API and content services
-- Support for both synchronous and asynchronous programming approaches
-- Parameter validation and coercion
-- Content negotiation
-- Cache control
-- Automatic rendering of resources into representations
-- Support for [Swagger](http:/swagger.io)
-- High performance
-
-With yada, many things you would expect to have to code yourself and taken care of automatically, leaving you to focus on other aspects of your application.
-
-That's the end of the introduction. The following chapters explain yada in more depth :-
-
-<toc drop="1"/>
+But this example has barely scratched the surface of what yada can do,
+as you will learn in the next few chapters.
 
 ## Installation
 
@@ -247,6 +317,112 @@ lein run
 
 (`lein` is available from [http://leiningen.org](http://leiningen.org))
 
+
+## Functions
+
+```clojure
+(yada (fn [ctx] ...))
+```
+
+## Async
+
+[Hello World! in Chinese]
+
+## Mutation
+
+```clojure
+(yada (atom "Hello World"))
+```
+
+## Resources - under the hood
+
+Different types of resources are added to yada by defining types or records.
+
+Let's delve a little deeper into how the _Hello World!_ example works.
+
+Here is the actual code that tells yada about Java strings.
+
+```clojure
+(defrecord StringResource [s last-modified]
+  ResourceFetch
+  (fetch [this ctx] this)
+
+  Resource
+  (methods [this] #{:get :head})
+  (parameters [_] nil)
+  (exists? [this ctx] true)
+  (last-modified [this _] last-modified)
+  (request [this method ctx] (case method :get s))
+
+  ResourceRepresentations
+  (representations [_]
+    [{
+      ;; Without attempting to actually parse it (which isn't completely
+      ;; impossible) we're not able to guess the media-type of this
+      ;; string, so we return text/plain.
+      :content-type #{"text/plain"}
+      :charset platform-charsets}]))
+
+(extend-protocol ResourceConstructor
+  String
+  (make-resource [s]
+    (->StringResource s (to-date (now)))))
+```
+
+Recall the _Hello World!_ example.
+
+```clojure
+(yada "Hello World!")
+```
+
+yada calls `make-resource` on the argument. This declaration causes a new instance of the StringResource record to be created.
+
+```clojure
+(extend-protocol ResourceConstructor
+  String
+  (make-resource [s]
+  (->StringResource s (to-date (now)))))
+```
+
+The original string (`Hello World!`) and the current date is captured
+and provided to the `StringResource` record.
+
+The `StringResource` resource satisfies the `ResourceRepresentations`
+protocol, which means it can specify which types of representation it is
+able to generate. The `representations` function must return a list of
+_representation declarations_, which declare all the possible
+combinations of media-type, charset, encoding and language. In this
+case, we just have one representation declaration which specifies
+`text/plain` and the charsets available (all those supported on the Java
+platform we are on).
+
+### Extending yada
+
+There are numerous types already built into yada, but you can also add your own.
+
+---
+
+### Dynamic responses
+
+The values in resource description can be constant values, as we have already seen. But typically the body of a response will be created dynamically, on a per-request basis, depending on the current state of the resource and/or parameters passed in the request. In this case, a Clojure function is used.
+
+```clojure
+(def ^{:doc "A handler to greet the world!"}
+  hello
+  (yada {:body (fn [ctx] "Hello World!")}))
+```
+
+The function takes a single argument known as the _request context_. It is an ordinary Clojure map containing various data relating to the request. Request contexts will be covered in more detail later on.
+
+<example ref="DynamicHelloWorld"/>
+
+### Feature list
+
+
+
+That's the end of the introduction. The following chapters explain yada in more depth :-
+
+<toc drop="1"/>
 
 ## Parameters
 

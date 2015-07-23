@@ -8,18 +8,18 @@
 (defn -main [& args]
   ;; We eval so that we don't AOT anything beyond this class
   (eval '(do
-             (require 'yada.dev.main)
-             (require 'dev)
-             (require 'com.stuartsierra.component)
-             (require '[modular.component.co-dependency :as co-dependency])
+           (require 'yada.dev.main)
+           (require 'yada.dev.system)
+           (require 'com.stuartsierra.component)
+           (require '[modular.component.co-dependency :as co-dependency])
 
-             (println "Starting yada website")
+           (println "Starting yada website")
 
-             (let [system (->
-                           (dev/new-dev-system)
-                           co-dependency/start-system)]
+           (let [system (->
+                         (yada.dev.system/new-production-system)
+                         co-dependency/start-system)]
 
-               (println "System started")
-               (println "Ready...")
+             (println "System started")
+             (println "Ready...")
 
-               ))))
+             ))))

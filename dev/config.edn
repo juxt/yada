@@ -1,0 +1,3 @@
+{:prefix #cond {:dev "http://localhost:8090"
+                :prod "http://yada.juxt.pro"}
+ :ext-prefix "http://localhost:8091"}

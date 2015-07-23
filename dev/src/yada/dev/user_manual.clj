@@ -20,8 +20,10 @@
    [yada.dev.examples :refer (get-title get-resource get-options get-path get-path-args get-query-string get-request expected-response get-test-function external? make-example-handler encode-data)]
    [yada.yada :refer (yada)]
    [yada.mime :as mime]
+   [yada.resource :as res]
+   [ring.util.time :as rt]
    yada.resources.string-resource
-))
+   ))
 
 (defn emit-element
   ;; An alternative emit-element that doesn't cause newlines to be
@@ -263,22 +265,24 @@
 
 (defn post-process-body
   "Some whitespace reduction"
-  [s prefix]
-  (assert prefix)
+  [s replacements]
   (-> s
-      (str/replace #"\{\{prefix\}\}" prefix)
+      (str/replace #"\{\{now.date\}\}" (:now-date replacements))
+      (str/replace #"\{\{hello.date\}\}" (:hello-date replacements))
+      (str/replace #"\{\{hello.date.after\}\}" (:hello-date-after replacements))
+      (str/replace #"\{\{prefix\}\}" (:prefix replacements))
       (str/replace #"\{\{(.+)\}\}" #(System/getProperty (last %)))
       (str/replace #"<p>\s*</p>" "")
       (str/replace #"(yada)(?![-/])" "<span class='yada'>yada</span>")
       ))
 
-(defn body [{:keys [*router templater] :as user-manual} doc {:keys [prefix]}]
+(defn body [{:keys [*router templater] :as user-manual} doc replacements]
   (render-template
    templater
    "templates/page.html.mustache"
    {:content
     (-> (with-out-str (emit-element doc))
-        (post-process-body prefix)
+        (post-process-body replacements)
         )
     :scripts ["/static/js/examples.js"]}))
 
@@ -340,6 +344,8 @@
            examples)]]]))
     :scripts ["/static/js/tests.js"]}))
 
+
+
 (defrecord UserManual [*router templater prefix ext-prefix]
   Lifecycle
   (start [component]
@@ -358,53 +364,65 @@
   RouteProvider
   (routes [component]
     (let [xbody (:xbody component)
-          examples (:examples component)]
-      ["/user-manual"
-       [[".html"
-         (->
-          (let [config {:prefix prefix :ext-prefix ext-prefix}]
+          examples (:examples component)
+          hello (yada "Hello World!\n")
+          hello-date (-> hello :resource (res/last-modified nil))
+          hello-date-after (java.util.Date/from (.plusMillis (.toInstant hello-date) 2000))]
 
-            ;; The problem now is that yada knows neither this string's
-            ;; content-type (nor its charset), so can't produce the
-            ;; correct Content-Type for the response. So we must specify it.
+      ["/"
 
-            ;; Given that we are providing a function (which is only
-            ;; called relatively late, in the 'fetch' phase of the
-            ;; resource/request life-cycle, we must provide the
-            ;; negotiation data explicitly as an option.
-
-            ;; NB: The reason we are using a function here, rather than a
-            ;; 'static' string, is to ensure template expansion happens
-            ;; outside the component's start phase, so that the *router
-            ;; is bound, which means we can use path-for to generate
-            ;; hrefs.
-
-            ;; Using a function as a resource (to fetch state) is
-            ;; expensive in this case - the string is generated from the
-            ;; template on every request, even on conditional
-            ;; requests. A better implementation is needed in this
-            ;; case. But it works OK for the "Hello World!" example. But
-            ;; perhaps the use of 'fetch functions' is a placeholder for
-            ;; a better design.
+       [["hello" hello]
+        ["user-manual"
+         [[".html"
             (->
-             (yada (fn [ctx]
-                     (body component (post-process-doc component xbody (into {} examples) config) config))
-                   :representations [{:content-type #{"text/html"} :charset #{"utf-8"}}]
-                   :last-modified (io/file "dev/resources/user-manual.md"))
-             (tag ::user-manual))))]
+             (let [config {:prefix prefix :ext-prefix ext-prefix}]
 
-        ["/examples/"
-         (vec
-          (for [[_ ex] examples]
-            [(get-path ex) (->
-                            (make-example-handler ex)
-                            (tag
-                             (keyword (basename ex))))]))]
-        ["/tests.html"
-         (-> (yada (fn [ctx] (tests component examples))
-                   :representations [{:content-type #{"text/html"}
-                                      :charset #{"utf-8"}}])
-             (tag ::tests))]]])))
+               ;; The problem now is that yada knows neither this string's
+               ;; content-type (nor its charset), so can't produce the
+               ;; correct Content-Type for the response. So we must specify it.
+
+               ;; Given that we are providing a function (which is only
+               ;; called relatively late, in the 'fetch' phase of the
+               ;; resource/request life-cycle, we must provide the
+               ;; negotiation data explicitly as an option.
+
+               ;; NB: The reason we are using a function here, rather than a
+               ;; 'static' string, is to ensure template expansion happens
+               ;; outside the component's start phase, so that the *router
+               ;; is bound, which means we can use path-for to generate
+               ;; hrefs.
+
+               ;; Using a function as a resource (to fetch state) is
+               ;; expensive in this case - the string is generated from the
+               ;; template on every request, even on conditional
+               ;; requests. A better implementation is needed in this
+               ;; case. But it works OK for the "Hello World!" example. But
+               ;; perhaps the use of 'fetch functions' is a placeholder for
+               ;; a better design.
+               (->
+                (yada (fn [ctx]
+                        (body component
+                              (post-process-doc component xbody (into {} examples) config)
+                              (assoc config
+                                     :hello-date (rt/format-date hello-date)
+                                     :hello-date-after (rt/format-date hello-date-after)
+                                     :now-date (rt/format-date (java.util.Date.)))))
+                      :representations [{:content-type #{"text/html"} :charset #{"utf-8"}}]
+                      :last-modified (io/file "dev/resources/user-manual.md"))
+                (tag ::user-manual))))]
+
+           ["examples/"
+            (vec
+             (for [[_ ex] examples]
+               [(get-path ex) (->
+                               (make-example-handler ex)
+                               (tag
+                                (keyword (basename ex))))]))]
+           ["tests.html"
+            (-> (yada (fn [ctx] (tests component examples))
+                      :representations [{:content-type #{"text/html"}
+                                         :charset #{"utf-8"}}])
+                (tag ::tests))]]]]])))
 
 (defmethod clojure.core/print-method UserManual
   [o ^java.io.Writer writer]

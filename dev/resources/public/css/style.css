@@ -217,3 +217,16 @@ div.warning p {
 div.warning p:before {
     content: "WARNING: ";
 }
+
+div.slight-warning {
+    border: 3px solid #d60;
+    background: #f80;
+    margin-bottom: 1em;
+    padding: 10px;
+}
+
+div.slight-warning p {
+    color: white;
+    font-weight: bold;
+    margin: 0;
+}

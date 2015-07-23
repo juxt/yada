@@ -20,38 +20,14 @@
    [modular.component.co-dependency :refer (co-using system-co-using)]
 
    [yada.dev.async :refer (new-handler)]
-   [yada.dev.external :refer (new-external-resources)]))
-
-(defn ^:private read-file
-  [f]
-  (read
-   ;; This indexing-push-back-reader gives better information if the
-   ;; file is misconfigured.
-   (indexing-push-back-reader
-    (java.io.PushbackReader. (io/reader f)))))
-
-(defn ^:private config-from
-  [f]
-  (if (.exists f)
-    (read-file f)
-    {}))
-
-(defn ^:private user-config
-  []
-  (config-from (io/file (System/getProperty "user.home") ".yada.edn")))
-
-(defn ^:private config-from-classpath
-  []
-  (if-let [res (io/resource "yada.edn")]
-    (config-from (io/file res))
-    {}))
+   [yada.dev.external :refer (new-external-resources)]
+   [aero.core :refer (read-config)]))
 
 (defn config
   "Return a map of the static configuration used in the component
   constructors."
-  []
-  (merge (config-from-classpath)
-         (user-config)))
+  [profile]
+  (read-config "dev/config.edn" {:profile profile}))
 
 (defn database-components [system config]
   (assoc system
@@ -70,8 +46,9 @@
    system
    :clostache-templater (make new-clostache-templater config)
    :user-manual (make new-user-manual config
-                     :prefix "http://localhost:8090"
-                     :ext-prefix "http://localhost:8091")
+                      :prefix ""
+                      :ext-prefix "")
+
    :website (make new-website config)
    :jquery (make new-web-resources config
                  :key :jquery
@@ -162,6 +139,6 @@
 (defn new-production-system
   "Create the production system"
   []
-  (-> (new-system-map (config))
+  (-> (new-system-map (config :prod))
       (system-using (new-dependency-map))
       (system-co-using (new-co-dependency-map))))

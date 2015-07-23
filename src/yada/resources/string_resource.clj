@@ -20,9 +20,8 @@
 
   ResourceRepresentations
   (representations [_]
-    [{:method #{:get :head}
-       ;; Without attempting to actually parse it (which isn't completely
-       ;; impossible) we're not able to guess the media-type of this
+    [{;; Without attempting to actually parse it (which isn't completely
+      ;; impossible) we're not able to guess the media-type of this
       ;; string, so we return text/plain.
       :content-type #{"text/plain"}
       :charset platform-charsets}]))

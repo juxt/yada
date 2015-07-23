@@ -18,11 +18,9 @@
 (defn new-dev-system
   "Create a development system"
   []
-  (let [config (config)
-        s-map (->
-               (new-system-map config)
-               #_(assoc
-                 ))]
+  (let [config (config :dev)
+        s-map (new-system-map config)]
+
     (-> s-map
         (component/system-using (new-dependency-map))
         )))

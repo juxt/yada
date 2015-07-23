@@ -182,7 +182,7 @@
          parameters (or (:parameters options)
                         (res/parameters resource))
 
-         methods (methods/methods)
+         known-methods (methods/methods)
 
          ;; This fact is established now for performance reasons, rather
          ;; than on every HTTP request. satisfies? is relatively expensive.
@@ -233,7 +233,7 @@
 
               (merge
                {:method method
-                :method-instance (get methods method)
+                :method-instance (get known-methods method)
                 :request req
                 :options options})
 
@@ -271,8 +271,10 @@
                ;; Is method allowed on this resource?
                (link ctx
                  (when-let [methods
-                            (or (:methods options)
-                                (res/methods resource))]
+                            (conj
+                             (or (:methods options)
+                                 (res/methods resource))
+                             :options)]
 
                    (when-not (contains? (set methods) method)
                      (d/error-deferred (ex-info "Method Not Allowed"

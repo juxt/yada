@@ -90,7 +90,7 @@
           (given @(handler (request method "/"))
             :status := 405
             [:headers "allow"] :!? nil?
-            [:headers "allow" parse-allow] := #{"GET" "HEAD"}
+            [:headers "allow" parse-allow] := #{"GET" "HEAD" "OPTIONS"}
             ))))
 
   #_(testing "wrap-in-atom"
