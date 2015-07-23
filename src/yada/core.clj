@@ -418,7 +418,7 @@
                        (let [vary (negotiation/vary method representations)]
                          (cond-> ctx
                            negotiated (update-in [:response] merge negotiated)
-                           negotiated (assoc-in [:response :representation] negotiated)
+                           negotiated (assoc-in [:response :representation] negotiated) ;; TODO: remove - duplication!
                            vary (assoc-in [:response :vary] vary)
                            ))
                        ))))
@@ -506,6 +506,10 @@
                                     200)
                         :headers (merge
                                   (get-in ctx [:response :headers])
+                                  ;; TODO: The context and its response
+                                  ;; map must be documented so users are
+                                  ;; clear what they can change and the
+                                  ;; effect of this change.
                                   (when-let [ct (get-in ctx [:response :content-type])]
                                     {"content-type" (mime/media-type->string ct)})
                                   (when-let [cl (get-in ctx [:response :content-length])]
