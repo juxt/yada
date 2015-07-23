@@ -36,7 +36,9 @@
    [yada.service :as service]
    [yada.resource :as res]
    [yada.mime :as mime]
-   [yada.util :refer (link)])
+   [yada.util :refer (link)]
+   manifold.deferred
+   schema.utils)
   (:import (clojure.lang IPending)
            (java.util Date)
            (java.util.concurrent Future)
@@ -183,7 +185,7 @@
 
          known-methods (methods/methods)
 
-         methods
+         allowed-methods
          (set
           (or (:methods options) ; you must include :head in options if you want it
               ;; We always support :head for resources
@@ -239,6 +241,7 @@
               (merge
                {:method method
                 :method-instance (get known-methods method)
+                :allowed-methods allowed-methods
                 :request req
                 :options options})
 
@@ -275,11 +278,11 @@
 
                ;; Is method allowed on this resource?
                (link ctx
-                 (when-not (contains? (set methods) method)
+                 (when-not (contains? allowed-methods method)
                    (d/error-deferred
                     (ex-info "Method Not Allowed"
                              {:status 405
-                              :headers {"allow" (str/join ", " (map (comp (memfn toUpperCase) name) methods))}
+                              :headers {"allow" (str/join ", " (map (comp (memfn toUpperCase) name) allowed-methods))}
                               ::http-response true}))))
 
                ;; Malformed? (parameters)
@@ -420,7 +423,11 @@
                        (let [vary (negotiation/vary method representations)]
                          (cond-> ctx
                            negotiated (update-in [:response] merge negotiated)
-                           negotiated (assoc-in [:response :representation] negotiated) ;; TODO: remove - duplication!
+                           ;; TODO: Here is some duplication -
+                           ;; methods/GetMethod uses (get-in [:response
+                           ;; :representation]) - need to think about
+                           ;; this
+                           negotiated (assoc-in [:response :representation] negotiated)
                            vary (assoc-in [:response :vary] vary)
                            ))
                        ))))

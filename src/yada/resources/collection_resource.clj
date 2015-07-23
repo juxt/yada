@@ -1,23 +1,26 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.resources.collection-resource
+  (:refer-clojure :exclude [get])
   (:require
    [clojure.tools.logging :refer :all]
    [clj-time.core :refer (now)]
    [clj-time.coerce :refer (to-date)]
    [yada.mime :refer (media-type)]
    [yada.resource :refer (Resource ResourceRepresentations ResourceConstructor platform-charsets)]
+   [yada.methods :refer [Get get*]]
    [cheshire.core :as json]
    [json-html.core :as jh])
   (:import [clojure.lang APersistentMap]))
 
 (defrecord MapResource [m last-modified]
   Resource
-  (methods [_] #{:get :head})
+  (methods [_] #{:get})
   (parameters [_] nil)
   (exists? [_ ctx] true)
   (last-modified [_ ctx] last-modified)
-  (request [_ method ctx] (case method :get m))
+  Get
+  (get* [_ ctx] m)
 
   ResourceRepresentations
   (representations [_]

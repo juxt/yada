@@ -59,7 +59,7 @@
   (last-modified [_ ctx] "Return the date that the resource was last
   modified. Can return a deferred value.")
 
-  (request [_ method ctx] "Perform request. Context contains
+  #_(request [_ method ctx] "Perform request. Context contains
   content-type, charset, language, content-encoding etc. in
   the :response map. Method as keyword is in context's :method entry,
   but is provided as a parameter for convenience only. The returned
@@ -98,7 +98,7 @@
   ;; returning nil.
   (exists? [_ ctx] true)
   (last-modified [_ ctx] nil)
-  (request [f method ctx] (f ctx))
+  #_(request [f method ctx] (f ctx))
 
   java.io.File
   (last-modified [f ctx]
@@ -109,7 +109,7 @@
   (methods [_] nil)
   (parameters [_] nil)
   (last-modified [_ _] nil)
-  (request [f method ctx] nil))
+  #_(request [f method ctx] nil))
 
 ;; Fetch
 

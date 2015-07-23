@@ -10,6 +10,7 @@
    [ring.util.response :refer (redirect)]
    [yada.bidi :refer (resource-leaf)]
    [yada.resource :refer (Resource ResourceRepresentations ResourceConstructor platform-charsets)]
+   [yada.methods :refer (Get get*)]
    [yada.mime :as mime]
    [clojure.tools.logging :refer :all]
    [camel-snake-kebab :as csk]
@@ -47,13 +48,15 @@
   (parameters [_] nil)
   (exists? [_ ctx] true)
   (last-modified [_ ctx] created-at)
-  (request [_ method ctx] (case method :get (rs/swagger-json spec)))
 
   ResourceRepresentations
   (representations [_]
     [{:method #{:get :head}
        :content-type #{"application/json" "text/html;q=0.9" "application/edn;q=0.8"}
-       :charset platform-charsets}]))
+      :charset platform-charsets}])
+
+  Get
+  (get* [_ ctx] (rs/swagger-json spec)))
 
 (defrecord Swagger [spec routes handler]
   Matched

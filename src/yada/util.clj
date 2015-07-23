@@ -1,6 +1,7 @@
 (ns yada.util
   (:require
-   [manifold.deferred :as d])
+   [manifold.deferred :as d]
+   clojure.core.async.impl.protocols)
   (:import [clojure.core.async.impl.protocols ReadPort]))
 
 (defmacro link [ctx body]

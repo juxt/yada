@@ -15,7 +15,9 @@
    [yada.negotiation :as negotiation]
    [yada.resource :as res]
    [clojure.walk :refer (keywordize-keys)]
-   [json-html.core :as jh])
+   [json-html.core :as jh]
+   manifold.stream.async
+   clojure.core.async.impl.channels)
   (:import [clojure.core.async.impl.channels ManyToManyChannel]
            [java.io File]
            [java.net URL]

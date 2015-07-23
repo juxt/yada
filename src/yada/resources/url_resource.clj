@@ -4,6 +4,7 @@
   (:require
    [clojure.java.io :as io]
    [yada.resource :refer (Resource ResourceRepresentations ResourceConstructor platform-charsets)]
+   [yada.methods :refer (Get)]
    [ring.util.mime-type :refer (ext-mime-type)])
   (:import [java.net URL]
            [java.util Date]
@@ -20,18 +21,20 @@
     (let [f (io/file (.getFile u))]
       (when (.exists f)
         (Date. (.lastModified f)))))
-  (request [u method ctx]
-    (case method
-      :get
-      (if (= (get-in ctx [:response :content-type :type]) "text")
-        (BufferedReader.
-         (InputStreamReader. (.openStream u) (or (get-in ctx [:response :server-charset]) "UTF-8")))
-        (.openStream u))))
+
+
 
   ResourceRepresentations
   (representations [u]
     [{:content-type #{(ext-mime-type (.getPath u))}
       :charset platform-charsets}])
+
+  Get
+  (get* [u ctx]
+    (if (= (get-in ctx [:response :content-type :type]) "text")
+      (BufferedReader.
+       (InputStreamReader. (.openStream u) (or (get-in ctx [:response :server-charset]) "UTF-8")))
+      (.openStream u)))
 
   ResourceConstructor
   (make-resource [url] url))

@@ -1,7 +1,7 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.methods
-  (:refer-clojure :exclude [methods])
+  (:refer-clojure :exclude [methods get])
   (:require
    [clojure.string :as str]
    [clojure.tools.logging :refer :all]
@@ -10,7 +10,8 @@
    [yada.representation :as rep]
    [yada.resource :as res]
    [yada.service :as service]
-   [yada.util :refer (link)])
+   [yada.util :refer (link)]
+   yada.response)
   (:import
    [yada.response Response]
    [java.io File]))
@@ -47,10 +48,11 @@
              [(keyword-binding i) i]))
          (extenders Method))))
 
-(deftype Head [])
+;; --------------------------------------------------------------------------------
 
+(deftype HeadMethod [])
 (extend-protocol Method
-  Head
+  HeadMethod
   (keyword-binding [_] :head)
   (safe? [_] true)
   (idempotent? [_] true)
@@ -71,7 +73,10 @@
     ;; per rfc7231.html#section-3.3
     ctx))
 
-(deftype Get [])
+;; --------------------------------------------------------------------------------
+
+(defprotocol Get
+  (get* [_ ctx]))
 
 (defprotocol GetResult
   (interpret-get-result [_ ctx]))
@@ -86,8 +91,9 @@
   nil ;; TODO: throw 404?
   (interpret-post-result [_ ctx] ctx))
 
+(deftype GetMethod [])
 (extend-protocol Method
-  Get
+  GetMethod
   (keyword-binding [_] :get)
   (safe? [_] true)
   (idempotent? [_] true)
@@ -97,7 +103,7 @@
                                      ::http-response true})))
     (d/chain
      ;; GET request normally returns (possibly deferred) body.
-     (res/request (:resource ctx) :get ctx)
+     (get* (:resource ctx) ctx)
 
      (fn [res]
        (interpret-get-result res ctx))
@@ -105,7 +111,7 @@
      (fn [ctx]
        (let [representation (get-in ctx [:response :representation])]
 
-         ;;(assert (not (instance? Response (get-in ctx [:response :body]))))
+         (assert (not (instance? Response (get-in ctx [:response :body]))))
 
          ;; representation could be nil, for example, resource could be a java.io.File
          (update-in ctx [:response :body] rep/to-body representation)))
@@ -114,23 +120,31 @@
        (let [content-length (rep/content-length (get-in ctx [:response :body]))]
          (cond-> ctx content-length (assoc-in [:response :content-length] content-length)))))))
 
-(deftype Put [])
+;; --------------------------------------------------------------------------------
 
+(defprotocol Put
+  (put [_ ctx]))
+
+(deftype PutMethod [])
 (extend-protocol Method
-  Put
+  PutMethod
   (keyword-binding [_] :put)
   (safe? [_] false)
   (idempotent? [_] true)
   (request [_ ctx]
-    (let [res (res/request (:resource ctx) :put ctx)]
+    (let [res (put (:resource ctx) ctx)]
       (assoc-in ctx [:response :status]
                 (cond
-                  ;; TODO A 202 may be not what the developer wants!
+                  ;; TODO: A 202 may be not what the developer wants!
+                  ;; TODO: See RFC7240
                   (d/deferred? res) 202
                   (:exists? ctx) 204
                   :otherwise 201)))))
 
-(deftype Post [])
+;; --------------------------------------------------------------------------------
+
+(defprotocol Post
+  (post [_ ctx]))
 
 (defprotocol PostResult
   (interpret-post-result [_ ctx]))
@@ -166,59 +180,83 @@
   nil
   (interpret-post-result [_ ctx] ctx))
 
+(deftype PostMethod [])
 (extend-protocol Method
-  Post
+  PostMethod
   (keyword-binding [_] :post)
   (safe? [_] false)
   (idempotent? [_] false)
   (request [_ ctx]
     (d/chain
-     (res/request (:resource ctx) :post ctx)
+     (post (:resource ctx) ctx)
      (fn [res]
-       (infof "res is %s" res)
        (interpret-post-result res ctx))
      (fn [ctx]
        (-> ctx
            (update-in [:response] (partial merge {:status 200})))))))
 
-(deftype Delete [])
+;; --------------------------------------------------------------------------------
+(defprotocol Delete
+  (delete [_ ctx]))
 
+(deftype DeleteMethod [])
 (extend-protocol Method
-  Delete
+  DeleteMethod
   (keyword-binding [_] :delete)
   (safe? [_] false)
   (idempotent? [_] true)
   (request [_ ctx]
     (d/chain
-     (res/request (:resource ctx) :delete ctx)
+     (delete (:resource ctx) ctx)
      (fn [res]
        ;; TODO: Could we support 202 somehow?
        (assoc-in ctx [:response :status] 204)))))
 
-(deftype Options [])
+;; --------------------------------------------------------------------------------
+(defprotocol Options
+  (options [_ ctx]))
 
+(defprotocol OptionsResult
+  (interpret-options-result [_ ctx]))
+
+(extend-protocol OptionsResult
+  Response
+  (interpret-options-result [response ctx]
+    (assoc ctx :response response))
+  clojure.lang.Fn
+  (interpret-options-result [f ctx]
+    (interpret-options-result (f ctx) ctx))
+  nil
+  (interpret-post-result [_ ctx] ctx))
+
+(deftype OptionsMethod [])
 (extend-protocol Method
-  Options
+  OptionsMethod
   (keyword-binding [_] :options)
   (safe? [_] true)
   (idempotent? [_] true)
   (request [_ ctx]
-    ;; TODO: Build in explicit support for CORS pre-flight requests
-    (d/chain
-     (res/request (:resource ctx) :options ctx)
-     (fn [res]
-       (update-in ctx [:response] merge res))
-     ;; For example, for a resource supporting CORS
-     #_(link ctx
-       (if-let [origin (service/allow-origin (:resource ctx) ctx)]
-         (update-in ctx [:response :headers]
-                    merge {"access-control-allow-origin"
-                           origin
-                           "access-control-allow-methods"
-                           (apply str
-                                  (interpose ", " ["GET" "POST" "PUT" "DELETE"]))}))))))
+    (let [ctx (update-in ctx [:response :headers "allow"]
+                         (str/join ", " (map (comp (memfn toUpperCase) name) (:allow-methods ctx))))]
+      ;; TODO: Build in explicit support for CORS pre-flight requests
+      (d/chain
+       (options (:resource ctx) ctx)
+       (fn [res]
+         (interpret-options-result res ctx))
 
-(deftype Trace [])
+       ;; For example, for a resource supporting CORS
+       #_(link ctx
+           (if-let [origin (service/allow-origin (:resource ctx) ctx)]
+             (update-in ctx [:response :headers]
+                        merge {"access-control-allow-origin"
+                               origin
+                               "access-control-allow-methods"
+                               (apply str
+                                      (interpose ", " ["GET" "POST" "PUT" "DELETE"]))})))))))
+
+;; --------------------------------------------------------------------------------
+
+(deftype TraceMethod [])
 
 (defn to-encoding [s encoding]
   (-> s
@@ -246,7 +284,7 @@
       (print (slurp body)))))
 
 (extend-protocol Method
-  Trace
+  TraceMethod
   (keyword-binding [_] :trace)
   (safe? [_] true)
   (idempotent? [_] true)
@@ -273,3 +311,19 @@
                             "content-length" (.length body)}
                   :body body
                   ::http-response true}))))))
+
+
+;; -----
+
+
+(extend-type clojure.lang.Fn
+  Get
+  (get* [f ctx] (f ctx))
+  Put
+  (put [f ctx] (f ctx))
+  Post
+  (post [f ctx] (f ctx))
+  Delete
+  (delete [f ctx] (f ctx))
+  Options
+  (options [f ctx] (f ctx)))

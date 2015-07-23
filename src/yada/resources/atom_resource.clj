@@ -5,6 +5,7 @@
    [clj-time.core :refer [now]]
    [clj-time.coerce :refer [to-date]]
    [yada.resource :refer (ResourceConstructor ResourceRepresentations Resource platform-charsets make-resource)]
+   [yada.methods :refer (Get Put)]
    yada.resources.string-resource)
   (:import [yada.resources.string_resource StringResource]))
 
@@ -13,7 +14,7 @@
 
 (defrecord AtomicMapResource [*a wrapper *last-mod]
   Resource
-  #_(supported-methods [_ ctx] (conj (set (supported-methods wrapper ctx)) :put :post :delete))
+  (methods [_] (conj (set (methods wrapper)) :put :post :delete))
 
   (exists? [_ ctx] true)
 
@@ -21,12 +22,16 @@
     (when-let [lm @*last-mod]
       lm))
 
-  (request [_ method ctx] (case method :get @*a :put (throw (ex-info "TODO" {}))))
-
   ResourceRepresentations
   (representations [_] [{:method #{:get :head}
                          :content-type #{"application/edn" "text/html;q=0.9" "application/json;q=0.9"}
-                         :charset platform-charsets}]))
+                         :charset platform-charsets}])
+
+  Get
+  (get* [_ ctx] @*a)
+
+  Put
+  (put [_ ctx] (throw (ex-info "TODO" {}))))
 
 (defn wrap-with-watch [wrapper *a]
   (let [*last-mod (atom nil)]
