@@ -168,11 +168,8 @@
       ;; CORS
       allow-origin
       ] ;; :or {resource {}}
-
      :as options
-
-     :or {authorization (NoAuthorizationSpecified.)}
-     }]
+     :or {authorization (NoAuthorizationSpecified.)}}]
 
    (let [security (as-sequential security)
          ;; Note that the resource is constructed during the yada call,
@@ -185,6 +182,12 @@
                         (res/parameters resource))
 
          known-methods (methods/methods)
+
+         methods
+         (set
+          (or (:methods options) ; you must include :head in options if you want it
+              ;; We always support :head for resources
+              (conj (res/methods resource) :head)))
 
          ;; This fact is established now for performance reasons, rather
          ;; than on every HTTP request. satisfies? is relatively expensive.
@@ -272,15 +275,12 @@
 
                ;; Is method allowed on this resource?
                (link ctx
-                 (when-let [methods
-                            (or (:methods options)
-                                (res/methods resource))]
-
-                   (when-not (contains? (set methods) method)
-                     (d/error-deferred (ex-info "Method Not Allowed"
-                                                {:status 405
-                                                 :headers {"allow" (str/join ", " (map (comp (memfn toUpperCase) name) methods))}
-                                                 ::http-response true})))))
+                 (when-not (contains? (set methods) method)
+                   (d/error-deferred
+                    (ex-info "Method Not Allowed"
+                             {:status 405
+                              :headers {"allow" (str/join ", " (map (comp (memfn toUpperCase) name) methods))}
+                              ::http-response true}))))
 
                ;; Malformed? (parameters)
                (fn [ctx]

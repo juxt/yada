@@ -12,15 +12,18 @@
   (fetch [this ctx] this)
 
   Resource
-  (methods [this] #{:get :head :options})
+  ;; Don't include :head, it is always available with yada.
+  (methods [this] #{:get :options})
   (parameters [_] nil)
   (exists? [this ctx] true)
   (last-modified [this _] last-modified)
-  (request [this method ctx] (case method :get s))
+  (request [this method ctx] (case method
+                               :get s
+                               :options (:response ctx)))
 
   ResourceRepresentations
   (representations [_]
-    [{;; Without attempting to actually parse it (which isn't completely
+    [{ ;; Without attempting to actually parse it (which isn't completely
       ;; impossible) we're not able to guess the media-type of this
       ;; string, so we return text/plain.
       :content-type #{"text/plain"}
