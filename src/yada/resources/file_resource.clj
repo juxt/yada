@@ -100,7 +100,7 @@
     ;; The analog of this is the ability to return a java.io.File as the
     ;; response body and have aleph efficiently stream it via NIO. This
     ;; code allows the same efficiency for file uploads.
-    ;;(throw (ex-info "here 2" {}))
+
     (case method
       :get
       (if (.exists f)

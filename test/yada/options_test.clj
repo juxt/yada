@@ -13,18 +13,18 @@
 
 (deftest options-test []
   #_(testing "Server capabilities"
-    (let [resource "Hello World!"
-          handler (yada resource)
-          request (request :options "*")
-          response @(handler request)]
-      (given response
-        :status := 200)))
-
-  #_(testing "Resource capabilities"
       (let [resource "Hello World!"
             handler (yada resource)
-            request (request :options "/")
+            request (request :options "*")
             response @(handler request)]
         (given response
-          :status := 200
-          :headers := {"accept" "(TODO)"}))))
+          :status := 200)))
+
+  #_(testing "Resource capabilities"
+    (let [resource "Hello World!"
+          handler (yada resource)
+          request (request :options "/")
+          response @(handler request)]
+      (given response
+        :status := 200
+        :headers := {"accept" "(TODO)"}))))

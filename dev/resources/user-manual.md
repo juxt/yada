@@ -130,7 +130,7 @@ Compojure route defintion.
 Once we have bound this handler to the path `/hello`, we're able to make the following HTTP request :-
 
 ```nohighlight
-curl -i http://localhost:8090/hello
+curl -i http://{{prefix}}/hello
 ```
 
 and receive a response like this :-
@@ -223,7 +223,7 @@ We can test this by setting the __If-Modified-Since__ header in the
 request.
 
 ```nohighlight
-curl -i http://localhost:8090/hello -H "If-Modified-Since: {{hello.date}}"
+curl -i {{prefix}}/hello -H "If-Modified-Since: {{hello.date}}"
 ```
 
 The server responds with
@@ -236,16 +236,12 @@ Date: Tue, 21 Jul 2015 20:17:51 GMT
 Content-Length: 0
 ```
 
-### A HEAD request
-
-[todo]
-
 ### Mutation
 
 Let's try to overwrite the string by using a PUT.
 
 ```nohighlight
-curl -i http://localhost:8090/hello -X PUT -d "Hello Dolly!"
+curl -i {{prefix}}/hello -X PUT -d "Hello Dolly!"
 ```
 
 The response is as follows (we'll omit the Aleph contributed headers from now on).
@@ -261,7 +257,15 @@ Content-Length: 0
 
 The response status is `405 Method Not Allowed`, telling us that our
 request was unacceptable. The is also a __Allow__ header, telling us
-which methods are allowed.
+which methods are allowed. One of these methods is OPTIONS. Let's try this.
+
+```nohighlight
+curl -i {{prefix}}/hello -X OPTIONS
+```
+
+### A HEAD request
+
+[todo]
 
 ### An attempt to get the string gzip compressed
 

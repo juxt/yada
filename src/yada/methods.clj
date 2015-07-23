@@ -80,6 +80,7 @@
 (extend-protocol GetResult
   Context
   (interpret-get-result [ctx _]
+    (throw (ex-info "TODO: Investigate" {}))
     ctx)
   Object
   (interpret-get-result [o ctx]
@@ -203,8 +204,7 @@
     (d/chain
      (res/request (:resource ctx) :options ctx)
      (fn [res]
-       (update-in ctx [:response]
-                  merge res))
+       (update-in ctx [:response] merge res))
      ;; For example, for a resource supporting CORS
      #_(link ctx
        (if-let [origin (service/allow-origin (:resource ctx) ctx)]

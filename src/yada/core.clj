@@ -271,10 +271,8 @@
                ;; Is method allowed on this resource?
                (link ctx
                  (when-let [methods
-                            (conj
-                             (or (:methods options)
-                                 (res/methods resource))
-                             :options)]
+                            (or (:methods options)
+                                (res/methods resource))]
 
                    (when-not (contains? (set methods) method)
                      (d/error-deferred (ex-info "Method Not Allowed"
@@ -384,8 +382,6 @@
 
                ;; TODO: Request entity too large - shouldn't we do this later,
                ;; when we determine we actually need to read the request body?
-
-               ;; TODO: OPTIONS
 
                ;; Content negotiation
                ;; TODO: Unknown Content-Type? (incorporate this into conneg)

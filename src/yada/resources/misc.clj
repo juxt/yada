@@ -11,6 +11,7 @@
   (exists? [_ ctx] true)
   (last-modified [_ ctx] (java.util.Date.))
   (request [this method ctx]
+    ;; TODO: ??? why does this work?
     (get-in this [method :response]))
   res/ResourceRepresentations
   (representations [_] [{:content-type #{"text/plain"}}]))

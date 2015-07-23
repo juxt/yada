@@ -12,7 +12,7 @@
   (fetch [this ctx] this)
 
   Resource
-  (methods [this] #{:get :head})
+  (methods [this] #{:get :head :options})
   (parameters [_] nil)
   (exists? [this ctx] true)
   (last-modified [this _] last-modified)

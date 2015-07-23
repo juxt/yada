@@ -26,8 +26,7 @@
   ResourceRepresentations
   (representations [_] [{:method #{:get :head}
                          :content-type #{"application/edn" "text/html;q=0.9" "application/json;q=0.9"}
-                         :charset platform-charsets}])
-  )
+                         :charset platform-charsets}]))
 
 (defn wrap-with-watch [wrapper *a]
   (let [*last-mod (atom nil)]
