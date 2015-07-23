@@ -6,14 +6,13 @@
    [clojure.string :as str]
    [clojure.tools.logging :refer :all]
    [manifold.deferred :as d]
-   [yada.context :as ctx]
    [yada.mime :as mime]
    [yada.representation :as rep]
    [yada.resource :as res]
    [yada.service :as service]
    [yada.util :refer (link)])
   (:import
-   [yada.context Context]
+   [yada.response Response]
    [java.io File]))
 
 ;; Allowed methods
@@ -78,14 +77,12 @@
   (interpret-get-result [_ ctx]))
 
 (extend-protocol GetResult
-  Context
-  (interpret-get-result [ctx _]
-    (throw (ex-info "TODO: Investigate" {}))
-    ctx)
+  Response
+  (interpret-get-result [response ctx]
+    (assoc ctx :response response))
   Object
   (interpret-get-result [o ctx]
     (assoc-in ctx [:response :body] o))
-  ;; TODO: Support return of context
   nil ;; TODO: throw 404?
   (interpret-post-result [_ ctx] ctx))
 
@@ -107,6 +104,8 @@
 
      (fn [ctx]
        (let [representation (get-in ctx [:response :representation])]
+
+         ;;(assert (not (instance? Response (get-in ctx [:response :body]))))
 
          ;; representation could be nil, for example, resource could be a java.io.File
          (update-in ctx [:response :body] rep/to-body representation)))
@@ -137,6 +136,9 @@
   (interpret-post-result [_ ctx]))
 
 (extend-protocol PostResult
+  Response
+  (interpret-post-result [response ctx]
+    (assoc ctx :response response))
   Boolean
   (interpret-post-result [b ctx]
     (if b ctx (throw (ex-info "Failed to process POST" {}))))
@@ -146,21 +148,21 @@
   clojure.lang.Fn
   (interpret-post-result [f ctx]
     (interpret-post-result (f ctx) ctx))
-  java.util.Map
-  (interpret-post-result [m ctx]
-    ;; TODO: Factor out hm (header-merge) so it can be tested independently
-    (letfn [(hm [x y]
-              (cond
-                (and (nil? x) (nil? y)) nil
-                (or (nil? x) (nil? y)) (or x y)
-                (and (coll? x) (coll? y)) (concat x y)
-                (and (coll? x) (not (coll? y))) (concat x [y])
-                (and (not (coll? x)) (coll? y)) (concat [x] y)
-                :otherwise (throw (ex-info "Unexpected headers case" {:x x :y y}))))]
-      (cond-> ctx
-        (:status m) (assoc-in [:response :status] (:status m))
-        (:headers m) (update-in [:response :headers] #(merge-with hm % (:headers m)))
-        (:body m) (assoc-in [:response :body] (:body m)))))
+  #_java.util.Map
+  #_(interpret-post-result [m ctx]
+      ;; TODO: Factor out hm (header-merge) so it can be tested independently
+      (letfn [(hm [x y]
+                (cond
+                  (and (nil? x) (nil? y)) nil
+                  (or (nil? x) (nil? y)) (or x y)
+                  (and (coll? x) (coll? y)) (concat x y)
+                  (and (coll? x) (not (coll? y))) (concat x [y])
+                  (and (not (coll? x)) (coll? y)) (concat [x] y)
+                  :otherwise (throw (ex-info "Unexpected headers case" {:x x :y y}))))]
+        (cond-> ctx
+          (:status m) (assoc-in [:response :status] (:status m))
+          (:headers m) (update-in [:response :headers] #(merge-with hm % (:headers m)))
+          (:body m) (assoc-in [:response :body] (:body m)))))
   nil
   (interpret-post-result [_ ctx] ctx))
 
@@ -173,6 +175,7 @@
     (d/chain
      (res/request (:resource ctx) :post ctx)
      (fn [res]
+       (infof "res is %s" res)
        (interpret-post-result res ctx))
      (fn [ctx]
        (-> ctx

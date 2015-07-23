@@ -29,7 +29,7 @@
    [schema.utils :refer (error? error-val)]
    [yada.coerce :refer (coercion-matcher)]
    [yada.charset :as charset]
-   [yada.context :as ctx]
+   [yada.response :refer (->Response)]
    [yada.representation :as rep]
    [yada.methods :as methods]
    [yada.negotiation :as negotiation]
@@ -56,7 +56,9 @@
 ;; Check duplication with yada/bidi ns
 (defrecord Endpoint [resource handler]
   clojure.lang.IFn
-  (invoke [_ req] (handler req (ctx/->Context)))
+  (invoke [_ req]
+    (let [ctx {:response (->Response)}]
+      (handler req ctx)))
   YadaInvokeable
   (invoke-with-initial-context [this req ctx] (handler req ctx))
   Matched

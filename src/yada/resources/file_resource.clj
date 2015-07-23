@@ -106,9 +106,9 @@
       (if (.exists f)
         ;; We need to return the file, but also we need to neg content-type
         (let [neg (negotiate-file-info f ctx)]
-          (cond-> ctx
-            f (assoc-in [:response :body] f)
-            (:content-type neg) (assoc-in [:response :content-type] (:content-type neg))))
+          (cond-> (:response ctx)
+            f (assoc :body f)
+            (:content-type neg) (assoc :content-type (:content-type neg))))
 
         ;; Otherwise if file doesn't exist
         (throw (ex-info "Not found" {:status 404 :yada.core/http-response true})))
@@ -161,8 +161,9 @@
                              (negotiation/extract-request-info (:request ctx))
                              (negotiation/parse-representations (representations this)))))
                 ct (:content-type neg)]
-            (cond-> (assoc-in ctx [:response :body] (rep/to-body (dir-index dir ct) neg))
-              ct (assoc-in [:response :content-type] ct)))
+            (cond-> (:response ctx)
+              true (assoc :body (rep/to-body (dir-index dir ct) neg))
+              ct (assoc :content-type ct)))
 
           (let [f (child-file dir path-info)]
             (cond
@@ -170,9 +171,9 @@
               (.isFile f)
               ;; If it's a file, we must negotiate the content-type
               (let [neg (negotiate-file-info f ctx)]
-                (cond-> ctx
-                  f (assoc-in [:response :body] f)
-                  (:content-type neg) (assoc-in [:response :content-type] (:content-type neg))))
+                (cond-> (:response ctx)
+                  f (assoc :body f)
+                  (:content-type neg) (assoc :content-type (:content-type neg))))
 
               (.isDirectory f)
               ;; This is sub-directory, with path-info, so no
@@ -184,8 +185,9 @@
                                  (negotiation/extract-request-info (:request ctx))
                                  (negotiation/parse-representations (representations this)))))
                     ct (:content-type neg)]
-                (cond-> (assoc-in [:response :body] (rep/to-body (dir-index f ct) neg))
-                  ct (assoc-in [:response :content-type] ct)))
+                (cond-> (:response ctx)
+                  true (assoc :body (rep/to-body (dir-index f ct) neg))
+                  ct (assoc :content-type ct)))
 
               :otherwise
               (throw (ex-info "File not found" {:status 404 :yada.core/http-response true})))))
