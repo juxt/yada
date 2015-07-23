@@ -9,9 +9,6 @@
    [yada.representation :refer [Representation]]))
 
 (defrecord StringResource [s last-modified]
-  ResourceFetch
-  (fetch [this ctx] this)
-
   Resource
   ;; Don't include :head, it is always available with yada.
   (methods [this] #{:get :options})

@@ -238,7 +238,7 @@ Content-Length: 0
 
 ### Mutation
 
-Let's try to overwrite the string by using a PUT.
+Let's try to overwrite the string by using a `PUT`.
 
 ```nohighlight
 curl -i {{prefix}}/hello -X PUT -d "Hello Dolly!"
@@ -263,9 +263,95 @@ which methods are allowed. One of these methods is OPTIONS. Let's try this.
 curl -i {{prefix}}/hello -X OPTIONS
 ```
 
+```http
+HTTP/1.1 200 OK
+Last-Modified: Thu, 23 Jul 2015 14:21:21 GMT
+Allow: GET, HEAD, OPTIONS
+Content-Type: text/plain;charset=utf-8
+Vary: accept-charset
+Server: Aleph/0.4.0
+Connection: Keep-Alive
+Date: Thu, 23 Jul 2015 14:22:12 GMT
+Content-Length: 0
+```
+
+An `OPTIONS` response contains an __Allow__ header which tells us that `PUT` isn't possible.
+
+We can't mutate our Java string, but we can put it into a Clojure
+reference, swapping in different Java strings.
+
+To demonstrate this, yada contains support for atoms (but you would usually employ a durable implementation).
+
+```clojure
+(yada (atom "Hello World!"))
+```
+
+We can now make another `OPTIONS` request to see whether `PUT` is available.
+
+```nohighlight
+curl -i {{prefix}}/hello-atom -X OPTIONS
+```
+
+```http
+HTTP/1.1 200 OK
+Allow: GET, DELETE, HEAD, POST, OPTIONS, PUT
+Vary:
+Server: Aleph/0.4.0
+Connection: Keep-Alive
+Date: Thu, 23 Jul 2015 14:33:16 GMT
+Content-Length: 0
+```
+
+It is! So let's try it.
+
+```nohighlight
+curl -i {{prefix}}/hello -X PUT -d "Hello Dolly!"
+```
+
+And now let's see if we've managed to change the state of the resource.
+
+```http
+HTTP/1.1 200 OK
+Last-Modified: Thu, 23 Jul 2015 14:38:20 GMT
+Content-Type: application/edn
+Vary: accept-charset
+Server: Aleph/0.4.0
+Connection: Keep-Alive
+Date: Thu, 23 Jul 2015 14:38:23 GMT
+Content-Length: 14
+
+Hello Dolly!
+```
+
+As long as someone else hasn't sneaked in a different state between your `PUT` and `GET`, and the server hasn't been restarted, you should see the new state of the resource is "Hello Dolly!".
+
 ### A HEAD request
 
-[todo]
+There was one more method indicated by the __Allow__ header of our `OPTIONS` request, which was `HEAD`. Let's try this now.
+
+```nohighlight
+curl -i {{prefix}}/hello -X HEAD
+```
+
+```http
+HTTP/1.1 200 OK
+Last-Modified: Thu, 23 Jul 2015 14:41:20 GMT
+Content-Type: text/plain;charset=utf-8
+Vary: accept-charset
+Server: Aleph/0.4.0
+Connection: Keep-Alive
+Date: Thu, 23 Jul 2015 14:42:26 GMT
+Content-Length: 0
+```
+
+The response does not have a body, but tells us the headers we would get
+if we were to try a `GET` request.
+
+(Note that unlike Ring's implementation of `HEAD`
+in `ring.middleware.head/wrap-head`, yada's implementation does not cause a
+response body to be generated and then truncated. This means that HEAD requests in yada are fast and inexpensive.)
+
+### Parameterized Hello World!
 
 ### An attempt to get the string gzip compressed
 
@@ -274,10 +360,6 @@ curl -i {{prefix}}/hello -X OPTIONS
 ### An attempt to get the string in Chinese
 
 [todo - well, yada isn't _that_ clever, at least not from just a string. But let's see how we would code it using Google Translate - defer this to another chapter introducing async, and we can offer the Chinese version in Shift_JIS encoding too!]
-
-### An OPTIONS request
-
-[todo]
 
 ### Swagger
 
@@ -448,7 +530,7 @@ yada allows you to declare both these and other types of parameter via the __:pa
 
 Parameters must be specified for each method that the resource supports. The reason for this is because parameters can, and often do, differ depending on the method used.
 
-For example, below we have a resource description that defines the parameters for requests to a resource representing a bank account. For GET requests, there is both a path parameter and query parameter, for POST requests there is the same path parameter and a body.
+For example, below we have a resource description that defines the parameters for requests to a resource representing a bank account. For `GET` requests, there is both a path parameter and query parameter, for `POST` requests there is the same path parameter and a body.
 
 We define parameter types in the style of [Prismatic](https://prismatic.com)'s
 excellent [schema](https://github.com/prismatic/schema) library.
@@ -468,7 +550,7 @@ excellent [schema](https://github.com/prismatic/schema) library.
           :body Transaction}}}
 ```
 
-But for POST requests, there is a body parameter, which defines the entity body that must be sent with the request. This might be used, for example, to post a new transaction to a bank account.
+But for `POST` requests, there is a body parameter, which defines the entity body that must be sent with the request. This might be used, for example, to post a new transaction to a bank account.
 
 We can declare the parameter in the resource description's __:parameters__ entry. At runtime, these parameters are extracted from a request and  added as the __:parameters__ entry of the _request context_.
 
@@ -478,7 +560,7 @@ Let's show this with an example.
 
 <!-- <example ref="PathParameterRequired"/> -->
 
-Now let's show how this same resource responds to a POST request.
+Now let's show how this same resource responds to a `POST` request.
 
 <example ref="ParameterDeclaredPathQueryWithPost"/>
 
@@ -674,9 +756,9 @@ HTTP specifies a number of methods which mutate a resource's state.
 
 #### POSTs
 
-Let's start with the POST method and review the spec :-
+Let's start with the `POST` method and review the spec :-
 
-> The POST method requests that the target resource process the
+> The `POST` method requests that the target resource process the
 representation enclosed in the request according to the resource's own
 specific semantics.
 
@@ -687,7 +769,7 @@ Let's see this with an example :-
 
 <example ref="PostCounter"/>
 
-As we have seen, processing of POST requests is achieved by adding an __:post__ entry to the resource description. If the value is a function, it will be called with the request context as an argument, and return a value. We can also specify the value as a constant. Whichever we choose, the table below shows how the return value is interpretted.
+As we have seen, processing of `POST` requests is achieved by adding an __:post__ entry to the resource description. If the value is a function, it will be called with the request context as an argument, and return a value. We can also specify the value as a constant. Whichever we choose, the table below shows how the return value is interpretted.
 
 <table class="table">
 <thead>
@@ -713,11 +795,11 @@ HTTP response.
 
 #### PUTs
 
-PUT a resource. The resource-map returns a resource with an etag which
+`PUT` a resource. The resource-map returns a resource with an etag which
 matches the value of the 'If-Match' header in the request. This means
-the PUT can proceed.
+the `PUT` can proceed.
 
-> If-Match is most often used with state-changing methods (e.g., POST, PUT, DELETE) to prevent accidental overwrites when multiple user agents might be acting in parallel on the same resource (i.e., to the \"lost update\" problem).
+> If-Match is most often used with state-changing methods (e.g., `POST`, `PUT`, `DELETE`) to prevent accidental overwrites when multiple user agents might be acting in parallel on the same resource (i.e., to the \"lost update\" problem).
 
 <example ref="PutResourceMatchedEtag"/>
 
@@ -725,7 +807,7 @@ the PUT can proceed.
 
 #### DELETEs
 
-[TODO: Explain how PUTs and DELETEs return '202 Accepted' on deferred responses]
+[TODO: Explain how `PUT`s and `DELETE`s return '202 Accepted' on deferred responses]
 
 
 ## Conditional Requests
@@ -818,7 +900,7 @@ However, if you want to receive cookies or user credentials, you'll need check t
 
 ### Preflight requests
 
-If you try to do a mutable action, such as a PUT, on server of different origin than your website, then the browser will 'pre-flight' the request.
+If you try to do a mutable action, such as a `PUT`, on server of different origin than your website, then the browser will 'pre-flight' the request.
 
 <example ref="CorsPreflight"/>
 

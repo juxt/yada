@@ -23,6 +23,7 @@
    [yada.resource :as res]
    [ring.util.time :as rt]
    yada.resources.string-resource
+   yada.resources.atom-resource
    ))
 
 (defn emit-element
@@ -366,12 +367,13 @@
     (let [xbody (:xbody component)
           examples (:examples component)
           hello (yada "Hello World!\n")
+          hello-atom (yada (atom "Hello World!\n"))
           hello-date (-> hello :resource (res/last-modified nil))
           hello-date-after (java.util.Date/from (.plusMillis (.toInstant hello-date) 2000))]
 
       ["/"
-
        [["hello" hello]
+        ["hello-atom" hello-atom]
         ["user-manual"
          [[".html"
             (->

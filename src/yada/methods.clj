@@ -71,6 +71,10 @@
     ;; We don't need to add Content-Length,
     ;; Content-Range, Trailer or Tranfer-Encoding, as
     ;; per rfc7231.html#section-3.3
+
+    ;; TODO: Content-Length (of 0) is still being added to HEAD
+    ;; responses - is this Aleph or a bug in yada?
+
     ctx))
 
 ;; --------------------------------------------------------------------------------
@@ -236,23 +240,28 @@
   (safe? [_] true)
   (idempotent? [_] true)
   (request [_ ctx]
-    (let [ctx (update-in ctx [:response :headers "allow"]
-                         (str/join ", " (map (comp (memfn toUpperCase) name) (:allow-methods ctx))))]
+    (let [ctx (assoc-in ctx [:response :headers "allow"]
+                        (str/join ", " (map (comp (memfn toUpperCase) name) (:allowed-methods ctx))))]
       ;; TODO: Build in explicit support for CORS pre-flight requests
-      (d/chain
-       (options (:resource ctx) ctx)
-       (fn [res]
-         (interpret-options-result res ctx))
+      (if (satisfies? Options (:resource ctx))
+        (d/chain
+         (options (:resource ctx) ctx)
+         (fn [res]
+           (interpret-options-result res ctx))
 
-       ;; For example, for a resource supporting CORS
-       #_(link ctx
-           (if-let [origin (service/allow-origin (:resource ctx) ctx)]
-             (update-in ctx [:response :headers]
-                        merge {"access-control-allow-origin"
-                               origin
-                               "access-control-allow-methods"
-                               (apply str
-                                      (interpose ", " ["GET" "POST" "PUT" "DELETE"]))})))))))
+         )
+        ctx)
+
+      ;; For example, for a resource supporting CORS
+      #_(link ctx
+          (if-let [origin (service/allow-origin (:resource ctx) ctx)]
+            (update-in ctx [:response :headers]
+                       merge {"access-control-allow-origin"
+                              origin
+                              "access-control-allow-methods"
+                              (apply str
+                                     (interpose ", " ["GET" "POST" "PUT" "DELETE"]))})))
+      )))
 
 ;; --------------------------------------------------------------------------------
 

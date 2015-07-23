@@ -28,8 +28,8 @@
     ;; default Resource implementation (above)
     f)
 
-  #_Object
-  #_(make-resource [o] o)
+  Object
+  (make-resource [o] o)
 
   nil
   (make-resource [_] nil))

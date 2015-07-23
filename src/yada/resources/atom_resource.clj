@@ -1,11 +1,13 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.resources.atom-resource
+  (:refer-clojure :exclude [methods])
   (:require
    [clj-time.core :refer [now]]
    [clj-time.coerce :refer [to-date]]
-   [yada.resource :refer (ResourceConstructor ResourceRepresentations Resource platform-charsets make-resource)]
+   [yada.resource :refer (ResourceConstructor ResourceRepresentations Resource platform-charsets make-resource parameters methods)]
    [yada.methods :refer (Get Put)]
+   [schema.core :as s]
    yada.resources.string-resource)
   (:import [yada.resources.string_resource StringResource]))
 
@@ -15,6 +17,7 @@
 (defrecord AtomicMapResource [*a wrapper *last-mod]
   Resource
   (methods [_] (conj (set (methods wrapper)) :put :post :delete))
+  (parameters [_] (assoc (parameters wrapper) :put {:body s/Str})) ;; TODO: Not just a string, depends on wrapper
 
   (exists? [_ ctx] true)
 
@@ -31,7 +34,7 @@
   (get* [_ ctx] @*a)
 
   Put
-  (put [_ ctx] (throw (ex-info "TODO" {}))))
+  (put [_ ctx] (reset! *a (get-in ctx [:parameters :body]))))
 
 (defn wrap-with-watch [wrapper *a]
   (let [*last-mod (atom nil)]
