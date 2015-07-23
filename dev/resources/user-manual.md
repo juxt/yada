@@ -414,40 +414,29 @@ lein run
 
 [Hello World! in Chinese]
 
-## Mutation
-
-```clojure
-(yada (atom "Hello World"))
-```
-
 ## Resources - under the hood
 
 Different types of resources are added to yada by defining types or records.
 
 Let's delve a little deeper into how the _Hello World!_ example works.
 
-Here is the actual code that tells yada about Java strings.
+Here is the actual code that tells yada about Java strings (comments removed).
 
 ```clojure
 (defrecord StringResource [s last-modified]
-  ResourceFetch
-  (fetch [this ctx] this)
-
   Resource
-  (methods [this] #{:get :head})
+  (methods [this] #{:get :options})
   (parameters [_] nil)
   (exists? [this ctx] true)
   (last-modified [this _] last-modified)
-  (request [this method ctx] (case method :get s))
 
   ResourceRepresentations
   (representations [_]
-    [{
-      ;; Without attempting to actually parse it (which isn't completely
-      ;; impossible) we're not able to guess the media-type of this
-      ;; string, so we return text/plain.
-      :content-type #{"text/plain"}
-      :charset platform-charsets}]))
+    [{:content-type #{"text/plain"}
+      :charset platform-charsets}])
+
+  Get
+  (get* [this ctx] s))
 
 (extend-protocol ResourceConstructor
   String
@@ -461,7 +450,7 @@ Recall the _Hello World!_ example.
 (yada "Hello World!")
 ```
 
-yada calls `make-resource` on the argument. This declaration causes a new instance of the StringResource record to be created.
+yada calls `make-resource` on the argument. This declaration causes a new instance of the `StringResource` record to be created.
 
 ```clojure
 (extend-protocol ResourceConstructor
@@ -484,7 +473,8 @@ platform we are on).
 
 ### Extending yada
 
-There are numerous types already built into yada, but you can also add your own.
+There are numerous types already built into yada, but you can also add
+your own. You can also add your own custom methods.
 
 ---
 
