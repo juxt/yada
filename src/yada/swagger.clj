@@ -2,23 +2,24 @@
 
 (ns yada.swagger
   (:require
-   [clojure.pprint :refer (pprint)]
-   [clj-time.core :refer (now)]
-   [clj-time.coerce :refer (to-date)]
    [bidi.bidi :refer (Matched resolve-handler unresolve-handler route-seq succeed)]
    [bidi.ring :refer (Ring)]
-   [ring.util.response :refer (redirect)]
-   [yada.bidi :refer (resource-leaf)]
-   [yada.resource :refer (Resource ResourceRepresentations ResourceConstructor platform-charsets)]
-   [yada.methods :refer (Get get*)]
-   [yada.mime :as mime]
-   [clojure.tools.logging :refer :all]
    [camel-snake-kebab :as csk]
    [cheshire.core :as json]
-   [ring.swagger.swagger2 :as rs]
-   [schema.core :as s]
+   [clj-time.coerce :refer (to-date)]
+   [clj-time.core :refer (now)]
+   [clojure.pprint :refer (pprint)]
+   [clojure.tools.logging :refer :all]
+   [hiccup.page :refer (html5)]
    [json-html.core :as jh]
-   [hiccup.page :refer (html5)])
+   [ring.swagger.swagger2 :as rs]
+   [ring.util.response :refer (redirect)]
+   [schema.core :as s]
+   [yada.bidi :refer (resource-leaf)]
+   [yada.methods :refer (Get get*)]
+   [yada.mime :as mime]
+   [yada.resource :as res]
+   [yada.resource :refer (Resource ResourceRepresentations ResourceConstructor platform-charsets)])
   (:import (clojure.lang PersistentVector Keyword)))
 
 (defprotocol SwaggerPath
@@ -31,20 +32,21 @@
 
 (defn- to-path [x]
   (let [swagger (-> x :handler :options :swagger)
-        parameters (-> x :handler :options :parameters)]
+        options (-> x :handler :options)
+        resource (-> x :handler :resource)
+        methods (or (:methods options) (res/methods resource))]
     [(apply str (map encode (:path x)))
      (merge-with merge swagger
                  (into {}
-                       (for [[k v] parameters]
-                         [k {:parameters v}]
-                         )))]))
+                       (for [method methods]
+                         ;; TODO: Add parameters
+                         ;; TODO: Add responses
+                         {method {:description "a method"}})))]))
 
 (defrecord SwaggerSpec [spec created-at]
-  ResourceConstructor
-  (make-resource [o] o)
-
   Resource
   (methods [_] #{:get :head})
+  ;; TODO: Parameters should be optional, so use a protocol like ResourceParameters
   (parameters [_] nil)
   (exists? [_ ctx] true)
   (last-modified [_ ctx] created-at)
@@ -52,13 +54,13 @@
   ResourceRepresentations
   (representations [_]
     [{:method #{:get :head}
-       :content-type #{"application/json" "text/html;q=0.9" "application/edn;q=0.8"}
+      :content-type #{"application/json" "text/html;q=0.9" "application/edn;q=0.8"}
       :charset platform-charsets}])
 
   Get
   (get* [_ ctx] (rs/swagger-json spec)))
 
-(defrecord Swagger [spec routes handler]
+(defrecord Swagger [spec route handler]
   Matched
   (resolve-handler [this m]
     (cond (= (:remainder m) (str (or (:base-path spec) "") "/swagger.json"))
@@ -72,7 +74,7 @@
                    (assoc m :remainder ""))
 
           ;; Otherwise
-          :otherwise (resolve-handler [[(or (:base-path spec) "") routes]]
+          :otherwise (resolve-handler [[(or (:base-path spec) "") [route]]]
                                       (merge m {::spec spec}))))
 
   (unresolve-handler [this m]
@@ -88,6 +90,6 @@
     (handler
      req)))
 
-(defn swaggered [spec routes]
-  (let [spec (merge spec {:paths (into {} (map to-path (route-seq ["" routes])))})]
-    (->Swagger spec routes (resource-leaf (->SwaggerSpec spec (to-date (now)))))))
+(defn swaggered [spec route]
+  (let [spec (merge spec {:paths (into {} (map to-path (route-seq route)))})]
+    (->Swagger spec route (resource-leaf (->SwaggerSpec spec (to-date (now)))))))

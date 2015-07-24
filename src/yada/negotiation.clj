@@ -183,15 +183,15 @@
 
 (s/defn vary [method :- s/Keyword
               server-acceptables :- [ServerAcceptable]]
-  (let [server-acceptables (filter #((or (:method %) identity) method) server-acceptables)]
-    (set
-     (remove nil?
-             (list
-              (when-let [ct (apply set/union (map :content-type server-acceptables))]
-                (when (> (count ct) 1) :content-type))
-              (when-let [cs (apply set/union (map :charset server-acceptables))]
-                (when (> (count cs) 1) :charset)
-                ))))))
+  (let [server-acceptables (filter #((or (:method %) identity) method) server-acceptables)
+        varies (remove nil?
+                       (list
+                        (when-let [ct (apply set/union (map :content-type server-acceptables))]
+                          (when (> (count ct) 1) :content-type))
+                        (when-let [cs (apply set/union (map :charset server-acceptables))]
+                          (when (> (count cs) 1) :charset)
+                          )))]
+    (when (not-empty varies) (set varies))))
 
 (s/defn interpret-negotiation
   "Take a negotiated result and determine status code and message. If

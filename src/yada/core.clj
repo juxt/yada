@@ -55,11 +55,14 @@
 ;; Yada returns instances of Endpoint, which allows yada to integrate
 ;; with bidi's matching-context.
 
+(defn make-context []
+  {:response (->Response)})
+
 ;; Check duplication with yada/bidi ns
 (defrecord Endpoint [resource handler]
   clojure.lang.IFn
   (invoke [_ req]
-    (let [ctx {:response (->Response)}]
+    (let [ctx (make-context)]
       (handler req ctx)))
   YadaInvokeable
   (invoke-with-initial-context [this req ctx] (handler req ctx))
@@ -70,7 +73,8 @@
     (when (= this (:handler m)) ""))
   Ring
   (request [this req m]
-    (handler req {k-bidi-match-context m})))
+    (handler req (merge {k-bidi-match-context m}
+                        (make-context)))))
 
 ;; "It is better to have 100 functions operate on one data structure
 ;; than 10 functions on 10 data structures." — Alan Perlis
@@ -124,26 +128,6 @@
 (defn read-body [req]
   (when-let [body (:body req)]
     (convert body String {:encoding (or (character-encoding req) "UTF-8")})))
-
-;; This used to be used, but still has some useful ideas in it.
-#_(defn allowed-methods [ctx resource]
-  (let [options (:options ctx)]
-    (if-let [methods (:methods options)]
-      (set (service/allowed-methods methods))
-      (conj
-       (set
-        (or
-         (res/supported-methods resource ctx)
-         (remove nil?
-                 (conj
-                  (filter safe? known-methods)
-                  (when (:put! options) :put)
-                  (when (:post! options) :post)
-                  (when (:delete! options) :delete)
-                  ))))
-       ;; Always allowed (because they're a bit special)
-       :options :trace
-       ))))
 
 (defn make-endpoint
   "Create a yada endpoint (Ring handler)"

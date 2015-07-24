@@ -105,6 +105,7 @@
     (when (false? (:exists? ctx))
       (d/error-deferred (ex-info "" {:status 404
                                      ::http-response true})))
+
     (d/chain
      ;; GET request normally returns (possibly deferred) body.
      (get* (:resource ctx) ctx)
@@ -115,7 +116,8 @@
      (fn [ctx]
        (let [representation (get-in ctx [:response :representation])]
 
-         (assert (not (instance? Response (get-in ctx [:response :body]))))
+         ;;(infof "[:response :body] is %s" (get-in ctx [:response :body]))
+         (infof "representation: %s" representation)
 
          ;; representation could be nil, for example, resource could be a java.io.File
          (update-in ctx [:response :body] rep/to-body representation)))
