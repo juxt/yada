@@ -84,9 +84,7 @@
   (request [_ req match-context]
     ;; This yada resource has match-context in its lexical scope,
     ;; containing any yada/partial (or bidi/partial) entries.
-
-    (handler
-     req)))
+    (handler req)))
 
 (defn swaggered [spec route]
   (let [spec (merge spec {:paths (into {} (map to-path (route-seq route)))})]
