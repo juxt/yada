@@ -18,8 +18,7 @@
    [yada.bidi :refer (resource-leaf)]
    [yada.methods :refer (Get get*)]
    [yada.mime :as mime]
-   [yada.resource :as res]
-   [yada.resource :refer (Resource ResourceRepresentations ResourceConstructor platform-charsets)])
+   [yada.resource :refer (Resource ResourceRepresentations ResourceConstructor platform-charsets make-resource) :as res])
   (:import (clojure.lang PersistentVector Keyword)))
 
 (defprotocol SwaggerPath
@@ -33,7 +32,7 @@
 (defn- to-path [x]
   (let [swagger (-> x :handler :options :swagger)
         options (-> x :handler :options)
-        resource (-> x :handler :resource)
+        resource (make-resource (-> x :handler :resource))
         methods (or (:methods options) (res/methods resource))]
     [(apply str (map encode (:path x)))
      (merge-with merge swagger
@@ -47,7 +46,6 @@
   Resource
   (methods [_] #{:get :head})
   ;; TODO: Parameters should be optional, so use a protocol like ResourceParameters
-  (parameters [_] nil)
   (exists? [_ ctx] true)
   (last-modified [_ ctx] created-at)
 

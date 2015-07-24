@@ -12,7 +12,6 @@
   Resource
   ;; Don't include :head, it is always available with yada.
   (methods [this] #{:get :options})
-  (parameters [_] nil)
   (exists? [this ctx] true)
   (last-modified [this _] last-modified)
 

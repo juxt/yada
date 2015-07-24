@@ -165,7 +165,8 @@
                     resource)
 
          parameters (or (:parameters options)
-                        (res/parameters resource))
+                        (when (satisfies? res/ResourceParameters resource)
+                          (res/parameters resource)))
 
          known-methods (methods/methods)
 

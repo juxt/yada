@@ -50,55 +50,24 @@
   able to educe the state on fetch or during the request call."
 
   ;; Context-agnostic - can be introspected by tools (e.g. swagger)
-  (methods [_] "Return the allowed methods.")
-  (parameters [_] "Return the parameters, by method. Must not return a deferred value.")
+  (methods [_]
+    "Return the allowed methods.")
 
   ;; Context-sensitive
-  (exists? [_ ctx] "Whether the resource actually exists. Can return a deferred value.")
+  (exists? [_ ctx]
+    "Whether the resource actually exists. Can return a deferred value.")
 
-  (last-modified [_ ctx] "Return the date that the resource was last
-  modified. Can return a deferred value.")
-
-  #_(request [_ method ctx] "Perform request. Context contains
-  content-type, charset, language, content-encoding etc. in
-  the :response map. Method as keyword is in context's :method entry,
-  but is provided as a parameter for convenience only. The returned
-  value is interpreted according to the its type, and the request
-  method. Side-effects are permissiable. Can return a deferred result.
-
-  GET: Return the state. Can be formatted to a representation of the
-  given media-type and charset. Returning nil results in a 404. Get the
-  charset from the context [:request :charset], if you can support
-  different charsets. A nil charset at [:request :charset] means the
-  user-agent can support all charsets, so just pick one. If you don't
-  return a String, a representation will be attempted from whatever you
-  do return.
-
-  PUT: Overwrite the state with the data. To avoid inefficiency in
-  abstraction, satisfying types are required to manage the parsing of
-  the representation in the request body. If a deferred is returned, the
-  HTTP response status is set to 202.
-
-  POST: Post the new data. Return a result. If a Ring response map is
-  returned, it is returned to the client. If a function can be
-  reeturned, it is invoked with the context as the only parameter. If a
-  string is returned, it is assumed to be the body. See
-  yada.methods/PostResult for full details of what can be returned.
-
-  DELETE: Delete the state. If a deferred is returned, the HTTP response
-  status is set to 202"))
+  (last-modified [_ ctx]
+    "Return the date that the resource was last modified. Can return a
+    deferred value."))
 
 (extend-protocol Resource
   clojure.lang.Fn
   (methods [_] #{:get :head})
-  ;; TODO: Many resources don't have parameters - let's put this in its
-  ;; own protocol (ResourceParameters)
-  (parameters [_] nil)
   ;; We assume the resource exists, the request can force a 404 by
   ;; returning nil.
   (exists? [_ ctx] true)
   (last-modified [_ ctx] nil)
-  #_(request [f method ctx] (f ctx))
 
   java.io.File
   (last-modified [f ctx]
@@ -107,9 +76,7 @@
   nil
   ;; last-modified of 'nil' means we don't consider last-modified
   (methods [_] nil)
-  (parameters [_] nil)
-  (last-modified [_ _] nil)
-  #_(request [f method ctx] nil))
+  (last-modified [_ _] nil))
 
 ;; Fetch
 
@@ -120,19 +87,6 @@
 ;; resource definition.
 
 (extend-protocol ResourceFetch
-  #_clojure.lang.Fn
-  #_(fetch [f ctx]
-    (let [res (f ctx)]
-      ;; We call make-resource on dynamic fetch functions, to ensure the
-      ;; result they return are treated just the same as if they were
-      ;; presented statically to the yada function.  Fetch is complected
-      ;; two ideas here. The first is the loading of
-      ;; state/meta-state. The second is allowing us to use functions in
-      ;; place of resources. Things seem to work OK with this complected
-      ;; design, but alarm bells are beginning to sound...
-      (if (deferrable? res)
-        (d/chain res #(make-resource (fetch % ctx)))
-        (make-resource (fetch res ctx)))))
   nil ; The user has not elected to specify a resource, that's fine (and common)
   (fetch [_ ctx] nil)
   Object
@@ -163,11 +117,8 @@
 ;; choose how to augment these (override completely, concat, etc.)
 
 (extend-protocol ResourceRepresentations
-  clojure.lang.PersistentVector
-  (representations [v] v)
-
-  nil
-  (representations [_] nil))
+  clojure.lang.PersistentVector (representations [v] v)
+  nil (representations [_] nil))
 
 (def default-platform-charset (.name (java.nio.charset.Charset/defaultCharset)))
 
@@ -176,3 +127,7 @@
    (concat
     [(to-charset-map default-platform-charset)]
     (map #(assoc % :weight 0.9) (map to-charset-map (keys (java.nio.charset.Charset/availableCharsets)))))))
+
+(defprotocol ResourceParameters
+  "Declare the resource's parameters"
+  (parameters [_] "Return the parameters, by method. Must not return a deferred value."))

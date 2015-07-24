@@ -35,7 +35,7 @@
                                       {:method #{:get}
                                        :content-type #{"text/plain" "text/html"}
                                        :charset #{"UTF-8" "Latin-1"}}]))
-        identity := #{})
+        identity := nil)
     (given
         (vary :get
               (parse-representations [{:content-type #{"application/json"}}

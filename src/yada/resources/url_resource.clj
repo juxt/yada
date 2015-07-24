@@ -15,14 +15,11 @@
 (extend-type URL
   Resource
   (methods [_] #{:get :head})
-  (parameters [_] nil)
   (exists? [_ ctx] true)
   (last-modified [u ctx]
     (let [f (io/file (.getFile u))]
       (when (.exists f)
         (Date. (.lastModified f)))))
-
-
 
   ResourceRepresentations
   (representations [u]

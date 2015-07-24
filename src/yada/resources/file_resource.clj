@@ -83,7 +83,6 @@
 (defrecord FileResource [f]
   Resource
   (methods [_] #{:get :head :put :delete})
-  (parameters [_] nil)
   (exists? [_ ctx] (.exists f))
   (last-modified [_ ctx] (Date. (.lastModified f)))
   Get
@@ -129,7 +128,6 @@
 
   Resource
   (methods [_] #{:get :head :put :delete})
-  (parameters [_] nil)
   (exists? [_ ctx] (.exists dir))
   (last-modified [_ ctx] (Date. (.lastModified dir)))
 

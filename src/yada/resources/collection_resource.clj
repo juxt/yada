@@ -16,7 +16,6 @@
 (defrecord MapResource [m last-modified]
   Resource
   (methods [_] #{:get})
-  (parameters [_] nil)
   (exists? [_ ctx] true)
   (last-modified [_ ctx] last-modified)
   Get

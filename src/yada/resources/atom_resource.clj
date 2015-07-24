@@ -5,7 +5,7 @@
   (:require
    [clj-time.core :refer [now]]
    [clj-time.coerce :refer [to-date]]
-   [yada.resource :refer (ResourceConstructor ResourceRepresentations Resource platform-charsets make-resource parameters methods)]
+   [yada.resource :refer (ResourceConstructor ResourceRepresentations Resource platform-charsets make-resource ResourceParameters parameters methods)]
    [yada.methods :refer (Get Put)]
    [schema.core :as s]
    yada.resources.string-resource)
@@ -17,13 +17,19 @@
 (defrecord AtomicMapResource [*a wrapper *last-mod]
   Resource
   (methods [_] (conj (set (methods wrapper)) :put :post :delete))
-  (parameters [_] (assoc (parameters wrapper) :put {:body s/Str})) ;; TODO: Not just a string, depends on wrapper
+
 
   (exists? [_ ctx] true)
 
   (last-modified [_ ctx]
     (when-let [lm @*last-mod]
       lm))
+
+  ResourceParameters
+  (parameters [_] (merge
+                   (when (satisfies? ResourceParameters wrapper)
+                     (parameters wrapper))
+                   {:put {:body s/Str}})) ;; TODO: Not just a string, depends on wrapper
 
   ResourceRepresentations
   (representations [_] [{:method #{:get :head}

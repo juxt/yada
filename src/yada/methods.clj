@@ -80,7 +80,15 @@
 ;; --------------------------------------------------------------------------------
 
 (defprotocol Get
-  (get* [_ ctx]))
+  (get* [_ ctx]
+    "Return the state. Can be formatted to a representation of the given
+  media-type and charset. Returning nil results in a 404. Get the
+  charset from the context [:request :charset], if you can support
+  different charsets. A nil charset at [:request :charset] means the
+  user-agent can support all charsets, so just pick one. If you don't
+  return a String, a representation will be attempted from whatever you
+  do return. Side-effects are not permissiable. Can return a deferred
+  result."))
 
 (defprotocol GetResult
   (interpret-get-result [_ ctx]))
@@ -129,7 +137,12 @@
 ;; --------------------------------------------------------------------------------
 
 (defprotocol Put
-  (put [_ ctx]))
+  (put [_ ctx]
+    "Overwrite the state with the data. To avoid inefficiency in
+  abstraction, satisfying types are required to manage the parsing of
+  the representation in the request body. If a deferred is returned, the
+  HTTP response status is set to 202. Side-effects are permissiable. Can
+  return a deferred result."))
 
 (deftype PutMethod [])
 (extend-protocol Method
@@ -150,7 +163,14 @@
 ;; --------------------------------------------------------------------------------
 
 (defprotocol Post
-  (post [_ ctx]))
+  (post [_ ctx]
+    "Post the new data. Return a result. If a Ring response map is
+  returned, it is returned to the client. If a function can be
+  reeturned, it is invoked with the context as the only parameter. If a
+  string is returned, it is assumed to be the body. See
+  yada.methods/PostResult for full details of what can be
+  returned. Side-effects are permissiable. Can return a deferred
+  result."))
 
 (defprotocol PostResult
   (interpret-post-result [_ ctx]))
@@ -203,7 +223,10 @@
 
 ;; --------------------------------------------------------------------------------
 (defprotocol Delete
-  (delete [_ ctx]))
+  (delete [_ ctx]
+    "Delete the state. If a deferred is returned, the HTTP response
+  status is set to 202. Side-effects are permissiable. Can return a
+  deferred result."))
 
 (deftype DeleteMethod [])
 (extend-protocol Method

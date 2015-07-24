@@ -9,11 +9,13 @@
 (defrecord JustMethods []
   res/Resource
   (methods [this] (keys this))
+  (exists? [_ ctx] true)
+  (last-modified [_ ctx] (java.util.Date.))
+
+  res/ResourceParameters
   (parameters [this]
     (reduce-kv (fn [acc k v]
                  (assoc acc k (:parameters v))) {} this))
-  (exists? [_ ctx] true)
-  (last-modified [_ ctx] (java.util.Date.))
 
   Get
   (get* [this ctx]
