@@ -57,8 +57,7 @@
   (resolve-handler [this m]
     (succeed this m))
   (unresolve-handler [this m]
-    (when (= this (:handler m)) ""))
-  )
+    (when (= this (:handler m)) "")))
 
 ;; "It is better to have 100 functions operate on one data structure
 ;; than 10 functions on 10 data structures." — Alan Perlis
@@ -494,7 +493,7 @@
                                     {"content-length" cl})
                                   (when-let [vary (get-in ctx [:response :vary])]
                                     {"vary" (str/join ", " (filter string? (map {:charset "accept-charset"
-                                                                                 :content-length "accept"}
+                                                                                 :content-type "accept"}
                                                                                 vary)))})
                                   (service/headers headers ctx))
 

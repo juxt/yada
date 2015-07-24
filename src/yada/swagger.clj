@@ -16,7 +16,6 @@
    [ring.util.response :refer (redirect)]
    [schema.core :as s]
    [yada.core :refer (yada)]
-   [yada.bidi :refer (resource-leaf)]
    [yada.methods :refer (Get get*)]
    [yada.mime :as mime]
    [yada.resource :refer (Resource ResourceRepresentations ResourceConstructor platform-charsets make-resource) :as res]
@@ -33,6 +32,7 @@
 
 (defn- to-path [route]
   (infof "to-path arg is %s" route)
+  ;; TODO: Fix this really poorly derived data model
   (let [swagger (-> route :handler :handler :options :swagger)
         path (-> route :path)
         options (-> route :handler :options)
@@ -47,20 +47,20 @@
                  (into {}
                        (for [method methods]
                          ;; TODO: Add parameters
+                         ;; TODO: Add produces
                          ;; TODO: Add responses
-                         {method {:description "a method"}})))]))
+                         {method {:description "a method"
+                                  :produces ["text/plain"]}})))]))
 
 (defrecord SwaggerSpec [spec created-at]
   Resource
   (methods [_] #{:get :head})
-  ;; TODO: Parameters should be optional, so use a protocol like ResourceParameters
   (exists? [_ ctx] true)
   (last-modified [_ ctx] created-at)
 
   ResourceRepresentations
   (representations [_]
-    [{:method #{:get :head}
-      :content-type #{"application/json" "text/html;q=0.9" "application/edn;q=0.8"}
+    [{:content-type #{"application/json" "text/html;q=0.9" "application/edn;q=0.8"}
       :charset platform-charsets}])
 
   Get
@@ -93,21 +93,23 @@
   (request [_ req match-context]
     ;; This yada resource has match-context in its lexical scope,
     ;; containing any yada/partial (or bidi/partial) entries.
-    (handler req)))
+    (handler req))
+
+  ;; So that we can use the Swagger record as a Ring handler
+  #_clojure.lang.IFn
+  #_(invoke [_ req]
+    (let [ctx (make-context)]
+      (handler req ctx))))
 
 (defn swaggered [spec route]
   (infof "swaggered, route is %s, spec is %s" route spec)
   (let [spec (merge spec {:paths (into {} (map to-path (route-seq (unroll-route route))))})]
-    ;; TODO: Not sure about resource-leaf, use yada directly?
-    (->Swagger spec route (resource-leaf (->SwaggerSpec spec (to-date (now)))))))
+    (->Swagger spec route (yada (->SwaggerSpec spec (to-date (now)))))))
 
-(pprint
- (let [route ["/hello" (yada "Hello World!")]]
-   (map to-path (route-seq (unroll-route route)))))
-
-(pprint
- (swaggered {:info {:title "Hello World!"
-                    :version "0.0.1"
-                    :description "Demonstrating yada + swagger"}
-             :basePath "/hello-api"}
-            ["/hello" (yada "Hello World!")]))
+#_(pprint
+   (swaggered {:info {:title "Hello World!"
+                      :version "0.0.1"
+                      :description "Demonstrating yada + swagger"}
+               :basePath "/hello-api"
+               }
+              ["/hello" (yada "Hello World!")]))

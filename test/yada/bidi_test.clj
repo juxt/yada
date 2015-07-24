@@ -5,8 +5,10 @@
    [clojure.test :refer :all]
    [byte-streams :as bs]
    [yada.yada :refer (yada) :as yada]
+   ;; TODO: These resources should be loaded automatically via a yada ns
+   yada.resources.string-resource
    [juxt.iota :refer (given)]
-   [yada.bidi :refer (resource-leaf)]
+   #_[yada.bidi :refer (resource-leaf)]
    [bidi.bidi :as bidi :refer (Matched compile-route succeed context)]
    [bidi.ring :refer (make-handler Ring)]
    [ring.mock.request :refer (request)]))
@@ -25,13 +27,13 @@
 
 (def api
   ["/api"
-   {"/status" (resource-leaf "API working!")
+   {"/status" (yada "API working!")
     "/hello" (fn [req] {:body "hello"})
-    "/protected" (secure {"/a" (resource-leaf "Secret area A")
-                          "/b" (resource-leaf "Secret area B")})}])
+    "/protected" (secure {"/a" (yada "Secret area A")
+                          "/b" (yada "Secret area B")})}])
 
 (deftest api-tests
-  (let [h (make-handler api)
+  (let [h (-> api bidi/unroll-route make-handler)
         response @(h (request :get "/api/status"))]
     (testing "hello"
       (given response

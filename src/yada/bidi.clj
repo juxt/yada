@@ -61,7 +61,7 @@
   ([resource options]
    (->ResourceBranchEndpoint resource options)))
 
-(defrecord ResourceLeafEndpoint [resource options]
+#_(defrecord ResourceLeafEndpoint [resource options]
   Matched
   (resolve-handler [this m]
     ;; Succeed with 'this' as the handler, because we satisfies Ring
@@ -82,7 +82,7 @@
     (let [handler (yada resource (merge (get match-context k-options) options))]
       (handler req))))
 
-(defn resource-leaf
+#_(defn resource-leaf
   ([resource]
    (resource-leaf resource {}))
   ([resource options]

@@ -378,11 +378,13 @@
                                         :description "Demonstrating yada + swagger"}
                                  :basePath "/hello-api"}
                                 ["/hello" hello])]
+
         ["petstore-simple.json" (yada (json/decode (slurp (io/file "dev/resources/petstore/petstore-simple.json")))
                                       :representations [{:content-type #{"application/json"
                                                                          "text/html;q=0.9"
                                                                          "application/edn;q=0.8"}
                                                          :charset #{"UTF-8"}}])]
+
         ["hello" hello]
         ["hello-atom" hello-atom]
         ["user-manual"

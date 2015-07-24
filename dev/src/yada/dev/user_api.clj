@@ -5,7 +5,6 @@
    [clojure.tools.logging :refer :all]
    yada.resources.collection-resource
    [yada.yada :refer (yada) :as yada]
-   [yada.bidi :refer (resource-leaf)]
    [bidi.bidi :refer (RouteProvider tag)]
    [bidi.ring :refer (make-handler)]
    [ring.mock.request :refer (request)]
