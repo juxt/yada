@@ -45,36 +45,20 @@
            (manifold.deferred IDeferred Deferrable)
            (schema.utils ValidationError ErrorContainer)))
 
-(def k-bidi-match-context :bidi/match-context)
-
-;; TODO: Find a better name
-(defprotocol YadaInvokeable
-  (invoke-with-initial-context [_ req ctx]
-    "Invoke the yada handler with some initial context entries"))
-
-;; Yada returns instances of Endpoint, which allows yada to integrate
-;; with bidi's matching-context.
-
 (defn make-context []
   {:response (->Response)})
 
-;; Check duplication with yada/bidi ns
 (defrecord Endpoint [resource handler]
   clojure.lang.IFn
   (invoke [_ req]
     (let [ctx (make-context)]
       (handler req ctx)))
-  YadaInvokeable
-  (invoke-with-initial-context [this req ctx] (handler req ctx))
   Matched
   (resolve-handler [this m]
     (succeed this m))
   (unresolve-handler [this m]
     (when (= this (:handler m)) ""))
-  Ring
-  (request [this req m]
-    (handler req (merge {k-bidi-match-context m}
-                        (make-context)))))
+  )
 
 ;; "It is better to have 100 functions operate on one data structure
 ;; than 10 functions on 10 data structures." — Alan Perlis

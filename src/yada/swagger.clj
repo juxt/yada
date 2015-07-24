@@ -2,7 +2,7 @@
 
 (ns yada.swagger
   (:require
-   [bidi.bidi :refer (Matched resolve-handler unresolve-handler route-seq succeed)]
+   [bidi.bidi :refer (Matched resolve-handler unresolve-handler route-seq succeed unroll-route)]
    [bidi.ring :refer (Ring)]
    [camel-snake-kebab :as csk]
    [cheshire.core :as json]
@@ -15,10 +15,12 @@
    [ring.swagger.swagger2 :as rs]
    [ring.util.response :refer (redirect)]
    [schema.core :as s]
+   [yada.core :refer (yada)]
    [yada.bidi :refer (resource-leaf)]
    [yada.methods :refer (Get get*)]
    [yada.mime :as mime]
-   [yada.resource :refer (Resource ResourceRepresentations ResourceConstructor platform-charsets make-resource) :as res])
+   [yada.resource :refer (Resource ResourceRepresentations ResourceConstructor platform-charsets make-resource) :as res]
+   yada.resources.string-resource)
   (:import (clojure.lang PersistentVector Keyword)))
 
 (defprotocol SwaggerPath
@@ -29,12 +31,18 @@
   PersistentVector (encode [v] (apply str (map encode v)))
   Keyword (encode [k] (str "{" (name k) "}")))
 
-(defn- to-path [x]
-  (let [swagger (-> x :handler :options :swagger)
-        options (-> x :handler :options)
-        resource (make-resource (-> x :handler :resource))
+(defn- to-path [route]
+  (infof "to-path arg is %s" route)
+  (let [swagger (-> route :handler :handler :options :swagger)
+        path (-> route :path)
+        options (-> route :handler :options)
+        resource (-> route :handler :handler :resource)
         methods (or (:methods options) (res/methods resource))]
-    [(apply str (map encode (:path x)))
+    (infof "path is %s" (apply str (map encode path)))
+    (infof "resource is %s" resource)
+    (infof "options are %s" options)
+    (infof "methods is %s" methods)
+    [(apply str (map encode path))
      (merge-with merge swagger
                  (into {}
                        (for [method methods]
@@ -61,6 +69,7 @@
 (defrecord Swagger [spec route handler]
   Matched
   (resolve-handler [this m]
+    (infof "spec is %s" spec)
     (cond (= (:remainder m) (str (or (:base-path spec) "") "/swagger.json"))
           ;; Return this, which satisfies Ring.
           ;; Truncate :remainder to ensure succeed actually succeeds.
@@ -87,5 +96,18 @@
     (handler req)))
 
 (defn swaggered [spec route]
-  (let [spec (merge spec {:paths (into {} (map to-path (route-seq route)))})]
+  (infof "swaggered, route is %s, spec is %s" route spec)
+  (let [spec (merge spec {:paths (into {} (map to-path (route-seq (unroll-route route))))})]
+    ;; TODO: Not sure about resource-leaf, use yada directly?
     (->Swagger spec route (resource-leaf (->SwaggerSpec spec (to-date (now)))))))
+
+(pprint
+ (let [route ["/hello" (yada "Hello World!")]]
+   (map to-path (route-seq (unroll-route route)))))
+
+(pprint
+ (swaggered {:info {:title "Hello World!"
+                    :version "0.0.1"
+                    :description "Demonstrating yada + swagger"}
+             :basePath "/hello-api"}
+            ["/hello" (yada "Hello World!")]))

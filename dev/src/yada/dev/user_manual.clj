@@ -374,9 +374,9 @@
 
       ["/"
        [["hello-api" (swaggered {:info {:title "Hello World!"
-                               :version "0.0.1"
-                               :description "Demonstrating yada + swagger"}
-                        :basePath "/hello-api"}
+                                        :version "0.0.1"
+                                        :description "Demonstrating yada + swagger"}
+                                 :basePath "/hello-api"}
                                 ["/hello" hello])]
         ["petstore-simple.json" (yada (json/decode (slurp (io/file "dev/resources/petstore/petstore-simple.json")))
                                       :representations [{:content-type #{"application/json"

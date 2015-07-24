@@ -7,15 +7,24 @@
   (:refer-clojure :exclude [partial])
   (:require
    [clojure.tools.logging :refer :all]
-   [yada.core :refer (yada invoke-with-initial-context k-bidi-match-context)]
+   [yada.core :refer (yada make-context)]
    [bidi.bidi :refer (Matched resolve-handler unresolve-handler context succeed)]
-   [bidi.ring :refer (Ring request)]))
+   [bidi.ring :refer (Ring request)])
+  (:import [yada.core Endpoint]))
+
+(def k-bidi-match-context :bidi/match-context)
 
 (def ^{:doc "This key is used to inject partial yada service options
   into bidi's matching-context, which is a map that is built up during
   bidi's matching process."}  k-options :yada/options)
 
 ;; Define a resource which can act as a handler in a bidi
+
+;; Let Endpoint extend bidi's Ring protocol
+(extend-type Endpoint
+  Ring
+  (request [this req m]
+    ((:handler this) req (make-context))))
 
 ;; A bidi endpoint that captures a path remainder as path-info
 (defrecord ResourceBranchEndpoint [resource options]
