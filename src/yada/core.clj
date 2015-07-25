@@ -495,6 +495,9 @@
                                     {"vary" (str/join ", " (filter string? (map {:charset "accept-charset"
                                                                                  :content-type "accept"}
                                                                                 vary)))})
+                                  (when true
+                                    {"access-control-allow-origin" "*"}
+                                    )
                                   (service/headers headers ctx))
 
                         ;; TODO :status and :headers should be implemented like this in all cases

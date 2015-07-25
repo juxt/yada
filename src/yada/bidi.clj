@@ -20,7 +20,7 @@
 
 ;; Define a resource which can act as a handler in a bidi
 
-;; Let Endpoint extend bidi's Ring protocol
+;; Let Endpoint satisfy bidi's Ring protocol
 (extend-type Endpoint
   Ring
   (request [this req m]
@@ -60,33 +60,6 @@
    (resource-branch resource {}))
   ([resource options]
    (->ResourceBranchEndpoint resource options)))
-
-#_(defrecord ResourceLeafEndpoint [resource options]
-  Matched
-  (resolve-handler [this m]
-    ;; Succeed with 'this' as the handler, because we satisfies Ring
-    ;; (below), so can be called by the handler created by bidi's
-    ;; make-handler function.
-    (succeed this m))
-  (unresolve-handler [this m]
-    (when (= this (:handler m)) ""))
-
-  ;; For testing, it can be useful to invoke this with a request, just
-  ;; as if it were a normal Ring handler function.
-  clojure.lang.IFn
-  (invoke [this req]
-    ((yada resource options) req))
-
-  Ring
-  (request [_ req match-context]
-    (let [handler (yada resource (merge (get match-context k-options) options))]
-      (handler req))))
-
-#_(defn resource-leaf
-  ([resource]
-   (resource-leaf resource {}))
-  ([resource options]
-   (->ResourceLeafEndpoint resource options)))
 
 (defn partial
   "Contextually bind a set of resource options to the match

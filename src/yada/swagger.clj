@@ -2,8 +2,8 @@
 
 (ns yada.swagger
   (:require
-   [bidi.bidi :refer (Matched resolve-handler unresolve-handler route-seq succeed unroll-route)]
-   [bidi.ring :refer (Ring)]
+   [bidi.bidi :refer (Matched resolve-handler unresolve-handler route-seq succeed unmatch-pair unroll-route)]
+   [bidi.ring :refer (Ring request make-handler)]
    [camel-snake-kebab :as csk]
    [cheshire.core :as json]
    [clj-time.coerce :refer (to-date)]
@@ -49,7 +49,7 @@
                          ;; TODO: Add parameters
                          ;; TODO: Add produces
                          ;; TODO: Add responses
-                         {method {:description "a method"
+                         {method {:description "another method"
                                   :produces ["text/plain"]}})))]))
 
 (defrecord SwaggerSpec [spec created-at]
@@ -66,7 +66,7 @@
   Get
   (get* [_ ctx] (rs/swagger-json spec)))
 
-(defrecord Swagger [spec route handler]
+(defrecord Swagger [spec route spec-handler]
   Matched
   (resolve-handler [this m]
     (infof "spec is %s" spec)
@@ -85,26 +85,30 @@
                                       (merge m {::spec spec}))))
 
   (unresolve-handler [this m]
+    (infof "unresolve handler, this is %s, m is %s" (into {} this) m)
     (if (= this (:handler m))
       (or (:base-path spec) "")
-      (unresolve-handler (:paths spec) m)))
+      (do
+        (infof "not a match with spec, calling to unresolve-handler on route: %s, m is %s" route m)
+        (unmatch-pair route m))))
 
   Ring
   (request [_ req match-context]
     ;; This yada resource has match-context in its lexical scope,
     ;; containing any yada/partial (or bidi/partial) entries.
-    (handler req))
+    (spec-handler req))
 
   ;; So that we can use the Swagger record as a Ring handler
-  #_clojure.lang.IFn
-  #_(invoke [_ req]
-    (let [ctx (make-context)]
-      (handler req ctx))))
+  clojure.lang.IFn
+  (invoke [this req]
+    (let [handler (make-handler ["" this])]
+      (handler req))))
 
 (defn swaggered [spec route]
   (infof "swaggered, route is %s, spec is %s" route spec)
   (let [spec (merge spec {:paths (into {} (map to-path (route-seq (unroll-route route))))})]
-    (->Swagger spec route (yada (->SwaggerSpec spec (to-date (now)))))))
+    (->Swagger spec route
+               (yada (->SwaggerSpec spec (to-date (now)))))))
 
 #_(pprint
    (swaggered {:info {:title "Hello World!"
