@@ -15,7 +15,7 @@
    [ring.swagger.swagger2 :as rs]
    [ring.util.response :refer (redirect)]
    [schema.core :as s]
-   [yada.core :refer (yada)]
+   [yada.core :refer (resource)]
    [yada.methods :refer (Get get*)]
    [yada.mime :as mime]
    [yada.resource :refer (Resource ResourceRepresentations ResourceConstructor platform-charsets make-resource) :as res]
@@ -108,7 +108,7 @@
   (infof "swaggered, route is %s, spec is %s" route spec)
   (let [spec (merge spec {:paths (into {} (map to-path (route-seq (unroll-route route))))})]
     (->Swagger spec route
-               (yada (->SwaggerSpec spec (to-date (now)))))))
+               (resource (->SwaggerSpec spec (to-date (now)))))))
 
 #_(pprint
    (swaggered {:info {:title "Hello World!"

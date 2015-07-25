@@ -5,7 +5,7 @@
             [clojure.test :refer :all]
             [clojure.tools.logging :refer :all]
             [ring.mock.request :refer [request]]
-            [yada.core :refer [yada]])
+            [yada.core :refer [resource]])
   (:import [java.io File BufferedInputStream ByteArrayInputStream]
            [java.util Date]))
 

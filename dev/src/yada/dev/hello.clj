@@ -1,6 +1,6 @@
 (ns yada.dev.hello
   (:require
-   [yada.yada :refer (yada)]
+   [yada.yada :refer (resource)]
    [yada.swagger :refer (swaggered)]
    [modular.ring :refer (WebRequestHandler)]))
 
@@ -12,7 +12,7 @@
                        :description "Demonstrating yada + swagger"}
                 :basePath ""
                 }
-               ["/hello" (yada "Hello World!\n")])))
+               ["/hello" (resource "Hello World!\n")])))
 
 (defn new-hello-api [& {:as opts}]
   (->HelloApi))

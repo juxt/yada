@@ -4,7 +4,7 @@
   (:require [yada.resources.url-resource :refer :all]
             [clojure.test :refer :all]
             [clojure.java.io :as io]
-            [yada.core :refer (yada)]
+            [yada.core :refer (resource)]
             [juxt.iota :refer [given]]
             [ring.mock.request :as mock]
             )
@@ -18,7 +18,7 @@
 
 (deftest resource-test
   (let [resource (io/resource "public/css/fonts.css")
-        handler (yada resource)
+        handler (yada.core/resource resource)
         response @(handler (mock/request :get "/"))]
     (given response
       identity :? some?

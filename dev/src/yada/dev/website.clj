@@ -11,7 +11,7 @@
             [schema.core :as s]
             yada.bidi
             yada.resources.file-resource
-            [yada.yada :refer (yada)]))
+            [yada.yada :refer (resource)]))
 
 (def titles
   {7230 "Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing"
@@ -27,7 +27,7 @@
    7240 "Prefer Header for HTTP"})
 
 (defn index [{:keys [*router templater]}]
-  (yada
+  (resource
    (fn [ctx]
      ;; TODO: Replace with template resource
      (render-template

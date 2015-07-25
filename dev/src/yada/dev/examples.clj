@@ -16,8 +16,8 @@
    [ring.mock.request :refer (request) :rename {request mock-request}]
    [ring.util.time :refer (format-date)]
    [schema.core :as s]
-   [yada.yada :refer (yada)]
-   [clojure.core.async :refer (go go-loop timeout <! >! chan)])
+   [clojure.core.async :refer (go go-loop timeout <! >! chan)]
+   yada.yada)
   (:import
    [java.util Date Calendar]))
 
@@ -694,9 +694,9 @@
   (let [res (eval (get-resource ex))
         opts (eval (get-options ex))]
     (cond
-      (and res opts) (yada res opts)
-      res (yada res)
-      opts (yada nil opts))))
+      (and res opts) (yada.yada/resource res opts)
+      res (yada.yada/resource res)
+      opts (yada.yada/resource nil opts))))
 
 (defn encode-data [data content-type]
   (case content-type

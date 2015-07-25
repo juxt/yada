@@ -4,13 +4,11 @@
    [clj-time.core :as time]
    [clj-time.coerce :refer (to-date)]
    [ring.util.time :refer (format-date)]
-   yada.resources.string-resource
    [clojure.test :refer :all]
    [clojure.java.io :as io]
-   [yada.core :refer [yada]]
+   [yada.yada :as yada]
    [ring.mock.request :refer [request]]
    [juxt.iota :refer [given]]))
-
 
 (deftest string-test
   (testing "Producing a Java string implies utf-8 charset"
@@ -23,13 +21,14 @@
     ;; that it can output these strings in utf-8.
     (let [resource "Hello World"
           handler
-          (yada resource
-                :representations [{:content-type #{"text/plain"}
-                                   ;; TODO: See comment above, this
-                                   ;; should not be necessary, somehow
-                                   ;; the charset should default to
-                                   ;; UTF-8 on strings, not sure how.
-                                   :charset #{"UTF-8"}}])
+          (yada/resource
+           resource
+           :representations [{:content-type #{"text/plain"}
+                              ;; TODO: See comment above, this
+                              ;; should not be necessary, somehow
+                              ;; the charset should default to
+                              ;; UTF-8 on strings, not sure how.
+                              :charset #{"UTF-8"}}])
           request (request :get "/")
           response @(handler request)]
       (given response
@@ -48,7 +47,7 @@
 (deftest hello-world-test
   (testing "hello-world"
     (let [resource "Hello World!"
-          handler (yada resource)
+          handler (yada/resource resource)
           request (request :get "/")
           response @(handler request)]
 
@@ -61,7 +60,7 @@
   (testing "if-last-modified"
     (time/do-at (time/minus (time/now) (time/days 6))
       (let [resource "Hello World!"
-            handler (yada resource)]
+            handler (yada/resource resource)]
 
         (time/do-at (time/minus (time/now) (time/days 3))
 
@@ -83,15 +82,15 @@
               :status := 304))))))
 
   (testing "safe-by-default"
-      (let [resource "Hello World!"
-            handler (yada resource)]
+    (let [resource "Hello World!"
+          handler (yada/resource resource)]
 
-        (doseq [method [:put :post :delete]]
-          (given @(handler (request method "/"))
-            :status := 405
-            [:headers "allow"] :!? nil?
-            [:headers "allow" parse-allow] := #{"GET" "HEAD" "OPTIONS"}
-            ))))
+      (doseq [method [:put :post :delete]]
+        (given @(handler (request method "/"))
+          :status := 405
+          [:headers "allow"] :!? nil?
+          [:headers "allow" parse-allow] := #{"GET" "HEAD" "OPTIONS"}
+          ))))
 
   #_(testing "wrap-in-atom"
       (let [resource (atom "Hello World!")

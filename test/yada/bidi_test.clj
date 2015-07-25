@@ -4,7 +4,7 @@
   (:require
    [clojure.test :refer :all]
    [byte-streams :as bs]
-   [yada.yada :refer (yada) :as yada]
+   [yada.yada :refer (resource) :as yada]
    ;; TODO: These resources should be loaded automatically via a yada ns
    yada.resources.string-resource
    [juxt.iota :refer (given)]
@@ -27,10 +27,10 @@
 
 (def api
   ["/api"
-   {"/status" (yada "API working!")
+   {"/status" (resource "API working!")
     "/hello" (fn [req] {:body "hello"})
-    "/protected" (secure {"/a" (yada "Secret area A")
-                          "/b" (yada "Secret area B")})}])
+    "/protected" (secure {"/a" (resource "Secret area A")
+                          "/b" (resource "Secret area B")})}])
 
 (deftest api-tests
   (let [h (-> api bidi/unroll-route make-handler)

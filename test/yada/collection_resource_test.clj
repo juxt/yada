@@ -8,7 +8,7 @@
    [clojure.java.io :as io]
    [ring.util.time :refer (parse-date format-date)]
    [juxt.iota :refer (given)]
-   [yada.yada :refer [yada]]
+   [yada.yada :refer [resource]]
    yada.resources.collection-resource))
 
 ;; Collections can be resources too, we should test them
@@ -16,7 +16,7 @@
 (deftest map-resource-test
   (testing "map"
     (let [resource {:name "Frank"}
-          handler (yada resource)
+          handler (yada.yada/resource resource)
           request (mock/request :get "/")
           response @(handler request)
           last-modified (parse-date (-> response :headers (get "last-modified")))]

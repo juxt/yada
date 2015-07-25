@@ -7,7 +7,7 @@
   (:refer-clojure :exclude [partial])
   (:require
    [clojure.tools.logging :refer :all]
-   [yada.core :refer (yada make-context)]
+   [yada.core :refer (resource make-context)]
    [bidi.bidi :refer (Matched resolve-handler unresolve-handler context succeed)]
    [bidi.ring :refer (Ring request)])
   (:import [yada.core Endpoint]))
@@ -41,7 +41,7 @@
   ;; as if it were a normal Ring handler function.
   clojure.lang.IFn
   (invoke [this req]
-    ((yada resource options) req))
+    ((yada.core/resource resource options) req))
 
   ;; TODO: We should be cafeful calling the (yada) fn unless absolutely
   ;; necessary, would be better to call it up-front - or pre-compile the
@@ -49,7 +49,7 @@
 
   Ring
   (request [_ req match-context]
-    (let [handler (yada resource (merge (get match-context k-options) options))]
+    (let [handler (yada.core/resource resource (merge (get match-context k-options) options))]
       (handler (let [rem (:remainder match-context)]
                  (when-let [path-info (:path-info req)]
                    (throw (ex-info "path-info already set on request" {:path-info path-info})))

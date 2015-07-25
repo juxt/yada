@@ -3,7 +3,7 @@
    [byte-streams :as bs]
    [clojure.edn :as edn]
    [clojure.test :refer :all]
-   [yada.yada :refer (yada)]
+   [yada.yada :as yada]
    [yada.resource :as res]
    [juxt.iota :refer (given)]
    [ring.mock.request :as mock]
@@ -13,7 +13,7 @@
    [clojure.tools.logging :refer :all]))
 
 (deftest post-test
-  (let [handler (yada
+  (let [handler (yada/resource
                  (just-methods
                   :post {:parameters {:form {:foo s/Str}}
                          :response (fn [ctx]
@@ -34,7 +34,7 @@
         [:body bs/to-string edn/read-string] := {:foo "bar"}))))
 
 (deftest post-test-with-query-params
-  (let [handler (yada
+  (let [handler (yada/resource
                  (just-methods
                   :post {:parameters {:query {:foo s/Str} :form {:bar s/Str}}
                          :response (fn [ctx] (pr-str (:parameters ctx)))}))]

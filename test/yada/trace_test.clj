@@ -5,13 +5,13 @@
    [clojure.java.io :as io]
    [clojure.test :refer :all]
    [ring.mock.request :refer [request]]
-   [yada.core :refer [yada]]
+   [yada.yada :as yada]
    [juxt.iota :refer (given)]))
 
 (deftest trace-test []
   (testing "Normal operation"
     (let [resource "Hello World!"
-          handler (yada resource)
+          handler (yada/resource resource)
           request (merge (request :trace "/")
                          {:body (java.io.ByteArrayInputStream. (.getBytes "Hello World!"))})
           response @(handler request)]
@@ -21,7 +21,7 @@
 
   ;; TODO: TRACE needs to be documented
   (testing "TRACE disabled"
-    (let [handler (yada "Hello World!" :trace false)
+    (let [handler (yada/resource "Hello World!" :trace false)
           request (request :trace "/")
           response @(handler request)]
       (given response

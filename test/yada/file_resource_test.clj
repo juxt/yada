@@ -12,7 +12,7 @@
    [ring.util.time :refer [parse-date format-date]]
    [schema.test :as st]
    ;;[yada.bidi :as yb]
-   [yada.core :refer [yada]]
+   [yada.yada :as yada]
    [yada.resource :as yst]
    [yada.resources.file-resource :refer :all]
    [juxt.iota :refer [given]])
@@ -30,7 +30,7 @@
 ;; Test an actual file resource
 (st/deftest file-test
   (let [resource (io/file "test/yada/state/test.txt")
-        handler (yada resource)
+        handler (yada/resource resource)
         request (request :get "/")
         response @(handler request)]
 
@@ -74,7 +74,7 @@
                          {:body (ByteArrayInputStream. (.getBytes (pr-str newstate)))}))]
 
           ;; If this resource didn't allow the PUT method, we'd get a 405.
-          (let [handler (yada f (update-in options [:methods] disj :put))]
+          (let [handler (yada/resource f (update-in options [:methods] disj :put))]
             (given @(handler (make-put))
               :status := 405))
 
@@ -82,7 +82,7 @@
           ;; should create the resource with the given content and
           ;; receive a 201.
 
-          (let [handler (yada f options)]
+          (let [handler (yada/resource f options)]
             (given @(handler (make-put))
               :status := 201
               :body :? nil?))
@@ -91,7 +91,7 @@
               "The file content after the PUT was not the same as that
                 in the request")
 
-          (let [handler (yada f options)]
+          (let [handler (yada/resource f options)]
             (given @(handler (request :get "/"))
               :status := 200
               [:headers "content-type"] := "application/edn"
@@ -120,7 +120,7 @@
   (let [dir (.toFile (java.nio.file.Files/createTempDirectory "yada" (make-array java.nio.file.attribute.FileAttribute 0)))]
     (is (exists? dir))
 
-    (let [handler (yada dir {:methods #{:get :head :put :delete}})]
+    (let [handler (yada/resource dir {:methods #{:get :head :put :delete}})]
 
       (testing "Start with 0 files"
         (given dir

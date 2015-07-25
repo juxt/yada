@@ -4,7 +4,7 @@
   (:require
    [clojure.test :refer :all]
    [clojure.string :as str]
-   [yada.yada :refer (yada)]
+   [yada.yada :as yada]
    [ring.mock.request :refer (request)]
    [juxt.iota :refer (given)]
    [schema.test :as st]
@@ -51,7 +51,7 @@
 
 (st/deftest vary-header-test []
   (let [resource "Hello World!"
-        handler (yada resource :produces "text/plain")
+        handler (yada/resource resource :produces "text/plain")
         request (request :head "/")
         response @(handler request)]
     (given response

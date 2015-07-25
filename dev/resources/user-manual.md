@@ -112,7 +112,9 @@ Let's introduce yada properly by writing some code. Let's start with some state,
 We pass the string as a single argument to yada's `yada` function, and yada returns a web _resource_.
 
 ```clojure
-(yada "Hello World!")
+(require '[yada.yada :as yada])
+
+(yada/resource "Hello World!")
 ```
 
 This web resource can be used as a Ring handler, for example, in a
@@ -124,7 +126,7 @@ Compojure route defintion.
 
 (run-jetty
   (GET "/hello" []
-    (yada "Hello World!")))
+    (yada/resource "Hello World!")))
 ```
 
 Once we have bound this handler to the path `/hello`, we're able to make the following HTTP request :-
@@ -283,7 +285,7 @@ reference, swapping in different Java strings.
 To demonstrate this, yada contains support for atoms (but you would usually employ a durable implementation).
 
 ```clojure
-(yada (atom "Hello World!"))
+(yada/resource (atom "Hello World!"))
 ```
 
 We can now make another `OPTIONS` request to see whether `PUT` is available.
@@ -354,7 +356,7 @@ response body to be generated and then truncated. This means that HEAD requests 
 ### Parameterized Hello World!
 
 ```clojure
-(yada (fn [ctx] ...))
+(yada/resource (fn [ctx] ...))
 ```
 
 ### An attempt to get the string gzip compressed
@@ -447,7 +449,7 @@ Here is the actual code that tells yada about Java strings (comments removed).
 Recall the _Hello World!_ example.
 
 ```clojure
-(yada "Hello World!")
+(yada/resource "Hello World!")
 ```
 
 yada calls `make-resource` on the argument. This declaration causes a new instance of the `StringResource` record to be created.

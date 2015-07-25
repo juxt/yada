@@ -5,12 +5,12 @@
    [clojure.java.io :as io]
    [clojure.test :refer :all]
    [ring.mock.request :refer [request]]
-   [yada.core :refer [yada]]
+   [yada.yada :as yada]
    [juxt.iota :refer (given)]))
 
 (deftest head-test []
   (let [resource "Hello World!"
-        handler (yada resource :produces "text/plain")
+        handler (yada/resource resource :produces "text/plain")
         request (request :head "/")
         response @(handler request)]
     (given response

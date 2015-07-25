@@ -18,7 +18,7 @@
    [modular.template :as template :refer (render-template)]
    [modular.component.co-dependency :refer (co-using)]
    [yada.dev.examples :refer (get-title get-resource get-options get-path get-path-args get-query-string get-request expected-response get-test-function external? make-example-handler encode-data)]
-   [yada.yada :refer (yada)]
+   [yada.yada :refer (resource)]
    [yada.mime :as mime]
    [yada.resource :as res]
    [yada.swagger :refer (swaggered)]
@@ -367,8 +367,8 @@
   (routes [component]
     (let [xbody (:xbody component)
           examples (:examples component)
-          hello (yada "Hello World!\n")
-          hello-atom (yada (atom "Hello World!\n"))
+          hello (resource "Hello World!\n")
+          hello-atom (resource (atom "Hello World!\n"))
           hello-date (-> hello :resource (res/last-modified nil))
           hello-date-after (java.util.Date/from (.plusMillis (.toInstant hello-date) 2000))]
 
@@ -379,11 +379,11 @@
                                  :basePath "/hello-api"}
                                 ["/hello" hello])]
 
-        ["petstore-simple.json" (yada (json/decode (slurp (io/file "dev/resources/petstore/petstore-simple.json")))
-                                      :representations [{:content-type #{"application/json"
-                                                                         "text/html;q=0.9"
-                                                                         "application/edn;q=0.8"}
-                                                         :charset #{"UTF-8"}}])]
+        ["petstore-simple.json" (resource (json/decode (slurp (io/file "dev/resources/petstore/petstore-simple.json")))
+                                          :representations [{:content-type #{"application/json"
+                                                                             "text/html;q=0.9"
+                                                                             "application/edn;q=0.8"}
+                                                             :charset #{"UTF-8"}}])]
 
         ["hello" hello]
         ["hello-atom" hello-atom]
@@ -415,15 +415,15 @@
               ;; perhaps the use of 'fetch functions' is a placeholder for
               ;; a better design.
               (->
-               (yada (fn [ctx]
-                       (body component
-                             (post-process-doc component xbody (into {} examples) config)
-                             (assoc config
-                                    :hello-date (rt/format-date hello-date)
-                                    :hello-date-after (rt/format-date hello-date-after)
-                                    :now-date (rt/format-date (java.util.Date.)))))
-                     :representations [{:content-type #{"text/html"} :charset #{"utf-8"}}]
-                     :last-modified (io/file "dev/resources/user-manual.md"))
+               (resource (fn [ctx]
+                           (body component
+                                 (post-process-doc component xbody (into {} examples) config)
+                                 (assoc config
+                                        :hello-date (rt/format-date hello-date)
+                                        :hello-date-after (rt/format-date hello-date-after)
+                                        :now-date (rt/format-date (java.util.Date.)))))
+                         :representations [{:content-type #{"text/html"} :charset #{"utf-8"}}]
+                         :last-modified (io/file "dev/resources/user-manual.md"))
                (tag ::user-manual))))]
 
           ["examples/"
@@ -434,7 +434,7 @@
                               (tag
                                (keyword (basename ex))))]))]
           ["tests.html"
-           (-> (yada (fn [ctx] (tests component examples))
+           (-> (resource (fn [ctx] (tests component examples))
                      :representations [{:content-type #{"text/html"}
                                         :charset #{"utf-8"}}])
                (tag ::tests))]]]]])))

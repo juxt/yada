@@ -526,7 +526,7 @@
                               [:p (str %)]
                               [:pre (with-out-str (apply str (interpose "\n" (seq (.getStackTrace %)))))]])})))))))))
 
-(defn yada
+(defn resource
   "The Yada API. The first form takes the resource."
   ([arg & otherargs]
    (apply make-endpoint

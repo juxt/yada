@@ -8,7 +8,7 @@
    [bidi.bidi :refer (match-route routes)]
    [bidi.ring :refer (make-handler)]
    [clojure.test :refer :all]
-   [yada.yada :refer (yada) :as yada]
+   [yada.yada :as yada]
    [juxt.iota :refer (given)]
    [manifold.deferred :as d]
    [modular.test :refer (with-system-fixture *system*)]
@@ -16,7 +16,7 @@
    [ring.mock.request :as mock]
    [yada.dev.user-api :refer (new-verbose-user-api)]
    [yada.dev.database :refer (new-database)]
-   yada.resources.collection-resource
+
    ))
 
 (defn new-system
