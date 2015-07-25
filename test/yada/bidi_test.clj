@@ -8,7 +8,7 @@
    ;; TODO: These resources should be loaded automatically via a yada ns
    yada.resources.string-resource
    [juxt.iota :refer (given)]
-   #_[yada.bidi :refer (resource-leaf)]
+   yada.bidi
    [bidi.bidi :as bidi :refer (Matched compile-route succeed context)]
    [bidi.ring :refer (make-handler Ring)]
    [ring.mock.request :refer (request)]))
