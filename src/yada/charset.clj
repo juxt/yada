@@ -1,3 +1,5 @@
+;; Copyright © 2015, JUXT LTD.
+
 (ns yada.charset
   (:require [clojure.java.io :as io]
             [clojure.string :as str]

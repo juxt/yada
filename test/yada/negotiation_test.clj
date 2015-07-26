@@ -19,14 +19,13 @@
     "image/*,text/*" ["image/png;q=0.8" "image/jpeg;q=0.9"] => "image/jpeg;q=0.9"
     "text/*;q=0.3, text/html;q=0.7, text/html;level=1, text/html;level=2;q=0.4, */*;q=0.5  " ["text/html;level=1" "text/html"] => "text/html;level=1"
     "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
-    ["text/html;charset=utf-8"] => "text/html;charset=utf-8"
-    ))
+    ["text/html;charset=utf-8"] => "text/html;charset=utf-8"))
 
 ;;    The special value "*", if present in the Accept-Charset field,
 ;;    matches every charset that is not mentioned elsewhere in the
 ;;    Accept-Charset field.  If no "*" is present in an Accept-Charset
 ;;    field, then any charsets not explicitly mentioned in the field are
-;; considered "not acceptable" to the client.
+;; considered "not acceptable" to the client.  (need a test for this)
 
 ;; A request without any Accept-Charset header field implies that the
 ;;    user agent will accept any charset in response.  Most general-purpose
@@ -44,8 +43,7 @@
     nil ["utf-8;q=0.8" "Shift_JIS;q=1.0"] ["Shift_JIS" "Shift_JIS"]
     nil ["utf-8;q=0.8" "Shift_JIS;q=0.2"] ["utf-8" "utf-8"]
     nil yada.resource/platform-charsets ["UTF-8" "UTF-8"]
-    "dummyfox" ["utf-8;q=0.8" "Shift_JIS;q=1.0"] nil
-    ))
+    "dummyfox" ["utf-8;q=0.8" "Shift_JIS;q=1.0"] nil))
 
 (st/deftest method-test
   (testing "single option matches"
@@ -90,8 +88,7 @@
       :status := nil
       [:content-type :type] := "text"
       [:content-type :subtype] := "plain"
-      [:content-type :parameters] := {"charset" "UTF-8"}
-      ))
+      [:content-type :parameters] := {"charset" "UTF-8"}))
 
   (testing "charset not applied when it shouldn't be"
     ;; according to http://tools.ietf.org/html/rfc6657
@@ -108,20 +105,7 @@
       :status := nil
       [:content-type :type] := "text"
       [:content-type :subtype] := "html"
-      [:content-type :parameters] := {}
-      )))
-
-#_(let [rep {:method #{:get :head}
-           :content-type #{"text/html"}}]
-  (merge
-   (select-keys rep [:method])
-   (when-let [ct (:content-type rep)]
-     {:content-type (set (map mime/string->media-type ct))})
-   (when-let [cs (:charset rep)]
-     {:content-type (set (map charset/to-charset-map cs))})))
-
-;;   (update-in [:content-type] #(set (map mime/string->media-type %)))
-;;   (update-in [:charset] #(set (map charset/to-charset-map %)))
+      [:content-type :parameters] := {})))
 
 (st/deftest charset-preferred-over-none
   "Ensure that an option with a charset is preferred over an option with
@@ -209,21 +193,16 @@
     interpret-negotiation := {}
     ))
 
-#_(interpret-negotiation
-   (first
-    (negotiate
-     {:method :get :accept "text/html"}
-     [{:method #{:get :head}
-       :content-type #{"image/png"}}
-      {:method #{:put :delete}}
-      ])))
+;; Languages - TODO: Improve tests
+(st/deftest language-test
+  (is (= {:method :get,
+          :request {:method :get, :accept-language "en,jp"},
+          :language "en"}
+         (first (negotiate
+                 {:method :get
+                  :accept-language "en,jp"}
+                 [{:language #{"de"}}
+                  {:language #{"en"}}
+                  ])))))
 
-
-#_(interpret-negotiation
-   (first
-    (negotiate
-     {:method :put :accept "text/html"}
-     [{:method #{:get :head}
-       :content-type #{"image/png"}}
-      {:method #{:put :delete}}
-      ])))
+;; TODO: Accept-Encoding

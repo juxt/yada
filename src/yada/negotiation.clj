@@ -1,6 +1,7 @@
 (ns yada.negotiation
   (:require
    [yada.mime :as mime]
+   [yada.language :as lang]
    [yada.charset :as cs]
    [clojure.tools.logging :refer :all :exclude [trace]]
    [clojure.string :as str]
@@ -116,12 +117,20 @@
      (map cs/to-charset-map (map str/trim (str/split accept-charset-header #"\s*,\s*"))))
    (map cs/to-charset-map candidates)))
 
+;; Language
+(defn negotiate-language [accept-language-header candidates]
+  (java.util.Locale/lookupTag
+   (java.util.Locale$LanguageRange/parse accept-language-header)
+   (seq candidates)))
+
+;; ------------------------------------------------------------------------
 ;; Unified negotiation
 
 (s/defschema RequestInfo
   {:method s/Keyword
    (s/optional-key :accept) s/Str       ; Accept header value
    (s/optional-key :accept-charset) s/Str ; Accept-Charset header value
+   (s/optional-key :accept-language) s/Str ; Accept-Charset header value
    })
 
 (s/defschema NegotiationResult
@@ -137,30 +146,37 @@
                                             :parameters {s/Str s/Str}
                                             :weight s/Num})
    (s/optional-key :charset) (s/maybe (s/pair s/Str "known-by-client" s/Str "known-by-server"))
+   (s/optional-key :language) (s/maybe s/Str)
    :request RequestInfo})
 
 (s/defschema ServerAcceptable
   {(s/optional-key :method) #{s/Keyword}
    (s/optional-key :content-type) #{MediaTypeMap}
-   (s/optional-key :charset) #{CharsetMap}})
+   (s/optional-key :charset) #{CharsetMap}
+   (s/optional-key :language) #{s/Str}})
+
+(defn merge-language [m accept-language langs]
+  (when-let [lang (negotiate-language accept-language langs)]
+    (merge m {:language lang})))
 
 (s/defn acceptable?
   [request :- RequestInfo
    server-acceptable :- ServerAcceptable]
   :- NegotiationResult
+  ;; If server-acceptable specifies a set of methods, find a
+  ;; match, otherwise match on the request method so that
+  ;; server-acceptable method guards are strictly optional.
   (when-let [method ((or (:method server-acceptable) identity) (:method request))]
-    (merge
-     {:method method
-      :request request}
-     ;; If server-acceptable specifies a set of methods, find a
-     ;; match, otherwise match on the request method so that
-     ;; server-acceptable method guards are strictly optional.
-     (when method
-       (when-let [cts (:content-type server-acceptable)]
-         (let [content-type (negotiate-content-type (or (:accept request) "*/*") cts)]
-           (merge
-            {:content-type content-type}
-            (when content-type {:charset (negotiate-charset (:accept-charset request) (:charset server-acceptable))}))))))))
+    (cond->
+        (when-let [cts (:content-type server-acceptable)]
+          (let [content-type (negotiate-content-type (or (:accept request) "*/*") cts)]
+            (merge
+             {:content-type content-type}
+             (when content-type {:charset (negotiate-charset (:accept-charset request) (:charset server-acceptable))})
+             )))
+      true (merge {:method method :request request})
+      (:accept-language request) (merge-language (:accept-language request) (:language server-acceptable))
+      )))
 
 (s/defn negotiate
   "Return a sequence of negotiation results, ordered by
