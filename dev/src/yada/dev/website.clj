@@ -52,7 +52,14 @@
                               (path-for @*router :yada.dev.user-api/user-api)
                               )}
                   "Swagger UI"]
-             " - to demonstrate Swagger integration"]]]))}))
+             " - to demonstrate Swagger integration"]
+            [:li [:a {:href
+                      (format "%s/index.html?url=%s/swagger.json"
+                              (path-for @*router :swagger-ui)
+                              (path-for @*router :hello-api)
+                              )}
+                  "Swagger UI (hello)"]
+             ]]]))}))
    :representations [{:content-type #{"text/html"}
                       :charset #{"utf-8"}
                       }]))

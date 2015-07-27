@@ -98,7 +98,9 @@ taken care of automatically, leaving you time to focus on other aspects
 of your application. And you end up with less networking code to write
 and maintain.
 
-It gives you the option to exploit the asynchronous features of modern web servers, to achieve greater scaleability for Clojure-powered your websites and APIs.
+It gives you the option to exploit the asynchronous features of modern
+web servers, to achieve greater scaleability for Clojure-powered your
+websites and APIs.
 
 Above all, yada is data-centric, letting you specify your web resources
 as data. This has some compelling advantages, such as being able to

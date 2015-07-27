@@ -1,7 +1,6 @@
 (ns yada.negotiation
   (:require
    [yada.mime :as mime]
-   [yada.language :as lang]
    [yada.charset :as cs]
    [clojure.tools.logging :refer :all :exclude [trace]]
    [clojure.string :as str]
@@ -117,11 +116,14 @@
      (map cs/to-charset-map (map str/trim (str/split accept-charset-header #"\s*,\s*"))))
    (map cs/to-charset-map candidates)))
 
-;; Language
+(defn negotiate-encoding [accept-encoding-header candidates]
+  (throw (ex-info "TODO" {})))
+
 (defn negotiate-language [accept-language-header candidates]
-  (java.util.Locale/lookupTag
-   (java.util.Locale$LanguageRange/parse accept-language-header)
-   (seq candidates)))
+  (when candidates
+    (java.util.Locale/lookupTag
+     (java.util.Locale$LanguageRange/parse accept-language-header)
+     (seq candidates))))
 
 ;; ------------------------------------------------------------------------
 ;; Unified negotiation
@@ -130,7 +132,8 @@
   {:method s/Keyword
    (s/optional-key :accept) s/Str       ; Accept header value
    (s/optional-key :accept-charset) s/Str ; Accept-Charset header value
-   (s/optional-key :accept-language) s/Str ; Accept-Charset header value
+   (s/optional-key :accept-encoding) s/Str ; Accept-Encoding header value
+   (s/optional-key :accept-language) s/Str ; Accept-Language header value
    })
 
 (s/defschema NegotiationResult
@@ -146,6 +149,7 @@
                                             :parameters {s/Str s/Str}
                                             :weight s/Num})
    (s/optional-key :charset) (s/maybe (s/pair s/Str "known-by-client" s/Str "known-by-server"))
+   (s/optional-key :encoding) (s/maybe s/Str)
    (s/optional-key :language) (s/maybe s/Str)
    :request RequestInfo})
 
@@ -153,7 +157,12 @@
   {(s/optional-key :method) #{s/Keyword}
    (s/optional-key :content-type) #{MediaTypeMap}
    (s/optional-key :charset) #{CharsetMap}
+   (s/optional-key :encoding) #{s/Str}
    (s/optional-key :language) #{s/Str}})
+
+(defn merge-encoding [m accept-encoding encodings]
+  (when-let [encoding (negotiate-encoding accept-encoding encodings)]
+    (merge m {:encoding encoding})))
 
 (defn merge-language [m accept-language langs]
   (when-let [lang (negotiate-language accept-language langs)]
@@ -175,6 +184,7 @@
              (when content-type {:charset (negotiate-charset (:accept-charset request) (:charset server-acceptable))})
              )))
       true (merge {:method method :request request})
+      (:accept-encoding request) (merge-encoding (:accept-encoding request) (:encoding server-acceptable))
       (:accept-language request) (merge-language (:accept-language request) (:language server-acceptable))
       )))
 
@@ -187,7 +197,9 @@
   :- [NegotiationResult]
   (->> server-acceptables
        (keep (partial acceptable? request))
-       (sort-by (juxt (comp :weight :content-type) (comp :charset)) (comp - compare))))
+       (sort-by (juxt (comp :weight :content-type) (comp :charset)
+                      ;; TODO: Add encoding and language
+                      ) (comp - compare))))
 
 (defn add-charset? [mt]
   (and (= (:type mt) "text")
@@ -199,44 +211,85 @@
 
 (s/defn vary [method :- s/Keyword
               server-acceptables :- [ServerAcceptable]]
+  (infof "Caling vary with method %s server-acceptables %s" method server-acceptables)
   (let [server-acceptables (filter #((or (:method %) identity) method) server-acceptables)
         varies (remove nil?
-                       (list
-                        (when-let [ct (apply set/union (map :content-type server-acceptables))]
+                       [(when-let [ct (apply set/union (map :content-type server-acceptables))]
                           (when (> (count ct) 1) :content-type))
                         (when-let [cs (apply set/union (map :charset server-acceptables))]
-                          (when (> (count cs) 1) :charset)
-                          )))]
-    (when (not-empty varies) (set varies))))
+                          (when (> (count cs) 1) :charset))
+                        (when-let [encodings (apply set/union (map :encoding server-acceptables))]
+                          (when (> (count encodings) 1) :encoding))
+                        (when-let [languages (apply set/union (map :language server-acceptables))]
+                          (when (> (count languages) 1) :language))])]
+    (infof "varis is %s" (seq varies))
+    (when (not-empty varies)
+      (set varies))))
+
+#_(vary :get (parse-representations [{:content-type #{"text/plain"}
+                         :language #{"en" "zh-CH"}
+                         :charset #{"UTF-8"}}]))
+
+#_(parse-representations [{:content-type #{"text/plain"}
+                         :language #{"en" "zh-CH"}
+                         :charset #{"UTF-8"}}])
 
 (s/defn interpret-negotiation
   "Take a negotiated result and determine status code and message. If
   unacceptable (to the client) content-types yield 406. Unacceptable (to
   the server) content-types yield 415- Unsupported Media Type"
   ;; TODO: Result should not be s/maybe
-  [{:keys [method content-type charset request] :as result} :- (s/maybe NegotiationResult)]
+  [{:keys [method content-type charset encoding language request] :as result} :- (s/maybe NegotiationResult)]
   :- {(s/optional-key :status) s/Int
       (s/optional-key :message) s/Str
       (s/optional-key :content-type) MediaTypeMap
       (s/optional-key :client-charset) s/Str
-      (s/optional-key :server-charset) s/Str}
+      (s/optional-key :server-charset) s/Str
+      (s/optional-key :encoding) s/Str
+      (s/optional-key :language) s/Str}
 
   (cond
-    (and (contains? result :content-type) (nil? content-type)) {:status 406 :message "Not Acceptable (content-type)"}
-    (and (:accept-charset request) (contains? result :charset) (nil? charset)) {:status 406 :message "Not Acceptable (charset)"}
+    (and (contains? result :content-type)
+         (nil? content-type))
+    {:status 406 :message "Not Acceptable (content-type)"}
 
-    :otherwise (merge {}
-                      (when content-type
-                        {:content-type
-                         (if (and charset
-                                  (add-charset? content-type)
-                                  (not (some-> content-type :parameters (get "charset"))))
-                           (assoc-in content-type [:parameters "charset"] (first charset))
-                           content-type)})
-                      (when charset
-                        {:client-charset (first charset)
-                         :server-charset (second charset)
-                         }))))
+    (and (:accept-charset request)
+         (contains? result :charset)
+         (nil? charset))
+    {:status 406 :message "Not Acceptable (charset)"}
+
+    ;; Note: We don't send a 406 if there is no negotiated encoding,
+    ;; instead we use the 'identity' encoding, as per the spec.
+
+    (and (:accept-language request)
+         (contains? result :language)
+         (nil? language))
+    {:status 406 :message "Not Acceptable (language)"}
+
+    :otherwise
+    (merge
+     {}
+     (when content-type
+       {:content-type
+        (if (and charset
+                 (add-charset? content-type)
+                 (not (some-> content-type :parameters (get "charset"))))
+          (assoc-in content-type [:parameters "charset"] (first charset))
+          content-type)})
+     ;; Charsets can be known by aliases, so each party
+     ;; is given the exact name that they have
+     ;; specified the charset in, rather than the
+     ;; canonical name of the charset. A party should
+     ;; use the canonical name if possible, but if it
+     ;; doesn't, there might be a valid reason why not
+     ;; and we should honor its decision.
+     (when charset {:client-charset (first charset)
+                    :server-charset (second charset)})
+     ;; It's true that the spec. says to default to
+     ;; 'identity', but this is really the same as not
+     ;; negotiating an encoding at all
+     (when encoding {:encoding encoding})
+     (when language {:language language}))))
 
 
 (s/defn extract-request-info [req] :- RequestInfo
@@ -244,7 +297,11 @@
          (when-let [header (get-in req [:headers "accept"])]
            {:accept header})
          (when-let [header (get-in req [:headers "accept-charset"])]
-           {:accept-charset header})))
+           {:accept-charset header})
+         (when-let [header (get-in req [:headers "accept-encoding"])]
+           {:accept-encoding header})
+         (when-let [header (get-in req [:headers "accept-language"])]
+           {:accept-language header})))
 
 ;; TODO: Should also allow non-set specifications: {:method :get :content-type "text/html}
 ;; TODO: Should also pre-parsed specifications: {:method :get :content-type MimeTypeMap}
@@ -259,9 +316,20 @@
         (when-let [ct (:content-type rep)]
           {:content-type (set (map mime/string->media-type ct))})
         (when-let [cs (:charset rep)]
-          {:charset (set (map cs/to-charset-map cs))})))
+          {:charset (set (map cs/to-charset-map cs))})
+        (when-let [enc (:encoding rep)]
+          {:encoding (set enc)})
+        (when-let [langs (:language rep)]
+          {:language (set langs)})))
      reps)))
 
+(defn to-vary-header [vary]
+  (str/join ", "
+            (filter string? (map {:charset "accept-charset"
+                                  :content-type "accept"
+                                  :encoding "accept-encoding"
+                                  :language "accept-language"}
+                                 vary))))
 
 
 ;; TODO: see rfc7231.html#section-3.4.1

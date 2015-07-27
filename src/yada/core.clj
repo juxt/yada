@@ -389,6 +389,7 @@
                        (d/error-deferred (ex-info "" (merge negotiated {::http-response true})))
 
                        (let [vary (negotiation/vary method representations)]
+                         (infof "neg vary is %s" vary)
                          (cond-> ctx
                            negotiated (update-in [:response] merge negotiated)
                            ;; TODO: Here is some duplication -
@@ -492,12 +493,11 @@
                                   (when-let [cl (get-in ctx [:response :content-length])]
                                     {"content-length" cl})
                                   (when-let [vary (get-in ctx [:response :vary])]
-                                    {"vary" (str/join ", " (filter string? (map {:charset "accept-charset"
-                                                                                 :content-type "accept"}
-                                                                                vary)))})
-                                  (when true
-                                    {"access-control-allow-origin" "*"}
-                                    )
+                                    (infof "response vary is %s" vary)
+                                    {"vary" (negotiation/to-vary-header vary)})
+                                  #_(when true
+                                      {"access-control-allow-origin" "*"})
+
                                   (service/headers headers ctx))
 
                         ;; TODO :status and :headers should be implemented like this in all cases

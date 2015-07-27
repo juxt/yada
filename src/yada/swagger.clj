@@ -69,7 +69,6 @@
 (defrecord Swagger [spec route spec-handler]
   Matched
   (resolve-handler [this m]
-    (infof "spec is %s" spec)
     (cond (= (:remainder m) (str (or (:base-path spec) "") "/swagger.json"))
           ;; Return this, which satisfies Ring.
           ;; Truncate :remainder to ensure succeed actually succeeds.
@@ -85,12 +84,9 @@
                                       (merge m {::spec spec}))))
 
   (unresolve-handler [this m]
-    (infof "unresolve handler, this is %s, m is %s" (into {} this) m)
     (if (= this (:handler m))
       (or (:base-path spec) "")
-      (do
-        (infof "not a match with spec, calling to unresolve-handler on route: %s, m is %s" route m)
-        (unmatch-pair route m))))
+      (unmatch-pair route m)))
 
   Ring
   (request [_ req match-context]

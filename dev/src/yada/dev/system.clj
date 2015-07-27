@@ -72,7 +72,7 @@
          (make new-web-resources config
                :key :swagger-ui
                :uri-context "/swagger-ui"
-               :resource-prefix "META-INF/resources/webjars/swagger-ui/2.1.8-M1")))
+               :resource-prefix "META-INF/resources/webjars/swagger-ui/2.1.0")))
 
 (defn router-components [system config]
   (assoc system
@@ -131,9 +131,9 @@
   {:http-server {:request-handler :router}
    :external-server {:request-handler :external-router}
    :user-manual {:templater :clostache-templater}
-   :router [:user-api
+   :router [:swagger-ui
+            :user-api
             :user-manual
-            :swagger-ui
             :website
             :jquery :bootstrap
             :web-resources

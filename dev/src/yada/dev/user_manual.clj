@@ -373,11 +373,12 @@
           hello-date-after (java.util.Date/from (.plusMillis (.toInstant hello-date) 2000))]
 
       ["/"
-       [["hello-api" (swaggered {:info {:title "Hello World!"
-                                        :version "0.0.1"
-                                        :description "Demonstrating yada + swagger"}
-                                 :basePath "/hello-api"}
-                                ["/hello" hello])]
+       [["hello-api" (-> (swaggered {:info {:title "Hello World!"
+                                            :version "0.0.1"
+                                            :description "Demonstrating yada + swagger"}
+                                     }
+                                    ["/hello" hello])
+                         (tag :hello-api))]
 
         ["petstore-simple.json" (resource (json/decode (slurp (io/file "dev/resources/petstore/petstore-simple.json")))
                                           :representations [{:content-type #{"application/json"
@@ -387,6 +388,23 @@
 
         ["hello" hello]
         ["hello-atom" hello-atom]
+
+        ["hello2" (resource (fn [ctx] (format "Hi %s\n" (get-in ctx [:parameters :object])))
+                            :parameters {:get {:query {:object String}}})]
+
+        ["hello3" (resource (fn [ctx] (case (get-in ctx [:response :representation :language])
+                                       "en" "Hello World!\n"
+                                       "zh-ch" "你好世界!\n"))
+                            :parameters {:get {:query {:object String}}}
+                            ;; TODO: Where is the content-type response header?
+                            ;; TODO: Put tests around these (after documentation)
+                            :representations [{:content-type #{"text/plain"}
+                                               :language #{"en" "zh-CH"}
+                                               :charset #{"UTF-8"}}])]
+
+        ["hello4" (resource (fn [ctx] "你好世界!\n")
+                            )]
+
         ["user-manual"
          [[".html"
            (->
