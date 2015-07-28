@@ -2,6 +2,7 @@
   (:require
    [yada.mime :as mime]
    [yada.charset :as cs]
+   [yada.util :refer (http-token)]
    [clojure.tools.logging :refer :all :exclude [trace]]
    [clojure.string :as str]
    [schema.core :as s]
@@ -70,7 +71,7 @@
            (some? (cs/charset acceptable-charset))
            (= (cs/charset acceptable-charset)
               (cs/charset candidate)))
-          ;; As a stretch, let's see if their canonical names match
+          ;; Finally, let's see if their canonical names match
           (and
            (some? (cs/canonical-name acceptable-charset))
            (= (cs/canonical-name acceptable-charset)
@@ -116,14 +117,36 @@
      (map cs/to-charset-map (map str/trim (str/split accept-charset-header #"\s*,\s*"))))
    (map cs/to-charset-map candidates)))
 
+(defn parse-encoding [s]
+  (let [[_ encoding q]
+        (re-matches (re-pattern (str "("  "(?:" http-token "|\\*)" ")(?:(?:;q=)(" http-token "))?"))
+                    s)]
+    {:encoding encoding
+     :weight (if q (try
+                     (Float/parseFloat q)
+                     (catch java.lang.NumberFormatException e
+                       1.0))
+                 1.0)}))
+
 (defn negotiate-encoding [accept-encoding-header candidates]
-  (throw (ex-info "TODO" {})))
+  (when accept-encoding-header
+    (let [acceptable-encodings (map parse-encoding (map str/trim (str/split accept-encoding-header #"\s*,\s*")))]
+      ;; TODO
+      )))
 
 (defn negotiate-language [accept-language-header candidates]
-  (when candidates
-    (java.util.Locale/lookupTag
-     (java.util.Locale$LanguageRange/parse accept-language-header)
-     (seq candidates))))
+  (infof "candidates: %s" candidates)
+  (infof "accept-language-header: %s" accept-language-header)
+  (let [res (when candidates
+              (java.util.Locale/lookupTag
+               (or
+                (some-> accept-language-header java.util.Locale$LanguageRange/parse)
+                (java.util.Locale$LanguageRange/parse (str/join "," candidates)))
+               (seq candidates)))
+        ]
+    (infof "res is %s" res)
+    res))
+
 
 ;; ------------------------------------------------------------------------
 ;; Unified negotiation
@@ -166,6 +189,7 @@
 
 (defn merge-language [m accept-language langs]
   (when-let [lang (negotiate-language accept-language langs)]
+    (infof "negotiated language is %s" lang)
     (merge m {:language lang})))
 
 (s/defn acceptable?
@@ -185,7 +209,7 @@
              )))
       true (merge {:method method :request request})
       (:accept-encoding request) (merge-encoding (:accept-encoding request) (:encoding server-acceptable))
-      (:accept-language request) (merge-language (:accept-language request) (:language server-acceptable))
+      true (merge-language (:accept-language request) (:language server-acceptable))
       )))
 
 (s/defn negotiate
@@ -193,8 +217,9 @@
   preference (client first, then server). The request and each
   server-acceptable is presumed to have been pre-validated."
   [request :- RequestInfo
-   server-acceptables :- [ServerAcceptable]]
+   server-acceptables :- #{ServerAcceptable}]
   :- [NegotiationResult]
+  (infof "negotiate: request is %s, server-acceptables is %s" request server-acceptables)
   (->> server-acceptables
        (keep (partial acceptable? request))
        (sort-by (juxt (comp :weight :content-type) (comp :charset)
@@ -211,7 +236,6 @@
 
 (s/defn vary [method :- s/Keyword
               server-acceptables :- [ServerAcceptable]]
-  (infof "Caling vary with method %s server-acceptables %s" method server-acceptables)
   (let [server-acceptables (filter #((or (:method %) identity) method) server-acceptables)
         varies (remove nil?
                        [(when-let [ct (apply set/union (map :content-type server-acceptables))]
@@ -222,17 +246,8 @@
                           (when (> (count encodings) 1) :encoding))
                         (when-let [languages (apply set/union (map :language server-acceptables))]
                           (when (> (count languages) 1) :language))])]
-    (infof "varis is %s" (seq varies))
     (when (not-empty varies)
       (set varies))))
-
-#_(vary :get (parse-representations [{:content-type #{"text/plain"}
-                         :language #{"en" "zh-CH"}
-                         :charset #{"UTF-8"}}]))
-
-#_(parse-representations [{:content-type #{"text/plain"}
-                         :language #{"en" "zh-CH"}
-                         :charset #{"UTF-8"}}])
 
 (s/defn interpret-negotiation
   "Take a negotiated result and determine status code and message. If
@@ -248,6 +263,7 @@
       (s/optional-key :encoding) s/Str
       (s/optional-key :language) s/Str}
 
+  (infof "interpreting neg: result is %s" result)
   (cond
     (and (contains? result :content-type)
          (nil? content-type))
@@ -303,8 +319,33 @@
          (when-let [header (get-in req [:headers "accept-language"])]
            {:accept-language header})))
 
-;; TODO: Should also allow non-set specifications: {:method :get :content-type "text/html}
 ;; TODO: Should also pre-parsed specifications: {:method :get :content-type MimeTypeMap}
+(defprotocol SetCoercion
+  (to-set [_] "Coerce to a set, useful for a shorthand when specifying
+  representation entries, which must always be coerced to sets."))
+
+(extend-protocol SetCoercion
+  java.util.Set
+  (to-set [s] s)
+  clojure.lang.Sequential
+  (to-set [s] (set s))
+  Object
+  (to-set [o] #{o})
+  nil
+  (to-set [_] nil))
+
+(defprotocol ListCoercion
+  (to-list [_] "Coerce to a list, useful for a shorthand when specifying
+  representation entries where ordering is relevant (languages)"))
+
+(extend-protocol ListCoercion
+  clojure.lang.Sequential
+  (to-list [s] s)
+  Object
+  (to-list [o] [o])
+  nil
+  (to-list [_] nil))
+
 (defn parse-representations
   "For performance reasons it is sensible to parse the representations ahead of time, rather than on each request. mapv this function onto the result of representations"
   [reps]
@@ -314,13 +355,13 @@
        (merge
         (select-keys rep [:method])
         (when-let [ct (:content-type rep)]
-          {:content-type (set (map mime/string->media-type ct))})
+          {:content-type (set (map mime/string->media-type (to-set ct)))})
         (when-let [cs (:charset rep)]
-          {:charset (set (map cs/to-charset-map cs))})
+          {:charset (set (map cs/to-charset-map (to-set cs)))})
         (when-let [enc (:encoding rep)]
-          {:encoding (set enc)})
+          {:encoding (to-set enc)})
         (when-let [langs (:language rep)]
-          {:language (set langs)})))
+          {:language (to-list langs)})))
      reps)))
 
 (defn to-vary-header [vary]

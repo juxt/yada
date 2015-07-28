@@ -44,12 +44,18 @@
   (re-pattern (str "(" http-token ")"
                    "((?:" ";" http-token "=" http-token ")*)")))
 
+;; TODO: Support * - see rfc7231: The special value "*", if present in the
+;; Accept-Charset field, matches every charset that is not mentioned
+;; elsewhere in the Accept-Charset field.  If no "*" is present in an
+;; Accept-Charset field, then any charsets not explicitly mentioned in
+;; the field are considered "not acceptable" to the client.
+
 (memoize
  (defn- string->charset* [s]
    (let [g (rest (re-matches charset-pattern s))]
      (when (last g)
        (let [params (into {} (map vec (map rest (re-seq (re-pattern (str ";(" http-token ")=(" http-token ")"))
-                                                    (last g)))))]
+                                                        (last g)))))]
          (->CharsetMap
           (first g)
           (if-let [q (get params "q")]

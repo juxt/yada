@@ -83,6 +83,8 @@ extent. Fundamentally, the programming model is the same: the developer
 is still writing code with a view to forming a response at the protocol
 level.
 
+[MVC]
+
 It is time for a fresh approach, one that replaces the 'operational'
 view of web 'services' with a strong _data-oriented_ approach,
 emphasising the view of _state_ at the heart of a web _resource_.
@@ -351,23 +353,112 @@ Content-Length: 0
 The response does not have a body, but tells us the headers we would get
 if we were to try a `GET` request.
 
+For more details about HREAD queries, see [insert reference here].
+
+<!--
 (Note that unlike Ring's implementation of `HEAD`
 in `ring.middleware.head/wrap-head`, yada's implementation does not cause a
 response body to be generated and then truncated. This means that HEAD requests in yada are fast and inexpensive.)
+-->
 
-### Parameterized Hello World!
+### Parameters
+
+Often, a resource's state will not be constant, but depend in some way on the request itself. Let's say we want to pass a parameter to the resource, via a query parameter.
+
+First, let's call name our query parameter `p`. Since the state is
+sensitive to the request, we specify a function rather than a value. The
+function takes a single parameter called the _request context_, denoted
+by the symbol `ctx`.
 
 ```clojure
-(yada/resource (fn [ctx] ...))
+(yada/resource
+  (fn [ctx] (format "Hello %s!\n" (get-in ctx [:parameters :p])))
+  :parameters {:get {:query {:p String}}})
+```
+
+Parameters are declared using additional key-value arguments after the first argument. They are declared on a per-method, per-type basis.
+
+If the request correctly contains the parameter, it is available in the
+request context, via the __:parameters__ key.
+
+Let's see this in action
+
+```nohighlight
+curl -i {{prefix}}/hello-parameters?p=Ken
+```
+
+```http
+HTTP/1.1 200 OK
+Server: Aleph/0.4.0
+Connection: Keep-Alive
+Date: Mon, 27 Jul 2015 16:31:59 GMT
+Content-Length: 7
+
+Hi Ken
+```
+
+As well as query parameters, yada supports path parameters, request
+headers, form parameters and whole request bodies. It can also coerce
+parameters to a range of types. For more details, see
+[insert reference here].
+
+### Content negotiation
+
+Content negotiation is an important feature of HTTP, allowing clients and servers to agree on how a resource can be represented to best meet the availability, compatibility and preferences of both parties.
+
+For example, let's suppose we wanted to provide our greeting in multiple languages. We can specify a set of representations.
+
+```clojure
+(yada/resource
+  (fn [ctx]
+    (case (get-in ctx [:response :representation :language])
+            "zh-ch" "你好世界!\n"
+            "en" "Hello World!\n"))
+  :representations [{:content-type "text/plain"
+                     :language #{"en" "de" "zh-ch"}
+                     :charset "UTF-8"}
+                    {:content-type "text/plain"
+                     :language "zh-CH"
+                     :charset "Shift_JIS;q=0.9"}])
+```
+
+```http
+HTTP/1.1 200 OK
+Content-Type: text/plain;charset=utf-8
+Vary: accept-language
+Server: Aleph/0.4.0
+Connection: Keep-Alive
+Date: Mon, 27 Jul 2015 17:36:42 GMT
+Content-Length: 14
+
+你好世界!
+```
+
+```nohighlight
+curl -i {{prefix}}/hello-languages -H "Accept-Language: zh-CH"
+```
+
+
+```nohighlight
+curl -i http://localhost:8090/hello-languages -H "Accept-Charset: Shift_JIS" -H
+"Accept: text/plain" -H "Accept-Language: zh-CH"
+```
+
+```http
+HTTP/1.1 200 OK
+Content-Type: text/plain;charset=shift_jis
+Vary: accept-charset, accept-language, accept
+Server: Aleph/0.4.0
+Connection: Keep-Alive
+Date: Mon, 27 Jul 2015 18:38:01 GMT
+Content-Length: 9
+
+?�D���E!
 ```
 
 ### An attempt to get the string gzip compressed
 
 [todo]
-
-### An attempt to get the string in Chinese
-
-[todo - well, yada isn't _that_ clever, at least not from just a string. But let's see how we would code it using Google Translate - defer this to another chapter introducing async, and we can offer the Chinese version in Shift_JIS encoding too!]
 
 ### Swagger
 

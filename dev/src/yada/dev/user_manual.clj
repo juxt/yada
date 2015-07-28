@@ -346,7 +346,24 @@
            examples)]]]))
     :scripts ["/static/js/tests.js"]}))
 
+(def hello
+  (resource "Hello World!\n"))
 
+(def hello-languages
+  (resource
+   (fn [ctx] (case (get-in ctx [:response :representation :language])
+              "en" "Hello World!\n"
+              "zh-ch" "你好世界!\n"))
+   :representations [{:content-type #{"text/plain" "text/html"}
+                      :language ["zh-ch" "en" "de"]
+                      :charset "UTF-8"}
+                     {:content-type #{"text/plain" "text/html"}
+                      :language "zh-ch"
+                      :charset "Shift_JIS;q=0.9"}]))
+
+(def hello-parameters
+  (resource (fn [ctx] (format "Hello %s!\n" (get-in ctx [:parameters :p])))
+            :parameters {:get {:query {:p String}}}))
 
 (defrecord UserManual [*router templater prefix ext-prefix]
   Lifecycle
@@ -360,14 +377,14 @@
                      :*post-counter (atom 0)
                      :xbody xbody)]
       (assoc component
-             :examples (extract-examples component xbody))))
+             :examplnes (extract-examples component xbody))))
   (stop [component] component)
 
   RouteProvider
   (routes [component]
     (let [xbody (:xbody component)
           examples (:examples component)
-          hello (resource "Hello World!\n")
+
           hello-atom (resource (atom "Hello World!\n"))
           hello-date (-> hello :resource (res/last-modified nil))
           hello-date-after (java.util.Date/from (.plusMillis (.toInstant hello-date) 2000))]
@@ -389,21 +406,13 @@
         ["hello" hello]
         ["hello-atom" hello-atom]
 
-        ["hello2" (resource (fn [ctx] (format "Hi %s\n" (get-in ctx [:parameters :object])))
-                            :parameters {:get {:query {:object String}}})]
+        ["hello-parameters" hello-parameters]
 
-        ["hello3" (resource (fn [ctx] (case (get-in ctx [:response :representation :language])
-                                       "en" "Hello World!\n"
-                                       "zh-ch" "你好世界!\n"))
-                            :parameters {:get {:query {:object String}}}
-                            ;; TODO: Where is the content-type response header?
-                            ;; TODO: Put tests around these (after documentation)
-                            :representations [{:content-type #{"text/plain"}
-                                               :language #{"en" "zh-CH"}
-                                               :charset #{"UTF-8"}}])]
+        ["hello-languages" hello-languages
+         ]
 
-        ["hello4" (resource (fn [ctx] "你好世界!\n")
-                            )]
+        #_["hello4" (resource (fn [ctx] "你好世界!\n")
+                              )]
 
         ["user-manual"
          [[".html"
@@ -453,8 +462,8 @@
                                (keyword (basename ex))))]))]
           ["tests.html"
            (-> (resource (fn [ctx] (tests component examples))
-                     :representations [{:content-type #{"text/html"}
-                                        :charset #{"utf-8"}}])
+                         :representations [{:content-type #{"text/html"}
+                                            :charset #{"utf-8"}}])
                (tag ::tests))]]]]])))
 
 (defmethod clojure.core/print-method UserManual

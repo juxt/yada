@@ -385,21 +385,15 @@
                             (negotiation/extract-request-info req)
                             representations)))]
 
+                     (infof "negotiated is %s" negotiated)
+
                      (if (:status negotiated)
                        (d/error-deferred (ex-info "" (merge negotiated {::http-response true})))
 
                        (let [vary (negotiation/vary method representations)]
-                         (infof "neg vary is %s" vary)
                          (cond-> ctx
-                           negotiated (update-in [:response] merge negotiated)
-                           ;; TODO: Here is some duplication -
-                           ;; methods/GetMethod uses (get-in [:response
-                           ;; :representation]) - need to think about
-                           ;; this
                            negotiated (assoc-in [:response :representation] negotiated)
-                           vary (assoc-in [:response :vary] vary)
-                           ))
-                       ))))
+                           vary (assoc-in [:response :vary] vary)))))))
 
                ;; Resource exists?
                (link ctx
@@ -488,13 +482,16 @@
                                   ;; map must be documented so users are
                                   ;; clear what they can change and the
                                   ;; effect of this change.
-                                  (when-let [ct (get-in ctx [:response :content-type])]
+                                  (when-let [ct (get-in ctx [:response :representation :content-type])]
                                     {"content-type" (mime/media-type->string ct)})
+                                  (when-let [lang (get-in ctx [:response :representation :language])]
+                                    {"content-language" lang})
                                   (when-let [cl (get-in ctx [:response :content-length])]
                                     {"content-length" cl})
                                   (when-let [vary (get-in ctx [:response :vary])]
-                                    (infof "response vary is %s" vary)
                                     {"vary" (negotiation/to-vary-header vary)})
+
+
                                   #_(when true
                                       {"access-control-allow-origin" "*"})
 

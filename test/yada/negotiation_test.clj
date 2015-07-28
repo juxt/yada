@@ -153,27 +153,7 @@
 
 
 ;; An example set of server-provided options
-#_[{:method #{:get :head}
-    :content-type #{"text/html;q=1.0" "text/html"}
-    :charset #{"UTF-8" "Shift_JIS;q=0.2"}
-    :encoding #{"compress" "gzip" "deflate"}
-    :language #{"jp-JP"}
-    }
-   {:method #{:get :head}
-    :content-type #{"text/html;q=1.0"}
-    :language #{"en-GB" "en-US;q=0.9"}
-    }
-   {:method #{:post}
-    :accept #{"application/edn"}        ; the server accepts
-    :accept-language #{"en-US"}         ; the server accepts
-    :content-type #{"application/edn"}  ; the server produces
 
-    ;; rfc7231.html#section-3.1.3.2
-    ;; "Content-Language MAY be applied to any media type -- it is not limited to textual documents."
-    :language #{"en-GB" "en-US;q=0.9"}
-
-
-    }]
 
 ;; If no charset (usually only if there's an
 ;; explicit Accept-Charset header sent, or the
