@@ -135,17 +135,12 @@
       )))
 
 (defn negotiate-language [accept-language-header candidates]
-  (infof "candidates: %s" candidates)
-  (infof "accept-language-header: %s" accept-language-header)
-  (let [res (when candidates
-              (java.util.Locale/lookupTag
-               (or
-                (some-> accept-language-header java.util.Locale$LanguageRange/parse)
-                (java.util.Locale$LanguageRange/parse (str/join "," candidates)))
-               (seq candidates)))
-        ]
-    (infof "res is %s" res)
-    res))
+  (when candidates
+    (java.util.Locale/lookupTag
+     (or
+      (some-> accept-language-header java.util.Locale$LanguageRange/parse)
+      (java.util.Locale$LanguageRange/parse (str/join "," candidates)))
+     (seq candidates))))
 
 
 ;; ------------------------------------------------------------------------
@@ -189,7 +184,6 @@
 
 (defn merge-language [m accept-language langs]
   (when-let [lang (negotiate-language accept-language langs)]
-    (infof "negotiated language is %s" lang)
     (merge m {:language lang})))
 
 (s/defn acceptable?
@@ -209,7 +203,7 @@
              )))
       true (merge {:method method :request request})
       (:accept-encoding request) (merge-encoding (:accept-encoding request) (:encoding server-acceptable))
-      true (merge-language (:accept-language request) (:language server-acceptable))
+      (:accept-language request) (merge-language (:accept-language request) (:language server-acceptable))
       )))
 
 (s/defn negotiate
@@ -217,9 +211,11 @@
   preference (client first, then server). The request and each
   server-acceptable is presumed to have been pre-validated."
   [request :- RequestInfo
-   server-acceptables :- #{ServerAcceptable}]
+   server-acceptables :- (s/either #{ServerAcceptable}
+                                   [ServerAcceptable])]
   :- [NegotiationResult]
-  (infof "negotiate: request is %s, server-acceptables is %s" request server-acceptables)
+  (infof "Negotiating: request=%s server-acceptables=%s" request server-acceptables)
+
   (->> server-acceptables
        (keep (partial acceptable? request))
        (sort-by (juxt (comp :weight :content-type) (comp :charset)
@@ -231,7 +227,10 @@
        ;; See http://tools.ietf.org/html/rfc6657 TODO: This list is not
        ;; very comprehensive, go through 'text/*' IANA registrations
        ;; http://www.iana.org/assignments/media-types/media-types.xhtml
-       (not (contains? #{"text/html"
+       (not (contains? #{#_"text/html"
+                         ;; This really ought to be an option, because it seems existing
+                         ;; behaviour is to add charset to text/html
+
                          "text/xml"} (mime/media-type mt)))))
 
 (s/defn vary [method :- s/Keyword
@@ -253,8 +252,7 @@
   "Take a negotiated result and determine status code and message. If
   unacceptable (to the client) content-types yield 406. Unacceptable (to
   the server) content-types yield 415- Unsupported Media Type"
-  ;; TODO: Result should not be s/maybe
-  [{:keys [method content-type charset encoding language request] :as result} :- (s/maybe NegotiationResult)]
+  [{:keys [method content-type charset encoding language request] :as result} :- NegotiationResult]
   :- {(s/optional-key :status) s/Int
       (s/optional-key :message) s/Str
       (s/optional-key :content-type) MediaTypeMap
@@ -263,7 +261,6 @@
       (s/optional-key :encoding) s/Str
       (s/optional-key :language) s/Str}
 
-  (infof "interpreting neg: result is %s" result)
   (cond
     (and (contains? result :content-type)
          (nil? content-type))

@@ -379,13 +379,11 @@
                    ;; do on every request
 
                    (let [negotiated
-                         (negotiation/interpret-negotiation
-                          (first
-                           (negotiation/negotiate
-                            (negotiation/extract-request-info req)
-                            representations)))]
-
-                     (infof "negotiated is %s" negotiated)
+                         (when-let [res (first
+                                         (negotiation/negotiate
+                                          (negotiation/extract-request-info req)
+                                          representations))]
+                           (negotiation/interpret-negotiation res))]
 
                      (if (:status negotiated)
                        (d/error-deferred (ex-info "" (merge negotiated {::http-response true})))

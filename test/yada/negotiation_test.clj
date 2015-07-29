@@ -93,18 +93,18 @@
   (testing "charset not applied when it shouldn't be"
     ;; according to http://tools.ietf.org/html/rfc6657
     (given (interpret-negotiation
-            (first (negotiate {:method :get :accept "text/html"}
+            (first (negotiate {:method :get :accept "text/xml"}
                               (parse-representations
                                [{:method #{:get :head}
-                                 :content-type #{"text/html"}}
+                                 :content-type #{"text/xml"}}
 
                                 {:method #{:get :head}
-                                 :content-type #{"text/html"}
+                                 :content-type #{"text/xml"}
                                  :charset #{"UTF-8"}
                                  }]))))
       :status := nil
       [:content-type :type] := "text"
-      [:content-type :subtype] := "html"
+      [:content-type :subtype] := "xml"
       [:content-type :parameters] := {})))
 
 (st/deftest charset-preferred-over-none

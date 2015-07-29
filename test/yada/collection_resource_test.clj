@@ -8,8 +8,7 @@
    [clojure.java.io :as io]
    [ring.util.time :refer (parse-date format-date)]
    [juxt.iota :refer (given)]
-   [yada.yada :refer [resource]]
-   yada.resources.collection-resource))
+   [yada.yada :refer [resource]]))
 
 ;; Collections can be resources too, we should test them
 

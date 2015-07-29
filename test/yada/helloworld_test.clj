@@ -34,7 +34,8 @@
 (deftest content-negotiation-test
   (let [resource tutorial/hello-languages]
     (testing "default is Simplified Chinese"
-      (given @(resource (request :get "/"))
+      (given @(resource (-> (request :get "/")
+                            (assoc-in [:headers "accept"] "text/plain")))
         :status := 200
         [:headers "content-language"] := "zh-ch"
         ;; TODO: Test a lot more, like content-type
@@ -42,6 +43,7 @@
 
     (testing "English is available on request"
       (given @(resource (-> (request :get "/")
+                            (assoc-in [:headers "accept"] "text/plain")
                             (assoc-in [:headers "accept-language"] "en")))
         :status := 200
         ;; TODO: Test a lot more, like content-type

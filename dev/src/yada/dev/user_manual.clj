@@ -13,6 +13,7 @@
    [clojure.xml :refer (parse)]
    [com.stuartsierra.component :refer (using Lifecycle)]
    [hiccup.core :refer (h html) :rename {h escape-html}]
+   [hiccup.page :refer (html5)]
    [markdown.core :refer (md-to-html-string)]
    [modular.bidi :refer (path-for)]
    [modular.template :as template :refer (render-template)]
@@ -351,9 +352,21 @@
 
 (def hello-languages
   (resource
-   (fn [ctx] (case (get-in ctx [:response :representation :language])
-              "en" "Hello World!\n"
-              "zh-ch" "你好世界!\n"))
+   (fn [ctx]
+     (case (-> ctx :response :representation :content-type mime/media-type) ; TODO: helper functions needed here
+       "text/plain"
+       (case (get-in ctx [:response :representation :language]) ;; ditto
+         "en" "Hello World!\n"
+         "zh-ch" "你好世界!\n")
+
+       "text/html"
+       (html5 [:head
+               [:meta {:type (get-in ctx [:response :representation :charset])}]]
+              [:body
+               [:h1 (case (get-in ctx [:response :representation :language])
+                      "en" "Hello World!\n"
+                      "zh-ch" "你好世界!\n")]])))
+
    :representations [{:content-type #{"text/plain" "text/html"}
                       :language ["zh-ch" "en" "de"]
                       :charset "UTF-8"}

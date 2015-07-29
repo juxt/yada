@@ -82,6 +82,7 @@
 
   clojure.lang.APersistentMap
   (to-body [m representation]
+    (infof "m is %s, representation is %s" m representation)
     (to-body (render-map m representation) representation))
 
   CoreAsyncSource
@@ -146,3 +147,8 @@
       (str \newline) ; annoying on the command-line otherwise
       (to-body representation) ; for string encoding
       ))
+
+(defmethod render-map :default
+  [m representation]
+  (throw (ex-info "Attempt to call render-map without a media-type"
+                  {:representation representation})))
