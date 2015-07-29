@@ -150,8 +150,6 @@
                            (negotiation/parse-representations (representations this)))))
               ct (:content-type neg)]
 
-          (infof "HERE, neg is %s" neg)
-
           (cond-> (:response ctx)
             true (assoc :body (rep/to-body (dir-index dir ct) neg))
             neg (assoc :representation neg)))

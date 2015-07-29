@@ -82,7 +82,6 @@
 
   clojure.lang.APersistentMap
   (to-body [m representation]
-    (infof "m is %s, representation is %s" m representation)
     (to-body (render-map m representation) representation))
 
   CoreAsyncSource

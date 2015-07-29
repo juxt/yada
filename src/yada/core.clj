@@ -385,8 +385,6 @@
                                           representations))]
                            (negotiation/interpret-negotiation res))]
 
-                     (infof "negotiated is %s" negotiated)
-
                      (if (:status negotiated)
                        (d/error-deferred (ex-info "" (merge negotiated {::http-response true})))
 
@@ -472,7 +470,6 @@
 
                ;; Response
                (fn [ctx]
-                 (infof "response rep is %s" (get-in ctx [:response :representation]))
                  (let [response
                        {:status (or (get-in ctx [:response :status])
                                     (service/status status ctx)
