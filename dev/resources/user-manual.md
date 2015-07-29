@@ -67,11 +67,13 @@ invocation.
 For years, the same RPC-centered approach has been copied by web
 frameworks in most other languages, old and new (Python, Ruby, Go,
 Clojure...). It has survived because it is so flexible, as most
-low-level programming models are. But there are significant downsides to
-this model too. HTTP is a big specification, and it is unreasonable to
-expect developers to have the time to implement all the relevant pieces
-of it. What's more, many developers tend to implement much the same code
-over and over again, for each and every 'operation' they write.
+low-level programming models are.
+
+But there are significant downsides to this model too. HTTP is a big
+specification, and it is unreasonable to expect developers to have the
+time to implement all the relevant pieces of it. What's more, many
+developers tend to implement much the same code over and over again, for
+each and every 'operation' they write.
 
 A notable variation on this programming model can be found in Erlang's
 WebMachine and Clojure's Liberator. To a degree, these libraries ease
@@ -83,31 +85,52 @@ extent. Fundamentally, the programming model is the same: the developer
 is still writing code with a view to forming a response at the protocol
 level.
 
-[MVC]
+While this model has served as well in the past, there are increasingly
+important reasons why we need an upgrade. Rather than mere playthings,
+HTTP-based APIs are becoming critical components in virtually every
+organisation. With supporting infrastructure such as proxies, API
+gateways and monitoring, there has never been a greater need to improve
+compatibility through better conformance with HTTP standards. Yet many
+APIs today at best ignore, and worst violate many parts of the HTTP
+standard.
 
-It is time for a fresh approach, one that replaces the 'operational'
-view of web 'services' with a strong _data-oriented_ approach,
-emphasising the view of _state_ at the heart of a web _resource_.
+It is time for a fresh approach. We need our libraries to do more work
+for us. For this to happen, we need to move from the _de-facto_
+'operational' view of web 'services' to a strong _data-oriented_
+approach, focussing on what a web _resource_ is really about: _state_.
 
 ## Introduction
 
 ### What is yada?
 
-yada is a Clojure library that lets you expose state to the web over HTTP.
+yada is a Clojure library that lets you expose state to the web over
+HTTP. But many libraries and 'web framworks' let you do that. What makes
+yada different is the _programming model_ it offers developers, one that
+is based on state rather than the HTTP protocol itself.
 
-With yada, many things you would expect to have to code yourself and
-taken care of automatically, leaving you time to focus on other aspects
-of your application. And you end up with less networking code to write
-and maintain.
+This approach has a number of advantages. Many things you would expect
+to have to code yourself and taken care of automatically, leaving you
+time to focus on other aspects of your application. And you end up with
+far less networking code to write and maintain.
 
-It gives you the option to exploit the asynchronous features of modern
-web servers, to achieve greater scaleability for Clojure-powered your
-websites and APIs.
+yada is built on a fully asynchronous foundation, allowing you to
+exploit the asynchronous features of modern web servers, to achieve
+greater scaleability for Clojure-powered your websites and APIs.
 
 Above all, yada is data-centric, letting you specify your web resources
 as data. This has some compelling advantages, such as being able to
 transform that data into other formats, such as
 [Swagger](http://swagger.io) specifications for API documentation.
+
+### What yada is not
+
+yada is not a fully-fledged web framework. It does not offer URI routing
+and link formation, nor does it offer templating. It does, however,
+integrate seamlessly with its sibling library
+[bidi](https://github.com/juxt/bidi (for URI routing and formation) and
+other routing libraries. It can integrated with the many template
+libraries available for Clojure and Java, so you can build your own
+web-framework from yada and other libraries.
 
 ## A tutorial: Hello World!
 
