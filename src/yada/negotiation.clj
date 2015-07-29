@@ -192,6 +192,9 @@
   ;; If server-acceptable specifies a set of methods, find a
   ;; match, otherwise match on the request method so that
   ;; server-acceptable method guards are strictly optional.
+
+  ;; TODO: Need to return nil if the server-acceptable isn't acceptable.
+
   (when-let [method ((or (:method server-acceptable) identity) (:method request))]
     (cond->
         (when-let [cts (:content-type server-acceptable)]
