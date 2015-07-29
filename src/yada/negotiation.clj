@@ -136,12 +136,9 @@
 
 (defn negotiate-language [accept-language-header candidates]
   (when candidates
-    (java.util.Locale/lookupTag
-     (or
-      (some-> accept-language-header java.util.Locale$LanguageRange/parse)
-      (java.util.Locale$LanguageRange/parse (str/join "," candidates)))
-     (seq candidates))))
-
+    (if accept-language-header
+      (java.util.Locale/lookupTag (java.util.Locale$LanguageRange/parse accept-language-header) (seq candidates))
+      (first candidates))))
 
 ;; ------------------------------------------------------------------------
 ;; Unified negotiation
@@ -156,6 +153,7 @@
 
 (s/defschema NegotiationResult
   {:method s/Keyword
+   :request RequestInfo
    ;; There is a subtle distinction between a missing entry and a nil
    ;; entry.  If content-type/charset is nil, it means no acceptable
    ;; content-type, whereas if the content-type/charset entry is missing
@@ -169,7 +167,7 @@
    (s/optional-key :charset) (s/maybe (s/pair s/Str "known-by-client" s/Str "known-by-server"))
    (s/optional-key :encoding) (s/maybe s/Str)
    (s/optional-key :language) (s/maybe s/Str)
-   :request RequestInfo})
+   })
 
 (s/defschema ServerAcceptable
   {(s/optional-key :method) #{s/Keyword}
@@ -178,12 +176,17 @@
    (s/optional-key :encoding) #{s/Str}
    (s/optional-key :language) #{s/Str}})
 
+(defn merge-content-type [m accept-header content-types accept-charset charsets]
+  {:content-type (negotiate-content-type accept-header content-types)
+   :charset (negotiate-charset accept-charset charsets)})
+
 (defn merge-encoding [m accept-encoding encodings]
   (when-let [encoding (negotiate-encoding accept-encoding encodings)]
     (merge m {:encoding encoding})))
 
 (defn merge-language [m accept-language langs]
-  (merge m {:language (negotiate-language accept-language langs)}))
+  (when-let [lang (negotiate-language accept-language langs)]
+    (merge m {:language lang})))
 
 (s/defn acceptable?
   [request :- RequestInfo
@@ -193,20 +196,25 @@
   ;; match, otherwise match on the request method so that
   ;; server-acceptable method guards are strictly optional.
 
-  ;; TODO: Need to return nil if the server-acceptable isn't acceptable.
-
   (when-let [method ((or (:method server-acceptable) identity) (:method request))]
     (cond->
-        (when-let [cts (:content-type server-acceptable)]
-          (let [content-type (negotiate-content-type (or (:accept request) "*/*") cts)]
-            (merge
-             {:content-type content-type}
-             (when content-type {:charset (negotiate-charset (:accept-charset request) (:charset server-acceptable))})
-             )))
-      true (merge {:method method :request request})
-      (:accept-encoding request) (merge-encoding (:accept-encoding request) (:encoding server-acceptable))
-      true (merge-language (:accept-language request) (:language server-acceptable))
-      )))
+        ;; Start with the values that always appear
+        {:method method :request request}
+
+      ;; content-type and charset (could be nil)
+      (:content-type server-acceptable)
+      (merge
+       (let [cts (:content-type server-acceptable)]
+         (let [content-type (negotiate-content-type (or (:accept request) "*/*") cts)]
+           (merge
+            {:content-type content-type}
+            (when content-type {:charset (negotiate-charset (:accept-charset request) (:charset server-acceptable))})))))
+
+      (:language server-acceptable)
+      (merge-language (:accept-language request) (:language server-acceptable))
+
+      (:encoding server-acceptable)
+      (merge-encoding (:accept-encoding request) (:encoding server-acceptable)))))
 
 (s/defn negotiate
   "Return a sequence of negotiation results, ordered by
