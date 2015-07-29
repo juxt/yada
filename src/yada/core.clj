@@ -66,7 +66,7 @@
   (fn [ctx]
     (infof "SPYCTX %s: Context is %s"
             label
-            (if korks (get-in ctx (if (sequential? korks) korks [korks])) ctx))
+            (pr-str (if korks (get-in ctx (if (sequential? korks) korks [korks])) ctx)))
     ctx))
 
 (defrecord NoAuthorizationSpecified []
@@ -385,6 +385,8 @@
                                           representations))]
                            (negotiation/interpret-negotiation res))]
 
+                     (infof "negotiated is %s" negotiated)
+
                      (if (:status negotiated)
                        (d/error-deferred (ex-info "" (merge negotiated {::http-response true})))
 
@@ -470,6 +472,7 @@
 
                ;; Response
                (fn [ctx]
+                 (infof "response rep is %s" (get-in ctx [:response :representation]))
                  (let [response
                        {:status (or (get-in ctx [:response :status])
                                     (service/status status ctx)

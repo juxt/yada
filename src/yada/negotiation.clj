@@ -183,8 +183,7 @@
     (merge m {:encoding encoding})))
 
 (defn merge-language [m accept-language langs]
-  (when-let [lang (negotiate-language accept-language langs)]
-    (merge m {:language lang})))
+  (merge m {:language (negotiate-language accept-language langs)}))
 
 (s/defn acceptable?
   [request :- RequestInfo
@@ -203,7 +202,7 @@
              )))
       true (merge {:method method :request request})
       (:accept-encoding request) (merge-encoding (:accept-encoding request) (:encoding server-acceptable))
-      (:accept-language request) (merge-language (:accept-language request) (:language server-acceptable))
+      true (merge-language (:accept-language request) (:language server-acceptable))
       )))
 
 (s/defn negotiate
@@ -214,8 +213,6 @@
    server-acceptables :- (s/either #{ServerAcceptable}
                                    [ServerAcceptable])]
   :- [NegotiationResult]
-  (infof "Negotiating: request=%s server-acceptables=%s" request server-acceptables)
-
   (->> server-acceptables
        (keep (partial acceptable? request))
        (sort-by (juxt (comp :weight :content-type) (comp :charset)

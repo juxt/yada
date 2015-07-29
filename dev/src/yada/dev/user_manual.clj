@@ -357,7 +357,8 @@
        "text/plain"
        (case (get-in ctx [:response :representation :language]) ;; ditto
          "en" "Hello World!\n"
-         "zh-ch" "你好世界!\n")
+         "zh-ch" "你好世界!\n"
+         (throw (ex-info "No matching language" {:ctx ctx})))
 
        "text/html"
        (html5 [:head
@@ -365,7 +366,9 @@
               [:body
                [:h1 (case (get-in ctx [:response :representation :language])
                       "en" "Hello World!\n"
-                      "zh-ch" "你好世界!\n")]])))
+                      "zh-ch" "你好世界!\n")]])
+
+       (throw (ex-info "No matching content-type" {:ctx ctx}))))
 
    :representations [{:content-type #{"text/plain" "text/html"}
                       :language ["zh-ch" "en" "de"]

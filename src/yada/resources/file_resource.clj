@@ -37,6 +37,9 @@
                      })))
   (io/file dir name))
 
+(defn with-newline [s]
+  (str s \newline))
+
 (defn dir-index [dir content-type]
   (assert content-type)
   (case (mime/media-type content-type)
@@ -46,26 +49,27 @@
              (str (.getName child) \newline)))
 
     "text/html"
-    (html
-     [:html
-      [:head
-       [:title (.getName dir)]]
-      [:body
-       [:table
-        [:thead
-         [:tr
-          [:th "Name"]
-          [:th "Size"]
-          [:th "Last modified"]]]
-        [:tbody
-         (for [child (sort (.listFiles dir))]
+    (with-newline
+      (html
+       [:html
+        [:head
+         [:title (.getName dir)]]
+        [:body
+         [:table
+          [:thead
            [:tr
-            [:td [:a {:href (if (.isDirectory child) (str (.getName child) "/") (.getName child))} (.getName child)]]
-            [:td (if (.isDirectory child) "" (.length child))]
-            [:td (.format
-                  (doto (SimpleDateFormat. "yyyy-MM-dd HH:mm:ss zzz")
-                    (.setTimeZone (TimeZone/getTimeZone "UTC")))
-                  (java.util.Date. (.lastModified child)))]])]]]])))
+            [:th "Name"]
+            [:th "Size"]
+            [:th "Last modified"]]]
+          [:tbody
+           (for [child (sort (.listFiles dir))]
+             [:tr
+              [:td [:a {:href (if (.isDirectory child) (str (.getName child) "/") (.getName child))} (.getName child)]]
+              [:td (if (.isDirectory child) "" (.length child))]
+              [:td (.format
+                    (doto (SimpleDateFormat. "yyyy-MM-dd HH:mm:ss zzz")
+                      (.setTimeZone (TimeZone/getTimeZone "UTC")))
+                    (java.util.Date. (.lastModified child)))]])]]]]))))
 
 (defn negotiate-file-info [f ctx]
   (let [neg
@@ -74,10 +78,8 @@
                  (negotiation/extract-request-info (:request ctx))
                  (negotiation/parse-representations
                   [{:content-type (set (remove nil? [(ext-mime-type (.getName f))]))}]))))]
-
     (when-let [status (:status neg)]
       (throw (ex-info "" {:status status :yada.core/http-response true})))
-
     neg))
 
 (defrecord FileResource [f]
@@ -108,7 +110,7 @@
       (let [neg (negotiate-file-info f ctx)]
         (cond-> (:response ctx)
           f (assoc :body f)
-          (:content-type neg) (assoc :content-type (:content-type neg))))
+          neg (assoc-in [:response :representation] neg)))
 
       ;; Otherwise if file doesn't exist
       (throw (ex-info "Not found" {:status 404 :yada.core/http-response true}))))
@@ -147,9 +149,12 @@
                            (negotiation/extract-request-info (:request ctx))
                            (negotiation/parse-representations (representations this)))))
               ct (:content-type neg)]
+
+          (infof "HERE, neg is %s" neg)
+
           (cond-> (:response ctx)
             true (assoc :body (rep/to-body (dir-index dir ct) neg))
-            ct (assoc :content-type ct)))
+            neg (assoc :representation neg)))
 
         (let [f (child-file dir path-info)]
           (cond
@@ -173,7 +178,7 @@
                   ct (:content-type neg)]
               (cond-> (:response ctx)
                 true (assoc :body (rep/to-body (dir-index f ct) neg))
-                ct (assoc :content-type ct)))
+                neg (assoc :representation neg)))
 
             :otherwise
             (throw (ex-info "File not found" {:status 404 :yada.core/http-response true})))))
