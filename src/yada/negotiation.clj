@@ -8,9 +8,9 @@
    [clojure.tools.logging :refer :all :exclude [trace]]
    [schema.core :as s]
    [yada.charset :as cs]
+   [yada.coerce :refer (to-list to-set)]
    [yada.mime :as mime]
-   [yada.util :refer (http-token)]
-   [yada.util :refer (to-list to-set)])
+   [yada.util :refer (http-token)])
   (:import [yada.charset CharsetMap]
            [yada.mime MediaTypeMap]))
 

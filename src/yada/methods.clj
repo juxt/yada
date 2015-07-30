@@ -60,7 +60,7 @@
 
     (when (false? (:exists? ctx))
       (d/error-deferred (ex-info "" {:status 404
-                                     ::http-response true})))
+                                     :yada.core/http-response true})))
 
     ;; HEAD is implemented without delegating to the resource.
 
@@ -100,8 +100,10 @@
   Object
   (interpret-get-result [o ctx]
     (assoc-in ctx [:response :body] o))
-  nil ;; TODO: throw 404?
-  (interpret-post-result [_ ctx] ctx))
+  nil
+  (interpret-get-result [_ ctx]
+    (throw (ex-info "" {:status 404
+                        :yada.core/http-response true}))))
 
 (deftype GetMethod [])
 (extend-protocol Method
@@ -112,7 +114,7 @@
   (request [this ctx]
     (when (false? (:exists? ctx))
       (d/error-deferred (ex-info "" {:status 404
-                                     ::http-response true})))
+                                     :yada.core/http-response true})))
 
     (d/chain
      ;; GET request normally returns (possibly deferred) body.
@@ -218,6 +220,7 @@
            (update-in [:response] (partial merge {:status 200})))))))
 
 ;; --------------------------------------------------------------------------------
+
 (defprotocol Delete
   (delete [_ ctx]
     "Delete the state. If a deferred is returned, the HTTP response
@@ -238,6 +241,7 @@
        (assoc-in ctx [:response :status] 204)))))
 
 ;; --------------------------------------------------------------------------------
+
 (defprotocol Options
   (options [_ ctx]))
 
@@ -340,11 +344,10 @@
                             ;; TODO: Whoops! http://mark.koli.ch/remember-kids-an-http-content-length-is-the-number-of-bytes-not-the-number-of-characters
                             "content-length" (.length body)}
                   :body body
-                  ::http-response true}))))))
+                  :yada.core/http-response true}))))))
 
 
 ;; -----
-
 
 (extend-type clojure.lang.Fn
   Get

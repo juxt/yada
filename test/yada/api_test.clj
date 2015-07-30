@@ -57,7 +57,6 @@
           ["paths" "/users/{username}" "get" "parameters" first "description"] := ""
           ["paths" "/users/{username}" "get" "parameters" first "required"] := true
           ["paths" "/users/{username}" "get" "parameters" first "type"] := "string"
-          ["paths" "/users/{username}" "get" "responses" "default" "description"] := ""
 
           ["paths" "/users/{username}/posts" "post"] :? map?
           ["paths" "/users/{username}/posts" "post" "summary"] := "Create a new post"
