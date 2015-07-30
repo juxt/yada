@@ -144,16 +144,12 @@ We pass the string as a single argument to yada's `yada` function, and yada retu
 (yada/resource "Hello World!")
 ```
 
-This web resource can be used as a Ring handler, for example, in a
-Compojure route defintion.
+This web resource can be used as a Ring handler.
 
 ```clojure
-(use 'compojure.core
-     'ring.adapter.jetty)
+(use 'aleph.http)
 
-(run-jetty
-  (GET "/hello" []
-    (yada/resource "Hello World!")))
+(start-server (yada/resource "Hello World!") {:port 3000})
 ```
 
 Once we have bound this handler to the path `/hello`, we're able to make the following HTTP request :-
@@ -429,7 +425,7 @@ parameters to a range of types. For more details, see
 
 Content negotiation is an important feature of HTTP, allowing clients and servers to agree on how a resource can be represented to best meet the availability, compatibility and preferences of both parties.
 
-For example, let's suppose we wanted to provide our greeting in multiple languages. We can specify a set of representations.
+For example, let's suppose we wanted to provide our greeting in multiple languages. We can specify a list of representations.
 
 ```clojure
 (yada/resource
