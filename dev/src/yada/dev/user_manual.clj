@@ -19,7 +19,7 @@
    [modular.template :as template :refer (render-template)]
    [modular.component.co-dependency :refer (co-using)]
    [yada.dev.examples :refer (get-title get-resource get-options get-path get-path-args get-query-string get-request expected-response get-test-function external? make-example-handler encode-data)]
-   [yada.yada :refer (resource)]
+   [yada.yada :as yada]
    [yada.mime :as mime]
    [yada.resource :as res]
    [yada.swagger :refer (swaggered)]
@@ -348,10 +348,10 @@
     :scripts ["/static/js/tests.js"]}))
 
 (def hello
-  (resource "Hello World!\n"))
+  (yada/resource "Hello World!\n"))
 
 (def hello-languages
-  (resource
+  (yada/resource
    (fn [ctx]
      (case (-> ctx :response :representation :content-type mime/media-type) ; TODO: helper functions needed here
        "text/plain"
@@ -370,16 +370,18 @@
 
        (throw (ex-info "No matching content-type" {:ctx ctx}))))
 
-   :representations [{:content-type #{"text/plain" "text/html"}
-                      :language ["zh-ch" "en" "de"]
-                      :charset "UTF-8"}
-                     {:content-type #{"text/plain" "text/html"}
-                      :language "zh-ch"
-                      :charset "Shift_JIS;q=0.9"}]))
+   {:representations
+    [{:content-type #{"text/plain" "text/html"}
+      :language ["zh-ch" "en" "de"]
+      :charset "UTF-8"}
+     {:content-type #{"text/plain" "text/html"}
+      :language "zh-ch"
+      :charset "Shift_JIS;q=0.9"}]}))
 
 (def hello-parameters
-  (resource (fn [ctx] (format "Hello %s!\n" (get-in ctx [:parameters :p])))
-            :parameters {:get {:query {:p String}}}))
+  (yada/resource
+   (fn [ctx] (format "Hello %s!\n" (get-in ctx [:parameters :p])))
+   {:parameters {:get {:query {:p String}}}}))
 
 (defrecord UserManual [*router templater prefix ext-prefix]
   Lifecycle
@@ -401,7 +403,7 @@
     (let [xbody (:xbody component)
           examples (:examples component)
 
-          hello-atom (resource (atom "Hello World!\n"))
+          hello-atom (yada/resource (atom "Hello World!\n"))
           hello-date (-> hello :resource (res/last-modified nil))
           hello-date-after (java.util.Date/from (.plusMillis (.toInstant hello-date) 2000))]
 
@@ -413,11 +415,11 @@
                                     ["/hello" hello])
                          (tag :hello-api))]
 
-        ["petstore-simple.json" (resource (json/decode (slurp (io/file "dev/resources/petstore/petstore-simple.json")))
-                                          :representations [{:content-type #{"application/json"
-                                                                             "text/html;q=0.9"
-                                                                             "application/edn;q=0.8"}
-                                                             :charset #{"UTF-8"}}])]
+        ["petstore-simple.json" (yada/resource (json/decode (slurp (io/file "dev/resources/petstore/petstore-simple.json")))
+                                               {:representations [{:content-type #{"application/json"
+                                                                                   "text/html;q=0.9"
+                                                                                   "application/edn;q=0.8"}
+                                                                   :charset #{"UTF-8"}}]})]
 
         ["hello" hello]
         ["hello-atom" hello-atom]
@@ -457,17 +459,16 @@
               ;; case. But it works OK for the "Hello World!" example. But
               ;; perhaps the use of 'fetch functions' is a placeholder for
               ;; a better design.
-              (->
-               (resource (fn [ctx]
-                           (body component
-                                 (post-process-doc component xbody (into {} examples) config)
-                                 (assoc config
-                                        :hello-date (rt/format-date hello-date)
-                                        :hello-date-after (rt/format-date hello-date-after)
-                                        :now-date (rt/format-date (java.util.Date.)))))
-                         :representations [{:content-type #{"text/html"} :charset #{"utf-8"}}]
-                         :last-modified (io/file "dev/resources/user-manual.md"))
-               (tag ::user-manual))))]
+              (yada/resource (fn [ctx]
+                               (body component
+                                     (post-process-doc component xbody (into {} examples) config)
+                                     (assoc config
+                                            :hello-date (rt/format-date hello-date)
+                                            :hello-date-after (rt/format-date hello-date-after)
+                                            :now-date (rt/format-date (java.util.Date.)))))
+                             {:representations [{:content-type #{"text/html"} :charset #{"utf-8"}}]
+                              :last-modified (io/file "dev/resources/user-manual.md")
+                              :id ::user-manual})))]
 
           ["examples/"
            (vec
@@ -477,10 +478,10 @@
                               (tag
                                (keyword (basename ex))))]))]
           ["tests.html"
-           (-> (resource (fn [ctx] (tests component examples))
-                         :representations [{:content-type #{"text/html"}
-                                            :charset #{"utf-8"}}])
-               (tag ::tests))]]]]])))
+           (yada/resource (fn [ctx] (tests component examples))
+                          {:representations [{:content-type #{"text/html"}
+                                              :charset #{"utf-8"}}]
+                           :id ::tests})]]]]])))
 
 (defmethod clojure.core/print-method UserManual
   [o ^java.io.Writer writer]

@@ -11,7 +11,7 @@
             [schema.core :as s]
             yada.bidi
             yada.resources.file-resource
-            [yada.yada :refer (resource)]))
+            [yada.yada :as yada]))
 
 (def titles
   {7230 "Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing"
@@ -27,7 +27,7 @@
    7240 "Prefer Header for HTTP"})
 
 (defn index [{:keys [*router templater]}]
-  (resource
+  (yada/resource
    (fn [ctx]
      ;; TODO: Replace with template resource
      (render-template
@@ -60,19 +60,18 @@
                               )}
                   "Swagger UI (hello)"]
              ]]]))}))
-   :representations [{:content-type #{"text/html"}
-                      :charset #{"utf-8"}
-                      }]))
+   {:id ::index
+    :representations [{:content-type #{"text/html"}
+                       :charset #{"utf-8"}
+                       }]}))
 
 (defrecord Website [*router templater]
   RouteProvider
   (routes [component]
     ["/"
-     [["index.html" (-> (index component)
-                        (tag ::index))]
+     [["index.html" (index component)]
       ["dir/" (-> (yada.bidi/resource-branch (io/file "dev/resources"))
-                  (tag ::dir))]
-      ]]))
+                  (tag ::dir))]]]))
 
 (defn new-website [& {:as opts}]
   (-> (->> opts

@@ -21,7 +21,7 @@
 
   ;; TODO: TRACE needs to be documented
   (testing "TRACE disabled"
-    (let [handler (yada/resource "Hello World!" :trace false)
+    (let [handler (yada/resource "Hello World!" {:trace false})
           request (request :trace "/")
           response @(handler request)]
       (given response

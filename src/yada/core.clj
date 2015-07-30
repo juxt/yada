@@ -48,7 +48,7 @@
 (defn make-context []
   {:response (->Response)})
 
-(defrecord Endpoint [resource handler]
+(defrecord Endpoint [resource id handler]
   clojure.lang.IFn
   (invoke [_ req]
     (let [ctx (make-context)]
@@ -57,7 +57,7 @@
   (resolve-handler [this m]
     (succeed this m))
   (unresolve-handler [this m]
-    (when (= this (:handler m)) "")))
+    (when (#{id this} (:handler m)) "")))
 
 ;; "It is better to have 100 functions operate on one data structure
 ;; than 10 functions on 10 data structures." — Alan Perlis
@@ -112,19 +112,16 @@
   (when-let [body (:body req)]
     (convert body String {:encoding (or (character-encoding req) "UTF-8")})))
 
-(defn make-endpoint
-  "Create a yada endpoint (Ring handler)"
-  ([resource options]
-   (make-endpoint (if resource
-                    (assoc options :resource resource)
-                    options)))
+(defn resource
+  "Create a yada resource (Ring handler)"
+  ([resource]                         ; Single form with default options
+   (yada.core/resource resource {}))
 
-  ([{:keys
+  ([resource
+    {:keys
      ;; TODO: Replace these with inline extracts from options to reduce
      ;; scope complexity
-     [resource                          ; async-supported
-
-      service-available?                ; async-supported
+     [service-available?                ; async-supported
       request-uri-too-long?
 
       status                            ; async-supported
@@ -134,11 +131,13 @@
       authorization                     ; async-supported
       security
 
+      id ;; bidi compatible identifier
+
       ;; CORS
       allow-origin
-      ] ;; :or {resource {}}
-     :as options
-     :or {authorization (NoAuthorizationSpecified.)}}]
+      ] :as options
+     :or {authorization (NoAuthorizationSpecified.)
+          id (java.util.UUID/randomUUID)}}]
 
    (let [security (as-sequential security)
          ;; Note that the resource is constructed during the yada call,
@@ -166,8 +165,10 @@
          representations
          (negotiation/parse-representations
           (or
-           ;; TODO We might need a shorthand for representations one day
-           (res/representations (:representations options))
+           (res/representations (or (:representations options)
+                                    (when-let [rep (:representation options)] [rep])
+                                    (let [m (select-keys options [:content-type :charset :encoding :language])]
+                                      (when (not-empty m) [m]))))
            (when resource-representations?
              (res/representations resource))))
 
@@ -196,7 +197,7 @@
          ]
 
      (->Endpoint
-      resource
+      resource id
 
       (fn [req ctx]
 
@@ -520,28 +521,3 @@
                               [:h1 "Internal Server Error"]
                               [:p (str %)]
                               [:pre (with-out-str (apply str (interpose "\n" (seq (.getStackTrace %)))))]])})))))))))
-
-(defn resource
-  "The Yada API. The first form takes the resource."
-  ([arg & otherargs]
-   (apply make-endpoint
-          (cond
-            ;; If the only argument is not a keyword, it's the resource
-            (and (not (keyword? arg)) (nil? otherargs))
-            [arg {}]
-
-            ;; If the first argument is a keyword, the whole arg list are the options
-            (and (keyword? arg) (odd? otherargs))
-            [nil (into {} (cons arg otherargs))]
-
-            ;; If there are just two args, the second is the options, if it's a map
-            (and (= 1 (count otherargs)) (map? (first otherargs)))
-            [arg (first otherargs)]
-
-            (and (pos? (count otherargs))
-                 (even? (count otherargs))
-                 (not (keyword? arg)))
-            [arg (into {} (map vec (partition 2 otherargs)))]
-
-            :otherwise
-            (throw (ex-info "The yada function does not support this form" {:args (cons arg otherargs)}))))))

@@ -4,7 +4,7 @@
   (:require
    [clojure.tools.logging :refer :all]
    yada.resources.collection-resource
-   [yada.yada :refer (resource) :as yada]
+   [yada.yada :as yada]
    [bidi.bidi :refer (RouteProvider tag)]
    [bidi.ring :refer (make-handler)]
    [ring.mock.request :refer (request)]
@@ -37,13 +37,13 @@
         :basePath "/api"}
        ["" {"/users"
             {""
-             (resource
+             (yada/resource
               (:users db)
-              :swagger {:get {:summary "Get users"
-                              :description "Get a list of all known users"}})
+              {:swagger {:get {:summary "Get users"
+                               :description "Get a list of all known users"}}})
 
              ["/" :username]
-             {"" (resource
+             {"" (yada/resource
                   ;; TODO What does this function even mean?  Looks like the
                   ;; intent is the final fetch, but this means that all the
                   ;; methods, produces, etc. need to be defined up front.
@@ -51,14 +51,14 @@
                     (when-let [user (get {"bob" {:name "Bob"}}
                                          (-> ctx :parameters :username))]
                       {:user user}))
-                  :swagger {:get {:summary "Get user"
-                                  :description "Get the details of a known user"}}
-                  :parameters {:get {:path {:username s/Str}}})
+                  {:swagger {:get {:summary "Get user"
+                                   :description "Get the details of a known user"}}
+                   :parameters {:get {:path {:username s/Str}}}})
 
-              "/posts" (resource
-                        "Posts"         ; TODO
-                        :swagger {:post {:summary "Create a new post"}}
-                        :post (fn [ctx] nil))}}}])
+              "/posts" (yada/resource
+                        (fn [ctx] nil)
+                        {:swagger {:post {:summary "Create a new post"}}
+                         :methods [:post] })}}}])
       ;; TODO: Might be able to unresolve-handler on yada's Endpoint and
       ;; not have to tag like this, that would be nice!
       (tag ::user-api))]))

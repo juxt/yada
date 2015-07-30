@@ -23,12 +23,12 @@
           handler
           (yada/resource
            resource
-           :representations [{:content-type #{"text/plain"}
-                              ;; TODO: See comment above, this
-                              ;; should not be necessary, somehow
-                              ;; the charset should default to
-                              ;; UTF-8 on strings, not sure how.
-                              :charset #{"UTF-8"}}])
+           {:representations [{:content-type #{"text/plain"}
+                               ;; TODO: See comment above, this
+                               ;; should not be necessary, somehow
+                               ;; the charset should default to
+                               ;; UTF-8 on strings, not sure how.
+                               :charset #{"UTF-8"}}]})
           request (request :get "/")
           response @(handler request)]
       (given response
