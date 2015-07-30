@@ -357,7 +357,6 @@
 (defn parse-representations
   "For performance reasons it is sensible to parse the representations ahead of time, rather than on each request. mapv this function onto the result of representations"
   [reps]
-  (infof "Parsing representations: %s" reps)
   (when reps
     (mapv
      (fn [rep]
@@ -368,7 +367,15 @@
         (when-let [cs (:charset rep)]
           {:charset (set (map cs/to-charset-map (to-set cs)))})
 
-        ;; TODO: Check the charset is recognised, or throw an error now
+        ;; Check to see if the server-specified charset is
+        ;; recognized (registered with IANA). If it isn't we
+         ;; throw a 500, as this is a server error. (It might be
+         ;; necessary to disable this check in future but a
+         ;; balance should be struck between giving the
+         ;; developer complete control to dictate charsets, and
+         ;; error-proofing. It might be possible to disable
+         ;; this check for advanced users if a reasonable case
+         ;; is made.)
         #_(when-let [bad-charset
                      (some (fn [mt] (when-let [charset (some-> mt :parameters (get "charset"))]
                                      (when-not (charset/valid-charset? charset) charset)))

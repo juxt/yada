@@ -139,16 +139,9 @@
      :or {authorization (NoAuthorizationSpecified.)
           id (java.util.UUID/randomUUID)}}]
 
-   (let [security (as-sequential security)
-         ;; Note that the resource is constructed during the yada call,
-         ;; not during the request.
-         resource (if (satisfies? res/ResourceConstructor resource)
+   (let [resource (if (satisfies? res/ResourceConstructor resource)
                     (res/make-resource resource)
                     resource)
-
-         parameters (or (:parameters options)
-                        (when (satisfies? res/ResourceParameters resource)
-                          (res/parameters resource)))
 
          known-methods (methods/methods)
 
@@ -157,6 +150,10 @@
           (or (:methods options) ; you must include :head in options if you want it
               ;; We always support :head for resources
               (conj (res/methods resource) :head)))
+
+         parameters (or (:parameters options)
+                        (when (satisfies? res/ResourceParameters resource)
+                          (res/parameters resource)))
 
          representations
          (negotiation/parse-representations
@@ -168,344 +165,336 @@
            (when (satisfies? res/ResourceRepresentations resource)
              (res/representations resource))))
 
-         ;; Check to see if the server-specified charset is
-         ;; recognized (registered with IANA). If it isn't we
-         ;; throw a 500, as this is a server error. (It might be
-         ;; necessary to disable this check in future but a
-         ;; balance should be struck between giving the
-         ;; developer complete control to dictate charsets, and
-         ;; error-proofing. It might be possible to disable
-         ;; this check for advanced users if a reasonable case
-         ;; is made.) - TODO Move this check into negotiation logic
-         #_(when-let [bad-charset
-                      (some (fn [mt] (when-let [charset (some-> mt :parameters (get "charset"))]
-                                      (when-not (charset/valid-charset? charset) charset)))
-                            available-content-types)]
-             (throw (ex-info (format "Resource or service declares it produces an unknown charset: %s" bad-charset) {:charset bad-charset})))
-         ]
+         security (as-sequential security)]
 
-     (->Endpoint
-      resource id
+     (map->Endpoint
+      {:id id
+       :resource resource
+       :options options
+       :methods allowed-methods
+       :parameters parameters
+       :representations representations
+       :security security
+       :handler
+       (fn [req ctx]
 
-      (fn [req ctx]
+         (let [method (:request-method req)
+               ;; TODO: Document this debug feature
+               debug (boolean (get-in req [:headers "x-yada-debug"]))]
 
-        (let [method (:request-method req)
-              ;; TODO: Document this debug feature
-              debug (boolean (get-in req [:headers "x-yada-debug"]))]
+           (-> ctx
 
-          (-> ctx
+               (merge
+                {:method method
+                 :method-instance (get known-methods method)
+                 :allowed-methods allowed-methods
+                 :request req
+                 :options options})
 
-              (merge
-               {:method method
-                :method-instance (get known-methods method)
-                :allowed-methods allowed-methods
-                :request req
-                :options options})
+               (d/chain
 
-              (d/chain
+                ;; Available?
+                (link ctx
+                  (let [res (service/service-available? service-available? ctx)]
+                    (if-not (service/interpret-service-available res)
+                      (d/error-deferred
+                       (ex-info "" (merge {:status 503
+                                           ::http-response true}
+                                          (when-let [retry-after (service/retry-after res)] {:headers {"retry-after" retry-after}})))))))
 
-               ;; Available?
-               (link ctx
-                 (let [res (service/service-available? service-available? ctx)]
-                   (if-not (service/interpret-service-available res)
-                     (d/error-deferred
-                      (ex-info "" (merge {:status 503
-                                          ::http-response true}
-                                         (when-let [retry-after (service/retry-after res)] {:headers {"retry-after" retry-after}})))))))
+                ;; Known method?
+                (link ctx
+                  (when-not (:method-instance ctx)
+                    (d/error-deferred (ex-info "" {:status 501 ::method method ::http-response true}))))
 
-               ;; Known method?
-               (link ctx
-                 (when-not (:method-instance ctx)
-                   (d/error-deferred (ex-info "" {:status 501 ::method method ::http-response true}))))
+                ;; URI too long?
+                (link ctx
+                  (when (service/request-uri-too-long? request-uri-too-long? (:uri req))
+                    (d/error-deferred (ex-info "" {:status 414
+                                                   ::http-response true}))))
 
-               ;; URI too long?
-               (link ctx
-                 (when (service/request-uri-too-long? request-uri-too-long? (:uri req))
-                   (d/error-deferred (ex-info "" {:status 414
-                                                  ::http-response true}))))
+                ;; TRACE
+                (link ctx
+                  (when (#{:trace} method)
+                    (if (false? (:trace options))
+                      (d/error-deferred (ex-info "Method Not Allowed"
+                                                 {:status 405
+                                                  ::http-response true}))
+                      (methods/request (:method-instance ctx) ctx))))
 
-               ;; TRACE
-               (link ctx
-                 (when (#{:trace} method)
-                   (if (false? (:trace options))
-                     (d/error-deferred (ex-info "Method Not Allowed"
-                                                {:status 405
-                                                 ::http-response true}))
-                     (methods/request (:method-instance ctx) ctx))))
+                ;; Is method allowed on this resource?
+                (link ctx
+                  (when-not (contains? allowed-methods method)
+                    (d/error-deferred
+                     (ex-info "Method Not Allowed"
+                              {:status 405
+                               :headers {"allow" (str/join ", " (map (comp (memfn toUpperCase) name) allowed-methods))}
+                               ::http-response true}))))
 
-               ;; Is method allowed on this resource?
-               (link ctx
-                 (when-not (contains? allowed-methods method)
-                   (d/error-deferred
-                    (ex-info "Method Not Allowed"
-                             {:status 405
-                              :headers {"allow" (str/join ", " (map (comp (memfn toUpperCase) name) allowed-methods))}
-                              ::http-response true}))))
+                ;; Malformed? (parameters)
+                (fn [ctx]
+                  (let [keywordize (fn [m] (into {} (for [[k v] m] [(keyword k) v])))
 
-               ;; Malformed? (parameters)
-               (fn [ctx]
-                 (let [keywordize (fn [m] (into {} (for [[k v] m] [(keyword k) v])))
+                        parameters
+                        (when parameters
+                          {:path
+                           (when-let [schema (get-in parameters [method :path])]
+                             (rs/coerce schema (:route-params req) :query))
 
-                       parameters
-                       (when parameters
-                         {:path
-                          (when-let [schema (get-in parameters [method :path])]
-                            (rs/coerce schema (:route-params req) :query))
+                           :query
+                           (when-let [schema (get-in parameters [method :query])]
+                             ;; We'll call assoc-query-params with the negotiated charset, falling back to UTF-8.
+                             ;; Also, read this:
+                             ;; http://www.w3.org/TR/html5/forms.html#application/x-www-form-urlencoded-encoding-algorithm
+                             (rs/coerce schema (-> req (assoc-query-params (or (:charset ctx) "UTF-8")) :query-params keywordize) :query))
 
-                          :query
-                          (when-let [schema (get-in parameters [method :query])]
-                            ;; We'll call assoc-query-params with the negotiated charset, falling back to UTF-8.
-                            ;; Also, read this:
-                            ;; http://www.w3.org/TR/html5/forms.html#application/x-www-form-urlencoded-encoding-algorithm
-                            (rs/coerce schema (-> req (assoc-query-params (or (:charset ctx) "UTF-8")) :query-params keywordize) :query))
+                           :body
+                           (when-let [schema (get-in parameters [method :body])]
+                             (let [body (read-body (-> ctx :request))]
+                               (rep/from-representation body (content-type req) schema)))
 
-                          :body
-                          (when-let [schema (get-in parameters [method :body])]
-                            (let [body (read-body (-> ctx :request))]
-                              (rep/from-representation body (content-type req) schema)))
+                           :form
+                           ;; TODO: Can we use rep:from-representation
+                           ;; instead? It's virtually the same logic for
+                           ;; url encoded forms
+                           (when-let [schema (get-in parameters [method :form])]
+                             (when (urlencoded-form? req)
+                               (let [fp (keywordize-keys
+                                         (form-decode (read-body (-> ctx :request))
+                                                      (character-encoding req)))]
+                                 (rs/coerce schema fp :json))))
 
-                          :form
-                          ;; TODO: Can we use rep:from-representation
-                          ;; instead? It's virtually the same logic for
-                          ;; url encoded forms
-                          (when-let [schema (get-in parameters [method :form])]
-                            (when (urlencoded-form? req)
-                              (let [fp (keywordize-keys
-                                        (form-decode (read-body (-> ctx :request))
-                                                     (character-encoding req)))]
-                                (rs/coerce schema fp :json))))
+                           :header
+                           (when-let [schema (get-in parameters [method :header])]
+                             (let [params (select-keys (-> req :headers keywordize-keys) (keys schema))]
+                               (rs/coerce schema params :query)))})]
 
-                          :header
-                          (when-let [schema (get-in parameters [method :header])]
-                            (let [params (select-keys (-> req :headers keywordize-keys) (keys schema))]
-                              (rs/coerce schema params :query)))})]
+                    (let [errors (filter (comp error? second) parameters)]
+                      (if (not-empty errors)
+                        (d/error-deferred (ex-info "" {:status 400
+                                                       :body errors
+                                                       ::http-response true}))
 
-                   (let [errors (filter (comp error? second) parameters)]
-                     (if (not-empty errors)
-                       (d/error-deferred (ex-info "" {:status 400
-                                                      :body errors
-                                                      ::http-response true}))
+                        (if parameters
+                          (let [body (:body parameters)
+                                merged-params (merge (apply merge (vals (dissoc parameters :body)))
+                                                     (when body {:body body}))]
+                            (cond-> ctx
+                              (not-empty merged-params) (assoc :parameters merged-params)))
+                          ctx)))))
 
-                       (if parameters
-                         (let [body (:body parameters)
-                               merged-params (merge (apply merge (vals (dissoc parameters :body)))
-                                                    (when body {:body body}))]
-                           (cond-> ctx
-                             (not-empty merged-params) (assoc :parameters merged-params)))
-                         ctx)))))
+                ;; Authentication
+                (fn [ctx]
+                  (cond-> ctx
+                    (not-empty (filter (comp (partial = :basic) :type) security))
+                    (assoc :authentication (:basic-authentication (ba/basic-authentication-request req (fn [user password] {:user user :password password}))))))
 
-               ;; Authentication
-               (fn [ctx]
-                 (cond-> ctx
-                   (not-empty (filter (comp (partial = :basic) :type) security))
-                   (assoc :authentication (:basic-authentication (ba/basic-authentication-request req (fn [user password] {:user user :password password}))))))
+                ;; Authorization
+                (fn [ctx]
+                  (if-let [res (service/authorize authorization ctx)]
+                    (if (= res :not-authorized)
+                      (d/error-deferred
+                       (ex-info ""
+                                (merge
+                                 {:status 401 ::http-response true}
+                                 (when-let [basic-realm (first (sequence realms-xf security))]
+                                   {:headers {"www-authenticate" (format "Basic realm=\"%s\"" basic-realm)}}))
+                                ))
+                      (if-let [auth (service/authorization res)]
+                        (assoc ctx :authorization auth)
+                        ctx))
+                    (d/error-deferred (ex-info "" {:status 403
+                                                   ::http-response true}))))
 
-               ;; Authorization
-               (fn [ctx]
-                 (if-let [res (service/authorize authorization ctx)]
-                   (if (= res :not-authorized)
-                     (d/error-deferred
-                      (ex-info ""
-                               (merge
-                                {:status 401 ::http-response true}
-                                (when-let [basic-realm (first (sequence realms-xf security))]
-                                  {:headers {"www-authenticate" (format "Basic realm=\"%s\"" basic-realm)}}))
-                               ))
-                     (if-let [auth (service/authorization res)]
-                       (assoc ctx :authorization auth)
-                       ctx))
-                   (d/error-deferred (ex-info "" {:status 403
-                                                  ::http-response true}))))
+                ;; Now we do a fetch, so the resource has a chance to
+                ;; load any metadata it may need to answer the questions
+                ;; to follow. It can also load state in this step, if it
+                ;; wants, but can defer this to the get-state call if it
+                ;; wants. This would usually depend on the size of the
+                ;; state. For example, if it's a stream, it would be
+                ;; returned on get-state.
 
-               ;; Now we do a fetch, so the resource has a chance to
-               ;; load any metadata it may need to answer the questions
-               ;; to follow. It can also load state in this step, if it
-               ;; wants, but can defer this to the get-state call if it
-               ;; wants. This would usually depend on the size of the
-               ;; state. For example, if it's a stream, it would be
-               ;; returned on get-state.
+                ;; Do the fetch here - this is intended to allow
+                ;; resources to prepare to answer questions about
+                ;; themselves. This has to happen _after_ the request
+                ;; parameters have been established because the fetch
+                ;; might depend on them in some way. The fetch may
+                ;; involve a database trip, to load context based on the
+                ;; request parameters.
 
-               ;; Do the fetch here - this is intended to allow
-               ;; resources to prepare to answer questions about
-               ;; themselves. This has to happen _after_ the request
-               ;; parameters have been established because the fetch
-               ;; might depend on them in some way. The fetch may
-               ;; involve a database trip, to load context based on the
-               ;; request parameters.
+                ;; The fetch can return a deferred result.
+                (fn [ctx]
+                  (d/chain
+                   (res/fetch resource ctx)
+                   (fn [res]
+                     (assoc ctx :resource res))))
 
-               ;; The fetch can return a deferred result.
-               (fn [ctx]
-                 (d/chain
-                  (res/fetch resource ctx)
-                  (fn [res]
-                    (assoc ctx :resource res))))
+                ;; TODO: Unknown or unsupported Content-* header
 
-               ;; TODO: Unknown or unsupported Content-* header
+                ;; TODO: Request entity too large - shouldn't we do this later,
+                ;; when we determine we actually need to read the request body?
 
-               ;; TODO: Request entity too large - shouldn't we do this later,
-               ;; when we determine we actually need to read the request body?
+                ;; Content negotiation
+                ;; TODO: Unknown Content-Type? (incorporate this into conneg)
 
-               ;; Content negotiation
-               ;; TODO: Unknown Content-Type? (incorporate this into conneg)
+                (link ctx
 
-               (link ctx
+                  ;; We do not do negotiation for representations if the
+                  ;; request has some path-info - that makes it
+                  ;; context-sensitive and negotiation must be done
+                  ;; dynamically in the resource implementation.
 
-                 ;; We do not do negotiation for representations if the
-                 ;; request has some path-info - that makes it
-                 ;; context-sensitive and negotiation must be done
-                 ;; dynamically in the resource implementation.
+                  ;; (TODO: We should apply the same rationale to methods
+                  ;; and parameters)
 
-                 ;; (TODO: We should apply the same rationale to methods
-                 ;; and parameters)
+                  ;; TODO: It is better that we simply filter out
+                  ;; representations that are guarded by a path-info
+                  ;; pattern in the representations.
+                  (when (nil? (:path-info req))
 
-                 ;; TODO: It is better that we simply filter out
-                 ;; representations that are guarded by a path-info
-                 ;; pattern in the representations.
-                 (when (nil? (:path-info req))
+                    ;; TODO Use yada.resource/Negotiable, cache the
+                    ;; satisfies? on the resource first, it's expensive to
+                    ;; do on every request
 
-                   ;; TODO Use yada.resource/Negotiable, cache the
-                   ;; satisfies? on the resource first, it's expensive to
-                   ;; do on every request
+                    (let [negotiated
+                          (when-let [res (first
+                                          (negotiation/negotiate
+                                           (negotiation/extract-request-info req)
+                                           representations))]
+                            (negotiation/interpret-negotiation res))]
 
-                   (let [negotiated
-                         (when-let [res (first
-                                         (negotiation/negotiate
-                                          (negotiation/extract-request-info req)
-                                          representations))]
-                           (negotiation/interpret-negotiation res))]
+                      (if (:status negotiated)
+                        (d/error-deferred (ex-info "" (merge negotiated {::http-response true})))
 
-                     (if (:status negotiated)
-                       (d/error-deferred (ex-info "" (merge negotiated {::http-response true})))
+                        (let [vary (negotiation/vary method representations)]
+                          (cond-> ctx
+                            negotiated (assoc-in [:response :representation] negotiated)
+                            vary (assoc-in [:response :vary] vary)))))))
 
-                       (let [vary (negotiation/vary method representations)]
-                         (cond-> ctx
-                           negotiated (assoc-in [:response :representation] negotiated)
-                           vary (assoc-in [:response :vary] vary)))))))
+                ;; Resource exists?
+                (link ctx
+                  (d/chain
+                   (res/exists? resource ctx)
+                   (fn [exists?]
+                     (assoc ctx :exists? exists?))))
 
-               ;; Resource exists?
-               (link ctx
-                 (d/chain
-                  (res/exists? resource ctx)
-                  (fn [exists?]
-                    (assoc ctx :exists? exists?))))
+                ;; Conditional requests - put this in own ns
+                (fn [ctx]
 
-               ;; Conditional requests - put this in own ns
-               (fn [ctx]
+                  ;; TODO Rethink etags now we have protocols
+                  (when-let [etag (get-in req [:headers "if-match"])]
+                    (when (not= etag (get-in ctx [:resource :etag]))
+                      (throw
+                       (ex-info "Precondition failed"
+                                {:status 412
+                                 ::http-response true}))))
 
-                 ;; TODO Rethink etags now we have protocols
-                 (when-let [etag (get-in req [:headers "if-match"])]
-                   (when (not= etag (get-in ctx [:resource :etag]))
-                     (throw
-                      (ex-info "Precondition failed"
-                               {:status 412
-                                ::http-response true}))))
+                  (d/chain
 
-                 (d/chain
+                   (or
+                    (res/last-modified (:last-modified options) ctx)
+                    (res/last-modified (:resource ctx) ctx))
 
-                  (or
-                   (res/last-modified (:last-modified options) ctx)
-                   (res/last-modified (:resource ctx) ctx))
+                   (fn [last-modified]
+                     (if-let [last-modified (round-seconds-up last-modified)]
 
-                  (fn [last-modified]
-                    (if-let [last-modified (round-seconds-up last-modified)]
+                       (if-let [if-modified-since (some-> req
+                                                          (get-in [:headers "if-modified-since"])
+                                                          parse-date)]
 
-                      (if-let [if-modified-since (some-> req
-                                                         (get-in [:headers "if-modified-since"])
-                                                         parse-date)]
+                         (if (<=
+                              (.getTime last-modified)
+                              (.getTime if-modified-since))
 
-                        (if (<=
-                             (.getTime last-modified)
-                             (.getTime if-modified-since))
+                           ;; exit with 304
+                           (d/error-deferred
+                            (ex-info "" (merge {:status 304
+                                                ::http-response true}
+                                               ctx)))
 
-                          ;; exit with 304
-                          (d/error-deferred
-                           (ex-info "" (merge {:status 304
-                                               ::http-response true}
-                                              ctx)))
+                           (assoc-in ctx [:response :headers "last-modified"] (format-date last-modified)))
 
-                          (assoc-in ctx [:response :headers "last-modified"] (format-date last-modified)))
+                         (or
+                          (some->> last-modified
+                                   format-date
+                                   (assoc-in ctx [:response :headers "last-modified"]))
+                          ctx))
 
-                        (or
-                         (some->> last-modified
-                                  format-date
-                                  (assoc-in ctx [:response :headers "last-modified"]))
-                         ctx))
+                       ctx))))
 
-                      ctx))))
+                (link ctx
+                  (when-let [etag (get-in ctx [:request :headers "if-match"])]
+                    (when (not= etag (get-in ctx [:resource :etag]))
+                      (throw
+                       (ex-info "Precondition failed"
+                                {:status 412
+                                 ::http-response true})))))
 
-               (link ctx
-                 (when-let [etag (get-in ctx [:request :headers "if-match"])]
-                   (when (not= etag (get-in ctx [:resource :etag]))
-                     (throw
-                      (ex-info "Precondition failed"
-                               {:status 412
-                                ::http-response true})))))
+                ;; Methods
+                (fn [ctx]
+                  (methods/request (:method-instance ctx) ctx))
 
-               ;; Methods
-               (fn [ctx]
-                 (methods/request (:method-instance ctx) ctx))
+                ;; CORS
+                ;; TODO: Reinstate
+                #_(fn [ctx]
+                    (if-let [origin (service/allow-origin allow-origin ctx)]
+                      (update-in ctx [:response :headers]
+                                 merge {"access-control-allow-origin"
+                                        origin
+                                        "access-control-expose-headers"
+                                        (apply str
+                                               (interpose ", " ["Server" "Date" "Content-Length" "Access-Control-Allow-Origin"]))})
+                      ctx))
 
-               ;; CORS
-               ;; TODO: Reinstate
-               #_(fn [ctx]
-                   (if-let [origin (service/allow-origin allow-origin ctx)]
-                     (update-in ctx [:response :headers]
-                                merge {"access-control-allow-origin"
-                                       origin
-                                       "access-control-expose-headers"
-                                       (apply str
-                                              (interpose ", " ["Server" "Date" "Content-Length" "Access-Control-Allow-Origin"]))})
-                     ctx))
-
-               ;; Response
-               (fn [ctx]
-                 (let [response
-                       {:status (or (get-in ctx [:response :status])
-                                    (service/status status ctx)
-                                    200)
-                        :headers (merge
-                                  (get-in ctx [:response :headers])
-                                  ;; TODO: The context and its response
-                                  ;; map must be documented so users are
-                                  ;; clear what they can change and the
-                                  ;; effect of this change.
-                                  (when-let [ct (get-in ctx [:response :representation :content-type])]
-                                    {"content-type" (mime/media-type->string ct)})
-                                  (when-let [lang (get-in ctx [:response :representation :language])]
-                                    {"content-language" lang})
-                                  (when-let [cl (get-in ctx [:response :content-length])]
-                                    {"content-length" cl})
-                                  (when-let [vary (get-in ctx [:response :vary])]
-                                    {"vary" (negotiation/to-vary-header vary)})
+                ;; Response
+                (fn [ctx]
+                  (let [response
+                        {:status (or (get-in ctx [:response :status])
+                                     (service/status status ctx)
+                                     200)
+                         :headers (merge
+                                   (get-in ctx [:response :headers])
+                                   ;; TODO: The context and its response
+                                   ;; map must be documented so users are
+                                   ;; clear what they can change and the
+                                   ;; effect of this change.
+                                   (when-let [ct (get-in ctx [:response :representation :content-type])]
+                                     {"content-type" (mime/media-type->string ct)})
+                                   (when-let [lang (get-in ctx [:response :representation :language])]
+                                     {"content-language" lang})
+                                   (when-let [cl (get-in ctx [:response :content-length])]
+                                     {"content-length" cl})
+                                   (when-let [vary (get-in ctx [:response :vary])]
+                                     {"vary" (negotiation/to-vary-header vary)})
 
 
-                                  #_(when true
-                                      {"access-control-allow-origin" "*"})
+                                   #_(when true
+                                       {"access-control-allow-origin" "*"})
 
-                                  (service/headers headers ctx))
+                                   (service/headers headers ctx))
 
-                        ;; TODO :status and :headers should be implemented like this in all cases
-                        :body (get-in ctx [:response :body])}]
-                   (debugf "Returning response: %s" (dissoc response :body))
-                   response)))
+                         ;; TODO :status and :headers should be implemented like this in all cases
+                         :body (get-in ctx [:response :body])}]
+                    (debugf "Returning response: %s" (dissoc response :body))
+                    response)))
 
-              ;; Handle exits
-              (d/catch clojure.lang.ExceptionInfo
-                  #(let [data (ex-data %)]
-                     (if (::http-response data)
-                       (if-let [debug-data (when debug (::debug data))]
-                         (assoc data :body (prn-str debug-data))
-                         data)
+               ;; Handle exits
+               (d/catch clojure.lang.ExceptionInfo
+                   #(let [data (ex-data %)]
+                      (if (::http-response data)
+                        (if-let [debug-data (when debug (::debug data))]
+                          (assoc data :body (prn-str debug-data))
+                          data)
 
-                       (throw (ex-info "Internal Server Error (ex-info)" data %))
-                       #_{:status 500
-                          :body (format "Internal Server Error: %s" (prn-str data))})))
+                        (throw (ex-info "Internal Server Error (ex-info)" data %))
+                        #_{:status 500
+                           :body (format "Internal Server Error: %s" (prn-str data))})))
 
-              (d/catch #(identity
-                         (throw (ex-info "Internal Server Error" {:request req} %))
-                         #_{:status 500 :body
-                            (html
-                             [:body
-                              [:h1 "Internal Server Error"]
-                              [:p (str %)]
-                              [:pre (with-out-str (apply str (interpose "\n" (seq (.getStackTrace %)))))]])})))))))))
+               (d/catch #(identity
+                          (throw (ex-info "Internal Server Error" {:request req} %))
+                          #_{:status 500 :body
+                             (html
+                              [:body
+                               [:h1 "Internal Server Error"]
+                               [:p (str %)]
+                               [:pre (with-out-str (apply str (interpose "\n" (seq (.getStackTrace %)))))]])})))))}))))

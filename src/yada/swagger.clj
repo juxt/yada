@@ -30,17 +30,20 @@
   Keyword (encode [k] (str "{" (name k) "}")))
 
 (defn- to-path [route]
-  (infof "to-path arg is %s" route)
-  ;; TODO: Fix this really poorly derived data model with the 2 :handler keys
-  (let [swagger (-> route :handler :handler :options :swagger)
-        path (-> route :path)
-        options (-> route :handler :options)
-        resource (-> route :handler :handler :resource)
-        methods (or (:methods options) (res/methods resource))]
+  (infof "to-path arg is %s" (pr-str route))
+  (let [path (-> route :path)
+        endpoint (-> route :handler :delegate)
+        {:keys [resource options methods parameters representations]} endpoint
+        swagger (:swagger options)]
     (infof "path is %s" (apply str (map encode path)))
+    (infof "endpoint is %s" endpoint)
+
     (infof "resource is %s" resource)
-    (infof "options are %s" options)
+    (infof "options is %s" options)
     (infof "methods is %s" methods)
+    (infof "parameters is %s" parameters)
+    (infof "representations is %s" representations)
+
     [(apply str (map encode path))
      (merge-with merge swagger
                  (into {}
