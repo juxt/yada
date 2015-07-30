@@ -65,7 +65,7 @@
   Get
   (get* [_ ctx] (rs/swagger-json spec)))
 
-(defrecord Swagger [spec route spec-handler]
+(defrecord Swaggered [spec route spec-handler]
   Matched
   (resolve-handler [this m]
     (cond (= (:remainder m) (str (or (:base-path spec) "") "/swagger.json"))
@@ -93,7 +93,7 @@
     ;; containing any yada/partial (or bidi/partial) entries.
     (spec-handler req))
 
-  ;; So that we can use the Swagger record as a Ring handler
+  ;; So that we can use the Swaggered record as a Ring handler
   clojure.lang.IFn
   (invoke [this req]
     (let [handler (make-handler ["" this])]
@@ -102,8 +102,8 @@
 (defn swaggered [spec route]
   (infof "swaggered, route is %s, spec is %s" route spec)
   (let [spec (merge spec {:paths (into {} (map to-path (route-seq (unroll-route route))))})]
-    (->Swagger spec route
-               (yada/resource (->SwaggerSpec spec (to-date (now)))))))
+    (->Swaggered spec route
+                 (yada/resource (->SwaggerSpec spec (to-date (now)))))))
 
 #_(pprint
    (swaggered {:info {:title "Hello World!"
