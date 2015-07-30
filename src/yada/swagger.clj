@@ -52,7 +52,7 @@
                                    representations (filter (fn [rep] (or (nil? (:method rep))
                                                                         (contains? (:method rep) method))) representations)
                                    produces (map mime/media-type (mapcat (comp :content-type) representations))]]
-                         ;; TODO: Add responses
+                         ;; Responses must be added in the static swagger section
                          {method {:produces produces
                                   :parameters parameters}}))
                  swagger)]))

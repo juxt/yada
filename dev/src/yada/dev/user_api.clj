@@ -48,7 +48,9 @@
                                          (-> ctx :parameters :username))]
                       {:user user}))
                   {:swagger {:get {:summary "Get user"
-                                   :description "Get the details of a known user"}}
+                                   :description "Get the details of a known user"
+                                   :responses {200 {:description "Known user"}
+                                               404 {:description "Unknown user"}}}}
                    :parameters {:get {:path {:username s/Str}}}
                    :representations (res/representations (res/make-resource {}))})
 
