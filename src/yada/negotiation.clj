@@ -271,6 +271,7 @@
 
 (s/defn vary [method :- s/Keyword
               server-offers :- [ServerOffer]]
+  (infof "Server offers is %s" server-offers)
   (let [server-offers (filter #((or (:method %) identity) method) server-offers)
         varies (remove nil?
                        [(when-let [ct (apply set/union (map :content-type server-offers))]
@@ -281,6 +282,7 @@
                           (when (> (count encodings) 1) :encoding))
                         (when-let [languages (apply set/union (map :language server-offers))]
                           (when (> (count languages) 1) :language))])]
+    (infof "Varies is %s" (seq varies))
     (when (not-empty varies)
       (set varies))))
 
@@ -355,6 +357,7 @@
 (defn parse-representations
   "For performance reasons it is sensible to parse the representations ahead of time, rather than on each request. mapv this function onto the result of representations"
   [reps]
+  (infof "Parsing representations: %s" reps)
   (when reps
     (mapv
      (fn [rep]

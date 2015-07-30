@@ -51,12 +51,11 @@
 
 (st/deftest vary-header-test []
   (let [resource "Hello World!"
-        handler (yada/resource resource {:content-type "text/plain"})
+        handler (yada/resource resource {:content-type #{"text/plain" "text/html"}})
         request (request :head "/")
         response @(handler request)]
     (given response
       :status := 200
       [:headers "vary"] :? some?
-      [:headers "vary"] := nil
-      ;;[:headers "vary" parse-csv] := #{"accept-charset"}
+      [:headers "vary" parse-csv] := #{"accept"}
       )))

@@ -165,10 +165,10 @@
          representations
          (negotiation/parse-representations
           (or
-           (res/representations (or (:representations options)
-                                    (when-let [rep (:representation options)] [rep])
-                                    (let [m (select-keys options [:content-type :charset :encoding :language])]
-                                      (when (not-empty m) [m]))))
+           (:representations options)
+           (when-let [rep (:representation options)] [rep])
+           (let [m (select-keys options [:content-type :charset :encoding :language])]
+             (when (not-empty m) [m]))
            (when resource-representations?
              (res/representations resource))))
 
