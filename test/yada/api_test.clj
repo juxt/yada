@@ -15,9 +15,7 @@
    [cheshire.core :as json]
    [ring.mock.request :as mock]
    [yada.dev.user-api :refer (new-verbose-user-api)]
-   [yada.dev.database :refer (new-database)]
-
-   ))
+   [yada.dev.database :refer (new-database)]))
 
 (defn new-system
   "Define a minimal system which is just enough for the tests in this
@@ -29,8 +27,6 @@
     {}))
 
 (use-fixtures :each (with-system-fixture new-system))
-
-
 
 #_(deftest api-test
   (let [handler (make-handler (routes (:api *system*)))]

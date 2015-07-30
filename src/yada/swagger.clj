@@ -15,11 +15,10 @@
    [ring.swagger.swagger2 :as rs]
    [ring.util.response :refer (redirect)]
    [schema.core :as s]
-   [yada.core :refer (resource)]
    [yada.methods :refer (Get get*)]
    [yada.mime :as mime]
    [yada.resource :refer (Resource ResourceRepresentations ResourceConstructor platform-charsets make-resource) :as res]
-   yada.resources.string-resource)
+   [yada.yada :as yada])
   (:import (clojure.lang PersistentVector Keyword)))
 
 (defprotocol SwaggerPath
@@ -32,7 +31,7 @@
 
 (defn- to-path [route]
   (infof "to-path arg is %s" route)
-  ;; TODO: Fix this really poorly derived data model
+  ;; TODO: Fix this really poorly derived data model with the 2 :handler keys
   (let [swagger (-> route :handler :handler :options :swagger)
         path (-> route :path)
         options (-> route :handler :options)
@@ -104,7 +103,7 @@
   (infof "swaggered, route is %s, spec is %s" route spec)
   (let [spec (merge spec {:paths (into {} (map to-path (route-seq (unroll-route route))))})]
     (->Swagger spec route
-               (resource (->SwaggerSpec spec (to-date (now)))))))
+               (yada/resource (->SwaggerSpec spec (to-date (now)))))))
 
 #_(pprint
    (swaggered {:info {:title "Hello World!"

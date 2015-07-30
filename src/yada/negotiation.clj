@@ -367,6 +367,14 @@
           {:content-type (set (map mime/string->media-type (to-set ct)))})
         (when-let [cs (:charset rep)]
           {:charset (set (map cs/to-charset-map (to-set cs)))})
+
+        ;; TODO: Check the charset is recognised, or throw an error now
+        #_(when-let [bad-charset
+                     (some (fn [mt] (when-let [charset (some-> mt :parameters (get "charset"))]
+                                     (when-not (charset/valid-charset? charset) charset)))
+                           available-content-types)]
+            (throw (ex-info (format "Resource or service declares it produces an unknown charset: %s" bad-charset) {:charset bad-charset})))
+
         (when-let [enc (:encoding rep)]
           {:encoding (to-set enc)})
         (when-let [langs (:language rep)]

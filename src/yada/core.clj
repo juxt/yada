@@ -158,10 +158,6 @@
               ;; We always support :head for resources
               (conj (res/methods resource) :head)))
 
-         ;; This fact is established now for performance reasons, rather
-         ;; than on every HTTP request. satisfies? is relatively expensive.
-         resource-representations? (satisfies? res/ResourceRepresentations resource)
-
          representations
          (negotiation/parse-representations
           (or
@@ -169,16 +165,8 @@
            (when-let [rep (:representation options)] [rep])
            (let [m (select-keys options [:content-type :charset :encoding :language])]
              (when (not-empty m) [m]))
-           (when resource-representations?
+           (when (satisfies? res/ResourceRepresentations resource)
              (res/representations resource))))
-
-         ;; TODO Now parse the content-types in the representations into
-         ;; mime/MediaTypeMap records, because this doesn't need to be
-         ;; done on a per-request basis given that the representations
-         ;; function isn't context-sensitive. But this will require that
-         ;; the negotiation algorithm accepts/expects MediaTypeMap
-         ;; records rather than strings, so will have to be modified
-         ;; first.
 
          ;; Check to see if the server-specified charset is
          ;; recognized (registered with IANA). If it isn't we
