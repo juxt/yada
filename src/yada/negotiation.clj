@@ -1,13 +1,16 @@
-(ns yada.negotiation
+;; Copyright © 2015, JUXT LTD.
+
+(ns ^{:doc "HTTP content negotiation"}
+  yada.negotiation
   (:require
-   [yada.mime :as mime]
-   [yada.charset :as cs]
-   [yada.util :refer (http-token)]
-   [clojure.tools.logging :refer :all :exclude [trace]]
-   [clojure.string :as str]
-   [schema.core :as s]
    [clojure.set :as set]
-   )
+   [clojure.string :as str]
+   [clojure.tools.logging :refer :all :exclude [trace]]
+   [schema.core :as s]
+   [yada.charset :as cs]
+   [yada.mime :as mime]
+   [yada.util :refer (http-token)]
+   [yada.util :refer (to-list to-set)])
   (:import [yada.charset CharsetMap]
            [yada.mime MediaTypeMap]))
 
@@ -23,7 +26,7 @@
   parameters, which preferes text/html;level=1 over text/html. This
   meets the criteria in the HTTP specifications. Although the preference
   that should result with multiple parameters is not specified formally,
-  candidates that "
+  candidates that have a greater number of parameters are preferred."
   [acceptable candidate]
   (when
       (= (:parameters acceptable)
@@ -128,11 +131,17 @@
                        1.0))
                  1.0)}))
 
+;; ------------------------------------------------------------------------
+;; Encodings
+
 (defn negotiate-encoding [accept-encoding-header candidates]
   (when accept-encoding-header
     (let [acceptable-encodings (map parse-encoding (map str/trim (str/split accept-encoding-header #"\s*,\s*")))]
       ;; TODO
       )))
+
+;; ------------------------------------------------------------------------
+;; Languages
 
 (defn negotiate-language [accept-language-header candidates]
   (when candidates
@@ -144,14 +153,18 @@
 ;; Unified negotiation
 
 (s/defschema RequestInfo
+  "Captures all the aspects of a request relevant to
+  content-negotation. Used to make testing easier. Could be replaced
+  eventually with the original Ring request."
   {:method s/Keyword
-   (s/optional-key :accept) s/Str       ; Accept header value
-   (s/optional-key :accept-charset) s/Str ; Accept-Charset header value
+   (s/optional-key :accept) s/Str          ; Accept header value
+   (s/optional-key :accept-charset) s/Str  ; Accept-Charset header value
    (s/optional-key :accept-encoding) s/Str ; Accept-Encoding header value
    (s/optional-key :accept-language) s/Str ; Accept-Language header value
    })
 
 (s/defschema NegotiationResult
+  "The raw result of a negotiation."
   {:method s/Keyword
    :request RequestInfo
    ;; There is a subtle distinction between a missing entry and a nil
@@ -169,68 +182,83 @@
    (s/optional-key :language) (s/maybe s/Str)
    })
 
-(s/defschema ServerAcceptable
+(s/defschema ServerOffer
+  "A map representing a cross-product of potential server
+  capabilities. Each entry is optional. Each value is a set, indicating
+  a disjunction of possibie values."
   {(s/optional-key :method) #{s/Keyword}
    (s/optional-key :content-type) #{MediaTypeMap}
    (s/optional-key :charset) #{CharsetMap}
    (s/optional-key :encoding) #{s/Str}
    (s/optional-key :language) #{s/Str}})
 
-(defn merge-content-type [m accept-header content-types accept-charset charsets]
+(defn- merge-content-type [m accept-header content-types accept-charset charsets]
   {:content-type (negotiate-content-type accept-header content-types)
    :charset (negotiate-charset accept-charset charsets)})
 
-(defn merge-encoding [m accept-encoding encodings]
+(defn- merge-encoding [m accept-encoding encodings]
   (when-let [encoding (negotiate-encoding accept-encoding encodings)]
     (merge m {:encoding encoding})))
 
-(defn merge-language [m accept-language langs]
+(defn- merge-language [m accept-language langs]
   (when-let [lang (negotiate-language accept-language langs)]
     (merge m {:language lang})))
 
 (s/defn acceptable?
   [request :- RequestInfo
-   server-acceptable :- ServerAcceptable]
+   server-offer :- ServerOffer]
   :- NegotiationResult
-  ;; If server-acceptable specifies a set of methods, find a
+  ;; If server-offer specifies a set of methods, find a
   ;; match, otherwise match on the request method so that
-  ;; server-acceptable method guards are strictly optional.
+  ;; server-offer method guards are strictly optional.
 
-  (when-let [method ((or (:method server-acceptable) identity) (:method request))]
+  (when-let [method ((or (:method server-offer) identity) (:method request))]
     (cond->
         ;; Start with the values that always appear
         {:method method :request request}
 
       ;; content-type and charset (could be nil)
-      (:content-type server-acceptable)
+      (:content-type server-offer)
       (merge
-       (let [cts (:content-type server-acceptable)]
+       (let [cts (:content-type server-offer)]
          (let [content-type (negotiate-content-type (or (:accept request) "*/*") cts)]
            (merge
             {:content-type content-type}
-            (when content-type {:charset (negotiate-charset (:accept-charset request) (:charset server-acceptable))})))))
+            (when content-type {:charset (negotiate-charset (:accept-charset request) (:charset server-offer))})))))
 
-      (:language server-acceptable)
-      (merge-language (:accept-language request) (:language server-acceptable))
+      (:language server-offer)
+      (merge-language (:accept-language request) (:language server-offer))
 
-      (:encoding server-acceptable)
-      (merge-encoding (:accept-encoding request) (:encoding server-acceptable)))))
+      (:encoding server-offer)
+      (merge-encoding (:accept-encoding request) (:encoding server-offer)))))
 
 (s/defn negotiate
   "Return a sequence of negotiation results, ordered by
   preference (client first, then server). The request and each
-  server-acceptable is presumed to have been pre-validated."
+  server-offer is presumed to have been pre-validated."
   [request :- RequestInfo
-   server-acceptables :- (s/either #{ServerAcceptable}
-                                   [ServerAcceptable])]
+   server-offers :- (s/either #{ServerOffer} [ServerOffer])]
   :- [NegotiationResult]
-  (->> server-acceptables
+  (->> server-offers
        (keep (partial acceptable? request))
        (sort-by (juxt (comp :weight :content-type) (comp :charset)
                       ;; TODO: Add encoding and language
-                      ) (comp - compare))))
+                      )
+                ;; Trick to get sort-by to reverse sort
+                (comp - compare))))
 
-(defn add-charset? [mt]
+(defn- has-registered-charset-param?
+  "Whether the given media-type has a charset parameter. RFC 6657
+  recommends that media-types that have the ability to embed the charset
+  encoding in the content itself (e.g. text/xml) should not register a
+  charset parameter with IANA. That way, there can be no discrepancy
+  between the response's Content-Type header and the content
+  itself. Since text/html already has an (optional) charset parameter
+  registered, and due to very common practice, we don't include
+  text/html as one of these types, so that text/html content IS given a
+  charset parameter in the response's Content-Type header. Potentially
+  this could be configurable in the future."
+  [mt]
   (and (= (:type mt) "text")
        ;; See http://tools.ietf.org/html/rfc6657 TODO: This list is not
        ;; very comprehensive, go through 'text/*' IANA registrations
@@ -238,20 +266,20 @@
        (not (contains? #{#_"text/html"
                          ;; This really ought to be an option, because it seems existing
                          ;; behaviour is to add charset to text/html
-
+                         "text/xml+xhtml" ;; TODO: check this
                          "text/xml"} (mime/media-type mt)))))
 
 (s/defn vary [method :- s/Keyword
-              server-acceptables :- [ServerAcceptable]]
-  (let [server-acceptables (filter #((or (:method %) identity) method) server-acceptables)
+              server-offers :- [ServerOffer]]
+  (let [server-offers (filter #((or (:method %) identity) method) server-offers)
         varies (remove nil?
-                       [(when-let [ct (apply set/union (map :content-type server-acceptables))]
+                       [(when-let [ct (apply set/union (map :content-type server-offers))]
                           (when (> (count ct) 1) :content-type))
-                        (when-let [cs (apply set/union (map :charset server-acceptables))]
+                        (when-let [cs (apply set/union (map :charset server-offers))]
                           (when (> (count cs) 1) :charset))
-                        (when-let [encodings (apply set/union (map :encoding server-acceptables))]
+                        (when-let [encodings (apply set/union (map :encoding server-offers))]
                           (when (> (count encodings) 1) :encoding))
-                        (when-let [languages (apply set/union (map :language server-acceptables))]
+                        (when-let [languages (apply set/union (map :language server-offers))]
                           (when (> (count languages) 1) :language))])]
     (when (not-empty varies)
       (set varies))))
@@ -293,7 +321,7 @@
      (when content-type
        {:content-type
         (if (and charset
-                 (add-charset? content-type)
+                 (has-registered-charset-param? content-type)
                  (not (some-> content-type :parameters (get "charset"))))
           (assoc-in content-type [:parameters "charset"] (first charset))
           content-type)})
@@ -323,33 +351,6 @@
            {:accept-encoding header})
          (when-let [header (get-in req [:headers "accept-language"])]
            {:accept-language header})))
-
-;; TODO: Should also pre-parsed specifications: {:method :get :content-type MimeTypeMap}
-(defprotocol SetCoercion
-  (to-set [_] "Coerce to a set, useful for a shorthand when specifying
-  representation entries, which must always be coerced to sets."))
-
-(extend-protocol SetCoercion
-  java.util.Set
-  (to-set [s] s)
-  clojure.lang.Sequential
-  (to-set [s] (set s))
-  Object
-  (to-set [o] #{o})
-  nil
-  (to-set [_] nil))
-
-(defprotocol ListCoercion
-  (to-list [_] "Coerce to a list, useful for a shorthand when specifying
-  representation entries where ordering is relevant (languages)"))
-
-(extend-protocol ListCoercion
-  clojure.lang.Sequential
-  (to-list [s] s)
-  Object
-  (to-list [o] [o])
-  nil
-  (to-list [_] nil))
 
 (defn parse-representations
   "For performance reasons it is sensible to parse the representations ahead of time, rather than on each request. mapv this function onto the result of representations"
