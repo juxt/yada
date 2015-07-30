@@ -48,7 +48,7 @@
 (defn make-context []
   {:response (->Response)})
 
-(defrecord Endpoint [resource id handler]
+(defrecord HttpResource [resource id handler]
   clojure.lang.IFn
   (invoke [_ req]
     (let [ctx (make-context)]
@@ -167,7 +167,7 @@
 
          security (as-sequential security)]
 
-     (map->Endpoint
+     (map->HttpResource
       {:id id
        :resource resource
        :options options

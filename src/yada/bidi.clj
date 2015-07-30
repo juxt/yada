@@ -10,7 +10,7 @@
    [yada.core :refer (resource make-context)]
    [bidi.bidi :refer (Matched resolve-handler unresolve-handler context succeed)]
    [bidi.ring :refer (Ring request)])
-  (:import [yada.core Endpoint]))
+  (:import [yada.core HttpResource]))
 
 (def k-bidi-match-context :bidi/match-context)
 
@@ -20,8 +20,8 @@
 
 ;; Define a resource which can act as a handler in a bidi
 
-;; Let Endpoint satisfy bidi's Ring protocol
-(extend-type Endpoint
+;; Let HttpResource satisfy bidi's Ring protocol
+(extend-type HttpResource
   Ring
   (request [this req m]
     ((:handler this) req (make-context))))
