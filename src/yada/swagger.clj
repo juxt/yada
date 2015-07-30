@@ -32,11 +32,11 @@
 (defn- to-path [route]
   (infof "to-path arg is %s" (pr-str route))
   (let [path (-> route :path)
-        endpoint (-> route :handler :delegate)
-        {:keys [resource options methods parameters representations]} endpoint
+        http-resource (-> route :handler :delegate)
+        {:keys [resource options methods parameters representations]} http-resource
         swagger (:swagger options)]
     (infof "path is %s" (apply str (map encode path)))
-    (infof "endpoint is %s" endpoint)
+    (infof "http-resource is %s" http-resource)
 
     (infof "resource is %s" resource)
     (infof "options is %s" options)
