@@ -28,7 +28,7 @@
 
 (use-fixtures :each (with-system-fixture new-system))
 
-#_(deftest api-test
+(deftest api-test
   (let [handler (make-handler (routes (:api *system*)))]
     (testing "swagger.json"
       (let [response @(handler (mock/request :get "/api/swagger.json"))]

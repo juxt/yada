@@ -271,7 +271,6 @@
 
 (s/defn vary [method :- s/Keyword
               server-offers :- [ServerOffer]]
-  (infof "Server offers is %s" server-offers)
   (let [server-offers (filter #((or (:method %) identity) method) server-offers)
         varies (remove nil?
                        [(when-let [ct (apply set/union (map :content-type server-offers))]
@@ -282,7 +281,6 @@
                           (when (> (count encodings) 1) :encoding))
                         (when-let [languages (apply set/union (map :language server-offers))]
                           (when (> (count languages) 1) :language))])]
-    (infof "Varies is %s" (seq varies))
     (when (not-empty varies)
       (set varies))))
 

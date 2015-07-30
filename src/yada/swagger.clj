@@ -30,29 +30,32 @@
   Keyword (encode [k] (str "{" (name k) "}")))
 
 (defn- to-path [route]
-  (infof "to-path arg is %s" (pr-str route))
-  (let [path (-> route :path)
+  #_(infof "to-path arg is %s" (pr-str route))
+  (let [path (->> route :path (map encode) (apply str))
         http-resource (-> route :handler :delegate)
         {:keys [resource options methods parameters representations]} http-resource
         swagger (:swagger options)]
-    (infof "path is %s" (apply str (map encode path)))
+    (infof "path is %s" path)
     (infof "http-resource is %s" http-resource)
 
     (infof "resource is %s" resource)
-    (infof "options is %s" options)
+    #_(infof "options is %s" options)
     (infof "methods is %s" methods)
     (infof "parameters is %s" parameters)
-    (infof "representations is %s" representations)
+    (infof "representations is %s" (pr-str (map #(dissoc % :charset) representations)))
 
-    [(apply str (map encode path))
-     (merge-with merge swagger
+    [path
+     (merge-with merge
                  (into {}
-                       (for [method methods]
-                         ;; TODO: Add parameters
-                         ;; TODO: Add produces
+                       (for [method methods
+                             :let [parameters (get parameters method)
+                                   representations (filter (fn [rep] (or (nil? (:method rep))
+                                                                        (contains? (:method rep) method))) representations)
+                                   produces (map mime/media-type (mapcat (comp :content-type) representations))]]
                          ;; TODO: Add responses
-                         {method {:description "another method"
-                                  :produces ["text/plain"]}})))]))
+                         {method {:produces produces
+                                  :parameters parameters}}))
+                 swagger)]))
 
 (defrecord SwaggerSpec [spec created-at]
   Resource
@@ -103,7 +106,7 @@
       (handler req))))
 
 (defn swaggered [spec route]
-  (infof "swaggered, route is %s, spec is %s" route spec)
+  #_(infof "swaggered, route is %s, spec is %s" route spec)
   (let [spec (merge spec {:paths (into {} (map to-path (route-seq (unroll-route route))))})]
     (->Swaggered spec route
                  (yada/resource (->SwaggerSpec spec (to-date (now)))))))

@@ -408,7 +408,7 @@
           hello-date-after (java.util.Date/from (.plusMillis (.toInstant hello-date) 2000))]
 
       ["/"
-       [["hello-api" (-> (swaggered {:info {:title "Hello World!"
+       [#_["hello-api" (-> (swaggered {:info {:title "Hello World!"
                                             :version "0.0.1"
                                             :description "Demonstrating yada + swagger"}
                                      }

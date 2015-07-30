@@ -122,7 +122,7 @@
         (router-components config)
         (http-server-components config)
         (external-server-components config)
-        (hello-api-server-components config)
+        #_(hello-api-server-components config)
         (assoc :redirect (new-redirect :from "/" :to :yada.dev.website/index))
         ))))
 

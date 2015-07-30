@@ -2,17 +2,16 @@
 
 (ns yada.dev.user-api
   (:require
-   [clojure.tools.logging :refer :all]
-   yada.resources.collection-resource
-   [yada.yada :as yada]
    [bidi.bidi :refer (RouteProvider tag)]
    [bidi.ring :refer (make-handler)]
-   [ring.mock.request :refer (request)]
-   [yada.swagger :refer (swaggered)]
    [cheshire.core :refer (decode)]
+   [clojure.tools.logging :refer :all]
    [com.stuartsierra.component :refer (Lifecycle)]
+   [ring.mock.request :refer (request)]
    [schema.core :as s]
-   ))
+   [yada.swagger :refer (swaggered)]
+   [yada.yada :as yada]
+   [yada.resource :as res]))
 
 ;; {"swagger":"2.0","info":{"title":"API","version":"0.0.1"},"produces":["application/json","application/x-yaml","application/edn","application/transit+json","application/transit+msgpack"],"consumes":["application/json","application/x-yaml","application/edn","application/transit+json","application/transit+msgpack"],"basePath":"/","paths":{"/api/users":{"post":{"tags":["registration"],"summary":"Register a user","parameters":[{"in":"body","name":"UserRegistrationSchema","description":"","required":true,"schema":{"$ref":"#/definitions/UserRegistrationSchema"}}],"responses":{"default":{"description":""}}},"get":{"tags":["registration"],"summary":"List users","responses":{"default":{"description":""}}}}},"definitions":{"UserRegistrationSchema":{"type":"object","properties":{"email":{"type":"string"},"password":{"type":"string"}},"required":["email","password"]}}}
 
@@ -44,16 +43,14 @@
 
              ["/" :username]
              {"" (yada/resource
-                  ;; TODO What does this function even mean?  Looks like the
-                  ;; intent is the final fetch, but this means that all the
-                  ;; methods, produces, etc. need to be defined up front.
                   (fn [ctx]
-                    (when-let [user (get {"bob" {:name "Bob"}}
+                    (when-let [user (get (:users db)
                                          (-> ctx :parameters :username))]
                       {:user user}))
                   {:swagger {:get {:summary "Get user"
                                    :description "Get the details of a known user"}}
-                   :parameters {:get {:path {:username s/Str}}}})
+                   :parameters {:get {:path {:username s/Str}}}
+                   :representations (res/representations (res/make-resource {}))})
 
               "/posts" (yada/resource
                         (fn [ctx] nil)
