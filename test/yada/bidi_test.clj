@@ -40,3 +40,13 @@
         :status := 200
         :headers :> {"content-length" 12}
         [:body #(bs/convert % String)] := "API working!"))))
+
+;; Original
+#_(deftest api-tests
+  (let [h (-> api bidi/unroll-route make-handler)
+        response @(h (request :get "/api/status"))]
+    (testing "hello"
+      (given response
+        :status := 200
+        :headers :> {"content-length" 12}
+        [:body #(bs/convert % String)] := "API working!"))))
