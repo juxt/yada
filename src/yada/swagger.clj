@@ -30,20 +30,10 @@
   Keyword (encode [k] (str "{" (name k) "}")))
 
 (defn- to-path [route]
-  #_(infof "to-path arg is %s" (pr-str route))
   (let [path (->> route :path (map encode) (apply str))
         http-resource (-> route :handler :delegate)
         {:keys [resource options methods parameters representations]} http-resource
         swagger (:swagger options)]
-    (infof "path is %s" path)
-    (infof "http-resource is %s" http-resource)
-
-    (infof "resource is %s" resource)
-    #_(infof "options is %s" options)
-    (infof "methods is %s" methods)
-    (infof "parameters is %s" parameters)
-    (infof "representations is %s" (pr-str (map #(dissoc % :charset) representations)))
-
     [path
      (merge-with merge
                  (into {}
