@@ -552,7 +552,7 @@ Here is the actual code that tells yada about Java strings (comments removed).
   Get
   (get* [this ctx] s))
 
-(extend-protocol ResourceConstructor
+(extend-protocol ResourceCoercion
   String
   (make-resource [s]
     (->StringResource s (to-date (now)))))
@@ -567,7 +567,7 @@ Recall the _Hello World!_ example.
 yada calls `make-resource` on the argument. This declaration causes a new instance of the `StringResource` record to be created.
 
 ```clojure
-(extend-protocol ResourceConstructor
+(extend-protocol ResourceCoercion
   String
   (make-resource [s]
   (->StringResource s (to-date (now)))))

@@ -139,7 +139,7 @@
      :or {authorization (NoAuthorizationSpecified.)
           id (java.util.UUID/randomUUID)}}]
 
-   (let [resource (if (satisfies? res/ResourceConstructor resource)
+   (let [resource (if (satisfies? res/ResourceCoercion resource)
                     (res/make-resource resource)
                     resource)
 

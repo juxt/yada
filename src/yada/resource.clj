@@ -11,16 +11,16 @@
            [java.io File InputStream]
            [java.util Date]))
 
-(defprotocol ResourceConstructor
-  (make-resource [_] "Make a resource. Often, resources need to be
-  constructed rather than simply extending types with the Resource
-  protocol. For example, we sometimes need to know the exact time that a
-  resource is constructed, to support time-based conditional
+(defprotocol ResourceCoercion
+  (make-resource [_] "Coerce to a resource. Often, resources need to be
+  coerced rather than simply extending types with the Resource
+  protocol. We can exploit the time of coercion to know the time of
+  birth for the resource, which supports time-based conditional
   requests. For example, a simple StringResource is immutable, so by
   knowing the time of construction, we can precisely state its
   Last-Modified-Date."))
 
-(extend-protocol ResourceConstructor
+(extend-protocol ResourceCoercion
   clojure.lang.Fn
   (make-resource [f]
     ;; In the case of a function, we assume the function is dynamic

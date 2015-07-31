@@ -4,7 +4,7 @@
   (:require
    [clj-time.core :refer (now)]
    [clj-time.coerce :refer (to-date)]
-   [yada.resource :refer [Resource ResourceRepresentations ResourceConstructor ResourceFetch platform-charsets]]
+   [yada.resource :refer [Resource ResourceRepresentations ResourceCoercion ResourceFetch platform-charsets]]
    [yada.methods :refer [Get Options]]
    [yada.representation :refer [Representation]]))
 
@@ -26,7 +26,7 @@
   Get
   (get* [this ctx] s))
 
-(extend-protocol ResourceConstructor
+(extend-protocol ResourceCoercion
   String
   (make-resource [s]
     (->StringResource s (to-date (now)))))

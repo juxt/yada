@@ -5,7 +5,7 @@
   (:require
    [clj-time.core :refer [now]]
    [clj-time.coerce :refer [to-date]]
-   [yada.resource :refer (ResourceConstructor ResourceRepresentations Resource platform-charsets make-resource ResourceParameters parameters methods)]
+   [yada.resource :refer (ResourceCoercion ResourceRepresentations Resource platform-charsets make-resource ResourceParameters parameters methods)]
    [yada.methods :refer (Get Put)]
    [schema.core :as s]
    yada.resources.string-resource)
@@ -58,7 +58,7 @@
   StringResource
   (wrap-atom [this *a] (wrap-with-watch this *a)))
 
-(extend-protocol ResourceConstructor
+(extend-protocol ResourceCoercion
   clojure.lang.Atom
   (make-resource [a]
     (wrap-atom (make-resource @a) a)))

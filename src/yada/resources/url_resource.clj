@@ -3,7 +3,7 @@
 (ns yada.resources.url-resource
   (:require
    [clojure.java.io :as io]
-   [yada.resource :refer (Resource ResourceRepresentations ResourceConstructor platform-charsets)]
+   [yada.resource :refer (Resource ResourceRepresentations ResourceCoercion platform-charsets)]
    [yada.methods :refer (Get)]
    [ring.util.mime-type :refer (ext-mime-type)])
   (:import [java.net URL]
@@ -33,5 +33,5 @@
        (InputStreamReader. (.openStream u) (or (get-in ctx [:response :server-charset]) "UTF-8")))
       (.openStream u)))
 
-  ResourceConstructor
+  ResourceCoercion
   (make-resource [url] url))

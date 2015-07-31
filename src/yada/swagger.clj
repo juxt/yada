@@ -17,7 +17,7 @@
    [schema.core :as s]
    [yada.methods :refer (Get get*)]
    [yada.mime :as mime]
-   [yada.resource :refer (Resource ResourceRepresentations ResourceConstructor platform-charsets make-resource) :as res]
+   [yada.resource :refer (Resource ResourceRepresentations ResourceCoercion platform-charsets make-resource) :as res]
    [yada.yada :as yada])
   (:import (clojure.lang PersistentVector Keyword)))
 

@@ -7,7 +7,7 @@
    [clj-time.core :refer (now)]
    [clj-time.coerce :refer (to-date)]
    [yada.mime :refer (media-type)]
-   [yada.resource :refer (Resource ResourceRepresentations ResourceConstructor platform-charsets)]
+   [yada.resource :refer (Resource ResourceRepresentations ResourceCoercion platform-charsets)]
    [yada.methods :refer [Get get*]]
    [cheshire.core :as json]
    [json-html.core :as jh])
@@ -27,7 +27,7 @@
       :content-type #{"application/edn" "application/json;q=0.9" "text/html;q=0.8"}
       :charset platform-charsets}]))
 
-(extend-protocol ResourceConstructor
+(extend-protocol ResourceCoercion
   APersistentMap
   (make-resource [m]
     (->MapResource m (to-date (now)))))

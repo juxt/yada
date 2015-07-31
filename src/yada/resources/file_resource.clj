@@ -10,7 +10,7 @@
             [ring.util.mime-type :refer (ext-mime-type)]
             [ring.util.response :refer (redirect)]
             [ring.util.time :refer (format-date)]
-            [yada.resource :refer [Resource ResourceRepresentations ResourceFetch ResourceConstructor representations platform-charsets]]
+            [yada.resource :refer [Resource ResourceRepresentations ResourceFetch ResourceCoercion representations platform-charsets]]
             [yada.representation :as rep]
             [yada.methods :refer (Get get* Put put Post post Delete delete)]
             [yada.negotiation :as negotiation]
@@ -213,7 +213,7 @@
               (.delete f)
               (throw (ex-info {:status 404 :yada.core/http-response true})))))))))
 
-(extend-protocol ResourceConstructor
+(extend-protocol ResourceCoercion
   File
   (make-resource [f]
     (if (.isDirectory f)
