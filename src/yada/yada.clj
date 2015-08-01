@@ -16,3 +16,8 @@
 (import-vars
  [yada.core resource]
  [yada.swagger swaggered])
+
+;; Convenience functions, allowing us to encapsulate the context
+;; structure.
+(defn language [ctx]
+  (get-in ctx [:response :representation :language]))

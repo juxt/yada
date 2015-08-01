@@ -238,6 +238,59 @@ Finally we see our response body.
 Hello World!
 ```
 
+### Hello Swagger!
+
+Now we have a web resource, let's build an API!
+
+First, we need to choose a URI router. Let's choose [bidi](https://github.com/juxt/bidi), because it allows us to specify our _routes as data_. Since yada allows us to specify our _resources as data_, we can combine both to form a single data structure to describe our URI.
+
+Having the API specified as a data structure means we can easily derive a Swagger spec.
+
+First, let's require the support we need in the `ns` declaration.
+
+```clojure
+(require '[aleph.http :refer [start-server]]
+         '[bidi.ring :refer [make-handler]]
+         '[yada.yada :as yada])
+```
+
+Now for our resource.
+
+```clojure
+(def hello
+  (yada/resource "Hello World!\n"))
+```
+
+Now let's create a route structure housing this resource. This is our API.
+
+```clojure
+(def api
+  ["/hello-api"
+      (yada/swaggered
+        {:info {:title "Hello World!"
+                :version "1.0"
+                :description "Demonstrating yada + swagger"}
+                :basePath "/hello-api"}
+        ["/hello" hello])]
+```
+
+This is an API we can serialize into a data structure, store to disk,
+generate and derive new data structures from.
+
+Finally, let's use bidi to create a Ring handler from our API definition
+and start the web server.
+
+```clojure
+(start-server
+  (bidi/make-handler api)
+  {:port 3000})
+```
+
+The `yada/swaggered` wrapper provides a Swagger specification, in JSON, derived from its arguments. This specification can be used to drive a [Swagger UI]({{prefix}}/swagger-ui/index.html?url=/hello-api/swagger.json).
+
+![Swagger](/static/img/hello-swagger.png)
+
+
 ### A conditional request
 
 In HTTP, a conditional request is one where a user-agent (like a
@@ -428,23 +481,28 @@ parameters to a range of types. For more details, see
 
 ### Content negotiation
 
-Content negotiation is an important feature of HTTP, allowing clients and servers to agree on how a resource can be represented to best meet the availability, compatibility and preferences of both parties.
+Let's suppose we wanted to provide our greeting in both (simplified)
+Chinese and English.
 
-For example, let's suppose we wanted to provide our greeting in multiple languages. We can specify a list of representations.
+We add an option indicating the language codes of the two languages we are going to support. We can then
 
 ```clojure
 (yada/resource
   (fn [ctx]
-    (case (get-in ctx [:response :representation :language])
-            "zh-ch" "你好世界!\n"
-            "en" "Hello World!\n"))
-  :representations [{:content-type "text/plain"
-                     :language #{"en" "de" "zh-ch"}
-                     :charset "UTF-8"}
-                    {:content-type "text/plain"
-                     :language "zh-CH"
-                     :charset "Shift_JIS;q=0.9"}])
+    (case (yada/language ctx)
+      "zh-ch" "你好世界!\n"
+      "en" "Hello World!\n"))
+  :language ["zh-ch" "en"])
 ```
+
+Let's test this by providing a request header which indicates a
+preference for simplified Chinese
+
+```nohighlight
+curl -i {{prefix}}/hello-languages -H "Accept-Language: zh-CH"
+```
+
+We should get the following response
 
 ```http
 HTTP/1.1 200 OK
@@ -458,84 +516,18 @@ Content-Length: 14
 你好世界!
 ```
 
-```nohighlight
-curl -i {{prefix}}/hello-languages -H "Accept-Language: zh-CH"
-```
-
-
-```nohighlight
-curl -i http://localhost:8090/hello-languages -H "Accept-Charset: Shift_JIS" -H
-"Accept: text/plain" -H "Accept-Language: zh-CH"
-```
-
-```http
-HTTP/1.1 200 OK
-Content-Type: text/plain;charset=shift_jis
-Vary: accept-charset, accept-language, accept
-Server: Aleph/0.4.0
-Connection: Keep-Alive
-Date: Mon, 27 Jul 2015 18:38:01 GMT
-Content-Length: 9
-
-?�D���E!
-```
-
-### An attempt to get the string gzip compressed
-
-[todo]
-
-### Hello Swagger!
-
-Now we have a web resource, let's build an API!
-
-First, we need to choose a URI router. Let's choose [bidi](https://github.com/juxt/bidi), because it allows us to specify our _routes as data_. Since yada allows us to specify our _resources as data_, we can combine both to form a single data structure to describe our URI.
-
-Having the API specified as a data structure means we can easily derive a Swagger spec.
-
-```clojure
-(require '[aleph.http :refer [start-server]]
-         '[bidi.ring :refer [make-handler]]
-         '[yada.yada :as yada])
-```
-
-```clojure
-(require '[aleph.http :refer [start-server]]
-         '[bidi.ring :refer [make-handler]]
-         '[yada.yada :as yada])
-
-(def hello
-  (yada/resource "Hello World!\n"))
-
-(def routes
-  ["/hello-api"
-      (yada/swaggered
-        {:info {:title "Hello World!"
-                :version "1.0"
-                :description "Demonstrating yada + swagger"}
-                :basePath "/hello-api"}
-        ["/hello" hello])]
-
-(start-server
-  (bidi/make-handler routes)
-  {:port 3000})
-```
-
-![Swagger](/static/img/hello-swagger.png)
-
-[Swagger UI]({{prefix}}/swagger-ui/index.html?url=/hello-api/swagger.json)
-
-## Async
-
-[Hello World! in Chinese]
+There is a lot more to content negotiation than this simple example can
+show. It is covered in depth in subsequent chapters.
 
 ### Summary
 
 This simple example demonstrated how a rich and functional HTTP resource
 was created with a tiny amount of code. And yet, none of the behaviour
-we have seen is hardcoded or contrived, everything was inferred from the
-properties of the humble Java string, and yada includes support for many
-other basic types (atoms, Clojure collections, URLs, files,
-directories…).
+we have seen is hardcoded or contrived. Much of the behavior was
+inferred from the types of the first argument given to the
+`yada/resource` properties, in this case, the Java string. And yada
+includes support for many other basic types (atoms, Clojure collections,
+URLs, files, directories…).
 
 But the real power of yada comes when you define your own resource
 types, as we shall discover in subsequent chapters. But first, let's see
@@ -569,8 +561,85 @@ lein run
 
 (`lein` is available from [http://leiningen.org](http://leiningen.org))
 
+## Async
 
-## Resources - under the hood
+![Swagger](/static/img/hello-async.png)
+
+## Methods
+
+## Parameters
+
+## Representations
+
+If you think of a web resource in MVC terms, representations are the
+different views of a resource. Representations are the means by which a
+resource's state can be tranferred to different parts of the web.
+
+The actual content of a representation is determined by the outcome of a
+process known as _content negotiation_.
+
+Content negotation is an important feature of HTTP, allowing clients and
+servers to agree on how a resource can be represented to best meet the
+availability, compatibility and preferences of both parties.
+
+There are 2 types of
+[content neogiation]({{prefix}}/static/spec/rfc7231.html#section-3.4)
+described in HTTP.
+
+### Proactive negotiation
+
+The first is termed _proactive negotiation_ where the server determined
+the type of representation from requirements sent in the request
+headers.
+
+There are 4 aspects to the representation that can be negotiated
+
+* Content-type - the media type of the content
+* Charset - if the content is textual, the character set of the text
+* Encoding - usually how the content is compressed
+* Language - the natural language of content
+
+Recall our `Hello World!` example. Let's extend this by specifying 2 sets of possible representation.
+
+```clojure
+(yada/resource
+  (fn [ctx]
+    (case (get-in ctx [:response :representation :language])
+            "zh-ch" "你好世界!\n"
+            "en" "Hello World!\n"))
+  :representations [{:content-type "text/plain"
+                     :language #{"en" "zh-ch"}
+                     :charset "UTF-8"}
+                    {:content-type "text/plain"
+                     :language "zh-ch"
+                     :charset "Shift_JIS;q=0.9"}])
+```
+
+
+```nohighlight
+curl -i http://localhost:8090/hello-languages -H "Accept-Charset: Shift_JIS" -H
+"Accept: text/plain" -H "Accept-Language: zh-CH"
+```
+
+```http
+HTTP/1.1 200 OK
+Content-Type: text/plain;charset=shift_jis
+Vary: accept-charset, accept-language, accept
+Server: Aleph/0.4.0
+Connection: Keep-Alive
+Date: Mon, 27 Jul 2015 18:38:01 GMT
+Content-Length: 9
+
+?�D���E!
+```
+
+### Reactive negotiation
+
+The second type of negotiation is termed _reactive negotation_ where the
+agent chooses from a list of representations provided by the server.
+
+
+## Resources
 
 Different types of resources are added to yada by defining types or records.
 
