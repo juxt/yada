@@ -290,6 +290,7 @@ The `yada/swaggered` wrapper provides a Swagger specification, in JSON, derived 
 
 ![Swagger](/static/img/hello-swagger.png)
 
+But we're getting ahead of ourselves here. Let's delve a bit deeper in our `Hello World!` resource.
 
 ### A conditional request
 
