@@ -117,26 +117,7 @@
   (to-body [_ _] nil)
   (content-length [_] nil))
 
-(defmethod render-map "application/json"
-  [m _]
-  (str (json/encode m) \newline))
-
-(defmethod render-map "application/edn"
-  [m _]
-  (prn-str m))
-
-(defmethod render-seq "application/json"
-  [s _]
-  (str (json/encode s) \newline))
-
-(defmethod render-seq "application/edn"
-  [s _]
-  (prn-str s))
-
-(defmethod render-seq "text/event-stream"
-  [s _]
-  ;; Transduce the body to server-sent-events
-  (transform (map (partial format "data: %s\n\n")) (->source s)))
+;; text/html
 
 (defmethod render-map "text/html"
   [m representation]
@@ -147,7 +128,43 @@
       (to-body representation) ; for string encoding
       ))
 
+;; application/json
+
+(defmethod render-map "application/json"
+  [m representation]
+  (let [pretty (get-in representation [:content-type :parameters "pretty"])]
+    (str (json/encode m {:pretty pretty}) \newline)))
+
+(defmethod render-seq "application/json"
+  [s representation]
+  (let [pretty (get-in representation [:content-type :parameters "pretty"])]
+    (str (json/encode s {:pretty pretty}) \newline)))
+
+;; application/edn
+
+(defmethod render-map "application/edn"
+  [m _]
+  (prn-str m))
+
+(defmethod render-seq "application/edn"
+  [s _]
+  (prn-str s))
+
+;; text/event-stream
+
+(defmethod render-seq "text/event-stream"
+  [s _]
+  ;; Transduce the body to server-sent-events
+  (transform (map (partial format "data: %s\n\n")) (->source s)))
+
+;; defaults
+
 (defmethod render-map :default
   [m representation]
   (throw (ex-info "Attempt to call render-map without a media-type"
+                  {:representation representation})))
+
+(defmethod render-seq :default
+  [m representation]
+  (throw (ex-info "Attempt to call render-seq without a media-type"
                   {:representation representation})))

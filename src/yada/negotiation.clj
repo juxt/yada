@@ -30,7 +30,8 @@
   [acceptable candidate]
   (when
       (= (:parameters acceptable)
-         (select-keys (:parameters candidate) (keys (:parameters acceptable))))
+         (:parameters candidate)
+         #_(select-keys (:parameters candidate) (keys (:parameters acceptable))))
     (cond
       (and (= (:type acceptable) (:type candidate))
            (= (:subtype acceptable) (:subtype candidate)))

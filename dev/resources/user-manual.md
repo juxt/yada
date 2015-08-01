@@ -144,18 +144,25 @@ We pass the string as a single argument to yada's `yada` function, and yada retu
 (yada/resource "Hello World!")
 ```
 
-This web resource can be used as a Ring handler.
+This web resource can be used as a Ring handler. By combining this handler with a web-server, we can start the service.
+
+Here's how you can start the service using
+[Aleph](https://github.com/ztellman/aleph), which is currently the only
+web server that yada supports.
 
 ```clojure
-(use 'aleph.http)
+(require '[yada.yada :as yada]
+         '[aleph.http :refer [start-server]])
 
-(start-server (yada/resource "Hello World!") {:port 3000})
+(start-server
+  (yada/resource "Hello World!")
+  {:port 3000})
 ```
 
 Once we have bound this handler to the path `/hello`, we're able to make the following HTTP request :-
 
 ```nohighlight
-curl -i http://{{prefix}}/hello
+curl -i {{prefix}}/hello
 ```
 
 and receive a response like this :-
@@ -178,15 +185,13 @@ Let's examine this response in detail.
 The status code is `200 OK`. We didn't have to set it explicitly in
 code, yada inferred the status from the request and the resource.
 
-The first three response headers are added by our webserver, [Aleph](https://github.com/ztellman/aleph).
+The first three response headers are added by our webserver.
 
 ```http
 Server: Aleph/0.4.0
 Connection: Keep-Alive
 Date: {{now.date}}
 ```
-
-(Note that currently, __Aleph is the only web server that yada supports__.)
 
 Next we have another date.
 
@@ -479,7 +484,43 @@ Content-Length: 9
 
 [todo]
 
-### Swagger
+### Hello Swagger!
+
+Now we have a web resource, let's build an API!
+
+First, we need to choose a URI router. Let's choose [bidi](https://github.com/juxt/bidi), because it allows us to specify our _routes as data_. Since yada allows us to specify our _resources as data_, we can combine both to form a single data structure to describe our URI.
+
+Having the API specified as a data structure means we can easily derive a Swagger spec.
+
+```clojure
+(require '[aleph.http :refer [start-server]]
+         '[bidi.ring :refer [make-handler]]
+         '[yada.yada :as yada])
+```
+
+```clojure
+(require '[aleph.http :refer [start-server]]
+         '[bidi.ring :refer [make-handler]]
+         '[yada.yada :as yada])
+
+(def hello
+  (yada/resource "Hello World!\n"))
+
+(def routes
+  ["/hello-api"
+      (yada/swaggered
+        {:info {:title "Hello World!"
+                :version "1.0"
+                :description "Demonstrating yada + swagger"}
+                :basePath "/hello-api"}
+        ["/hello" hello])]
+
+(start-server
+  (bidi/make-handler routes)
+  {:port 3000})
+```
+
+![Swagger](/static/img/hello-swagger.png)
 
 [Swagger UI]({{prefix}}/swagger-ui/index.html?url=/hello-api/swagger.json)
 
@@ -508,6 +549,7 @@ following in the file's __:dependencies__ section.
 
 ```clojure
 [yada "{{yada.version}}"]
+[aleph "0.4.0"]
 ```
 
 If you want to use yada to create a web API, this is all you need to

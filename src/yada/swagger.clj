@@ -18,7 +18,7 @@
    [yada.methods :refer (Get get*)]
    [yada.mime :as mime]
    [yada.resource :refer (Resource ResourceRepresentations ResourceCoercion platform-charsets make-resource) :as res]
-   [yada.yada :as yada])
+   [yada.core :as yada])
   (:import (clojure.lang PersistentVector Keyword)))
 
 (defprotocol SwaggerPath
@@ -55,7 +55,10 @@
 
   ResourceRepresentations
   (representations [_]
-    [{:content-type #{"application/json" "text/html;q=0.9" "application/edn;q=0.8"}
+    [{:content-type #{"application/json"
+                      "application/json;pretty=true"
+                      "text/html;q=0.9"
+                      "application/edn;q=0.8"}
       :charset platform-charsets}])
 
   Get
@@ -96,15 +99,6 @@
       (handler req))))
 
 (defn swaggered [spec route]
-  #_(infof "swaggered, route is %s, spec is %s" route spec)
   (let [spec (merge spec {:paths (into {} (map to-path (route-seq (unroll-route route))))})]
     (->Swaggered spec route
                  (yada/resource (->SwaggerSpec spec (to-date (now)))))))
-
-#_(pprint
-   (swaggered {:info {:title "Hello World!"
-                      :version "0.0.1"
-                      :description "Demonstrating yada + swagger"}
-               :basePath "/hello-api"
-               }
-              ["/hello" (yada "Hello World!")]))

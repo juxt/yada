@@ -21,7 +21,7 @@
 
    [yada.dev.async :refer (new-handler)]
    [yada.dev.external :refer (new-external-resources)]
-   [yada.dev.hello :refer (new-hello-api)]
+   [yada.dev.hello :refer (new-hello-world-example)]
    [aero.core :refer (read-config)]))
 
 (defn config
@@ -102,13 +102,10 @@
                      {:request-handler :external-router
                       :user-manual :user-manual})))
 
-(defn hello-api-server-components [system config]
+(defn hello-world-components [system config]
   (assoc
    system
-   :hello-api (new-hello-api)
-   :hello-api-server (using
-                      (new-webserver :port 8092)
-                      {:request-handler :hello-api})))
+   :hello-world (new-hello-world-example)))
 
 (defn new-system-map
   [config]
@@ -122,7 +119,7 @@
         (router-components config)
         (http-server-components config)
         (external-server-components config)
-        #_(hello-api-server-components config)
+        (hello-world-components config)
         (assoc :redirect (new-redirect :from "/" :to :yada.dev.website/index))
         ))))
 
@@ -132,6 +129,7 @@
    :external-server {:request-handler :external-router}
    :user-manual {:templater :clostache-templater}
    :router [:swagger-ui
+            :hello-world
             :user-api
             :user-manual
             :website

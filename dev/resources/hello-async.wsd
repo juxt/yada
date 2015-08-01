@@ -1,0 +1,40 @@
+#title Website registration with collection code
+
+participant User Agent as user
+participant Aleph as aleph
+participant Yada as yada
+participant Manifold as manifold
+participant Method as method
+participant Async API as api
+
+option footer=none
+autonumber 1
+user -> aleph: HTTP request
+activate aleph
+aleph -> yada: call handler
+deactivate aleph
+activate yada
+yada -> manifold: start chain
+deactivate yada
+activate manifold
+manifold -> method: invoke
+deactivate manifold
+activate method
+method -> api: async call
+activate api
+method -> manifold: return a promise
+deactivate method
+api -> method: callback
+deactivate api
+activate method
+method -> manifold: deliver the promise
+deactivate method
+activate manifold
+manifold -> yada: end chain
+deactivate manifold
+activate yada
+yada -> aleph: response
+deactivate yada
+activate aleph
+aleph -> user: HTTP response
+deactivate aleph

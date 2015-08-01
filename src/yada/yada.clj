@@ -4,6 +4,7 @@
   (:refer-clojure :exclude [partial])
   (:require
    yada.core
+   yada.swagger
    yada.resources.atom-resource
    yada.resources.collection-resource
    yada.resources.file-resource
@@ -13,4 +14,5 @@
    [potemkin :refer (import-vars)]))
 
 (import-vars
- [yada.core resource])
+ [yada.core resource]
+ [yada.swagger swaggered])

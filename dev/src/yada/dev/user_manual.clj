@@ -415,18 +415,18 @@
                                     ["/hello" hello])
                          (tag :hello-api))]
 
-        ["petstore-simple.json" (yada/resource (json/decode (slurp (io/file "dev/resources/petstore/petstore-simple.json")))
+        #_["petstore-simple.json" (yada/resource (json/decode (slurp (io/file "dev/resources/petstore/petstore-simple.json")))
                                                {:representations [{:content-type #{"application/json"
                                                                                    "text/html;q=0.9"
                                                                                    "application/edn;q=0.8"}
                                                                    :charset #{"UTF-8"}}]})]
 
-        ["hello" hello]
-        ["hello-atom" hello-atom]
+        #_["hello" hello]
+        #_["hello-atom" hello-atom]
 
-        ["hello-parameters" hello-parameters]
+        #_["hello-parameters" hello-parameters]
 
-        ["hello-languages" hello-languages
+        #_["hello-languages" hello-languages
          ]
 
         #_["hello4" (resource (fn [ctx] "你好世界!\n")

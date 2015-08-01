@@ -1,18 +1,27 @@
 (ns yada.dev.hello
   (:require
-   [yada.yada :refer (resource)]
+   [yada.yada :as yada]
    [yada.swagger :refer (swaggered)]
-   [modular.ring :refer (WebRequestHandler)]))
+   [bidi.bidi :refer (RouteProvider)]
+   ))
 
-(defrecord HelloApi []
-  WebRequestHandler
-  (request-handler [_]
-    (swaggered {:info {:title "Hello World!"
-                       :version "0.0.1"
-                       :description "Demonstrating yada + swagger"}
-                :basePath ""
-                }
-               ["/hello" (resource "Hello World!\n")])))
+(def hello
+  (yada/resource "Hello World!\n"))
 
-(defn new-hello-api [& {:as opts}]
-  (->HelloApi))
+(defrecord HelloWorldExample []
+  RouteProvider
+  (routes [_]
+    [""
+     [["/hello" hello]
+
+      ;; Swagger
+      ["/hello-api"
+       (swaggered {:info {:title "Hello World!"
+                          :version "1.0"
+                          :description "Demonstrating yada + swagger"}
+                   :basePath "/hello-api"
+                   }
+                  ["/hello" hello])]]]))
+
+(defn new-hello-world-example [& {:as opts}]
+  (->HelloWorldExample))
