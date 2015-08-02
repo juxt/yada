@@ -34,6 +34,8 @@
   nil
   (make-resource [_] nil))
 
+;; Fetch
+
 (defprotocol ResourceFetch
   (fetch [this ctx] "Fetch the resource, such that questions can be
   answered about it. Anything you return from this function will be
@@ -43,6 +45,18 @@
   to perform some IO in this function). Often, you will return 'this',
   perhaps augmented with some additional state. Sometimes you will
   return something else."))
+
+;; Fetch happens before negotiation, so must only return resource data,
+;; nothing to do with the representation itself. Negotiation information
+;; will not be present in the context, which is provided primarily to
+;; give the resource fetch access to the Ring request and it's own
+;; resource definition.
+
+(extend-protocol ResourceFetch
+  nil ; The user has not elected to specify a resource, that's fine (and common)
+  (fetch [_ ctx] nil)
+  Object
+  (fetch [o ctx] o))
 
 (defprotocol Resource
   "A protocol for describing a resource: where it is, when it was last
@@ -78,26 +92,7 @@
   (methods [_] nil)
   (last-modified [_ _] nil))
 
-;; Fetch
-
-;; Fetch happens before negotiation, so must only return resource data,
-;; nothing to do with the representation itself. Negotiation information
-;; will not be present in the context, which is provided primarily to
-;; give the resource fetch access to the Ring request and it's own
-;; resource definition.
-
-(extend-protocol ResourceFetch
-  nil ; The user has not elected to specify a resource, that's fine (and common)
-  (fetch [_ ctx] nil)
-  Object
-  (fetch [o ctx] o))
-
 ;; Negotiation
-
-(defprotocol Negotiable
-  (negotiate [_ ctx] "Negotiate the resource's representations. Return a
-  yada.negotiation/NegotiationResult. Optional protocol, falls back to
-  default negotiation."))
 
 (defprotocol ResourceRepresentations
   ;; Context-agnostic
