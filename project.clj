@@ -14,7 +14,7 @@
   [[prismatic/schema "0.4.2" :exclusions [potemkin]] ; TODO 0.4.2
    [potemkin "0.3.11" :exclusions [riddley]]
    [manifold "0.1.0"]
-   [bidi "1.20.3-SNAPSHOT"]
+   [bidi "1.20.3"]
    [hiccup "1.0.5"]
    [cheshire "5.4.0"]
    [ring-basic-authentication "1.0.5"]
