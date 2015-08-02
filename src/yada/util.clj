@@ -45,7 +45,15 @@
 
 (def text (comp (mapcat :content) (filter string?)))
 
-
 ;; Parsing
 
 (def http-token #"[!#$%&'*+-\.\^_`|~\p{Alnum}]+")
+
+;; ETags
+
+(defn md5-hash [s]
+  (let [digest
+        (doto
+            (java.security.MessageDigest/getInstance "MD5")
+          (.update (.getBytes s) 0 (.length s)))]
+    (format "%1$032x" (java.math.BigInteger. 1 (.digest digest)))))

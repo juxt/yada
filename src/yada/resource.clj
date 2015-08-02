@@ -126,3 +126,7 @@
 (defprotocol ResourceParameters
   "Declare the resource's parameters"
   (parameters [_] "Return the parameters, by method. Must not return a deferred value."))
+
+(defprotocol ResourceEntityTag
+  "Entity tags."
+  (etag [_] "Return the entity tag of a resource, as a string."))

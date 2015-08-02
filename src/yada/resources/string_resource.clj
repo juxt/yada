@@ -4,11 +4,12 @@
   (:require
    [clj-time.core :refer (now)]
    [clj-time.coerce :refer (to-date)]
-   [yada.resource :refer [Resource ResourceRepresentations ResourceCoercion ResourceFetch platform-charsets]]
+   [yada.resource :refer [Resource ResourceRepresentations ResourceEntityTag ResourceCoercion platform-charsets]]
    [yada.methods :refer [Get Options]]
-   [yada.representation :refer [Representation]]))
+   [yada.representation :refer [Representation]]
+   [yada.util :refer (md5-hash)]))
 
-(defrecord StringResource [s last-modified]
+(defrecord StringResource [s last-modified etag]
   Resource
   ;; Don't include :head, it is always available with yada.
   (methods [this] #{:get :options})
@@ -23,10 +24,13 @@
       :content-type #{"text/plain"}
       :charset platform-charsets}])
 
+  ResourceEntityTag
+  (etag [_] etag)
+
   Get
   (get* [this ctx] s))
 
 (extend-protocol ResourceCoercion
   String
   (make-resource [s]
-    (->StringResource s (to-date (now)))))
+    (->StringResource s (to-date (now)) (md5-hash s))))

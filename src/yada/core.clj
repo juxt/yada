@@ -165,6 +165,8 @@
            (when (satisfies? res/ResourceRepresentations resource)
              (res/representations resource))))
 
+         etag? (satisfies? res/ResourceEntityTag resource)
+
          security (as-sequential security)]
 
      (map->HttpResource
@@ -378,19 +380,9 @@
                    (fn [exists?]
                      (assoc ctx :exists? exists?))))
 
-                ;; Conditional requests - put this in own ns
+                ;; Conditional requests - last modified time
                 (fn [ctx]
-
-                  ;; TODO Rethink etags now we have protocols
-                  (when-let [etag (get-in req [:headers "if-match"])]
-                    (when (not= etag (get-in ctx [:resource :etag]))
-                      (throw
-                       (ex-info "Precondition failed"
-                                {:status 412
-                                 ::http-response true}))))
-
                   (d/chain
-
                    (or
                     (res/last-modified (:last-modified options) ctx)
                     (res/last-modified (:resource ctx) ctx))
@@ -419,11 +411,16 @@
                                    format-date
                                    (assoc-in ctx [:response :headers "last-modified"]))
                           ctx))
-
                        ctx))))
 
+                ;; ETags
                 (link ctx
-                  (when-let [etag (get-in ctx [:request :headers "if-match"])]
+
+                  (when etag?
+                    (let [etag (res/etag (:resource ctx))]
+                      (assoc-in ctx [:response :headers "etag"] etag)))
+
+                  #_(when-let [etag (get-in ctx [:request :headers "if-match"])]
                     (when (not= etag (get-in ctx [:resource :etag]))
                       (throw
                        (ex-info "Precondition failed"
