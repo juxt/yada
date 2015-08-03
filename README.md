@@ -29,7 +29,7 @@ For the latest stable release, add the following dependency to your
 For the latest release, use the following
 
 ```clojure
-[yada "0.5.0-20150802.201449-3"]
+[yada "1.0.0-20150803.074120-1"]
 ```
 
 ## Status
