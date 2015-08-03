@@ -136,26 +136,26 @@ web-framework from yada and other libraries.
 
 Let's introduce yada properly by writing some code. Let's start with some state, a string: `Hello World!`. We'll be able to give an overview of many of yada's features using this simple example.
 
-We pass the string as a single argument to yada's `yada` function, and yada returns a web _resource_.
+We pass the string as a single argument to yada's `resource` function, and yada returns a web _resource_.
 
 ```clojure
 (require '[yada.yada :as yada])
 
-(yada/resource "Hello World!")
+(yada/resource "Hello World!\n")
 ```
 
 This web resource can be used as a Ring handler. By combining this handler with a web-server, we can start the service.
 
 Here's how you can start the service using
-[Aleph](https://github.com/ztellman/aleph), which is currently the only
-web server that yada supports.
+[Aleph](https://github.com/ztellman/aleph). (Note that Aleph is the only
+web server that yada currently supports).
 
 ```clojure
 (require '[yada.yada :as yada]
          '[aleph.http :refer [start-server]])
 
 (start-server
-  (yada/resource "Hello World!")
+  (yada/resource "Hello World!\n")
   {:port 3000})
 ```
 
@@ -173,6 +173,7 @@ Server: Aleph/0.4.0
 Connection: Keep-Alive
 Date: {{now.date}}
 Last-Modified: {{hello.date}}
+ETag: 8ddd8be4b179a529afa5f2ffae4b9858
 Content-Type: text/plain;charset=utf-8
 Vary: accept-charset
 Content-Length: 13
@@ -193,44 +194,39 @@ Connection: Keep-Alive
 Date: {{now.date}}
 ```
 
-Next we have another date.
+Next we have another date and a string known as the _entity tag_.
 
 ```http
 Last-Modified: {{hello.date}}
+ETag: 8ddd8be4b179a529afa5f2ffae4b9858
 ```
 
 The __Last-Modified__ header shows when the string `Hello World!` was
 created. As Java strings are immutable, yada is able to deduce that the
 string's creation date is also the last time it could have been
-modified.
+modified. The same goes for the entity tag. Both are used in cacheing
+and conflict detection, which will be described later.
 
-Next we have a header telling us the media-type of the string's
-state. yada is able to determine that the media-type is text, but
-without more clues it must default to
-`text/plain`.
-
-It is, however, able to offer the body in numerous character set
-encodings, thanks to the Java platform. The default character set of the
-Java platform serving this resource is UTF-8, so yada inherits that as a
-default.
+Next we have a header telling us the media-type of the string's representation.
 
 ```http
 Content-Type: text/plain;charset=utf-8
 ```
 
-Since the Java platform can encode a string in other charsets, yada uses the _Vary_ header to signal to the user-agent (and caches) that the body could change if a request contained an _Accept-Charset_ header.
+yada is able to determine that the media-type is text, but
+without more clues it defaults to `text/plain`.
 
 ```http
 Vary: accept-charset
 ```
+
+Since the Java platform can encode a string in other charsets, yada uses the _Vary_ header to signal to the user-agent (and caches) that the body could change if a request contained an _Accept-Charset_ header.
 
 Next we are given the length of the body, in bytes.
 
 ```http
 Content-Length: 13
 ```
-
-In this case, the count includes a newline.
 
 Finally we see our response body.
 
@@ -340,8 +336,9 @@ Content-Length: 0
 ```
 
 The response status is `405 Method Not Allowed`, telling us that our
-request was unacceptable. The is also a __Allow__ header, telling us
-which methods are allowed. One of these methods is OPTIONS. Let's try this.
+request was unacceptable. There is also a __Allow__ header, telling us
+which methods are allowed. One of these methods is OPTIONS. Let's try
+this.
 
 ```nohighlight
 curl -i {{prefix}}/hello -X OPTIONS
@@ -408,6 +405,13 @@ Hello Dolly!
 ```
 
 As long as someone else hasn't sneaked in a different state between your `PUT` and `GET`, and the server hasn't been restarted, you should see the new state of the resource is "Hello Dolly!".
+
+Before reverting our code back to the original, without the atom, let's see the Swagger UI again.
+
+![Swagger](/static/img/mutable-hello-swagger.png)
+
+We now have a few more methods. [See for your self]({{prefix}}/swagger-ui/index.html?url=/mutable-hello-api/swagger.json).
+
 
 ### A HEAD request
 
