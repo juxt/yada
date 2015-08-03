@@ -408,7 +408,7 @@ As long as someone else hasn't sneaked in a different state between your `PUT` a
 
 Before reverting our code back to the original, without the atom, let's see the Swagger UI again.
 
-![Swagger](/static/img/mutable-hello-swagger.png)
+![Swagger](public/img/mutable-hello-swagger.png)
 
 We now have a few more methods. [See for your self]({{prefix}}/swagger-ui/index.html?url=/mutable-hello-api/swagger.json).
 
@@ -568,7 +568,7 @@ lein run
 
 ## Async
 
-![Swagger](/static/img/hello-async.png)
+![Swagger](public/img/hello-async.png)
 
 ## Methods
 
