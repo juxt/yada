@@ -114,7 +114,7 @@
 
 (defn resource
   "Create a yada resource (Ring handler)"
-  ([resource]                         ; Single form with default options
+  ([resource]                         ; Single-arity form with default options
    (yada.core/resource resource {}))
 
   ([resource
