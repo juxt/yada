@@ -15,7 +15,7 @@ It has the following features
 Full documentation for 0.4.3 is available at
 [http://yada.juxt.pro](http://yada.juxt.pro) or offline (see below).
 
-Incomplete documentation for 0.5.x is available [here](dev/resources/user-manual.md).
+Incomplete documentation for 1.0.x is available [here](dev/resources/user-manual.md).
 
 ## Installation
 
@@ -37,7 +37,7 @@ For the latest release, use the following
 Please note that being a 0.x.y version indicates the provisional status
 of this library, and that features are subject to change.
 
-For the latest 0.5.x release there are expected to be some bugs. Please
+For the latest 1.0.x release there are expected to be some bugs. Please
 feel free to raise GitHub issues.
 
 ## Running documentation and examples offline
