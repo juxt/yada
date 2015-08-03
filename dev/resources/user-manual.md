@@ -284,7 +284,7 @@ and start the web server.
 
 The `yada/swaggered` wrapper provides a Swagger specification, in JSON, derived from its arguments. This specification can be used to drive a [Swagger UI]({{prefix}}/swagger-ui/index.html?url=/hello-api/swagger.json).
 
-![Swagger](/static/img/hello-swagger.png)
+![Swagger](public/img/hello-swagger.png)
 
 But we're getting ahead of ourselves here. Let's delve a bit deeper in our `Hello World!` resource.
 
