@@ -139,7 +139,8 @@
      :or {authorization (NoAuthorizationSpecified.)
           id (java.util.UUID/randomUUID)}}]
 
-   (let [resource (if (satisfies? res/ResourceCoercion resource)
+   (let [base resource ; keep a copy, we're about to eclipse
+         resource (if (satisfies? res/ResourceCoercion resource)
                     (res/make-resource resource)
                     resource)
 
@@ -172,11 +173,13 @@
      (map->HttpResource
       {:id id
        :resource resource
+       :base base
        :options options
        :methods allowed-methods
        :parameters parameters
        :representations representations
        :security security
+       :authorization authorization
        :handler
        (fn [req ctx]
 

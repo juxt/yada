@@ -2,7 +2,7 @@
 
 (ns yada.swagger
   (:require
-   [bidi.bidi :refer (Matched resolve-handler unresolve-handler route-seq succeed unmatch-pair unroll-route)]
+   [bidi.bidi :refer (Matched resolve-handler unresolve-handler route-seq succeed unmatch-pair)]
    [bidi.ring :refer (Ring request make-handler)]
    [camel-snake-kebab :as csk]
    [cheshire.core :as json]
@@ -99,6 +99,6 @@
       (handler req))))
 
 (defn swaggered [spec route]
-  (let [spec (merge spec {:paths (into {} (map to-path (route-seq (unroll-route route))))})]
+  (let [spec (merge spec {:paths (into {} (map to-path (route-seq route)))})]
     (->Swaggered spec route
                  (yada/resource (->SwaggerSpec spec (to-date (now)))))))

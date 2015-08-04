@@ -7,8 +7,9 @@
   (:refer-clojure :exclude [partial])
   (:require
    [clojure.tools.logging :refer :all]
+   [clojure.walk :refer (postwalk)]
    [yada.core :refer (resource make-context)]
-   [bidi.bidi :refer (Matched resolve-handler unresolve-handler context succeed)]
+   [bidi.bidi :refer (Matched resolve-handler unresolve-handler succeed)]
    [bidi.ring :refer (Ring request)])
   (:import [yada.core HttpResource]))
 
@@ -61,14 +62,18 @@
   ([resource options]
    (->ResourceBranchEndpoint resource options)))
 
-(defn partial
-  "Contextually bind a set of resource options to the match
-  context. This allows policies (e.g. security entries) to be specified
-  at a bidi route context which are merged with the final resource
-  map. Where there is a merge clash, the inner-most (lower) context
-  wins."
-  [m routes]
-  (context
-   (fn [ctx]
-     (merge-with merge ctx {k-options m}))
+;; Functions to update inner routes
+
+(defn update-routes [routes f & args]
+  (postwalk
+   (fn [x] (cond
+            (instance? yada.core.HttpResource x)
+            (apply f x args)
+            :otherwise x))
    routes))
+
+(defn secure-with [security-options routes]
+  (yada.bidi/update-routes
+   routes
+   (fn [{:keys [base options]}]
+     (resource base (merge options security-options)))))
