@@ -3,6 +3,7 @@
 (ns yada.representation
   (:require
    [clojure.tools.logging :refer :all]
+   [clojure.pprint :refer (pprint)]
    [byte-streams :as bs]
    [cheshire.core :as json]
    [clojure.java.io :as io]
@@ -143,12 +144,18 @@
 ;; application/edn
 
 (defmethod render-map "application/edn"
-  [m _]
-  (prn-str m))
+  [m representation]
+  (let [pretty (get-in representation [:content-type :parameters "pretty"])]
+    (if pretty
+      (with-out-str (pprint m))
+      (prn-str m))))
 
 (defmethod render-seq "application/edn"
-  [s _]
-  (prn-str s))
+  [s representation]
+  (let [pretty (get-in representation [:content-type :parameters "pretty"])]
+    (if pretty
+      (with-out-str (pprint s))
+      (prn-str s))))
 
 ;; text/event-stream
 
