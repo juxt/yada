@@ -22,9 +22,7 @@
       ;; impossible) we're not able to guess the media-type of this
       ;; string, so we return text/plain.
       :content-type #{"text/plain"}
-      ;; Tune down the number of charsets to a manageable level.
-      :charset (filter (comp not (partial re-matches #"(x-|IBM).*") :alias)
-                       platform-charsets)}])
+      :charset platform-charsets}])
 
   ResourceEntityTag
   (etag [_] etag)
