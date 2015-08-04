@@ -17,8 +17,9 @@
    [schema.core :as s]
    [yada.methods :refer (Get get*)]
    [yada.mime :as mime]
-   [yada.resource :refer (Resource ResourceRepresentations ResourceCoercion platform-charsets make-resource) :as res]
-   [yada.core :as yada])
+   [yada.resource :refer (Resource ResourceRepresentations ResourceEntityTag ResourceCoercion platform-charsets make-resource) :as res]
+   [yada.core :as yada]
+   [yada.util :refer (md5-hash)])
   (:import (clojure.lang PersistentVector Keyword)))
 
 (defprotocol SwaggerPath
@@ -29,7 +30,7 @@
   PersistentVector (encode [v] (apply str (map encode v)))
   Keyword (encode [k] (str "{" (name k) "}")))
 
-(defn- to-path [route]
+(defn to-path [route]
   (let [path (->> route :path (map encode) (apply str))
         http-resource (-> route :handler :delegate)
         {:keys [resource options methods parameters representations]} http-resource
@@ -47,19 +48,24 @@
                                   :parameters parameters}}))
                  swagger)]))
 
-(defrecord SwaggerSpec [spec created-at]
+(defrecord SwaggerSpec [spec created-at etag]
   Resource
   (methods [_] #{:get :head})
   (exists? [_ ctx] true)
   (last-modified [_ ctx] created-at)
 
+  ResourceEntityTag
+  (etag [_] etag)
+
   ResourceRepresentations
   (representations [_]
-    [{:content-type #{"application/json"
+    [{:content-type "text/html"
+      :charset platform-charsets}
+
+     {:content-type #{"application/json"
                       "application/json;pretty=true"
-                      "text/html;q=0.9"
                       "application/edn;q=0.8"}
-      :charset platform-charsets}])
+      :charset #{"UTF-8" "UTF-16;q=0.9" "UTF-32;q=0.9"}}])
 
   Get
   (get* [_ ctx] (rs/swagger-json spec)))
@@ -101,4 +107,4 @@
 (defn swaggered [spec route]
   (let [spec (merge spec {:paths (into {} (map to-path (route-seq route)))})]
     (->Swaggered spec route
-                 (yada/resource (->SwaggerSpec spec (to-date (now)))))))
+                 (yada/resource (->SwaggerSpec spec (to-date (now)) (md5-hash (pr-str spec)))))))
