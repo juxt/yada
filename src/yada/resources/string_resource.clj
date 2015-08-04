@@ -18,11 +18,13 @@
 
   ResourceRepresentations
   (representations [_]
-    [{;; Without attempting to actually parse it (which isn't completely
+    [{ ;; Without attempting to actually parse it (which isn't completely
       ;; impossible) we're not able to guess the media-type of this
       ;; string, so we return text/plain.
       :content-type #{"text/plain"}
-      :charset platform-charsets}])
+      ;; Tune down the number of charsets to a manageable level.
+      :charset (filter (comp not (partial re-matches #"(x-|IBM).*") :alias)
+                       platform-charsets)}])
 
   ResourceEntityTag
   (etag [_] etag)
