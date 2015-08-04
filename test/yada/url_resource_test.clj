@@ -17,7 +17,7 @@
 ;; content-length.)
 
 (deftest resource-test
-  (let [resource (io/resource "public/css/fonts.css")
+  (let [resource (io/resource "static/css/fonts.css")
         handler (yada.core/resource resource)
         response @(handler (mock/request :get "/"))]
     (given response
@@ -25,5 +25,4 @@
       :status := 200
       [:headers "content-type"] := "text/css;charset=utf-8"
       [:headers "content-length"] :? nil?
-      :body :? (partial instance? BufferedReader)
-      )))
+      :body :? (partial instance? BufferedReader))))
