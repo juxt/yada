@@ -284,7 +284,7 @@ and start the web server.
 
 The `yada/swaggered` wrapper provides a Swagger specification, in JSON, derived from its arguments. This specification can be used to drive a [Swagger UI]({{prefix}}/swagger-ui/index.html?url=/hello-api/swagger.json).
 
-![Swagger](public/img/hello-swagger.png)
+![Swagger](static/img/hello-swagger.png)
 
 But we're getting ahead of ourselves here. Let's delve a bit deeper in our `Hello World!` resource.
 
@@ -408,7 +408,7 @@ As long as someone else hasn't sneaked in a different state between your `PUT` a
 
 Before reverting our code back to the original, without the atom, let's see the Swagger UI again.
 
-![Swagger](public/img/mutable-hello-swagger.png)
+![Swagger](static/img/mutable-hello-swagger.png)
 
 We now have a few more methods. [See for your self]({{prefix}}/swagger-ui/index.html?url=/mutable-hello-api/swagger.json).
 
@@ -568,7 +568,7 @@ lein run
 
 ## Async
 
-![Swagger](public/img/hello-async.png)
+![Swagger](static/img/hello-async.png)
 
 ## Methods
 

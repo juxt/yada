@@ -61,7 +61,7 @@
                     :resource-prefix "META-INF/resources/webjars/bootstrap/3.3.2")
    :web-resources (make new-web-resources config
                         :uri-context "/static"
-                        :resource-prefix "public")
+                        :resource-prefix "static")
    :highlight-js-resources
    (make new-archived-web-resources config :archive (io/resource "highlight.zip") :uri-context "/hljs/")
    ))
