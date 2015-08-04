@@ -20,10 +20,8 @@
   []
   (let [config (config :dev)
         s-map (new-system-map config)]
-
     (-> s-map
-        (component/system-using (new-dependency-map))
-        )))
+        (component/system-using (new-dependency-map)))))
 
 (defn init
   "Constructs the current development system."
@@ -36,8 +34,7 @@
   []
   (alter-var-root
    #'system
-   co-dependency/start-system
-))
+   co-dependency/start-system))
 
 (defn stop
   "Shuts down and destroys the current development system."
@@ -50,8 +47,7 @@
   []
   (init)
   (start)
-  :ok
-  )
+  :ok)
 
 (defn reset []
   (stop)
