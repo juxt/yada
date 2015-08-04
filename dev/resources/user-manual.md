@@ -132,7 +132,7 @@ other routing libraries. It can integrated with the many template
 libraries available for Clojure and Java, so you can build your own
 web-framework from yada and other libraries.
 
-### A tutorial: Hello World!
+### An introductory example: Hello World!
 
 Let's introduce yada properly by writing some code. Let's start with some state, a string: `Hello World!`. We'll be able to give an overview of many of yada's features using this simple example.
 
