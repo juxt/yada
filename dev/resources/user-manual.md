@@ -726,3 +726,47 @@ platform we are on).
 
 There are numerous types already built into yada, but you can also add
 your own. You can also add your own custom methods.
+
+
+## Routing
+
+Since the `yada.yada/resource` function returns a Ring-compatible
+handler, it is compatible with any Clojure URI router.
+
+If you use a data-structure for your routes, you can walk the tree to
+find yada resources which, as data, can be augmented according to any
+policies you may have for a particular sub-tree of routes.
+
+Let's demonstrate this with an example. Here is a data structure
+compatible with the bidi routing library.
+
+```clojure
+(require '[yada.walk :refer [basic-auth]])
+
+["/api"
+   {"/status" (yada/resource "API working!")
+    "/hello" (fn [req] {:body "hello"})
+    "/protected" (basic-auth
+                  "Protected" (fn [ctx]
+                                (or
+                                 (when-let [auth (:authentication ctx)]
+                                   (= ((juxt :user :password) auth)
+                                      ["alice" "password"]))
+                                 :not-authorized))
+                  {"/a" (yada/resource "Secret area A")
+                   "/b" (yada/resource "Secret area B")})}]
+```
+
+The 2 routes, `/api/protected/a` and `/api/protected/b` are wrapped with
+`basic-auth`. This function simply walks the tree and augments each yada
+resource it finds with some additional options, effectively securing
+both with HTTP Basic Authentication.
+
+If we examine the source code in the `yada.walk` namespace we see that there is no clever trickery involved, merely a `clojure.walk/postwalk` of the data structure below it to update the resource leaves with the given security policy.
+
+It is easy to envisage a number of useful functions that could be
+written to transform a sub-tree of routes in this way to provide many
+kinds of additional functionality. This is the advantage that choosing a
+data-centric approach gives you. When both your routes and resources are
+data, they are amenable to programmatic transformation, making your
+future options virtually limitless.

@@ -3,31 +3,27 @@
 (ns yada.bidi-test
   (:require
    [clojure.test :refer :all]
-   [ring.util.codec :as codec]
-   [byte-streams :as bs]
-   [yada.yada :as yada]
-   ;; TODO: These resources should be loaded automatically via a yada ns
-   yada.resources.string-resource
-   [juxt.iota :refer (given)]
-   [yada.bidi :refer (secure-with)]
+   [clojure.walk :refer (postwalk)]
    [bidi.bidi :as bidi :refer (Matched compile-route succeed)]
    [bidi.ring :refer (make-handler Ring)]
+   [byte-streams :as bs]
+   [juxt.iota :refer (given)]
    [ring.mock.request :refer (request)]
-   [clojure.walk :refer (postwalk)]
-   bidi.bidi))
+   [ring.util.codec :as codec]
+   [yada.walk :refer (basic-auth)]
+   [yada.yada :as yada]))
 
 (defn make-api []
   ["/api"
    {"/status" (yada/resource "API working!")
     "/hello" (fn [req] {:body "hello"})
-    "/protected" (secure-with
-                  {:security {:type :basic :realm "Protected"}
-                   :authorization (fn [ctx]
-                                    (or
-                                     (when-let [auth (:authentication ctx)]
-                                       (= ((juxt :user :password) auth)
-                                          ["alice" "password"]))
-                                     :not-authorized))}
+    "/protected" (basic-auth
+                  "Protected" (fn [ctx]
+                                (or
+                                 (when-let [auth (:authentication ctx)]
+                                   (= ((juxt :user :password) auth)
+                                      ["alice" "password"]))
+                                 :not-authorized))
                   {"/a" (yada/resource "Secret area A")
                    "/b" (yada/resource "Secret area B")})}])
 

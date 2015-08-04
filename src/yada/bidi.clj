@@ -7,7 +7,6 @@
   (:refer-clojure :exclude [partial])
   (:require
    [clojure.tools.logging :refer :all]
-   [clojure.walk :refer (postwalk)]
    [yada.core :refer (resource make-context)]
    [bidi.bidi :refer (Matched resolve-handler unresolve-handler succeed)]
    [bidi.ring :refer (Ring request)])
@@ -61,19 +60,3 @@
    (resource-branch resource {}))
   ([resource options]
    (->ResourceBranchEndpoint resource options)))
-
-;; Functions to update inner routes
-
-(defn update-routes [routes f & args]
-  (postwalk
-   (fn [x] (cond
-            (instance? yada.core.HttpResource x)
-            (apply f x args)
-            :otherwise x))
-   routes))
-
-(defn secure-with [security-options routes]
-  (yada.bidi/update-routes
-   routes
-   (fn [{:keys [base options]}]
-     (resource base (merge options security-options)))))
