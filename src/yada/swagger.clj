@@ -32,9 +32,10 @@
 
 (defn to-path [route]
   (let [path (->> route :path (map encode) (apply str))
-        http-resource (-> route :handler :delegate)
+        http-resource (-> route :handler)
         {:keys [resource options methods parameters representations]} http-resource
         swagger (:swagger options)]
+
     [path
      (merge-with merge
                  (into {}
@@ -48,7 +49,7 @@
                                   :parameters parameters}}))
                  swagger)]))
 
-(defrecord SwaggerSpec [spec created-at etag]
+(defrecord SwaggerSpec [spec created-at etag content-type]
   Resource
   (methods [_] #{:get :head})
   (exists? [_ ctx] true)
@@ -59,24 +60,33 @@
 
   ResourceRepresentations
   (representations [_]
-    [{:content-type "text/html"
-      :charset platform-charsets}
+    (case content-type
+      "text/html" [{:content-type "text/html"
+                    :charset platform-charsets}]
+      "application/edn" [{:content-type #{"application/edn"
+                                          "application/edn;pretty=true"}
+                          :charset #{"UTF-8"}}]
 
-     {:content-type #{"application/json"
-                      "application/json;pretty=true"
-                      "application/edn;q=0.8"}
-      :charset #{"UTF-8" "UTF-16;q=0.9" "UTF-32;q=0.9"}}])
+      "application/json" [{:content-type #{"application/json"
+                                           "application/json;pretty=true"}
+                           :charset #{"UTF-8" "UTF-16;q=0.9" "UTF-32;q=0.9"}}]))
 
   Get
   (get* [_ ctx] (rs/swagger-json spec)))
 
-(defrecord Swaggered [spec route spec-handler]
+(defrecord Swaggered [spec route spec-handlers]
   Matched
   (resolve-handler [this m]
     (cond (= (:remainder m) (str (or (:base-path spec) "") "/swagger.json"))
           ;; Return this, which satisfies Ring.
           ;; Truncate :remainder to ensure succeed actually succeeds.
-          (succeed this (assoc m :remainder ""))
+          (succeed this (assoc m :remainder "" :type "application/json"))
+
+          (= (:remainder m) (str (or (:base-path spec) "") "/swagger.edn"))
+          (succeed this (assoc m :remainder "" :type "application/edn"))
+
+          (= (:remainder m) (str (or (:base-path spec) "") "/swagger.html"))
+          (succeed this (assoc m :remainder "" :type "text/html"))
 
           ;; Redirect to swagger.json
           (= (:remainder m) (str (or (:base-path spec) "") "/"))
@@ -94,9 +104,11 @@
 
   Ring
   (request [_ req match-context]
-    ;; This yada resource has match-context in its lexical scope,
-    ;; containing any yada/partial (or bidi/partial) entries.
-    (spec-handler req))
+    #_(throw (ex-info "TODO" {:match-context match-context
+                            :handler (get spec-handlers (:type match-context))}))
+    (if-let [h (get spec-handlers (:type match-context))]
+      (h req)
+      (throw (ex-info "Error: unknown type" {:match-context match-context}))))
 
   ;; So that we can use the Swaggered record as a Ring handler
   clojure.lang.IFn
@@ -105,6 +117,9 @@
       (handler req))))
 
 (defn swaggered [spec route]
-  (let [spec (merge spec {:paths (into {} (map to-path (route-seq route)))})]
+  (let [spec (merge spec {:paths (into {} (map to-path (route-seq route)))})
+        modified-date (to-date (now))
+        etag (md5-hash (pr-str spec))]
     (->Swaggered spec route
-                 (yada/resource (->SwaggerSpec spec (to-date (now)) (md5-hash (pr-str spec)))))))
+                 (into {} (for [ct ["application/edn" "application/json" "text/html"]]
+                            [ct (yada/resource (->SwaggerSpec spec modified-date etag ct))])))))
