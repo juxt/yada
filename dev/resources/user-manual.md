@@ -132,7 +132,7 @@ other routing libraries. It can integrated with the many template
 libraries available for Clojure and Java, so you can build your own
 web-framework from yada and other libraries.
 
-## A tutorial: Hello World!
+### A tutorial: Hello World!
 
 Let's introduce yada properly by writing some code. Let's start with some state, a string: `Hello World!`. We'll be able to give an overview of many of yada's features using this simple example.
 
@@ -234,7 +234,7 @@ Finally we see our response body.
 Hello World!
 ```
 
-### Hello Swagger!
+#### Hello Swagger!
 
 Now we have a web resource, let's build an API!
 
@@ -288,7 +288,7 @@ The `yada/swaggered` wrapper provides a Swagger specification, in JSON, derived 
 
 But we're getting ahead of ourselves here. Let's delve a bit deeper in our `Hello World!` resource.
 
-### A conditional request
+#### A conditional request
 
 In HTTP, a conditional request is one where a user-agent (like a
 browser) can ask a server for the state of the resource but only if a
@@ -412,8 +412,7 @@ Before reverting our code back to the original, without the atom, let's see the 
 
 We now have a few more methods. [See for your self]({{prefix}}/swagger-ui/index.html?url=/mutable-hello-api/swagger.json).
 
-
-### A HEAD request
+#### A HEAD request
 
 There was one more method indicated by the __Allow__ header of our `OPTIONS` request, which was `HEAD`. Let's try this now.
 
@@ -443,7 +442,7 @@ in `ring.middleware.head/wrap-head`, yada's implementation does not cause a
 response body to be generated and then truncated. This means that HEAD requests in yada are fast and inexpensive.)
 -->
 
-### Parameters
+#### Parameters
 
 Often, a resource's state will not be constant, but depend in some way on the request itself. Let's say we want to pass a parameter to the resource, via a query parameter.
 
@@ -484,7 +483,7 @@ headers, form parameters and whole request bodies. It can also coerce
 parameters to a range of types. For more details, see
 [insert reference here].
 
-### Content negotiation
+#### Content negotiation
 
 Let's suppose we wanted to provide our greeting in both (simplified)
 Chinese and English.
@@ -523,6 +522,25 @@ Content-Length: 14
 
 There is a lot more to content negotiation than this simple example can
 show. It is covered in depth in subsequent chapters.
+
+### How yada compares
+
+It is often easier to understand a technology in relation to another.
+
+> "I know Ring, how does yada compare to that?"
+
+As a developer, Ring provides you with the raw HTTP request. The rest is up to you. You've got to figure out how to take that data and turn it into a response. There are some support functions, called Ring middleware, which can help in common tasks. However, it's up to you which Ring middleware to use, and in which order to apply it. You have figure this out for every service you write.
+
+Generally speaking, a web service written with Ring starts at zero
+functionality and builds up. A web service written with yada starts you
+off at full HTTP functionality.
+
+That said, there do exist projects such as ring-defaults that compose
+together a tower of Ring middleware which provides a good foundation of
+HTTP and other functionality. The primary problem with applying Ring
+middleware in this way is that the tower needs to be executed by the
+request thread, which precludes the option to run middleware
+asynchronously.
 
 ### Summary
 
