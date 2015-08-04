@@ -35,7 +35,10 @@ a contributor!
 
 ## Forward
 
-State is everywhere. The world is moving and we need to keep up. We need our computers to do the same, keeping up-to-date with the latest information, trends, stock-prices, news and weather updates, and other important 'stuff'.
+State is everywhere. The world is moving and we need to keep up. We need
+our computers to help us stay up-to-date with the latest information,
+chats, trends, stock-prices, news and weather updates, and other
+important stuff.
 
 The web is primarily a means to move state around. You have some state
 here, and you want it over there. Or it's over there, but you want it
@@ -65,12 +68,12 @@ merely as an _operation_ (or set of operations) available for remote
 invocation.
 
 For years, the same RPC-centered approach has been copied by web
-frameworks in most other languages, old and new (Python, Ruby, Go,
-Clojure...). It has survived because it is so flexible, as most
+frameworks in many languages, old and new (Python, Ruby, Go,
+Clojure...). It has survived because it's so flexible, as many
 low-level programming models are.
 
 But there are significant downsides to this model too. HTTP is a big
-specification, and it is unreasonable to expect developers to have the
+specification, and it's unreasonable to expect developers to have the
 time to implement all the relevant pieces of it. What's more, many
 developers tend to implement much the same code over and over again, for
 each and every 'operation' they write.
@@ -94,7 +97,7 @@ compatibility through better conformance with HTTP standards. Yet many
 APIs today at best ignore, and worst violate many parts of the HTTP
 standard.
 
-It is time for a fresh approach. We need our libraries to do more work
+It's time for a fresh approach. We need our libraries to do more work
 for us. For this to happen, we need to move from the _de-facto_
 'operational' view of web 'services' to a strong _data-oriented_
 approach, focussing on what a web _resource_ is really about: _state_.
@@ -459,8 +462,8 @@ by the symbol `ctx`.
 
 Parameters are declared using additional key-value arguments after the first argument. They are declared on a per-method, per-type basis.
 
-If the request correctly contains the parameter, it is available in the
-request context, via the __:parameters__ key.
+If the request correctly contains the parameter, it will be available in
+the request context, via the __:parameters__ key.
 
 Let's see this in action
 
