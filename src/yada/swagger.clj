@@ -104,8 +104,6 @@
 
   Ring
   (request [_ req match-context]
-    #_(throw (ex-info "TODO" {:match-context match-context
-                            :handler (get spec-handlers (:type match-context))}))
     (if-let [h (get spec-handlers (:type match-context))]
       (h req)
       (throw (ex-info "Error: unknown type" {:match-context match-context}))))
