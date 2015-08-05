@@ -591,8 +591,6 @@ lein run
 
 ![Swagger](static/img/hello-async.png)
 
-## Methods
-
 ## Parameters
 
 ## Representations
@@ -722,11 +720,12 @@ case, we just have one representation declaration which specifies
 `text/plain` and the charsets available (all those supported on the Java
 platform we are on).
 
-### Extending yada
+### Custom resources
 
 There are numerous types already built into yada, but you can also add
 your own. You can also add your own custom methods.
 
+## Methods
 
 ## Routing
 
