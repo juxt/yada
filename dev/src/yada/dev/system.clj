@@ -20,7 +20,6 @@
    [modular.component.co-dependency :refer (co-using system-co-using)]
 
    [yada.dev.async :refer (new-handler)]
-   [yada.dev.external :refer (new-external-resources)]
    [yada.dev.hello :refer (new-hello-world-example)]
    [aero.core :refer (read-config)]))
 
@@ -87,20 +86,7 @@
           ;; raw-stream? = true gives us a manifold stream of io.netty.buffer.ByteBuf instances
           ;; Use to convert to a stream bs/to-input-stream
           :raw-stream? true
-          )
-    ))
-
-(defn external-server-components [system config]
-  (assoc
-   system
-   :external-resources (new-external-resources)
-   :external-router (using
-                     (make new-router config)
-                     [:external-resources])
-   :external-server (using
-                     (new-webserver :port 8091)
-                     {:request-handler :external-router
-                      :user-manual :user-manual})))
+          )))
 
 (defn hello-world-components [system config]
   (assoc
@@ -118,7 +104,6 @@
         (swagger-ui-components config)
         (router-components config)
         (http-server-components config)
-        (external-server-components config)
         (hello-world-components config)
         (assoc :redirect (new-redirect :from "/" :to :yada.dev.website/index))
         ))))
@@ -126,7 +111,6 @@
 (defn new-dependency-map
   []
   {:http-server {:request-handler :router}
-   :external-server {:request-handler :external-router}
    :user-manual {:templater :clostache-templater}
    :router [:swagger-ui
             :hello-world

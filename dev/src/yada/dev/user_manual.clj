@@ -18,7 +18,6 @@
    [modular.bidi :refer (path-for)]
    [modular.template :as template :refer (render-template)]
    [modular.component.co-dependency :refer (co-using)]
-   [yada.dev.examples :refer (get-title get-resource get-options get-path get-path-args get-query-string get-request expected-response get-test-function external? make-example-handler encode-data)]
    [yada.yada :as yada]
    [yada.mime :as mime]
    [yada.resource :as res]
@@ -87,112 +86,6 @@
   [m]
   (str/upper-case (name m)))
 
-(defn example-instance [user-manual example]
-  (when-let [v (find-var (symbol "yada.dev.examples" (str "map->" (namespace-munge example))))]
-    (v user-manual)))
-
-(defn post-process-example [user-manual ex xml {:keys [prefix ext-prefix]}]
-  (when xml
-    (let [url (str
-               (when (external? ex) ext-prefix)
-               (apply path-for @(:*router user-manual) (keyword (basename ex)) (get-path-args ex))
-               (when-let [qs (get-query-string ex)] (str "?" qs)))
-          {:keys [method headers data] :as req} (get-request ex)
-          ]
-
-      (postwalk
-       (fn [{:keys [tag attrs content] :as el}]
-         (cond
-           (= tag :handler)
-           {:tag :div
-            :content [{:tag :pre
-                       :content [{:tag :code
-                                  :attrs {:class "clojure"}
-                                  :content [(escape-html
-                                             (str/trim
-                                              (with-out-str
-                                                (binding [*print-right-margin* 80]
-                                                  (let [res (get-resource ex)
-                                                        opts (get-options ex)]
-                                                    (pprint
-                                                     (cond
-                                                       (and res opts)
-                                                       `(yada ~res ~opts)
-                                                       res `(yada ~res)
-                                                       opts `(yada ~opts)
-                                                       )
-                                                     ))))))]}]}]}
-
-           (= tag :request)
-           {:tag :div
-            :content [{:tag :pre
-                       :content [{:tag :code
-                                  :attrs {:class "http"}
-                                  :content [(str (->meth method) (format " %s HTTP/1.1" url)
-                                                 (apply str (for [[k v] headers] (format "\n%s: %s" k v))))
-                                            (str (when data
-                                                   (str "\n\n" (encode-data data (get headers "Content-Type")) )))]}]}]}
-
-           (= tag :response)
-           {:tag :div
-            :attrs {:id (format "response-%s" (basename ex))}
-            :content [{:tag :p
-                       :content [{:tag :button
-                                  :attrs {:class "btn btn-primary"
-                                          :type "button"
-                                          :onClick (format "%s(\"%s\",\"%s\",\"%s\",%s,%s)"
-                                                           (or (get-test-function ex) "tryIt")
-                                                           (->meth method)
-                                                           url
-                                                           (basename ex)
-                                                           (json/encode headers)
-                                                           (when data (encode-data data (get headers "Content-Type"))))}
-                                  :content ["Try it"]}
-                                 " "
-                                 {:tag :button
-                                  :attrs {:class "btn"
-                                          :type "button"
-                                          :onClick (format "clearIt(\"%s\")"
-                                                           (basename ex))}
-
-                                  :content ["Reset"]}
-                                 ]}
-                      {:tag :table
-                       :attrs {:class "table"}
-                       :content [{:tag :tbody
-                                  :content [{:tag :tr
-                                             :content [{:tag :td :content ["Status"]}
-                                                       {:tag :td :attrs {:class "status"} :content [""]}]}
-                                            {:tag :tr
-                                             :content [{:tag :td :content ["Headers"]}
-                                                       {:tag :td :attrs {:class "headers"} :content [""]}]}
-                                            {:tag :tr
-                                             :content [{:tag :td :content ["Body"]}
-                                                       {:tag :td :content [{:tag :textarea
-                                                                            :attrs {:class "body"}
-                                                                            :content [""]}]}]}]}]}]}
-
-           (= tag :curl)
-           {:tag :div
-            :content
-            [{:tag :pre
-              :content
-              [{:tag :code
-                :attrs {:class "http"}
-                :content
-                [(format "curl -i %s%s%s"
-                         (apply str (map #(str % " ") (for [[k v] headers] (format "-H '%s: %s'" k v))))
-                         (if-not (external? ex) prefix "")
-                         url)
-                 ]}]}]}
-
-           ;; Raise divs in paragraphs.
-           (and (= tag :p) (= (count content) 1) (= (:tag (first content)) :div))
-           (first content)
-
-           :otherwise el))
-       xml))))
-
 (defn extract-chapters [xml]
   (let [xf (comp (filter #(= (:tag %) :h2)) (mapcat :content))]
     (map str (sequence xf (xml-seq xml)))))
@@ -211,7 +104,7 @@
                            :attrs {:href (str "#" (chapter ch))}
                            :content [ch]}]}))})
 
-(defn post-process-doc [user-manual xml examples config]
+(defn post-process-doc [user-manual xml config]
   (postwalk
    (fn [{:keys [tag attrs content] :as el}]
      (cond
@@ -221,25 +114,6 @@
        {:tag :div
         :attrs {:class "chapter"}
         :content [{:tag :a :attrs {:name (chapter content)} :content []} el]}
-
-       (= tag :example)
-       ;; Render the example box
-       (let [exname (:ref attrs)]
-         (if-let [ex (get examples exname)]
-           {:tag :div
-            :attrs {:class "example"}
-            :example ex ; store the example
-            :content
-            (concat
-             [{:tag :a :attrs {:name (str "example-" exname)} :content []}
-              {:tag :h3 :content [(get-title ex)]}]
-             (remove nil? [(post-process-example
-                            user-manual
-                            ex
-                            (some-> (format "examples/%s.md" exname)
-                                    io/resource slurp md-to-html-string enclose xml-parse)
-                            config)]))}
-           {:tag :p :content [(str "MISSING EXAMPLE: " exname)]}))
 
        (= tag :include)
        ;; Include some content
@@ -262,10 +136,6 @@
        :otherwise el))
    xml))
 
-(defn extract-examples [user-manual xml]
-  (let [xf (comp (filter #(= (:tag %) :example)) (map :attrs) (map :ref))]
-    (map (juxt identity (partial example-instance user-manual)) (sequence xf (xml-seq xml)))))
-
 (defn post-process-body
   "Some whitespace reduction"
   [s replacements]
@@ -287,65 +157,7 @@
     (-> (with-out-str (emit-element doc))
         (post-process-body replacements)
         )
-    :scripts ["/static/js/examples.js"]}))
-
-(defn tests [{:keys [*router templater]} examples]
-  (render-template
-   templater
-   "templates/page.html.mustache"
-   {:content
-    (let [header [:button.btn.btn-primary {:onClick "testAll()"} "Repeat tests"]]
-      (html
-       [:body
-        [:div#intro
-         (md-to-html-string (slurp (io/resource "tests.md")))]
-        header
-        [:table.table
-         [:thead
-          [:tr
-           [:th "#"]
-           [:th "Title"]
-           [:th "Expected response"]
-           [:th "Status"]
-           [:th "Response"]
-           [:th "Result"]
-           ]]
-         [:tbody
-          (map-indexed
-           (fn [ix [exname ex]]
-             (let [url
-                   (str
-                    (apply path-for @*router (keyword (basename ex)) (get-path-args ex))
-                    (when-let [qs (get-query-string ex)] (str "?" qs)))
-
-                   {:keys [method headers data]} (get-request ex)]
-               [:tr {:id (str "test-" (link ex))}
-                [:td (inc ix)]
-                [:td [:a {:href (format "%s#example-%s"
-                                        (path-for @*router ::user-manual)
-                                        (link ex))}
-                      exname]]
-                [:td (:status (try (expected-response ex) (catch AbstractMethodError e)))]
-                [:td.status ""]
-                [:td
-                 [:div.headers ""]
-                 [:textarea.body ""]]
-
-                [:td.result ""]
-                [:td [:button.btn.test
-                      {:onClick (format
-                                 "testIt('%s','%s','%s',%s,%s,%s)"
-                                 (->meth method)
-                                 url
-                                 (link ex)
-                                 (json/encode headers)
-                                 (when data (encode-data data (get headers "Content-Type")))
-                                 (json/encode (or (try (expected-response ex)
-                                                       (catch AbstractMethodError e))
-                                                  {:status 200}))
-                                 )} "Run"]]]))
-           examples)]]]))
-    :scripts ["/static/js/tests.js"]}))
+    :scripts []}))
 
 (def hello
   (yada/resource "Hello World!\n"))
@@ -394,14 +206,12 @@
                      :start-time (java.util.Date.)
                      :*post-counter (atom 0)
                      :xbody xbody)]
-      (assoc component
-             :examplnes (extract-examples component xbody))))
+      component))
   (stop [component] component)
 
   RouteProvider
   (routes [component]
     (let [xbody (:xbody component)
-          examples (:examples component)
 
           hello-atom (yada/resource (atom "Hello World!\n"))
           hello-date (-> hello :resource (res/last-modified nil))
@@ -461,7 +271,7 @@
               ;; a better design.
               (yada/resource (fn [ctx]
                                (body component
-                                     (post-process-doc component xbody (into {} examples) config)
+                                     (post-process-doc component xbody config)
                                      (assoc config
                                             :hello-date (rt/format-date hello-date)
                                             :hello-date-after (rt/format-date hello-date-after)
@@ -470,18 +280,7 @@
                               :last-modified (io/file "dev/resources/user-manual.md")
                               :id ::user-manual})))]
 
-          ["examples/"
-           (vec
-            (for [[_ ex] examples]
-              [(get-path ex) (->
-                              (make-example-handler ex)
-                              (tag
-                               (keyword (basename ex))))]))]
-          ["tests.html"
-           (yada/resource (fn [ctx] (tests component examples))
-                          {:representations [{:content-type #{"text/html"}
-                                              :charset #{"utf-8"}}]
-                           :id ::tests})]]]]])))
+]]]])))
 
 (defmethod clojure.core/print-method UserManual
   [o ^java.io.Writer writer]
