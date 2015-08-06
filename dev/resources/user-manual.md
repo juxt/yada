@@ -44,7 +44,9 @@ The web is primarily a means to move state around. You have some state
 here, and you want it over there. Or it's over there, but you want it
 over here.
 
-For two decades or more, the pre-dominant model for web programming has ignored state, instead requiring developers to work at the level of the HTTP protocol itself.
+For two decades or more, the pre-dominant model for web programming has
+ignored state, instead requiring developers to work at the level of the
+HTTP protocol itself.
 
 For example, in Java...
 
@@ -439,12 +441,6 @@ if we were to try a `GET` request.
 
 For more details about HREAD queries, see [insert reference here].
 
-<!--
-(Note that unlike Ring's implementation of `HEAD`
-in `ring.middleware.head/wrap-head`, yada's implementation does not cause a
-response body to be generated and then truncated. This means that HEAD requests in yada are fast and inexpensive.)
--->
-
 #### Parameters
 
 Often, a resource's state will not be constant, but depend in some way on the request itself. Let's say we want to pass a parameter to the resource, via a query parameter.
@@ -526,25 +522,6 @@ Content-Length: 14
 There is a lot more to content negotiation than this simple example can
 show. It is covered in depth in subsequent chapters.
 
-### How yada compares
-
-It is often easier to understand a technology in relation to another.
-
-> "I know Ring, how does yada compare to that?"
-
-As a developer, Ring provides you with the raw HTTP request. The rest is up to you. You've got to figure out how to take that data and turn it into a response. There are some support functions, called Ring middleware, which can help in common tasks. However, it's up to you which Ring middleware to use, and in which order to apply it. You have figure this out for every service you write.
-
-Generally speaking, a web service written with Ring starts at zero
-functionality and builds up. A web service written with yada starts you
-off at full HTTP functionality.
-
-That said, there do exist projects such as ring-defaults that compose
-together a tower of Ring middleware which provides a good foundation of
-HTTP and other functionality. The primary problem with applying Ring
-middleware in this way is that the tower needs to be executed by the
-request thread, which precludes the option to run middleware
-asynchronously.
-
 ### Summary
 
 This simple example demonstrated how a rich and functional HTTP resource
@@ -623,7 +600,8 @@ There are 4 aspects to the representation that can be negotiated
 * Encoding - usually how the content is compressed
 * Language - the natural language of content
 
-Recall our `Hello World!` example. Let's extend this by specifying 2 sets of possible representation.
+Recall our `Hello World!` example. Let's extend this by specifying 2
+sets of possible representation.
 
 ```clojure
 (yada/resource
@@ -699,7 +677,8 @@ Recall the _Hello World!_ example.
 (yada/resource "Hello World!")
 ```
 
-yada calls `make-resource` on the argument. This declaration causes a new instance of the `StringResource` record to be created.
+yada calls `make-resource` on the argument. This declaration causes a
+new instance of the `StringResource` record to be created.
 
 ```clojure
 (extend-protocol ResourceCoercion
@@ -761,7 +740,10 @@ The 2 routes, `/api/protected/a` and `/api/protected/b` are wrapped with
 resource it finds with some additional options, effectively securing
 both with HTTP Basic Authentication.
 
-If we examine the source code in the `yada.walk` namespace we see that there is no clever trickery involved, merely a `clojure.walk/postwalk` of the data structure below it to update the resource leaves with the given security policy.
+If we examine the source code in the `yada.walk` namespace we see that
+there is no clever trickery involved, merely a `clojure.walk/postwalk`
+of the data structure below it to update the resource leaves with the
+given security policy.
 
 It is easy to envisage a number of useful functions that could be
 written to transform a sub-tree of routes in this way to provide many
@@ -769,3 +751,121 @@ kinds of additional functionality. This is the advantage that choosing a
 data-centric approach gives you. When both your routes and resources are
 data, they are amenable to programmatic transformation, making your
 future options virtually limitless.
+
+## Comparison guide
+
+It is often easier to understand a technology in relation to
+another. How does yada compare with other libraries?
+
+> "I know Ring, how does yada compare to that?"
+
+So let's start with Ring.
+
+### Ring
+
+Ring is by far the most popular way of building websites and HTTP
+services in Clojure. Ring encompasses two ideas. First, Ring specifies
+the contract between Clojure programs and the web servers they are
+served by, which are often written in Java. The contract involves
+specifying nature of the interface (request/response) and the structure
+of the maps are used to represent the request and response.
+
+In additional, Ring offers a set of modular and composeable higher-order
+functions, called Ring middleware, from which a single Ring-compatible
+handler can be composed featuring a rich set of behaviour. It is also
+straight-forward to create bespoke middleware for specialised
+requirements.
+
+While Ring is incredibly flexible, the fine-grained modularity if offers
+comes with some trade-offs.
+
+#### Everything always from the ground up
+
+As a developer, Ring provides you with the raw HTTP request. The rest is
+up to you. You've got to figure out how to take that data and turn it
+into a response. There are some support functions, called Ring
+middleware, which can help in common tasks. However, it's up to you
+which Ring middleware to use, and in which order to apply it. You have
+figure this out for every service you write.
+
+Generally speaking, a web service written with Ring starts at zero
+functionality and builds up. In contrast, a web service written with
+yada starts you off at full HTTP functionality.
+
+Ring is optimised for implementing _bare-bones_ web services
+quickly. Since that is what developers are so often asked to do, it is
+no wonder Ring is so ppoular.
+
+There do exist projects (such as noir and ring-defaults) that offer
+pre-constructed stacks of Ring middleware which provide a reasonable
+approximation of HTTP and other important functionality.
+
+But from the perspective of supporting HTTP fully, there are more
+entrenched problems with Ring as we shall see.
+
+#### Synchronous only
+
+A key problem with applying Ring middleware in this way is that the
+tower needs to be executed by the request thread, which precludes the
+option to run middleware asynchronously. The stack of Ring middleware
+maps directly onto the call stack over the executing thread.
+
+With Ring 1.3, the Ring middleware that is packaged with Ring has been
+refactored to expose the functionality to a wider set of contexts. It is
+no longer necessary to compose functions together to exploit the mature
+proven HTTP functionality embedded in the Ring library. However, this
+does mean that the main Ring design feature, composition of higher-order
+functions, just isn't possible in asynchronous contexts, a fact which
+severely limits its usefulness.
+
+#### Inefficiencies
+
+The fine-grained modularity of the Ring middleware design means that
+each Ring middleware function is strictly isolated from other middleware
+functions. This is generally a good thing. Individual middleware cannot
+make assumptions as to other Ring middleware in the stack. However, this
+leads to a number of inefficiencies.
+
+For example, Ring offers middleware, namely
+`ring.middleware.head/wrap-head`, to support the implementation of HEAD
+requests. However, the implementation requires that a full GET request
+is made, from which the response body is truncated. Therefore, HEAD
+requests are always at least as expensive as GET requests. This is
+certainly not what the authors of HTTP had in mind.
+
+Similarly, Ring's `wrap-not-modified` function only runs _after_ the
+response has been fully formed. The whole point of this HTTP feature is
+to remove load from the origin server. However, if the entire response
+has to be recreated each time, there are no advantages to using this
+feature.
+
+For these reasons, we can see that Ring merely offers a
+_smoke-and-mirrors_ approach to implementing certain features of HTTP.
+
+#### How yada compares
+
+The design of yada differs from the modular approach taken by Ring, and
+instead offers something of a monolith. Arguably, this approach results
+is a more complete and accurate implementation of HTTP.
+
+Given the choice of a home-brew kit for making your own beer, or getting
+your beer from an established brewery, many people opt for the latter.
+
+While yada is still something of a fashionably modern craft beer, it is
+hoped that given time it will mature into a stable and trusted
+foundation for HTTP-based services.
+
+[include a yada beer label]
+
+
+### Pedestal
+
+yada, like pedestal, is built on an interceptor chain, but this is an
+implementation detail, not considered important for exposing to
+manipulation by users. This may indeed change in future versions of
+yada, should people want it.
+
+Pedestal offers async only in inceptors, rather than in the target
+handlers. Pedestal pre-dates core.async and manifold. It does not offer
+a manifold chain, so exploiting async in Pedestal arguably requires more
+up-front work.
