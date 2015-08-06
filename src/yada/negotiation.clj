@@ -251,7 +251,7 @@
 (defn- has-registered-charset-param?
   "Whether the given media-type has a charset parameter. RFC 6657
   recommends that media-types that have the ability to embed the charset
-  encoding in the content itself (e.g. text/xml) should not register a
+  encoding in the content itself (e.g. application/xml) should not register a
   charset parameter with IANA. That way, there can be no discrepancy
   between the response's Content-Type header and the content
   itself. Since text/html already has an (optional) charset parameter
@@ -264,11 +264,8 @@
        ;; See http://tools.ietf.org/html/rfc6657 TODO: This list is not
        ;; very comprehensive, go through 'text/*' IANA registrations
        ;; http://www.iana.org/assignments/media-types/media-types.xhtml
-       (not (contains? #{#_"text/html"
-                         ;; This really ought to be an option, because it seems existing
-                         ;; behaviour is to add charset to text/html
-                         "text/xml+xhtml" ;; TODO: check this
-                         "text/xml"} (mime/media-type mt)))))
+       (not (contains? #{"application/xhtml+xml"
+                         "application/xml"} (mime/media-type mt)))))
 
 (s/defn vary [method :- s/Keyword
               server-offers :- [ServerOffer]]

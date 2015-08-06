@@ -96,13 +96,13 @@
   (testing "charset not applied when it shouldn't be"
     ;; according to http://tools.ietf.org/html/rfc6657
     (given (interpret-negotiation
-            (first (negotiate {:method :get :accept "text/xml"}
+            (first (negotiate {:method :get :accept "application/xml"}
                               (parse-representations
                                [{:method #{:get :head}
-                                 :content-type #{"text/xml"}}
+                                 :content-type #{"application/xml"}}
 
                                 {:method #{:get :head}
-                                 :content-type #{"text/xml"}
+                                 :content-type #{"application/xml"}
                                  :charset #{"UTF-8"}
                                  }]))))
       :status := nil
