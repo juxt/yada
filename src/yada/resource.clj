@@ -142,3 +142,16 @@
   representations that differ only in representation should not be
   identical. Return something other than a string and the representation
   will be included in the computation of the etag."))
+
+
+(defprotocol ETagResult
+  "The etag function may return a string, which becomes the final ETag
+  response header. Alternatively, it may return other results, which
+  must be coerced into the final ETag response header value."
+  (coerce-etag-result [_] "Coerce the result into a string"))
+
+(extend-protocol ETagResult
+  String
+  (coerce-etag-result [s] s)
+  Object
+  (coerce-etag-result [o] (str (hash o))))

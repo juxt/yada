@@ -114,7 +114,7 @@
 
 (defn resource
   "Create a yada resource (Ring handler)"
-  ([resource]                         ; Single-arity form with default options
+  ([resource]                   ; Single-arity form with default options
    (yada.core/resource resource {}))
 
   ([resource
@@ -139,7 +139,7 @@
      :or {authorization (NoAuthorizationSpecified.)
           id (java.util.UUID/randomUUID)}}]
 
-   (let [base resource ; keep a copy, we're about to eclipse
+   (let [base resource             ; keep a copy, we're about to eclipse
          resource (if (satisfies? res/ResourceCoercion resource)
                     (res/make-resource resource)
                     resource)
@@ -421,15 +421,16 @@
                 (link ctx
 
                   (when etag?
-                    (let [etag (res/etag (:resource ctx) ctx)]
-                      (assoc-in ctx [:response :headers "etag"] etag)))
+                    (let [etag-result (res/etag (:resource ctx) ctx)]
+                      (assoc-in ctx [:response :headers "etag"]
+                                (res/coerce-etag-result etag-result))))
 
                   #_(when-let [etag (get-in ctx [:request :headers "if-match"])]
-                    (when (not= etag (get-in ctx [:resource :etag]))
-                      (throw
-                       (ex-info "Precondition failed"
-                                {:status 412
-                                 ::http-response true})))))
+                      (when (not= etag (get-in ctx [:resource :etag]))
+                        (throw
+                         (ex-info "Precondition failed"
+                                  {:status 412
+                                   ::http-response true})))))
 
                 ;; Methods
                 (fn [ctx]

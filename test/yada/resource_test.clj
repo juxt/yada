@@ -1,16 +1,18 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.resource-test
-  (:require [clojure.java.io :as io]
-            [clojure.test :refer :all]
-            [clojure.tools.logging :refer :all]
-            [ring.mock.request :refer [request]]
-            [yada.core :refer [resource]])
-  (:import [java.io File BufferedInputStream ByteArrayInputStream]
-           [java.util Date]))
+  (:require
+   [yada.resource :refer [coerce-etag-result]]
+   [clojure.test :refer :all]
+   [juxt.iota :refer [given]]))
 
-;; TODO: Test conditional content
+(deftest coerce-etag-result-test
+  (is (= (coerce-etag-result "123") "123"))
+  (is (= (coerce-etag-result {:foo :bar}) "1766419479"))
+  (is (= (coerce-etag-result [:foo :bar]) "1531896286")))
+
 ;; TODO: Serve up file images and other content required for the examples with yada - don't use bidi/resources
+
 ;; TODO: yada should replace bidi's resources, files, etc.  and do a far better job
 ;; TODO: Observation: wrap-not-modified works on the response only - i.e. it still causes the handler to handle the request (and do work) on the server.
 
