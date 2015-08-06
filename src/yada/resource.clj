@@ -11,6 +11,8 @@
            [java.io File InputStream]
            [java.util Date]))
 
+;; Resource protocols
+
 (defprotocol ResourceCoercion
   (make-resource [_] "Coerce to a resource. Often, resources need to be
   coerced rather than simply extending types with the Resource
@@ -132,4 +134,11 @@
 
 (defprotocol ResourceEntityTag
   "Entity tags."
-  (etag [_] "Return the entity tag of a resource, as a string."))
+  (etag [_ ctx] "Return the entity tag of a resource. If returning a
+  string that is used as the etag, which should incorporate
+  the (potentially variable) representation. Representation data is
+  available in the ctx at [:response :representation], and this should
+  be used if returning a string since the etag returned for two
+  representations that differ only in representation should not be
+  identical. Return something other than a string and the representation
+  will be included in the computation of the etag."))

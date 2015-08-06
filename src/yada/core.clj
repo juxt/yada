@@ -341,7 +341,6 @@
 
                 ;; Content negotiation
                 ;; TODO: Unknown Content-Type? (incorporate this into conneg)
-
                 (link ctx
 
                   ;; We do not do negotiation for representations if the
@@ -416,11 +415,13 @@
                           ctx))
                        ctx))))
 
-                ;; ETags
+                ;; ETags - we already have the representation details,
+                ;; which are necessary for a strong validator. See
+                ;; section 2.3.3 of RFC 7232.
                 (link ctx
 
                   (when etag?
-                    (let [etag (res/etag (:resource ctx))]
+                    (let [etag (res/etag (:resource ctx) ctx)]
                       (assoc-in ctx [:response :headers "etag"] etag)))
 
                   #_(when-let [etag (get-in ctx [:request :headers "if-match"])]

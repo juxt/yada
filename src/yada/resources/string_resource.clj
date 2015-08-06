@@ -9,7 +9,7 @@
    [yada.representation :refer [Representation]]
    [yada.util :refer (md5-hash)]))
 
-(defrecord StringResource [s last-modified etag]
+(defrecord StringResource [s last-modified]
   Resource
   ;; Don't include :head, it is always available with yada.
   (methods [this] #{:get :options})
@@ -25,7 +25,7 @@
       :charset platform-charsets}])
 
   ResourceEntityTag
-  (etag [_] etag)
+  (etag [_ ctx] {:value s})
 
   Get
   (get* [this ctx] s))
@@ -33,4 +33,4 @@
 (extend-protocol ResourceCoercion
   String
   (make-resource [s]
-    (->StringResource s (to-date (now)) (md5-hash s))))
+    (->StringResource s (to-date (now)))))

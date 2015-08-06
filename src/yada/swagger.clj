@@ -49,14 +49,14 @@
                                   :parameters parameters}}))
                  swagger)]))
 
-(defrecord SwaggerSpec [spec created-at etag content-type]
+(defrecord SwaggerSpec [spec created-at content-type]
   Resource
   (methods [_] #{:get :head})
   (exists? [_ ctx] true)
   (last-modified [_ ctx] created-at)
 
   ResourceEntityTag
-  (etag [_] etag)
+  (etag [_ ctx] spec)
 
   ResourceRepresentations
   (representations [_]
@@ -116,8 +116,7 @@
 
 (defn swaggered [spec route]
   (let [spec (merge spec {:paths (into {} (map to-path (route-seq route)))})
-        modified-date (to-date (now))
-        etag (md5-hash (pr-str spec))]
+        modified-date (to-date (now))]
     (->Swaggered spec route
                  (into {} (for [ct ["application/edn" "application/json" "text/html"]]
-                            [ct (yada/resource (->SwaggerSpec spec modified-date etag ct))])))))
+                            [ct (yada/resource (->SwaggerSpec spec modified-date ct))])))))
