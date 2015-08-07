@@ -66,10 +66,12 @@
     by tools (e.g. swagger)"))
 
 (extend-protocol ResourceAllowedMethods
-  Object
+  clojure.lang.Fn
   (allowed-methods [_] #{:get})
   nil
-  (allowed-methods [_] nil))
+  (allowed-methods [_] #{:get})
+  ;; Note that yada.methods also extends this protocol later
+  )
 
 ;; Existence
 

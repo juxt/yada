@@ -165,13 +165,11 @@
 
 (defprotocol Post
   (POST [_ ctx]
-    "Post the new data. Return a result. If a Ring response map is
-  returned, it is returned to the client. If a function can be
-  reeturned, it is invoked with the context as the only parameter. If a
-  string is returned, it is assumed to be the body. See
-  yada.methods/PostResult for full details of what can be
-  returned. Side-effects are permissiable. Can return a deferred
-  result."))
+    "Post the new data. Return a result.  If a function is returned, it
+  is invoked with the context as the only parameter. If a string is
+  returned, it is assumed to be the body. See yada.methods/PostResult
+  for full details of what can be returned. Side-effects are
+  permissiable. Can return a deferred result."))
 
 (defprotocol PostResult
   (interpret-post-result [_ ctx]))
@@ -360,3 +358,15 @@
   Post (POST [f ctx] (f ctx))
   Delete (DELETE [f ctx] (f ctx))
   Options (OPTIONS [f ctx] (f ctx)))
+
+(defn infer-methods [o]
+  (cond-> #{}
+    (satisfies? Get o) (conj :get)
+    (satisfies? Put o) (conj :put)
+    (satisfies? Post o) (conj :post)
+    (satisfies? Delete o) (conj :put)
+    (satisfies? Options o) (conj :options)))
+
+(extend-protocol res/ResourceAllowedMethods
+  Object
+  (res/allowed-methods [o] (infer-methods o)))

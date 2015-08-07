@@ -146,11 +146,11 @@
 
          known-methods (methods/methods)
 
-         allowed-methods
-         (set
-          (or (:allowed-methods options) ; you must include :head in options if you want it
-              (conj (res/allowed-methods resource) :head :options)))
-
+         allowed-methods (conj
+                          (set
+                           (or (:allowed-methods options)
+                               (res/allowed-methods resource)))
+                          :head :options)
 
          parameters (or (:parameters options)
                         (when (satisfies? res/ResourceParameters resource)
