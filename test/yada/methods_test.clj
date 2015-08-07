@@ -1,4 +1,4 @@
-(ns yada.post-test
+(ns yada.methods-test
   (:require
    [byte-streams :as bs]
    [clojure.test :refer :all]
