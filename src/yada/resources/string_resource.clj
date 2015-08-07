@@ -4,16 +4,13 @@
   (:require
    [clj-time.core :refer (now)]
    [clj-time.coerce :refer (to-date)]
-   [yada.resource :refer [Resource ResourceRepresentations ResourceEntityTag ResourceCoercion platform-charsets]]
+   [yada.resource :refer [ResourceExistence ResourceModification ResourceRepresentations ResourceEntityTag ResourceCoercion platform-charsets]]
    [yada.methods :refer [Get Options]]
    [yada.representation :refer [Representation]]
    [yada.util :refer (md5-hash)]))
 
 (defrecord StringResource [s last-modified]
-  Resource
-  ;; Don't include :head, it is always available with yada.
-  (methods [this] #{:get :options})
-  (exists? [this ctx] true)
+  ResourceModification
   (last-modified [this _] last-modified)
 
   ResourceRepresentations

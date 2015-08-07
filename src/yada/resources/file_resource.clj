@@ -9,7 +9,7 @@
             [ring.util.mime-type :refer (ext-mime-type)]
             [ring.util.response :refer (redirect)]
             [ring.util.time :refer (format-date)]
-            [yada.resource :refer [Resource ResourceRepresentations ResourceFetch ResourceCoercion representations platform-charsets]]
+            [yada.resource :refer [ResourceAllowedMethods ResourceExistence ResourceModification ResourceRepresentations ResourceFetch ResourceCoercion representations platform-charsets]]
             [yada.representation :as rep]
             [yada.methods :refer (Get GET Put PUT Post POST Delete DELETE)]
             [yada.negotiation :as negotiation]
@@ -82,10 +82,15 @@
     neg))
 
 (defrecord FileResource [f]
-  Resource
-  (methods [_] #{:get :head :put :delete})
+  ResourceAllowedMethods
+  (allowed-methods [_] #{:get :head :put :delete})
+
+  ResourceExistence
   (exists? [_ ctx] (.exists f))
+
+  ResourceModification
   (last-modified [_ ctx] (Date. (.lastModified f)))
+
   Get
   (GET [_ ctx]
     ;; The reason to use bs/transfer is to allow an efficient copy of byte buffers
@@ -126,10 +131,13 @@
       :content-type (set (remove nil? [(ext-mime-type (.getName f))]))}]))
 
 (defrecord DirectoryResource [dir]
+  ResourceAllowedMethods
+  (allowed-methods [_] #{:get :head :put :delete})
 
-  Resource
-  (methods [_] #{:get :head :put :delete})
+  ResourceExistence
   (exists? [_ ctx] (.exists dir))
+
+  ResourceModification
   (last-modified [_ ctx] (Date. (.lastModified dir)))
 
   ResourceRepresentations

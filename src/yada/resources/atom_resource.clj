@@ -1,11 +1,10 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.resources.atom-resource
-  (:refer-clojure :exclude [methods])
   (:require
    [clj-time.core :refer [now]]
    [clj-time.coerce :refer [to-date]]
-   [yada.resource :refer (ResourceCoercion ResourceRepresentations Resource platform-charsets make-resource ResourceParameters parameters methods)]
+   [yada.resource :refer (ResourceCoercion ResourceAllowedMethods ResourceModification ResourceRepresentations platform-charsets make-resource ResourceParameters parameters allowed-methods)]
    [yada.methods :refer (Get Put)]
    [schema.core :as s]
    yada.resources.string-resource)
@@ -15,13 +14,12 @@
   (wrap-atom [init-state a] "Given the initial value on derefencing an atom, construct a record which will manage the reference."))
 
 (defrecord AtomicMapResource [*a wrapper *last-mod]
-  Resource
-  (methods [_] (conj (set (methods wrapper)) :put :post :delete))
-  (exists? [_ ctx] true)
+  ResourceAllowedMethods
+  (allowed-methods [_] (conj (set (allowed-methods wrapper)) :put :post :delete))
 
+  ResourceModification
   (last-modified [_ ctx]
-    (when-let [lm @*last-mod]
-      lm))
+    (when-let [lm @*last-mod] lm))
 
   ResourceParameters
   (parameters [_] (merge

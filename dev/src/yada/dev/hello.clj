@@ -1,9 +1,8 @@
 (ns yada.dev.hello
   (:require
-   [yada.yada :as yada]
-   [yada.swagger :refer (swaggered)]
    [bidi.bidi :refer (RouteProvider)]
-   ))
+   [yada.swagger :refer (swaggered)]
+   [yada.yada :as yada]))
 
 (def hello
   (yada/resource "Hello World!\n"))

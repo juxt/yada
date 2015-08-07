@@ -3,7 +3,7 @@
 (ns yada.resources.url-resource
   (:require
    [clojure.java.io :as io]
-   [yada.resource :refer (Resource ResourceRepresentations ResourceCoercion platform-charsets)]
+   [yada.resource :refer (ResourceExistence ResourceModification ResourceRepresentations ResourceCoercion platform-charsets)]
    [yada.methods :refer (Get)]
    [ring.util.mime-type :refer (ext-mime-type)])
   (:import [java.net URL]
@@ -13,9 +13,7 @@
 ;; A UrlResource is a Java resource.
 
 (extend-type URL
-  Resource
-  (methods [_] #{:get :head})
-  (exists? [_ ctx] true)
+  ResourceModification
   (last-modified [u ctx]
     (let [f (io/file (.getFile u))]
       (when (.exists f)

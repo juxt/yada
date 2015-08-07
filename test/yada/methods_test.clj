@@ -1,13 +1,16 @@
+;; Copyright © 2015, JUXT LTD.
+
 (ns yada.methods-test
   (:require
    [byte-streams :as bs]
    [clojure.test :refer :all]
-   [yada.yada :as yada]
    [juxt.iota :refer (given)]
    [ring.mock.request :as mock]
    [ring.util.codec :as codec]
+   [schema.core :as s]
    [yada.resources.misc :refer (just-methods)]
-   [schema.core :as s]))
+   [yada.resource :refer [ResourceEntityTag]]
+   [yada.yada :as yada]))
 
 (deftest post-test
   (let [handler (yada/resource
@@ -19,6 +22,7 @@
     (given @(handler (mock/request :post "/"))
       :status := 201
       [:body bs/to-string] := "foo"
+      ;;clojure.pprint/pprint := nil
       )))
 
 (deftest dynamic-post-test
@@ -40,3 +44,14 @@
     (given @(handler (mock/request :post "/"))
       :status := 201
       [:headers "set-cookie"] := ["a" "b"])))
+
+
+#_(deftest etag-test
+  (let [handler (yada/resource (reify
+                                 ResourceEntityTag
+                                 (etag [_ ctx] nil)
+                                 ))]
+    (given @(handler (mock/request :get "/"))
+      :status := 200
+      ))
+  )

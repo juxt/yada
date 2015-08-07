@@ -10,6 +10,7 @@
    [juxt.iota :refer (given)]
    [ring.mock.request :refer (request)]
    [ring.util.codec :as codec]
+   yada.bidi
    [yada.walk :refer (basic-auth)]
    [yada.yada :as yada]))
 

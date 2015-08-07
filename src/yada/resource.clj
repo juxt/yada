@@ -1,7 +1,6 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.resource
-  (:refer-clojure :exclude [methods])
   (:require [clojure.tools.logging :refer :all]
             [manifold.deferred :as d]
             [yada.charset :refer (to-charset-map)]
@@ -60,38 +59,50 @@
   Object
   (fetch [o ctx] o))
 
-(defprotocol Resource
-  "A protocol for describing a resource: where it is, when it was last
-  updated, how to change it, etc. A resource may hold its state, or be
-  able to educe the state on fetch or during the request call."
+(defprotocol ResourceAllowedMethods
+  "Optional protocol for resources to indicate which methods are allowed."
+  (allowed-methods [_]
+    "Return the allowed methods. Context-agnostic - can be introspected
+    by tools (e.g. swagger)"))
 
-  ;; Context-agnostic - can be introspected by tools (e.g. swagger)
-  (methods [_]
-    "Return the allowed methods.")
+(extend-protocol ResourceAllowedMethods
+  Object
+  (allowed-methods [_] #{:get})
+  nil
+  (allowed-methods [_] nil))
 
-  ;; Context-sensitive
+;; Existence
+
+(defprotocol ResourceExistence
+  "Optional protocol for a resource to indicate its
+  existence. Non-existent resources cause 404 responses."
   (exists? [_ ctx]
-    "Whether the resource actually exists. Can return a deferred value.")
+    "Whether or not the resource actually exists. Is context sensitive,
+    since existence can often depend on request context, such as
+    parameters. Therefore the context is given as an argument. Return
+    truthy if the resource exists. Can return a deferred value."))
 
+(extend-protocol ResourceExistence
+  Object (exists? [_ ctx] true)
+  nil (exists? [_ ctx] false))
+
+;; Modification
+
+(defprotocol ResourceModification
+  "Optional protocol for a resource to indicate when its state was last
+  modified."
   (last-modified [_ ctx]
-    "Return the date that the resource was last modified. Can return a
+    "Return the date that the resource was last modified. Is context
+    sensitive, the context is given as an argument. Can return a
     deferred value."))
 
-(extend-protocol Resource
+(extend-protocol ResourceModification
   clojure.lang.Fn
-  (methods [_] #{:get :head})
-  ;; We assume the resource exists, the request can force a 404 by
-  ;; returning nil.
-  (exists? [_ ctx] true)
   (last-modified [_ ctx] nil)
-
   java.io.File
-  (last-modified [f ctx]
-    (Date. (.lastModified f)))
-
-  nil
+  (last-modified [f ctx] (Date. (.lastModified f)))
   ;; last-modified of 'nil' means we don't consider last-modified
-  (methods [_] nil)
+  nil
   (last-modified [_ _] nil))
 
 ;; Negotiation

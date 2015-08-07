@@ -1,7 +1,6 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.core
-  (:refer-clojure :exclude [methods])
   (:require
    [byte-streams :refer (convert)]
    [bidi.bidi :refer (Matched succeed)]
@@ -140,6 +139,7 @@
           id (java.util.UUID/randomUUID)}}]
 
    (let [base resource             ; keep a copy, we're about to eclipse
+                                   ; with a coercion
          resource (if (satisfies? res/ResourceCoercion resource)
                     (res/make-resource resource)
                     resource)
@@ -148,9 +148,9 @@
 
          allowed-methods
          (set
-          (or (:methods options) ; you must include :head in options if you want it
-              ;; We always support :head for resources
-              (conj (res/methods resource) :head)))
+          (or (:allowed-methods options) ; you must include :head in options if you want it
+              (conj (res/allowed-methods resource) :head :options)))
+
 
          parameters (or (:parameters options)
                         (when (satisfies? res/ResourceParameters resource)
@@ -167,6 +167,7 @@
              (res/representations resource))))
 
          etag? (satisfies? res/ResourceEntityTag resource)
+         existence? (satisfies? res/ResourceExistence resource)
 
          security (as-sequential security)]
 
@@ -175,7 +176,7 @@
        :resource resource
        :base base
        :options options
-       :methods allowed-methods
+       :allowed-methods allowed-methods
        :parameters parameters
        :representations representations
        :security security
@@ -377,10 +378,12 @@
 
                 ;; Resource exists?
                 (link ctx
-                  (d/chain
-                   (res/exists? resource ctx)
-                   (fn [exists?]
-                     (assoc ctx :exists? exists?))))
+                  (if existence?
+                    (d/chain
+                     (res/exists? resource ctx)
+                     (fn [exists?]
+                       (assoc ctx :exists? exists?)))
+                    (assoc ctx :exists? true)))
 
                 ;; Conditional requests - last modified time
                 (fn [ctx]

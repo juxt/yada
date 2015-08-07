@@ -17,7 +17,7 @@
    [schema.core :as s]
    [yada.methods :refer (Get GET)]
    [yada.mime :as mime]
-   [yada.resource :refer (Resource ResourceRepresentations ResourceEntityTag ResourceCoercion platform-charsets make-resource) :as res]
+   [yada.resource :refer (ResourceModification ResourceRepresentations ResourceEntityTag ResourceCoercion platform-charsets make-resource) :as res]
    [yada.core :as yada]
    [yada.util :refer (md5-hash)])
   (:import (clojure.lang PersistentVector Keyword)))
@@ -33,13 +33,13 @@
 (defn to-path [route]
   (let [path (->> route :path (map encode) (apply str))
         http-resource (-> route :handler)
-        {:keys [resource options methods parameters representations]} http-resource
+        {:keys [resource options allowed-methods parameters representations]} http-resource
         swagger (:swagger options)]
 
     [path
      (merge-with merge
                  (into {}
-                       (for [method methods
+                       (for [method allowed-methods
                              :let [parameters (get parameters method)
                                    representations (filter (fn [rep] (or (nil? (:method rep))
                                                                         (contains? (:method rep) method))) representations)
@@ -50,9 +50,7 @@
                  swagger)]))
 
 (defrecord SwaggerSpec [spec created-at content-type]
-  Resource
-  (methods [_] #{:get :head})
-  (exists? [_ ctx] true)
+  ResourceModification
   (last-modified [_ ctx] created-at)
 
   ResourceEntityTag

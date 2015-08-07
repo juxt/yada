@@ -63,7 +63,7 @@
       (io/delete-file f)
       (is (not (exists? f)))
 
-      (let [options {:methods #{:get :head :put :delete}}
+      (let [options {:allowed-methods #{:get :head :put :delete}}
             newstate {:username "alice" :name "Alice"}]
 
         ;; A PUT request arrives on a new URL, containing a
@@ -74,7 +74,7 @@
                          {:body (ByteArrayInputStream. (.getBytes (pr-str newstate)))}))]
 
           ;; If this resource didn't allow the PUT method, we'd get a 405.
-          (let [handler (yada/resource f (update-in options [:methods] disj :put))]
+          (let [handler (yada/resource f (update-in options [:allowed-methods] disj :put))]
             (given @(handler (make-put))
               :status := 405))
 
