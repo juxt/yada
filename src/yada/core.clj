@@ -421,20 +421,34 @@
                 ;; ETags - we already have the representation details,
                 ;; which are necessary for a strong validator. See
                 ;; section 2.3.3 of RFC 7232.
-                (link ctx
+                (fn [ctx]
 
-                  (when etag?
-                    (let [etag-result (res/etag (:resource ctx) ctx)
-                          coerced-etag-result (res/coerce-etag-result etag-result ctx)]
-                      (cond-> ctx
-                        coerced-etag-result (assoc-in [:response :headers "etag"] coerced-etag-result))))
+                  (d/chain
+                   (when etag? (res/etag (:resource ctx) ctx))
 
-                  #_(when-let [etag (get-in ctx [:request :headers "if-match"])]
-                      (when (not= etag (get-in ctx [:resource :etag]))
-                        (throw
-                         (ex-info "Precondition failed"
-                                  {:status 412
-                                   ::http-response true})))))
+                   (fn [etag-result]
+                     (res/coerce-etag-result etag-result ctx))
+
+                   (fn [etag]
+                     (let [ctx
+                           (cond-> ctx
+                             etag (assoc-in [:response :headers "etag"] etag))]
+                       ;; etag could be nil
+
+                       ;; If there's an If-Match header, which doesn't contain the etag
+                       (when-let [matches (some->> (get-in req [:headers "if-match"])
+                                                   (#(str/split % #"\s*,\s*"))
+                                                   (map str/trim)
+                                                   set)]
+                         (when (or
+                                (and (contains? matches "*") (not etag))
+                                (and matches (not (contains? matches etag))))
+                           (throw
+                            (ex-info "Precondition failed"
+                                     {:status 412
+                                      ::http-response true})))))
+
+                     (assoc-in ctx [:response :headers "etag"] etag))))
 
                 ;; Methods
                 (fn [ctx]

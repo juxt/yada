@@ -103,7 +103,17 @@
         :status := 200)
       ;; ETags are the same in both responses
       (is (not (= (get-in r1 [:headers "etag"])
-                  (get-in r3 [:headers "etag"])))))))
+                  (get-in r3 [:headers "etag"]))))))
 
+  (testing "use-of-old-entity-tag-causes-412"
+    (let [v (atom 1)
+          handler (yada/resource (->ETagTestResource v))
+          r1 @(handler (mock/request :get "/"))
+          r2 @(handler (mock/request :post "/"))
+          ]
 
-#_(let [e1 (get-in response [:headers "etag"])])
+      (let [etag (get-in r1 [:headers "etag"])
+            r3 @(handler (-> (mock/request :get "/")
+                             (update-in [:headers] merge {"if-match" etag})))]
+        (given r3
+        :status := 412)))))
