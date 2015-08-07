@@ -106,7 +106,7 @@
                                  :charset #{"UTF-8"}
                                  }]))))
       :status := nil
-      [:content-type :type] := "text"
+      [:content-type :type] := "application"
       [:content-type :subtype] := "xml"
       [:content-type :parameters] := {})))
 
