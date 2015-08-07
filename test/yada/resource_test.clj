@@ -7,6 +7,6 @@
    [juxt.iota :refer [given]]))
 
 (deftest coerce-etag-result-test
-  (is (= (coerce-etag-result "123") "123"))
-  (is (= (coerce-etag-result {:foo :bar}) "1766419479"))
-  (is (= (coerce-etag-result [:foo :bar]) "1531896286")))
+  (is (= (coerce-etag-result "123" nil) "123"))
+  (is (= (coerce-etag-result {:foo :bar} nil) "-907073541"))
+  (is (= (coerce-etag-result [:foo :bar] nil) "-565349210")))

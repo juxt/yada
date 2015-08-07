@@ -22,7 +22,7 @@
       :charset platform-charsets}])
 
   ResourceEntityTag
-  (etag [_ ctx] {:value s})
+  (etag [_ ctx] {:string s})
 
   Get
   (GET [this ctx] s))

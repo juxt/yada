@@ -97,11 +97,10 @@
     deferred value."))
 
 (extend-protocol ResourceModification
-  clojure.lang.Fn
-  (last-modified [_ ctx] nil)
   java.io.File
   (last-modified [f ctx] (Date. (.lastModified f)))
-  ;; last-modified of 'nil' means we don't consider last-modified
+  Object
+  (last-modified [_ ctx] nil)
   nil
   (last-modified [_ _] nil))
 
@@ -159,10 +158,14 @@
   "The etag function may return a string, which becomes the final ETag
   response header. Alternatively, it may return other results, which
   must be coerced into the final ETag response header value."
-  (coerce-etag-result [_] "Coerce the result into a string"))
+  (coerce-etag-result [_ ctx] "Coerce the result into a string"))
 
 (extend-protocol ETagResult
   String
-  (coerce-etag-result [s] s)
+  (coerce-etag-result [s ctx] s)
   Object
-  (coerce-etag-result [o] (str (hash o))))
+  (coerce-etag-result [o ctx]
+    (str (hash {:value o
+                :representation (get-in ctx [:response :representation])})))
+  nil
+  (coerce-etag-result [o ctx] nil))

@@ -119,7 +119,7 @@
                                      :yada.core/http-response true})))
 
     (d/chain
-     ;; GET request normally returns (possibly deferred) body.
+     ;; GET request normally returns a (possibly deferred) body.
      (GET (:resource ctx) ctx)
 
      (fn [res]

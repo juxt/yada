@@ -139,7 +139,7 @@
           id (java.util.UUID/randomUUID)}}]
 
    (let [base resource             ; keep a copy, we're about to eclipse
-                                   ; with a coercion
+                                        ; with a coercion
          resource (if (satisfies? res/ResourceCoercion resource)
                     (res/make-resource resource)
                     resource)
@@ -424,9 +424,10 @@
                 (link ctx
 
                   (when etag?
-                    (let [etag-result (res/etag (:resource ctx) ctx)]
-                      (assoc-in ctx [:response :headers "etag"]
-                                (res/coerce-etag-result etag-result))))
+                    (let [etag-result (res/etag (:resource ctx) ctx)
+                          coerced-etag-result (res/coerce-etag-result etag-result ctx)]
+                      (cond-> ctx
+                        coerced-etag-result (assoc-in [:response :headers "etag"] coerced-etag-result))))
 
                   #_(when-let [etag (get-in ctx [:request :headers "if-match"])]
                       (when (not= etag (get-in ctx [:resource :etag]))
