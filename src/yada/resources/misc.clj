@@ -1,8 +1,7 @@
 (ns yada.resources.misc
   (:require
    [yada.resource :as res]
-   [yada.methods :refer (Get Put Post Delete Options)]
-   ))
+   [yada.methods :refer (Get Put Post Delete Options)]))
 
 ;; Each kv-arg must be off the form [method {:parameters {...} :response {...}}]
 
@@ -18,23 +17,23 @@
                  (assoc acc k (:parameters v))) {} this))
 
   Get
-  (get* [this ctx]
+  (GET [this ctx]
     (get-in this [:get :response]))
 
   Put
-  (put [this ctx]
+  (PUT [this ctx]
     (get-in this [:put :response]))
 
   Post
-  (post [this ctx]
+  (POST [this ctx]
     (get-in this [:post :response]))
 
   Delete
-  (delete [this ctx]
+  (DELETE [this ctx]
     (get-in this [:delete :response]))
 
   Options
-  (options [this ctx]
+  (OPTIONS [this ctx]
     (get-in this [:options :response]))
 
   res/ResourceRepresentations

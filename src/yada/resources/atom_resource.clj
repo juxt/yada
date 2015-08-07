@@ -17,8 +17,6 @@
 (defrecord AtomicMapResource [*a wrapper *last-mod]
   Resource
   (methods [_] (conj (set (methods wrapper)) :put :post :delete))
-
-
   (exists? [_ ctx] true)
 
   (last-modified [_ ctx]
@@ -37,10 +35,10 @@
                          :charset platform-charsets}])
 
   Get
-  (get* [_ ctx] @*a)
+  (GET [_ ctx] @*a)
 
   Put
-  (put [_ ctx] (reset! *a (get-in ctx [:parameters :body]))))
+  (PUT [_ ctx] (reset! *a (get-in ctx [:parameters :body]))))
 
 (defn wrap-with-watch [wrapper *a]
   (let [*last-mod (atom nil)]

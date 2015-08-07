@@ -27,7 +27,7 @@
       :charset platform-charsets}])
 
   Get
-  (get* [u ctx]
+  (GET [u ctx]
     (if (= (get-in ctx [:response :representation :content-type :type]) "text")
       (BufferedReader.
        (InputStreamReader. (.openStream u) (or (get-in ctx [:response :server-charset]) "UTF-8")))

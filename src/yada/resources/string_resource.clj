@@ -28,7 +28,7 @@
   (etag [_ ctx] {:value s})
 
   Get
-  (get* [this ctx] s))
+  (GET [this ctx] s))
 
 (extend-protocol ResourceCoercion
   String

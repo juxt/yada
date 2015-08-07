@@ -51,6 +51,7 @@
 ;; --------------------------------------------------------------------------------
 
 (deftype HeadMethod [])
+
 (extend-protocol Method
   HeadMethod
   (keyword-binding [_] :head)
@@ -80,7 +81,7 @@
 ;; --------------------------------------------------------------------------------
 
 (defprotocol Get
-  (get* [_ ctx]
+  (GET [_ ctx]
     "Return the state. Can be formatted to a representation of the given
   media-type and charset. Returning nil results in a 404. Get the
   charset from the context [:request :charset], if you can support
@@ -106,6 +107,7 @@
                         :yada.core/http-response true}))))
 
 (deftype GetMethod [])
+
 (extend-protocol Method
   GetMethod
   (keyword-binding [_] :get)
@@ -118,7 +120,7 @@
 
     (d/chain
      ;; GET request normally returns (possibly deferred) body.
-     (get* (:resource ctx) ctx)
+     (GET (:resource ctx) ctx)
 
      (fn [res]
        (interpret-get-result res ctx))
@@ -135,7 +137,7 @@
 ;; --------------------------------------------------------------------------------
 
 (defprotocol Put
-  (put [_ ctx]
+  (PUT [_ ctx]
     "Overwrite the state with the data. To avoid inefficiency in
   abstraction, satisfying types are required to manage the parsing of
   the representation in the request body. If a deferred is returned, the
@@ -143,13 +145,14 @@
   return a deferred result."))
 
 (deftype PutMethod [])
+
 (extend-protocol Method
   PutMethod
   (keyword-binding [_] :put)
   (safe? [_] false)
   (idempotent? [_] true)
   (request [_ ctx]
-    (let [res (put (:resource ctx) ctx)]
+    (let [res (PUT (:resource ctx) ctx)]
       (assoc-in ctx [:response :status]
                 (cond
                   ;; TODO: A 202 may be not what the developer wants!
@@ -161,7 +164,7 @@
 ;; --------------------------------------------------------------------------------
 
 (defprotocol Post
-  (post [_ ctx]
+  (POST [_ ctx]
     "Post the new data. Return a result. If a Ring response map is
   returned, it is returned to the client. If a function can be
   reeturned, it is invoked with the context as the only parameter. If a
@@ -205,6 +208,7 @@
   (interpret-post-result [_ ctx] ctx))
 
 (deftype PostMethod [])
+
 (extend-protocol Method
   PostMethod
   (keyword-binding [_] :post)
@@ -212,7 +216,7 @@
   (idempotent? [_] false)
   (request [_ ctx]
     (d/chain
-     (post (:resource ctx) ctx)
+     (POST (:resource ctx) ctx)
      (fn [res]
        (interpret-post-result res ctx))
      (fn [ctx]
@@ -222,7 +226,7 @@
 ;; --------------------------------------------------------------------------------
 
 (defprotocol Delete
-  (delete [_ ctx]
+  (DELETE [_ ctx]
     "Delete the state. If a deferred is returned, the HTTP response
   status is set to 202. Side-effects are permissiable. Can return a
   deferred result."))
@@ -235,7 +239,7 @@
   (idempotent? [_] true)
   (request [_ ctx]
     (d/chain
-     (delete (:resource ctx) ctx)
+     (DELETE (:resource ctx) ctx)
      (fn [res]
        ;; TODO: Could we support 202 somehow?
        (assoc-in ctx [:response :status] 204)))))
@@ -243,7 +247,7 @@
 ;; --------------------------------------------------------------------------------
 
 (defprotocol Options
-  (options [_ ctx]))
+  (OPTIONS [_ ctx]))
 
 (defprotocol OptionsResult
   (interpret-options-result [_ ctx]))
@@ -259,6 +263,7 @@
   (interpret-post-result [_ ctx] ctx))
 
 (deftype OptionsMethod [])
+
 (extend-protocol Method
   OptionsMethod
   (keyword-binding [_] :options)
@@ -270,11 +275,9 @@
       ;; TODO: Build in explicit support for CORS pre-flight requests
       (if (satisfies? Options (:resource ctx))
         (d/chain
-         (options (:resource ctx) ctx)
+         (OPTIONS (:resource ctx) ctx)
          (fn [res]
-           (interpret-options-result res ctx))
-
-         )
+           (interpret-options-result res ctx)))
         ctx)
 
       ;; For example, for a resource supporting CORS
@@ -349,14 +352,11 @@
 
 ;; -----
 
+;; The function is a very useful type to extend, so we do so here.
+
 (extend-type clojure.lang.Fn
-  Get
-  (get* [f ctx] (f ctx))
-  Put
-  (put [f ctx] (f ctx))
-  Post
-  (post [f ctx] (f ctx))
-  Delete
-  (delete [f ctx] (f ctx))
-  Options
-  (options [f ctx] (f ctx)))
+  Get (GET [f ctx] (f ctx))
+  Put (PUT [f ctx] (f ctx))
+  Post (POST [f ctx] (f ctx))
+  Delete (DELETE [f ctx] (f ctx))
+  Options (OPTIONS [f ctx] (f ctx)))

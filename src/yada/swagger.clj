@@ -15,7 +15,7 @@
    [ring.swagger.swagger2 :as rs]
    [ring.util.response :refer (redirect)]
    [schema.core :as s]
-   [yada.methods :refer (Get get*)]
+   [yada.methods :refer (Get GET)]
    [yada.mime :as mime]
    [yada.resource :refer (Resource ResourceRepresentations ResourceEntityTag ResourceCoercion platform-charsets make-resource) :as res]
    [yada.core :as yada]
@@ -72,7 +72,7 @@
                            :charset #{"UTF-8" "UTF-16;q=0.9" "UTF-32;q=0.9"}}]))
 
   Get
-  (get* [_ ctx] (rs/swagger-json spec)))
+  (GET [_ ctx] (rs/swagger-json spec)))
 
 (defrecord Swaggered [spec route spec-handlers]
   Matched

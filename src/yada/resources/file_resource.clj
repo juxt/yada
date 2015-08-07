@@ -1,7 +1,6 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.resources.file-resource
-  (:refer-clojure :exclude (get))
   (:require [byte-streams :as bs]
             [clojure.java.io :as io]
             [clojure.string :as str]
@@ -12,7 +11,7 @@
             [ring.util.time :refer (format-date)]
             [yada.resource :refer [Resource ResourceRepresentations ResourceFetch ResourceCoercion representations platform-charsets]]
             [yada.representation :as rep]
-            [yada.methods :refer (Get get* Put put Post post Delete delete)]
+            [yada.methods :refer (Get GET Put PUT Post POST Delete DELETE)]
             [yada.negotiation :as negotiation]
             [yada.mime :as mime])
   (:import [java.io File]
@@ -88,7 +87,7 @@
   (exists? [_ ctx] (.exists f))
   (last-modified [_ ctx] (Date. (.lastModified f)))
   Get
-  (get* [_ ctx]
+  (GET [_ ctx]
     ;; The reason to use bs/transfer is to allow an efficient copy of byte buffers
     ;; should the following be true:
 
@@ -116,10 +115,10 @@
       (throw (ex-info "Not found" {:status 404 :yada.core/http-response true}))))
 
   Put
-  (put [_ ctx] (bs/transfer (-> ctx :request :body) f))
+  (PUT [_ ctx] (bs/transfer (-> ctx :request :body) f))
 
   Delete
-  (delete [_ ctx] (.delete f))
+  (DELETE [_ ctx] (.delete f))
 
   ResourceRepresentations
   (representations [_]
@@ -141,7 +140,7 @@
       :charset platform-charsets}])
 
   Get
-  (get* [this ctx]
+  (GET [this ctx]
     (if-let [path-info (-> ctx :request :path-info)]
       (if (= path-info "")
         (let [neg (negotiation/interpret-negotiation
@@ -187,7 +186,7 @@
 
 
   Put
-  (put [_ ctx]
+  (PUT [_ ctx]
     (if-let [path-info (-> ctx :request :path-info)]
       (let [f (child-file dir path-info)]
         (bs/transfer (-> ctx :request :body) f))
@@ -195,7 +194,7 @@
 
 
   Delete
-  (delete [_ ctx]
+  (DELETE [_ ctx]
     (do
       (let [path-info (-> ctx :request :path-info)]
         ;; TODO: We must be ensure that the path-info points to a file
