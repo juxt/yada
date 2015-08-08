@@ -8,29 +8,29 @@
    [ring.mock.request :refer (request)]
    [juxt.iota :refer (given)]
    [schema.test :as st]
-   [yada.negotiation :refer (vary parse-representations)]))
+   [yada.negotiation :refer (vary coerce-representations)]))
 
 (st/deftest vary-test
   (given
     (vary :get
-          (parse-representations [{:content-type #{"text/plain" "text/html"}}]))
+          (coerce-representations [{:content-type #{"text/plain" "text/html"}}]))
     identity := #{:content-type})
 
   (given
     (vary :get
-          (parse-representations [{:charset #{"UTF-8" "Latin-1"}}]))
+          (coerce-representations [{:charset #{"UTF-8" "Latin-1"}}]))
     identity := #{:charset})
 
   (given
     (vary :get
-          (parse-representations [{:content-type #{"text/plain" "text/html"}
+          (coerce-representations [{:content-type #{"text/plain" "text/html"}
                                    :charset #{"UTF-8" "Latin-1"}}]))
     identity := #{:content-type :charset})
 
   (testing "method guards"
       (given
         (vary :post
-              (parse-representations [{:method #{:post}
+              (coerce-representations [{:method #{:post}
                                        :content-type #{"application/json"}}
                                       {:method #{:get}
                                        :content-type #{"text/plain" "text/html"}
@@ -38,7 +38,7 @@
         identity := nil)
     (given
         (vary :get
-              (parse-representations [{:content-type #{"application/json"}}
+              (coerce-representations [{:content-type #{"application/json"}}
                                       {:method #{:get}
                                        :content-type #{"text/plain"}
                                        :charset #{"UTF-8"}}]))

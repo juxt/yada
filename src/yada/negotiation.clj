@@ -350,7 +350,7 @@
          (when-let [header (get-in req [:headers "accept-language"])]
            {:accept-language header})))
 
-(defn parse-representations
+(defn coerce-representations
   "For performance reasons it is sensible to parse the representations ahead of time, rather than on each request. mapv this function onto the result of representations"
   [reps]
   (when reps

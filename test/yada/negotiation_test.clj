@@ -68,7 +68,7 @@
   (testing "no charset"
     (given (interpret-negotiation
             (first (negotiate {:method :get :accept "text/html"}
-                              (parse-representations
+                              (coerce-representations
                                [{:method #{:get :head}
                                  :content-type #{"text/html"}
                                  }]))))
@@ -80,7 +80,7 @@
   (testing "charset applied when necessary"
     (given (interpret-negotiation
             (first (negotiate {:method :get :accept "text/plain"}
-                              (parse-representations
+                              (coerce-representations
                                [{:method #{:get :head}
                                  :content-type #{"text/plain"}}
 
@@ -97,7 +97,7 @@
     ;; according to http://tools.ietf.org/html/rfc6657
     (given (interpret-negotiation
             (first (negotiate {:method :get :accept "application/xml"}
-                              (parse-representations
+                              (coerce-representations
                                [{:method #{:get :head}
                                  :content-type #{"application/xml"}}
 
@@ -116,7 +116,7 @@
   (is (= (:charset
           (first
            (negotiate {:method :get :accept "text/html"}
-                      (parse-representations
+                      (coerce-representations
                        [{:method #{:get :head}
                          :content-type #{"text/html"}}
 
@@ -130,7 +130,7 @@
   (given (:content-type (interpret-negotiation
                          (first
                           (negotiate {:method :get :accept "text/html"}
-                                     (parse-representations
+                                     (coerce-representations
                                       [{:method #{:get}
                                         :content-type #{"text/html;q=0.9"}}
                                        ])))))
@@ -141,7 +141,7 @@
           (interpret-negotiation
            (first
             (negotiate {:method :get :accept "text/html"}
-                       (parse-representations
+                       (coerce-representations
                         [{:content-type #{"text/html"}}
                          ])))))
     identity :> {:type "text", :subtype "html", :parameters {}}

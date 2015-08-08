@@ -157,7 +157,7 @@
                           (res/parameters resource)))
 
          representations
-         (negotiation/parse-representations
+         (negotiation/coerce-representations
           (or
            (:representations options)
            (when-let [rep (:representation options)] [rep])

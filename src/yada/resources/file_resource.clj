@@ -75,7 +75,7 @@
         (negotiation/interpret-negotiation
          (first (negotiation/negotiate
                  (negotiation/extract-request-info (:request ctx))
-                 (negotiation/parse-representations
+                 (negotiation/coerce-representations
                   [{:content-type (set (remove nil? [(ext-mime-type (.getName f))]))}]))))]
     (when-let [status (:status neg)]
       (throw (ex-info "" {:status status :yada.core/http-response true})))
@@ -154,7 +154,7 @@
         (let [neg (negotiation/interpret-negotiation
                    (first (negotiation/negotiate
                            (negotiation/extract-request-info (:request ctx))
-                           (negotiation/parse-representations (representations this)))))
+                           (negotiation/coerce-representations (representations this)))))
               ct (:content-type neg)]
 
           (cond-> (:response ctx)
@@ -179,7 +179,7 @@
             (let [neg (negotiation/interpret-negotiation
                        (first (negotiation/negotiate
                                (negotiation/extract-request-info (:request ctx))
-                               (negotiation/parse-representations (representations this)))))
+                               (negotiation/coerce-representations (representations this)))))
                   ct (:content-type neg)]
               (cond-> (:response ctx)
                 true (assoc :body (rep/to-body (dir-index f ct) neg))
