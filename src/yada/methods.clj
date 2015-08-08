@@ -35,7 +35,7 @@
 (defprotocol Method
   (keyword-binding [_] "Return the keyword this method is for")
   (safe? [_] "Is the method considered safe? Return a boolean")
-  (idempotent? [_] "Is the method considered safe? Return a boolean")
+  (idempotent? [_] "Is the method considered idempotent? Return a boolean")
   (request [_ ctx] "Apply the method to the resource"))
 
 (defn methods
