@@ -10,6 +10,22 @@
 (def mutable-hello
   (yada/resource (atom "Hello World!\n")))
 
+(def hello-api
+  (swaggered {:info {:title "Hello World!"
+                     :version "1.0"
+                     :description "Demonstrating yada + swagger"}
+              :basePath "/hello-api"
+              }
+             ["/hello" hello]))
+
+(def mutable-hello-api
+  (swaggered {:info {:title "Hello World!"
+                     :version "1.0"
+                     :description "Demonstrating yada + swagger"}
+              :basePath "/hello-api"
+              }
+             ["/hello" mutable-hello]))
+
 (defrecord HelloWorldExample []
   RouteProvider
   (routes [_]
@@ -19,21 +35,10 @@
       ["/mutable-hello" mutable-hello]
 
       ;; Swagger
-      ["/hello-api"
-       (swaggered {:info {:title "Hello World!"
-                          :version "1.0"
-                          :description "Demonstrating yada + swagger"}
-                   :basePath "/hello-api"
-                   }
-                  ["/hello" hello])]
+      ["/hello-api" hello-api]
 
       ["/mutable-hello-api"
-       (swaggered {:info {:title "Hello World!"
-                          :version "1.0"
-                          :description "Demonstrating yada + swagger"}
-                   :basePath "/hello-api"
-                   }
-                  ["/hello" mutable-hello])]]]))
+       mutable-hello-api]]]))
 
 (defn new-hello-world-example [& {:as opts}]
   (->HelloWorldExample))

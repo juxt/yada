@@ -159,10 +159,7 @@
         )
     :scripts []}))
 
-(def hello
-  (yada/resource "Hello World!\n"))
-
-(def hello-languages
+#_(def hello-languages
   (yada/resource
    (fn [ctx]
      (case (-> ctx :response :representation :content-type mime/media-type) ; TODO: helper functions needed here
@@ -190,11 +187,6 @@
       :language "zh-ch"
       :charset "Shift_JIS;q=0.9"}]}))
 
-(def hello-parameters
-  (yada/resource
-   (fn [ctx] (format "Hello %s!\n" (get-in ctx [:parameters :p])))
-   {:parameters {:get {:query {:p String}}}}))
-
 (defrecord UserManual [*router templater prefix ext-prefix]
   Lifecycle
   (start [component]
@@ -218,29 +210,13 @@
           hello-date-after (java.util.Date/from (.plusMillis (.toInstant hello-date) 2000))]
 
       ["/"
-       [#_["hello-api" (-> (swaggered {:info {:title "Hello World!"
-                                            :version "0.0.1"
-                                            :description "Demonstrating yada + swagger"}
-                                     }
-                                    ["/hello" hello])
-                         (tag :hello-api))]
+       [
 
         #_["petstore-simple.json" (yada/resource (json/decode (slurp (io/file "dev/resources/petstore/petstore-simple.json")))
                                                {:representations [{:content-type #{"application/json"
                                                                                    "text/html;q=0.9"
                                                                                    "application/edn;q=0.8"}
                                                                    :charset #{"UTF-8"}}]})]
-
-        #_["hello" hello]
-        #_["hello-atom" hello-atom]
-
-        #_["hello-parameters" hello-parameters]
-
-        #_["hello-languages" hello-languages
-         ]
-
-        #_["hello4" (resource (fn [ctx] "你好世界!\n")
-                              )]
 
         ["user-manual"
          [[".html"
