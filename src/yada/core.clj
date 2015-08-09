@@ -473,9 +473,7 @@
                       ;; Create a map of representation -> etag
                       version?
                       (let [version (res/version (:resource ctx) ctx)
-                            etags (into {} (map (juxt identity (partial res/to-etag version)) all-representations))
-                            _ (infof "etags %s" etags)
-                            _ (infof "matches %s" matches)]
+                            etags (into {} (map (juxt identity (partial res/to-etag version)) all-representations))]
 
                         (when (empty? (set/intersection matches (set (vals etags))))
                           (throw
