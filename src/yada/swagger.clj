@@ -17,7 +17,7 @@
    [schema.core :as s]
    [yada.methods :refer (Get GET)]
    [yada.mime :as mime]
-   [yada.resource :refer (ResourceModification ResourceRepresentations ResourceEntityTag ResourceCoercion platform-charsets make-resource) :as res]
+   [yada.resource :refer (ResourceModification ResourceRepresentations ResourceVersion ResourceCoercion platform-charsets make-resource) :as res]
    [yada.core :as yada]
    [yada.util :refer (md5-hash)])
   (:import (clojure.lang PersistentVector Keyword)))
@@ -53,8 +53,8 @@
   ResourceModification
   (last-modified [_ ctx] created-at)
 
-  ResourceEntityTag
-  (etag [_ ctx] spec)
+  ResourceVersion
+  (version [_ ctx] spec)
 
   ResourceRepresentations
   (representations [_]

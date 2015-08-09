@@ -156,19 +156,24 @@
                         (when (satisfies? res/ResourceParameters resource)
                           (res/parameters resource)))
 
-         representations
-         (negotiation/coerce-representations
-          (or
-           (:representations options)
-           (when-let [rep (:representation options)] [rep])
-           (let [m (select-keys options [:content-type :charset :encoding :language])]
-             (when (not-empty m) [m]))
-           (when (satisfies? res/ResourceRepresentations resource)
-             (res/representations resource))))
+         representations (negotiation/coerce-representations
+                          (or
+                           (:representations options)
+                           (when-let [rep (:representation options)] [rep])
+                           (let [m (select-keys options [:content-type :charset :encoding :language])]
+                             (when (not-empty m) [m]))
+                           (when (satisfies? res/ResourceRepresentations resource)
+                             (res/representations resource))))
 
-         etag? (satisfies? res/ResourceEntityTag resource)
+         ;; TODO: Merge with representations above
+         all-representations (set (negotiation/representation-seq representations))
+
+         ;; Calls to satisfies? have relatively poor performance, but
+         ;; since this won't change we can do an ahead-of-time check.
+         version? (satisfies? res/ResourceVersion resource)
          existence? (satisfies? res/ResourceExistence resource)
 
+         ;; TODO: It should be possible to override security checks
          security (as-sequential security)]
 
      (map->HttpResource
@@ -179,6 +184,7 @@
        :allowed-methods allowed-methods
        :parameters parameters
        :representations representations
+       :all-representations all-representations
        :security security
        :authorization authorization
        :handler
@@ -361,12 +367,35 @@
                     ;; satisfies? on the resource first, it's expensive to
                     ;; do on every request
 
-                    (let [negotiated
-                          (when-let [res (first
-                                          (negotiation/negotiate
-                                           (negotiation/extract-request-info req)
-                                           representations))]
-                            (negotiation/interpret-negotiation res))]
+                    (let [neg (first
+                               (negotiation/negotiate
+                                (negotiation/extract-request-info req)
+                                representations))
+
+                          selected-representation (when neg
+                                                    (merge {}
+                                                           (when-let [x (:content-type neg)] {:content-type x})
+                                                           (when-let [x (-> neg :charset second)] {:charset (charset/to-charset-map x)})
+                                                           (when-let [x (:encoding neg)] {:encoding x})
+                                                           (when-let [x (:language neg)] {:language x})
+                                                           ))
+
+
+                          negotiated (when neg
+                                       (negotiation/interpret-negotiation neg))]
+
+                      ;; When representations and all-representations
+                      ;; have been merged (i.e. when negotiate has been
+                      ;; rewritten to select out of
+                      ;; all-representations), this assertion can be
+                      ;; removed. Until then, it serves as a useful
+                      ;; check.
+                      (when neg
+                        (when-not (contains? all-representations selected-representation)
+                          (throw (ex-info "Selected representation not known"
+                                          {:selected-representation selected-representation
+                                           :all-representations all-representations
+                                           :neg neg}))))
 
                       (if (:status negotiated)
                         (d/error-deferred (ex-info "" (merge negotiated {::http-response true})))
@@ -374,6 +403,8 @@
                         (let [vary (negotiation/vary method representations)]
                           (cond-> ctx
                             negotiated (assoc-in [:response :representation] negotiated)
+                            ;; TODO: Merge these
+                            selected-representation (assoc-in [:response :selected-representation] selected-representation)
                             vary (assoc-in [:response :vary] vary)))))))
 
                 ;; Resource exists?
@@ -418,41 +449,78 @@
                           ctx))
                        ctx))))
 
-                ;; ETags - we already have the representation details,
+                ;; Check ETag - we already have the representation details,
                 ;; which are necessary for a strong validator. See
                 ;; section 2.3.3 of RFC 7232.
-                (fn [ctx]
 
-                  (d/chain
-                   (when etag? (res/etag (:resource ctx) ctx))
+                ;; If-Match check
+                (link ctx
 
-                   (fn [etag-result]
-                     (res/coerce-etag-result etag-result ctx))
+                  (when-let [matches (some->> (get-in req [:headers "if-match"])
+                                              (#(str/split % #"\s*,\s*"))
+                                              (map str/trim)
+                                              set)]
 
-                   (fn [etag]
-                     (let [ctx
-                           (cond-> ctx
-                             etag (assoc-in [:response :headers "etag"] etag))]
-                       ;; etag could be nil
+                    ;; We have an If-Match to process
+                    (cond
+                      (and (contains? matches "*") (pos? (count all-representations)))
+                      ;; No need to compute etag, exit
+                      ctx
 
-                       ;; If there's an If-Match header, which doesn't contain the etag
-                       (when-let [matches (some->> (get-in req [:headers "if-match"])
-                                                   (#(str/split % #"\s*,\s*"))
-                                                   (map str/trim)
-                                                   set)]
-                         (when (or
-                                (and (contains? matches "*") (not etag))
-                                (and matches (not (contains? matches etag))))
-                           (throw
-                            (ex-info "Precondition failed"
-                                     {:status 412
-                                      ::http-response true})))))
+                      ;; Otherwise we need to compute the etag for each current
+                      ;; representation of the resource
 
-                     (assoc-in ctx [:response :headers "etag"] etag))))
+                      ;; Create a map of representation -> etag
+                      version?
+                      (let [version (res/version (:resource ctx) ctx)
+                            etags (into {} (map (juxt identity (partial res/to-etag version)) all-representations))
+                            _ (infof "etags %s" etags)
+                            _ (infof "matches %s" matches)]
+
+                        (when (empty? (set/intersection matches (set (vals etags))))
+                          (throw
+                           (ex-info "Precondition failed"
+                                    {:status 412
+                                     ::http-response true})))
+
+                        ;; Otherwise, let's use the etag we've just
+                        ;; computed. Note, this might yet be
+                        ;; overridden by the (unsafe) method returning
+                        ;; a modified response. But if the method
+                        ;; chooses not to reset the etag (perhaps the
+                        ;; resource state didn't change), then this
+                        ;; etag will do for the response.
+                        (assoc-in ctx [:response :etag]
+                                  (get etags (:selected-representation ctx)))))))
 
                 ;; Methods
                 (fn [ctx]
                   (methods/request (:method-instance ctx) ctx))
+
+                ;; Compute ETag, if not already done so
+
+                ;; Unsafe resources that support etags MUST return a
+                ;; response which contains a version if they mutate the
+                ;; resource's state. If they don't return a version, no
+                ;; etag (or worse, a previously computed etag) will be
+                ;; set in the response header.
+
+                ;; Produce ETag: The "ETag" header field in a response provides
+                ;; the current entity-tag for the selected
+                ;; representation, as determined at the conclusion of
+                ;; handling the request. RFC 7232 section 2.3
+
+                (link ctx
+                  ;; only if resource supports etags
+                  (when version?
+                    ;; only if the resource hasn't already set an etag
+                    (when-let [version (or (-> ctx :response :version)
+                                           (res/version (:resource ctx) ctx))]
+                      (let [etag (res/to-etag version (get-in ctx [:response :selected-representation]))]
+                        (assoc-in ctx [:response :etag] etag)))))
+
+                ;; If we have just mutated the resource, we should
+                ;; recompute the etag
 
                 ;; CORS
                 ;; TODO: Reinstate
@@ -486,7 +554,8 @@
                                      {"content-length" cl})
                                    (when-let [vary (get-in ctx [:response :vary])]
                                      {"vary" (negotiation/to-vary-header vary)})
-
+                                   (when-let [etag (get-in ctx [:response :etag])]
+                                     {"etag" etag})
 
                                    #_(when true
                                        {"access-control-allow-origin" "*"})

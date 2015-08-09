@@ -144,30 +144,26 @@
   "Declare the resource's parameters"
   (parameters [_] "Return the parameters, by method. Must not return a deferred value."))
 
-(defprotocol ResourceEntityTag
-  "Entity tags."
-  (etag [_ ctx] "Return the entity tag of a resource. If returning a
-  string that is used as the etag, which should incorporate
-  the (potentially variable) representation. Representation data is
-  available in the ctx at [:response :representation], and this should
-  be used if returning a string since the etag returned for two
-  representations that differ only in representation should not be
-  identical. Return something other than a string and the representation
-  will be included in the computation of the etag."))
+(defprotocol ResourceVersion
+  "Entity tags. Satisfying resources MUST also satisfy
+  ResourceRepresentations, providing at least one
+  representation (because the representation data is used in
+  constructing the ETag header in the response)."
+  (version [_ ctx] "Return the version of a resource. This is useful for
+  conflict-detection."))
 
+(defprotocol ETag
+  "The version function returns material that becomes the ETag response
+  header. This is left open for extension. The ETag must differ between
+  representations, so the representation is given in order to be used in
+  the algorithm. Must always return a string (to aid comparison with the
+  strings the client will present on If-Match, If-None-Match."
+  (to-etag [_ rep]))
 
-(defprotocol ETagResult
-  "The etag function may return a string, which becomes the final ETag
-  response header. Alternatively, it may return other results, which
-  must be coerced into the final ETag response header value."
-  (coerce-etag-result [_ ctx] "Coerce the result into a string"))
-
-(extend-protocol ETagResult
-  String
-  (coerce-etag-result [s ctx] s)
+(extend-protocol ETag
   Object
-  (coerce-etag-result [o ctx]
+  (to-etag [o rep]
     (str (hash {:value o
-                :representation (get-in ctx [:response :representation])})))
+                :representation rep})))
   nil
-  (coerce-etag-result [o ctx] nil))
+  (to-etag [o rep] nil))

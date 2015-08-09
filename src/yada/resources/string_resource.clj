@@ -4,7 +4,7 @@
   (:require
    [clj-time.core :refer (now)]
    [clj-time.coerce :refer (to-date)]
-   [yada.resource :refer [ResourceExistence ResourceModification ResourceRepresentations ResourceEntityTag ResourceCoercion platform-charsets]]
+   [yada.resource :refer [ResourceExistence ResourceModification ResourceRepresentations ResourceVersion ResourceCoercion platform-charsets]]
    [yada.methods :refer [Get Options]]
    [yada.representation :refer [Representation]]
    [yada.util :refer (md5-hash)]))
@@ -21,8 +21,8 @@
       :content-type #{"text/plain"}
       :charset platform-charsets}])
 
-  ResourceEntityTag
-  (etag [_ ctx] {:string s})
+  ResourceVersion
+  (version [_ ctx] {:string s})
 
   Get
   (GET [this ctx] s))

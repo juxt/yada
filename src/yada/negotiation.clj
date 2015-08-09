@@ -14,6 +14,9 @@
   (:import [yada.charset CharsetMap]
            [yada.mime MediaTypeMap]))
 
+;; Consider either moving this into yada.representation, or promote as a
+;; separate library.
+
 ;; ------------------------------------------------------------------------
 ;; Content types
 
@@ -351,7 +354,8 @@
            {:accept-language header})))
 
 (defn coerce-representations
-  "For performance reasons it is sensible to parse the representations ahead of time, rather than on each request. mapv this function onto the result of representations"
+  "For performance reasons it is sensible to coerce the representations
+  ahead of time, rather than on each request."
   [reps]
   (when reps
     (mapv
@@ -365,13 +369,13 @@
 
         ;; Check to see if the server-specified charset is
         ;; recognized (registered with IANA). If it isn't we
-         ;; throw a 500, as this is a server error. (It might be
-         ;; necessary to disable this check in future but a
-         ;; balance should be struck between giving the
-         ;; developer complete control to dictate charsets, and
-         ;; error-proofing. It might be possible to disable
-         ;; this check for advanced users if a reasonable case
-         ;; is made.)
+        ;; throw a 500, as this is a server error. (It might be
+        ;; necessary to disable this check in future but a
+        ;; balance should be struck between giving the
+        ;; developer complete control to dictate charsets, and
+        ;; error-proofing. It might be possible to disable
+        ;; this check for advanced users if a reasonable case
+        ;; is made.)
         #_(when-let [bad-charset
                      (some (fn [mt] (when-let [charset (some-> mt :parameters (get "charset"))]
                                      (when-not (charset/valid-charset? charset) charset)))
@@ -384,13 +388,32 @@
           {:language (to-list langs)})))
      reps)))
 
+;; We need to calculate all the possible representations that a representation supports, this is needed by the ETag implementation
+;; pass result of coerce-representations
+(defn representation-seq
+  "Return a sequence of all possible representations."
+  [reps]
+  (for [rep reps
+        content-type (or (:content-type rep) [nil])
+        charset (or (:charset rep) [nil])
+        language (or (:language rep) [nil])
+        encoding (or (:encoding rep) [nil])]
+    (merge
+     (when content-type {:content-type content-type})
+     (when charset {:charset charset})
+     (when language {:language language})
+     (when encoding {:encoding encoding}))))
+
 (defn to-vary-header [vary]
   (str/join ", "
+            ;; TODO: Is this really about removing nils. Replace with
+            ;; keep?
             (filter string? (map {:charset "accept-charset"
                                   :content-type "accept"
                                   :encoding "accept-encoding"
                                   :language "accept-language"}
                                  vary))))
+
 
 
 ;; TODO: see rfc7231.html#section-3.4.1
@@ -412,5 +435,3 @@
 ;; of representations that declares its just for errors, so users can say
 ;; they can provide content in both text/html and application/csv but
 ;; errors must be in text/plain.
-
-;; TODO A capability that doesn't supply a method guard /should/ mean ALL methods.

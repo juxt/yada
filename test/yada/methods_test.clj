@@ -10,7 +10,7 @@
    [schema.core :as s]
    [yada.methods :refer (Get Post)]
    [yada.resources.misc :refer (just-methods)]
-   [yada.resource :refer [ResourceAllowedMethods allowed-methods ResourceEntityTag make-resource]]
+   [yada.resource :refer [ResourceAllowedMethods allowed-methods ResourceVersion make-resource ResourceRepresentations]]
    [yada.yada :as yada]))
 
 (deftest post-test
@@ -61,17 +61,21 @@
 
 ;; ETags -------------------------------------------------------------
 
+;; TODO Extract out into dedicated ns.
+
 (defn etag? [etag]
   (and (string? etag)
        (re-matches #"-?\d+" etag)))
 
 (defrecord ETagTestResource [v]
-  ResourceEntityTag
-  (etag [_ ctx] @v)
+  ResourceVersion
+  (version [_ ctx] @v)
+  ResourceRepresentations
+  (representations [_] [{:content-type "text/plain"}])
   Get
   (GET [_ ctx] "foo")
   Post
-  (POST [_ ctx] (do (swap! v inc) "OK")))
+  (POST [_ {:keys [response]}] (assoc response :version (swap! v inc))))
 
 (deftest etag-test
   (testing "etags-identical-for-consecutive-gets"
@@ -83,7 +87,8 @@
         [first :status] := 200
         [second :status] := 200
         [first :headers "etag"] :? etag?
-        [second :headers "etag"] :? etag?)
+        [second :headers "etag"] :? etag?
+        )
       ;; ETags are the same in both responses
       (is (= (get-in r1 [:headers "etag"])
              (get-in r2 [:headers "etag"])))))
@@ -105,15 +110,28 @@
       (is (not (= (get-in r1 [:headers "etag"])
                   (get-in r3 [:headers "etag"]))))))
 
-  (testing "use-of-old-entity-tag-causes-412"
+  (testing "post-using-etags"
     (let [v (atom 1)
           handler (yada/resource (->ETagTestResource v))
           r1 @(handler (mock/request :get "/"))
-          r2 @(handler (mock/request :post "/"))
-          ]
+          ;; Someone else POSTs, causing the etag given in r1 to become stale
+          r2 @(handler (mock/request :post "/"))]
 
-      (let [etag (get-in r1 [:headers "etag"])
-            r3 @(handler (-> (mock/request :get "/")
-                             (update-in [:headers] merge {"if-match" etag})))]
-        (given r3
-        :status := 412)))))
+      ;; Sad path - POSTing with a stale etag (from r1)
+      (let [etag (get-in r1 [:headers "etag"])]
+
+        (given @(handler (-> (mock/request :post "/")
+                             (update-in [:headers] merge {"if-match" etag})))
+          :status := 412)
+
+        (given @(handler (-> (mock/request :post "/")
+                             (update-in [:headers] merge {"if-match" (str "abc, " etag ",123")})))
+          :status := 412))
+
+
+      ;; Happy path - POSTing from a fresh etag (from r2)
+      (let [etag (get-in r2 [:headers "etag"])]
+        (is (etag? etag))
+        (given @(handler (-> (mock/request :post "/")
+                             (update-in [:headers] merge {"if-match" (str "abc, " etag ",123")})))
+          :status := 200)))))
