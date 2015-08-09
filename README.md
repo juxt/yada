@@ -26,7 +26,8 @@ For the latest stable release, add the following dependency to your
 [yada "0.4.3"]
 ```
 
-For the latest release, use the following
+For the latest release, use the following and run the documentation
+offline (details below).
 
 ```clojure
 [yada "1.0.0-20150804.111215-2"]

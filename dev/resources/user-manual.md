@@ -2,7 +2,7 @@
 
 Welcome to the yada manual!
 
-This manual corresponds with version {{yada.version}}.
+This manual corresponds with version 1.0.0-20150804.111215-2
 
 ### Table of Contents
 
@@ -179,7 +179,7 @@ web server that yada currently supports).
 Once we have bound this handler to the path `/hello`, we're able to make the following HTTP request :-
 
 ```nohighlight
-curl -i {{prefix}}/hello
+curl -i http://localhost:8090/hello
 ```
 
 and receive a response like this :-
@@ -188,9 +188,9 @@ and receive a response like this :-
 HTTP/1.1 200 OK
 Server: Aleph/0.4.0
 Connection: Keep-Alive
-Date: {{now.date}}
-Last-Modified: {{hello.date}}
-ETag: 8ddd8be4b179a529afa5f2ffae4b9858
+Date: Sun, 09 Aug 2015 07:32:23 GMT
+Last-Modified: Sun, 09 Aug 2015 07:25:10 GMT
+ETag: 1462348343
 Content-Type: text/plain;charset=utf-8
 Vary: accept-charset
 Content-Length: 13
@@ -208,14 +208,14 @@ The first three response headers are added by our webserver.
 ```http
 Server: Aleph/0.4.0
 Connection: Keep-Alive
-Date: {{now.date}}
+Date: Sun, 09 Aug 2015 07:32:23 GMT
 ```
 
 Next we have another date and a string known as the _entity tag_.
 
 ```http
-Last-Modified: {{hello.date}}
-ETag: 8ddd8be4b179a529afa5f2ffae4b9858
+Last-Modified: Sun, 09 Aug 2015 07:25:10 GMT
+ETag: 1462348343
 ```
 
 The __Last-Modified__ header shows when the string `Hello World!` was
@@ -299,7 +299,7 @@ and start the web server.
   {:port 3000})
 ```
 
-The `yada/swaggered` wrapper provides a Swagger specification, in JSON, derived from its arguments. This specification can be used to drive a [Swagger UI]({{prefix}}/swagger-ui/index.html?url=/hello-api/swagger.json).
+The `yada/swaggered` wrapper provides a Swagger specification, in JSON, derived from its arguments. This specification can be used to drive a [Swagger UI](http://localhost:8090/swagger-ui/index.html?url=/hello-api/swagger.json).
 
 ![Swagger](static/img/hello-swagger.png)
 
@@ -320,7 +320,7 @@ We can test this by setting the __If-Modified-Since__ header in the
 request.
 
 ```nohighlight
-curl -i {{prefix}}/hello -H "If-Modified-Since: {{hello.date}}"
+curl -i http://localhost:8090/hello -H "If-Modified-Since: Sun, 09 Aug 2015 07:25:10 GMT"
 ```
 
 The server responds with
@@ -338,7 +338,7 @@ Content-Length: 0
 Let's try to overwrite the string by using a `PUT`.
 
 ```nohighlight
-curl -i {{prefix}}/hello -X PUT -d "Hello Dolly!"
+curl -i http://localhost:8090/hello -X PUT -d "Hello Dolly!"
 ```
 
 The response is as follows (we'll omit the Aleph contributed headers from now on).
@@ -348,7 +348,7 @@ HTTP/1.1 405 Method Not Allowed
 Allow: GET, HEAD, OPTIONS
 Server: Aleph/0.4.0
 Connection: Keep-Alive
-Date: {{now.date}}
+Date: Sun, 09 Aug 2015 07:32:23 GMT
 Content-Length: 0
 ```
 
@@ -358,7 +358,7 @@ which methods are allowed. One of these methods is OPTIONS. Let's try
 this.
 
 ```nohighlight
-curl -i {{prefix}}/hello -X OPTIONS
+curl -i http://localhost:8090/hello -X OPTIONS
 ```
 
 ```http
@@ -387,7 +387,7 @@ To demonstrate this, yada contains support for atoms (but you would usually empl
 We can now make another `OPTIONS` request to see whether `PUT` is available.
 
 ```nohighlight
-curl -i {{prefix}}/hello-atom -X OPTIONS
+curl -i http://localhost:8090/hello-atom -X OPTIONS
 ```
 
 ```http
@@ -403,7 +403,7 @@ Content-Length: 0
 It is! So let's try it.
 
 ```nohighlight
-curl -i {{prefix}}/hello -X PUT -d "Hello Dolly!"
+curl -i http://localhost:8090/hello -X PUT -d "Hello Dolly!"
 ```
 
 And now let's see if we've managed to change the state of the resource.
@@ -427,14 +427,14 @@ Before reverting our code back to the original, without the atom, let's see the 
 
 ![Swagger](static/img/mutable-hello-swagger.png)
 
-We now have a few more methods. [See for your self]({{prefix}}/swagger-ui/index.html?url=/mutable-hello-api/swagger.json).
+We now have a few more methods. [See for your self](http://localhost:8090/swagger-ui/index.html?url=/mutable-hello-api/swagger.json).
 
 #### A HEAD request
 
 There was one more method indicated by the __Allow__ header of our `OPTIONS` request, which was `HEAD`. Let's try this now.
 
 ```nohighlight
-curl -i {{prefix}}/hello -X HEAD
+curl -i http://localhost:8090/hello -X HEAD
 ```
 
 ```http
@@ -476,7 +476,7 @@ the request context, via the __:parameters__ key.
 Let's see this in action
 
 ```nohighlight
-curl -i {{prefix}}/hello-parameters?p=Ken
+curl -i http://localhost:8090/hello-parameters?p=Ken
 ```
 
 ```http
@@ -514,7 +514,7 @@ Let's test this by providing a request header which indicates a
 preference for simplified Chinese
 
 ```nohighlight
-curl -i {{prefix}}/hello-languages -H "Accept-Language: zh-CH"
+curl -i http://localhost:8090/hello-languages -H "Accept-Language: zh-CH"
 ```
 
 We should get the following response
@@ -555,7 +555,7 @@ Clojure application with a Leiningen `project.clj` file, include the
 following in the file's __:dependencies__ section.
 
 ```clojure
-[yada "{{yada.version}}"]
+[yada "1.0.0-20150804.111215-2"]
 [aleph "0.4.0"]
 ```
 
@@ -647,7 +647,7 @@ servers to agree on how a resource can be represented to best meet the
 availability, compatibility and preferences of both parties.
 
 There are 2 types of
-[content neogiation]({{prefix}}/static/spec/rfc7231.html#section-3.4)
+[content neogiation](http://localhost:8090/static/spec/rfc7231.html#section-3.4)
 described in HTTP.
 
 ### Proactive negotiation
