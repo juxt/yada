@@ -108,34 +108,46 @@ approach, focussing on what a web _resource_ is really about: _state_.
 
 ### What is yada?
 
-yada is a Clojure library that lets you expose state to the web over
-HTTP. But many libraries and 'web framworks' let you do that. What makes
-yada different is the _programming model_ it offers developers, one that
-is based on state rather than the HTTP protocol itself.
+yada is a Clojure library that lets you create powerful and Ring
+handlers that are fully compliant with HTTP specifications.
+
+Underlying yada is a number of Clojure protocols. Any Clojure data type
+that satisfies one or more of these protocols can be used to build a
+Ring handler. You can use the built-in types (strings, files,
+collections, atoms, etc.), create your own or re-use ones written by
+others.
 
 This approach has a number of advantages. Many things you would expect
-to have to code yourself and taken care of automatically, leaving you
-time to focus on other aspects of your application. And you end up with
-far less networking code to write and maintain.
+to have to code yourself are taken care of automatically, such as
+request validation, content negotation, conditional requests, HEAD,
+OPTIONS and TRACE methods, cache-control, CORS and much more, leaving
+you time to focus on the functional parts of your application and
+leaving you with far less handler code to write and maintain.
 
-yada is built on a fully asynchronous foundation, allowing you to
+yada is built on a fully asynchronous core, allowing you to
 exploit the asynchronous features of modern web servers, to achieve
 greater scaleability for Clojure-powered your websites and APIs.
 
-Above all, yada is data-centric, letting you specify your web resources
-as data. This has some compelling advantages, such as being able to
-transform that data into other formats, such as
-[Swagger](http://swagger.io) specifications for API documentation.
+yada is data-centric, letting you specify your web resources
+as _data_. This has some compelling advantages, such as being able to
+dynamically generate parts of your application, or transform that data
+into other formats, such as [Swagger](http://swagger.io) specifications
+for API documentation.
 
-### What yada is not
+However, yada is not a fully-fledged 'batteries-included' web
+'framework'. It does not offer URI routing and link formation, nor does
+it offer views and templating. It does, however, integrate seamlessly
+with its sibling library [bidi](https://github.com/juxt/bidi (for URI
+routing and formation) and other routing libraries. It can integrated
+with the many template libraries available for Clojure and Java, so you
+can build your own web-framework from yada and other libraries.
 
-yada is not a fully-fledged web framework. It does not offer URI routing
-and link formation, nor does it offer templating. It does, however,
-integrate seamlessly with its sibling library
-[bidi](https://github.com/juxt/bidi (for URI routing and formation) and
-other routing libraries. It can integrated with the many template
-libraries available for Clojure and Java, so you can build your own
-web-framework from yada and other libraries.
+yada is also agnostic to how you want to build your app. It is designed
+to be easy to use for HTML content and web APIs, in whatever style you
+decide is right for you (Swagger documented, hypermedia driven, jsonapi,
+'realtime', etc). The only constraint is that yada tries to comply as far
+as possible with current HTTP specifications, to build a richer, more
+interoperable and interconnected web.
 
 ### An introductory example: Hello World!
 
@@ -564,11 +576,62 @@ lein run
 
 (`lein` is available from [http://leiningen.org](http://leiningen.org))
 
-## Async
-
-![Swagger](static/img/hello-async.png)
-
 ## Parameters
+
+Many web requests contain parameters, which affect how a resource behaves. Often parameters are specified as part of the URI's query string. But parameters can also be inferred from the URI's path. It's also possible for a request to contain parameters in its headers or body, as we'll see later.
+
+For example, let's imagine we have a fictional URI to access the transactions of a bank account.
+
+```nohighlight
+https://bigbank.com/accounts/1234/transactions?since=tuesday
+```
+
+There are 2 parameters here. The first, `1234`, is contained in the
+path `/accounts/1234/transactions`. We call this a _path parameter_.
+
+The second, `tuesday`, is embedded in the URI's query string (after
+the `?` symbol). We call this a _query parameter_.
+
+yada allows you to declare both these and other types of parameter via the __:parameters__ entry in the resource description.
+
+Parameters must be specified for each method that the resource supports. The reason for this is because parameters can, and often do, differ depending on the method used.
+
+For example, below we have a resource description that defines the parameters for requests to a resource representing a bank account. For `GET` requests, there is both a path parameter and query parameter, for `POST` requests there is the same path parameter and a body.
+
+We define parameter types in the style of [Prismatic](https://prismatic.com)'s
+excellent [schema](https://github.com/prismatic/schema) library.
+
+```clojure
+(require [schema.core :refer (defschema)]
+
+(defschema Transaction
+  {:payee String
+   :description String
+   :amount Double}
+
+{:parameters
+  {:get {:path {:account Long}
+         :query {:since String}}
+   :post {:path {:account Long}
+          :body Transaction}}}
+```
+
+But for `POST` requests, there is a body parameter, which defines the entity body that must be sent with the request. This might be used, for example, to post a new transaction to a bank account.
+
+We can declare the parameter in the resource description's __:parameters__ entry. At runtime, these parameters are extracted from a request and  added as the __:parameters__ entry of the _request context_.
+
+### Benefits to declarative parameter declaration
+
+Declaring your parameters in resource descriptions comes with numerous advantages.
+
+- Parameters are declared with types, which are automatically coerced thereby eliminating error-prone conversion code.
+
+- The parameter value will be automatically coerced to the given type. This eliminates the need to write error-prone code to parse and convert parameters into their desired type.
+
+- Parameters are pre-validated on every request, providing some defence against injection attacks. If the request if found to be invalid, a 400 response is returned.
+
+- Parameter declarations can help to document the API, for example,
+  automatic generation of Swagger specifications.
 
 ## Representations
 
@@ -647,23 +710,26 @@ Different types of resources are added to yada by defining types or records.
 
 Let's delve a little deeper into how the _Hello World!_ example works.
 
-Here is the actual code that tells yada about Java strings (comments removed).
+Here is the actual code that tells yada about Java strings. The
+namespace declaration and comments have been removed, but otherwise this
+is all the code that is required to adatp Java strings into yada
+resources.
 
 ```clojure
 (defrecord StringResource [s last-modified]
-  Resource
-  (methods [this] #{:get :options})
-  (parameters [_] nil)
-  (exists? [this ctx] true)
-  (last-modified [this _] last-modified)
 
   ResourceRepresentations
   (representations [_]
-    [{:content-type #{"text/plain"}
-      :charset platform-charsets}])
+    [{:content-type "text/plain" :charset platform-charsets}])
+
+  ResourceModification
+  (last-modified [_ _] last-modified)
+
+  ResourceVersion
+  (version [_ _] s)
 
   Get
-  (get* [this ctx] s))
+  (GET [_ _] s))
 
 (extend-protocol ResourceCoercion
   String
@@ -703,6 +769,71 @@ platform we are on).
 
 There are numerous types already built into yada, but you can also add
 your own. You can also add your own custom methods.
+
+## Async
+
+Under normal circumstances, with Clojure running on a JVM, each request can be processed by a separate thread.
+
+However, sometimes the production of the response body involves making requests
+to data-sources and other activities which may be _I/O-bound_. This means the thread handling the request has to block, waiting on the data to arrive from the IO system.
+
+For heavily loaded or high-throughput web APIs, this is an inefficient
+use of precious resources. In recent years, this problem has been
+addressed by using a asynchronous I/O. The request thread
+is able to make a request for data via I/O, and then is free to carry out
+further work (such as processing another web request). When the data
+requested arrives on the I/O channel, another thread carries on when the
+original thread left off.
+
+As a developer, yada gives you fine-grained control over when to use a synchronous
+programming model and when to use an asynchronous one.
+
+#### Deferred values
+
+A deferred value is simply a value that may not yet be known. Examples
+include Clojure's futures, delays and promises. Deferred values are
+built into yada. For further details, see Zach Tellman's
+[manifold](https://github.com/ztellman/manifold) library.
+
+In almost all cases, it is possible to return a _deferred value_ from
+any of the functions that make up our resource record or options.
+
+For example, suppose our resource retrieves its state from another internal web API. This would be a common pattern with µ-services. Let's assume you are using an HTTP client library that is asynchronous, and requires you provide a _callback_ function that will be called when the HTTP response is ready.
+
+On sending the request, we could create a promise which is given to the callback function and returned to yada as the return value of our function.
+
+Some time later the callback function will be called, and its implementation will _deliver_ the promise with the response value. That will cause the continuation of processing of the original request. Note that _at no time is any thread blocked by I/O_.
+
+![Swagger](static/img/hello-async.png)
+
+Actually, if we use Aleph or http-kit as our HTTP client the code is
+even simpler, since each return promises from their request functions.
+
+```clojure
+(require '[yada.resource :refer [Get]])
+
+(defrecord MyResource []
+  Get
+  (GET [_ ctx] (aleph.http/get "http://users.example.org")))
+```
+
+In a real-world application, the ability to
+use an asynchronous model is very useful for techniques to improve
+scalability. For example, in a heavily loaded server, I/O operations can
+be queued and batched together. Performance may be slightly worse for
+each individual request, but the overall throughput of the web server
+can be significantly improved.
+
+Normally, exploiting asynchronous operations in handling web requests is
+difficult and requires advanced knowledge of asynchronous programming
+techniques. In yada, however, it's easy.
+
+For a fuller explanation as to why asynchronous programming models are
+beneficial, see the [Ratpack](http://ratpack.io) documentation. Note
+that yada provides all the features of Ratpack, and more, but native to
+Clojure. The combination of Clojure and yada significantly reduces the
+amount of code you have to write to create scaleable web APIs for your
+applications.
 
 ## Methods
 
@@ -855,9 +986,6 @@ While yada is still something of a fashionably modern craft beer, it is
 hoped that given time it will mature into a stable and trusted
 foundation for HTTP-based services.
 
-[include a yada beer label]
-
-
 ### Pedestal
 
 yada, like pedestal, is built on an interceptor chain, but this is an
@@ -869,3 +997,14 @@ Pedestal offers async only in inceptors, rather than in the target
 handlers. Pedestal pre-dates core.async and manifold. It does not offer
 a manifold chain, so exploiting async in Pedestal arguably requires more
 up-front work.
+
+## Concluding remarks
+
+In this user-manual we have seen how yada can help create flexible HTTP
+services with a data-oriented syntax, and how the adoption
+of a declarative data format (rather than functional composition) allows
+us to easily extend yada's functionality in various ways.
+
+Asynchronous operation can be exploited wherever required, with
+fine-grained control residing with the user, using futures and promises,
+avoiding the need for deeply-nested code full of callback functions.

@@ -10,22 +10,22 @@
    [yada.util :refer (md5-hash)]))
 
 (defrecord StringResource [s last-modified]
-  ResourceModification
-  (last-modified [this _] last-modified)
-
   ResourceRepresentations
   (representations [_]
     [{ ;; Without attempting to actually parse it (which isn't completely
       ;; impossible) we're not able to guess the media-type of this
       ;; string, so we return text/plain.
-      :content-type #{"text/plain"}
+      :content-type "text/plain"
       :charset platform-charsets}])
 
+  ResourceModification
+  (last-modified [_ _] last-modified)
+
   ResourceVersion
-  (version [_ ctx] {:string s})
+  (version [_ _] s)
 
   Get
-  (GET [this ctx] s))
+  (GET [_ _] s))
 
 (extend-protocol ResourceCoercion
   String

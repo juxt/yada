@@ -22,47 +22,6 @@ That's the end of the introduction. The following chapters explain yada in more 
 
 ## Parameters
 
-Many web requests contain parameters, which affect how a resource behaves. Often parameters are specified as part of the URI's query string. But parameters can also be inferred from the URI's path. It's also possible for a request to contain parameters in its headers or body, as we'll see later.
-
-For example, let's imagine we have a fictional URI to access the transactions of a bank account.
-
-```nohighlight
-https://bigbank.com/accounts/1234/transactions?since=tuesday
-```
-
-There are 2 parameters here. The first, `1234`, is contained in the
-path `/accounts/1234/transactions`. We call this a _path parameter_.
-
-The second, `tuesday`, is embedded in the URI's query string (after
-the `?` symbol). We call this a _query parameter_.
-
-yada allows you to declare both these and other types of parameter via the __:parameters__ entry in the resource description.
-
-Parameters must be specified for each method that the resource supports. The reason for this is because parameters can, and often do, differ depending on the method used.
-
-For example, below we have a resource description that defines the parameters for requests to a resource representing a bank account. For `GET` requests, there is both a path parameter and query parameter, for `POST` requests there is the same path parameter and a body.
-
-We define parameter types in the style of [Prismatic](https://prismatic.com)'s
-excellent [schema](https://github.com/prismatic/schema) library.
-
-```clojure
-(require [schema.core :refer (defschema)]
-
-(defschema Transaction
-  {:payee String
-   :description String
-   :amount Double}
-
-{:parameters
-  {:get {:path {:account Long}
-         :query {:since String}}
-   :post {:path {:account Long}
-          :body Transaction}}}
-```
-
-But for `POST` requests, there is a body parameter, which defines the entity body that must be sent with the request. This might be used, for example, to post a new transaction to a bank account.
-
-We can declare the parameter in the resource description's __:parameters__ entry. At runtime, these parameters are extracted from a request and  added as the __:parameters__ entry of the _request context_.
 
 Let's show this with an example.
 
@@ -124,65 +83,9 @@ Finally, let's see how we could extract a path parameter without declaring it.
 
 <example ref="PathParameterUndeclared"/>
 
-### Benefits to declarative parameter declaration
-
-Declaring your parameters in resource descriptions comes with numerous advantages.
-
-- Parameters are declared with types, which are automatically coerced thereby eliminating error-prone conversion code.
-
-- The parameter value will be automatically coerced to the given type. This eliminates the need to write error-prone code to parse and convert parameters into their desired type.
-
-- Parameters are pre-validated on every request, providing some defence against injection attacks. If the request if found to be invalid, a 400 response is returned.
-
-- Parameter declarations can help to document the API — this will be covered later in the chapter on [Swagger](#Swagger).
 
 ## Asynchronous responses
 
-Under normal circumstances, with Clojure running on a JVM, each request can be processed by a separate thread.
-
-However, sometimes the production of the response body involves making requests
-to data-sources and other activities which may be _I/O-bound_. This means the thread handling the request has to block, waiting on the data to arrive from the IO system.
-
-For heavily loaded or high-throughput web APIs, this is an inefficient
-use of precious resources. In recent years, this problem has been
-addressed by using a asynchronous I/O. The request thread
-is able to make a request for data via I/O, and then is free to carry out
-further work (such as processing another web request). When the data
-requested arrives on the I/O channel, another thread carries on when the
-original thread left off.
-
-As a developer, yada gives you fine-grained control over when to use a synchronous
-programming model and when to use an asynchronous one.
-
-<include type="note" ref="kv-args"/>
-
-#### Deferred values
-
-A deferred value is simply a value that may not yet be known. Examples
-include Clojure's futures, delays and promises. Deferred values are
-built into yada. For further details, see Zach Tellman's
-[manifold](https://github.com/ztellman/manifold) library.
-
-In almost all cases, it is possible to specify _deferred values_ in a
-resource description.
-
-Let's see this in action with another example :-
-
-<example ref="AsyncHelloWorld"/>
-
-The sleep is exaggerated but the delay that the web client would
-experience is real. In a real-world application, however, the ability to
-use an asynchronous model is very useful for techniques to improve
-scalability. For example, in a heavily loaded server, I/O operations can
-be queued and batched together. Performance may be slightly worse for
-each individual request, but the overall throughput of the web server
-can be significantly improved.
-
-Normally, exploiting asynchronous operations in handling web requests is
-difficult and requires advanced knowledge of asynchronous programming
-techniques. In yada, however, it's easy.
-
-<include type="note" ref="ratpack"/>
 
 ## Content Negotiation
 
