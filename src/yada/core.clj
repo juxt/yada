@@ -35,7 +35,7 @@
    [yada.service :as service]
    [yada.resource :as res]
    [yada.mime :as mime]
-   [yada.util :refer (link)]
+   [yada.util :refer (link parse-csv)]
    manifold.deferred
    schema.utils)
   (:import (clojure.lang IPending)
@@ -457,8 +457,7 @@
                 (link ctx
 
                   (when-let [matches (some->> (get-in req [:headers "if-match"])
-                                              (#(str/split % #"\s*,\s*"))
-                                              (map str/trim)
+                                              (parse-csv)
                                               set)]
 
                     ;; We have an If-Match to process

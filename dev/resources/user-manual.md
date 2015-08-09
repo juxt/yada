@@ -375,10 +375,10 @@ Content-Length: 0
 
 An `OPTIONS` response contains an __Allow__ header which tells us that `PUT` isn't possible.
 
-We can't mutate our Java string, but we can put it into a Clojure
-reference, swapping in different Java strings.
+We can't mutate a Java string, but we can wrap it with a Clojure reference which can be changed to point at different Java strings.
 
-To demonstrate this, yada contains support for atoms (but you would usually employ a durable implementation).
+To demonstrate this, yada contains support for atoms. Let's add a new
+resource with the identifier `http://localhost:8090/mutable-hello`.
 
 ```clojure
 (yada/resource (atom "Hello World!"))
@@ -387,41 +387,57 @@ To demonstrate this, yada contains support for atoms (but you would usually empl
 We can now make another `OPTIONS` request to see whether `PUT` is available.
 
 ```nohighlight
-curl -i http://localhost:8090/hello-atom -X OPTIONS
+curl -i http://localhost:8090/mutable-hello -X OPTIONS
 ```
 
 ```http
 HTTP/1.1 200 OK
 Allow: GET, DELETE, HEAD, POST, OPTIONS, PUT
-Vary:
+ETag: -2092611972
 Server: Aleph/0.4.0
 Connection: Keep-Alive
-Date: Thu, 23 Jul 2015 14:33:16 GMT
+Date: Sun, 09 Aug 2015 07:56:20 GMT
 Content-Length: 0
 ```
 
 It is! So let's try it.
 
 ```nohighlight
-curl -i http://localhost:8090/hello -X PUT -d "Hello Dolly!"
+curl http://localhost:8090/mutable-hello -X PUT -d "Hello Dolly!"
 ```
 
 And now let's see if we've managed to change the state of the resource.
+
+```nohighlight
+curl -i http://localhost:8090/mutable-hello
+```
 
 ```http
 HTTP/1.1 200 OK
 Last-Modified: Thu, 23 Jul 2015 14:38:20 GMT
 Content-Type: application/edn
 Vary: accept-charset
+ETag: 1462348343
 Server: Aleph/0.4.0
 Connection: Keep-Alive
-Date: Thu, 23 Jul 2015 14:38:23 GMT
+Date: Sun, 09 Aug 2015 08:00:58 GMT
 Content-Length: 14
 
 Hello Dolly!
 ```
 
 As long as someone else hasn't sneaked in a different state between your `PUT` and `GET`, and the server hasn't been restarted, you should see the new state of the resource is "Hello Dolly!".
+
+If someone did manage to sneak in and change the state their changes would now be lost. That might not be what you wanted. To ensure we don't override someone's change, we could have set the __If-Match__ header using the __ETag__ value.
+
+Let's try this now, using the ETag value we got before we sent our `PUT` request.
+
+```nohighlight
+curl -i http://localhost:8090/hello -X PUT -H "If-Match: 123" -d "Hello Dolly!"
+```
+
+[fill out]
+
 
 Before reverting our code back to the original, without the atom, let's see the Swagger UI again.
 

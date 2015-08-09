@@ -10,7 +10,7 @@
    [yada.charset :as cs]
    [yada.coerce :refer (to-list to-set)]
    [yada.mime :as mime]
-   [yada.util :refer (http-token)])
+   [yada.util :refer (http-token parse-csv)])
   (:import [yada.charset CharsetMap]
            [yada.mime MediaTypeMap]))
 
@@ -65,7 +65,7 @@
 
 (defn negotiate-content-type [accept-header available]
   (negotiate-content-type*
-   (map mime/string->media-type (map str/trim (str/split accept-header #"\s*,\s*")))
+   (map mime/string->media-type (parse-csv accept-header))
    available))
 
 ;; ------------------------------------------------------------------------
@@ -121,7 +121,7 @@
 (defn negotiate-charset [accept-charset-header candidates]
   (negotiate-charset*
    (when accept-charset-header
-     (map cs/to-charset-map (map str/trim (str/split accept-charset-header #"\s*,\s*"))))
+     (map cs/to-charset-map (parse-csv accept-charset-header)))
    (map cs/to-charset-map candidates)))
 
 (defn parse-encoding [s]
@@ -140,7 +140,7 @@
 
 (defn negotiate-encoding [accept-encoding-header candidates]
   (when accept-encoding-header
-    (let [acceptable-encodings (map parse-encoding (map str/trim (str/split accept-encoding-header #"\s*,\s*")))]
+    (let [acceptable-encodings (map parse-encoding (parse-csv accept-encoding-header))]
       ;; TODO
       )))
 

@@ -1,20 +1,42 @@
-(ns yada.helloworld-test
-  (:require
-   [byte-streams :as bs]
-   [clojure.test :refer :all]
-   [yada.yada :as yada]
-   [juxt.iota :refer (given)]
-   [yada.dev.user-manual :as tutorial]
-   [ring.mock.request :refer [request]]))
+;; Copyright © 2015, JUXT LTD.
 
-;; Test the Hello World tutorial
+(ns ^{:doc "Test the Hello World tutorial"}
+  yada.helloworld-test
+  (:require
+   [clojure.test :refer :all]
+   [juxt.iota :refer (given)]
+   [ring.mock.request :refer [request]]
+   [ring.util.time :refer (parse-date format-date)]
+   [yada.dev.user-manual :as tutorial]
+   [yada.mime :as mime]
+   [yada.util :refer (parse-csv)]
+   [yada.test.util :refer (etag? to-string)]
+   [yada.yada :as yada]))
+
+(defn validate-headers? [headers]
+  (vec
+   (remove nil?
+           (for [[k v] headers]
+             (case k
+               "content-length" (when-not (number? v) "content-length not a number")
+               "content-type" (when-not (mime/string->media-type v) "mime-type not valid")
+               "last-modified" (when-not (instance? java.util.Date (parse-date v)) "last-modified not a date")
+               "vary" (when-not (pos? (count (parse-csv v))) "vary empty")
+               "etag" (when-not (etag? v) "not a valid etag")
+               (throw (ex-info "TODO" {:k k :v v})))))))
 
 (deftest string-test
   (let [resource tutorial/hello]
     (given @(resource (request :get "/"))
       :status := 200
       ;; TODO: Test a lot more, like content-type
-      [:body #(bs/convert % String)] := "Hello World!\n")))
+      [:headers keys set] := #{"last-modified" "content-type" "content-length" "vary" "etag"}
+      [:headers validate-headers?] := []
+      [:headers "content-type"] := "text/plain;charset=utf-8"
+      [:headers "content-length"] := 13
+      [:headers "vary" parse-csv set] := #{"accept-charset"}
+      [:headers "etag"] := "1462348343"
+      [:body to-string] := "Hello World!\n")))
 
 ;; TODO: conditional request
 
@@ -27,7 +49,7 @@
     (given @(resource (request :get "/?p=Ken"))
       :status := 200
       ;; TODO: Test a lot more, like content-type
-      [:body #(bs/convert % String)] := "Hello Ken!\n")))
+      [:body to-string] := "Hello Ken!\n")))
 
 ;; TODO: content negotiation
 
@@ -39,7 +61,7 @@
         :status := 200
         [:headers "content-language"] := "zh-ch"
         ;; TODO: Test a lot more, like content-type
-        [:body #(bs/convert % String)] := "你好世界!\n"))
+        [:body to-string] := "你好世界!\n"))
 
     (testing "English is available on request"
       (given @(resource (-> (request :get "/")
@@ -48,6 +70,6 @@
         :status := 200
         ;; TODO: Test a lot more, like content-type
         [:headers "content-language"] := "en"
-        [:body #(bs/convert % String)] := "Hello World!\n"))))
+        [:body to-string] := "Hello World!\n"))))
 
 ;; TODO: swagger

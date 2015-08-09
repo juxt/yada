@@ -150,7 +150,7 @@
   representation (because the representation data is used in
   constructing the ETag header in the response)."
   (version [_ ctx] "Return the version of a resource. This is useful for
-  conflict-detection."))
+  conflict-detection. Can return nil, meaning no ETag."))
 
 (defprotocol ETag
   "The version function returns material that becomes the ETag response

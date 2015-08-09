@@ -1,5 +1,8 @@
+;; Copyright © 2015, JUXT LTD.
+
 (ns yada.util
   (:require
+   [clojure.string :as str]
    [manifold.deferred :as d]
    clojure.core.async.impl.protocols)
   (:import [clojure.core.async.impl.protocols ReadPort]))
@@ -57,3 +60,8 @@
             (java.security.MessageDigest/getInstance "MD5")
           (.update (.getBytes s) 0 (.length s)))]
     (format "%1$032x" (java.math.BigInteger. 1 (.digest digest)))))
+
+;; CSV
+
+(defn parse-csv [v]
+  (map str/trim (str/split v #"\s*,\s*")))

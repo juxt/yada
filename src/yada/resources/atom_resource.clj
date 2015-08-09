@@ -4,7 +4,7 @@
   (:require
    [clj-time.core :refer [now]]
    [clj-time.coerce :refer [to-date]]
-   [yada.resource :refer (ResourceCoercion ResourceAllowedMethods ResourceModification ResourceRepresentations platform-charsets make-resource ResourceParameters parameters allowed-methods)]
+   [yada.resource :refer (ResourceCoercion ResourceAllowedMethods ResourceModification ResourceRepresentations representations platform-charsets make-resource ResourceParameters parameters allowed-methods ResourceVersion version)]
    [yada.methods :refer (Get Put)]
    [schema.core :as s]
    yada.resources.string-resource)
@@ -13,7 +13,7 @@
 (defprotocol StateWrapper
   (wrap-atom [init-state a] "Given the initial value on derefencing an atom, construct a record which will manage the reference."))
 
-(defrecord AtomicMapResource [*a wrapper *last-mod]
+(defrecord AtomResource [*a wrapper *last-mod]
   ResourceAllowedMethods
   (allowed-methods [_] (conj (set (allowed-methods wrapper)) :put :post :delete))
 
@@ -28,9 +28,14 @@
                    {:put {:body s/Str}})) ;; TODO: Not just a string, depends on wrapper
 
   ResourceRepresentations
-  (representations [_] [{:method #{:get :head}
-                         :content-type #{"application/edn" "text/html;q=0.9" "application/json;q=0.9"}
-                         :charset platform-charsets}])
+  (representations [_]
+    (when (satisfies? ResourceRepresentations wrapper)
+      (representations wrapper)))
+
+  ResourceVersion
+  (version [_ ctx]
+    (when (satisfies? ResourceVersion wrapper)
+      (version wrapper ctx)))
 
   Get
   (GET [_ ctx] @*a)
@@ -46,7 +51,7 @@
         (add-watch :last-modified
                    (fn [_ _ _ _]
                      (reset! *last-mod (to-date (now)))))
-        (->AtomicMapResource wrapper *last-mod))))
+        (->AtomResource wrapper *last-mod))))
 
 (extend-protocol StateWrapper
   clojure.lang.APersistentMap

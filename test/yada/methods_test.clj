@@ -11,6 +11,7 @@
    [yada.methods :refer (Get Post)]
    [yada.resources.misc :refer (just-methods)]
    [yada.resource :refer [ResourceAllowedMethods allowed-methods ResourceVersion make-resource ResourceRepresentations]]
+   [yada.test.util :refer (etag?)]
    [yada.yada :as yada]))
 
 (deftest post-test
@@ -62,10 +63,6 @@
 ;; ETags -------------------------------------------------------------
 
 ;; TODO Extract out into dedicated ns.
-
-(defn etag? [etag]
-  (and (string? etag)
-       (re-matches #"-?\d+" etag)))
 
 (defrecord ETagTestResource [v]
   ResourceVersion
