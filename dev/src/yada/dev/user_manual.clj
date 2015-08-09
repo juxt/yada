@@ -159,34 +159,6 @@
         )
     :scripts []}))
 
-#_(def hello-languages
-  (yada/resource
-   (fn [ctx]
-     (case (-> ctx :response :representation :content-type mime/media-type) ; TODO: helper functions needed here
-       "text/plain"
-       (case (get-in ctx [:response :representation :language]) ;; ditto
-         "en" "Hello World!\n"
-         "zh-ch" "你好世界!\n"
-         (throw (ex-info "No matching language" {:ctx ctx})))
-
-       "text/html"
-       (html5 [:head
-               [:meta {:type (get-in ctx [:response :representation :charset])}]]
-              [:body
-               [:h1 (case (get-in ctx [:response :representation :language])
-                      "en" "Hello World!\n"
-                      "zh-ch" "你好世界!\n")]])
-
-       (throw (ex-info "No matching content-type" {:ctx ctx}))))
-
-   {:representations
-    [{:content-type #{"text/plain" "text/html"}
-      :language ["zh-ch" "en" "de"]
-      :charset "UTF-8"}
-     {:content-type #{"text/plain" "text/html"}
-      :language "zh-ch"
-      :charset "Shift_JIS;q=0.9"}]}))
-
 (defrecord UserManual [*router templater prefix ext-prefix]
   Lifecycle
   (start [component]
@@ -205,9 +177,9 @@
   (routes [component]
     (let [xbody (:xbody component)
 
-          hello-atom (yada/resource (atom "Hello World!\n"))
-          hello-date (-> hello :resource (res/last-modified nil))
-          hello-date-after (java.util.Date/from (.plusMillis (.toInstant hello-date) 2000))]
+
+
+          ]
 
       ["/"
        [
@@ -248,10 +220,7 @@
               (yada/resource (fn [ctx]
                                (body component
                                      (post-process-doc component xbody config)
-                                     (assoc config
-                                            :hello-date (rt/format-date hello-date)
-                                            :hello-date-after (rt/format-date hello-date-after)
-                                            :now-date (rt/format-date (java.util.Date.)))))
+                                     config))
                              {:representations [{:content-type #{"text/html"} :charset #{"utf-8"}}]
                               :last-modified (io/file "dev/resources/user-manual.md")
                               :id ::user-manual})))]

@@ -97,7 +97,10 @@ organisation. With supporting infrastructure such as proxies, API
 gateways and monitoring, there has never been a greater need to improve
 compatibility through better conformance with HTTP standards. Yet many
 APIs today at best ignore, and worst violate many parts of the HTTP
-standard.
+standard. For ephemeral prototypes, this 'fake it' approach to HTTP is
+acceptable. But HTTP is designed for long-lived systems with lifetimes
+measured in decades, that must cross departmental and even
+organisational boundaries, and adapt to ongoing changes in technology.
 
 It's time for a fresh approach. We need our libraries to do more work
 for us. For this to happen, we need to move from the _de-facto_
@@ -144,10 +147,9 @@ can build your own web-framework from yada and other libraries.
 
 yada is also agnostic to how you want to build your app. It is designed
 to be easy to use for HTML content and web APIs, in whatever style you
-decide is right for you (Swagger documented, hypermedia driven, jsonapi,
-'realtime', etc). The only constraint is that yada tries to comply as far
-as possible with current HTTP specifications, to build a richer, more
-interoperable and interconnected web.
+decide is right for you (Swagger documented, hypermedia driven, ROCA, jsonapi, real-time, etc). The only constraint is that yada tries to comply as far
+as possible with current HTTP specifications, to promote richer, more
+interoperable and interconnected systems which are built to last.
 
 ### An introductory example: Hello World!
 
@@ -353,7 +355,7 @@ Content-Length: 0
 ```
 
 The response status is `405 Method Not Allowed`, telling us that our
-request was unacceptable. There is also a __Allow__ header, telling us
+request was unacceptable. There is also an __Allow__ header, telling us
 which methods are allowed. One of these methods is OPTIONS. Let's try
 this.
 
