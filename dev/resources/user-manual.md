@@ -706,7 +706,8 @@ agent chooses from a list of representations provided by the server.
 
 ## Resources
 
-Different types of resources are added to yada by defining types or records.
+Different types of resources are added to yada by defining Clojure types
+that satisfy one or more of yada's built-in protocols.
 
 Let's delve a little deeper into how the _Hello World!_ example works.
 
@@ -754,7 +755,8 @@ new instance of the `StringResource` record to be created.
 ```
 
 The original string (`Hello World!`) and the current date is captured
-and provided to the `StringResource` record.
+and provided to the `StringResource` record. (The only reason for using
+`clj-time` rather than `java.util.Date` is to facilitate testing).
 
 The `StringResource` resource satisfies the `ResourceRepresentations`
 protocol, which means it can specify which types of representation it is
