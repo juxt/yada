@@ -21,6 +21,7 @@
        "content-type" (when-not (mime/string->media-type v) "mime-type not valid")
        "last-modified" (when-not (instance? java.util.Date (parse-date v)) "last-modified not a date")
        "vary" (when-not (pos? (count (parse-csv v))) "vary empty")
+       "allow" (when-not (pos? (count (parse-csv v))) "allow empty")
        "etag" (when-not (etag? v) "not a valid etag")
        (throw (ex-info "Cannot validate unrecognized header" {:k k :v v}))))
    (remove nil?) vec))
@@ -49,10 +50,18 @@
 
 ;; TODO: conditional request
 
-;; TODO: mutation
+(deftest put-not-allowed
+  (let [resource hello/hello]
+    (given @(resource (request :put "/"))
+      :status := 405
+      [:headers keys set] := #{"allow"}
+      [:headers validate-headers?] := []
+      [:headers "allow" parse-csv set] := #{"OPTIONS" "GET" "HEAD"}
+      :body := nil)))
+
+;; TODO: mutable-hello
 
 ;; TODO: head request
-
 
 #_(deftest parameters-test
   (let [resource hello/hello-parameters]
@@ -81,5 +90,3 @@
         ;; TODO: Test a lot more, like content-type
         [:headers "content-language"] := "en"
         [:body to-string] := "Hello World!\n"))))
-
-;; TODO: swagger
