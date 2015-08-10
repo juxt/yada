@@ -76,8 +76,9 @@
 ;; Existence
 
 (defprotocol ResourceExistence
-  "Optional protocol for a resource to indicate its
-  existence. Non-existent resources cause 404 responses."
+  "Optional protocol for a resource to indicate the existence of the
+  given representation. If no representation exists, this results in a
+  404 response."
   (exists? [_ ctx]
     "Whether or not the resource actually exists. Is context sensitive,
     since existence can often depend on request context, such as

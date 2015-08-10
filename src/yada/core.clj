@@ -407,7 +407,7 @@
                             selected-representation (assoc-in [:response :selected-representation] selected-representation)
                             vary (assoc-in [:response :vary] vary)))))))
 
-                ;; Resource exists?
+                ;; A current representation for the resource exists?
                 (link ctx
                   (if existence?
                     (d/chain
