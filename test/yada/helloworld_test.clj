@@ -50,10 +50,19 @@
 
 ;; TODO: conditional request
 
-(deftest put-not-allowed
+(deftest put-not-allowed-test
   (let [resource hello/hello]
     (given @(resource (request :put "/"))
       :status := 405
+      [:headers keys set] := #{"allow"}
+      [:headers validate-headers?] := []
+      [:headers "allow" parse-csv set] := #{"OPTIONS" "GET" "HEAD"}
+      :body := nil)))
+
+(deftest options-test
+  (let [resource hello/hello]
+    (given @(resource (request :options "/"))
+      :status := 200
       [:headers keys set] := #{"allow"}
       [:headers validate-headers?] := []
       [:headers "allow" parse-csv set] := #{"OPTIONS" "GET" "HEAD"}

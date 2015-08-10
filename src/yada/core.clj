@@ -440,12 +440,12 @@
                                                 ::http-response true}
                                                ctx)))
 
-                           (assoc-in ctx [:response :headers "last-modified"] (format-date last-modified)))
+                           (assoc-in ctx [:response :last-modified] (format-date last-modified)))
 
                          (or
                           (some->> last-modified
                                    format-date
-                                   (assoc-in ctx [:response :headers "last-modified"]))
+                                   (assoc-in ctx [:response :last-modified]))
                           ctx))
                        ctx))))
 
@@ -543,16 +543,20 @@
                                    ;; map must be documented so users are
                                    ;; clear what they can change and the
                                    ;; effect of this change.
-                                   (when-let [ct (get-in ctx [:response :representation :content-type])]
-                                     {"content-type" (mime/media-type->string ct)})
-                                   (when-let [lang (get-in ctx [:response :representation :language])]
-                                     {"content-language" lang})
-                                   (when-let [cl (get-in ctx [:response :content-length])]
-                                     {"content-length" cl})
-                                   (when-let [vary (get-in ctx [:response :vary])]
-                                     {"vary" (negotiation/to-vary-header vary)})
-                                   (when-let [etag (get-in ctx [:response :etag])]
-                                     {"etag" etag})
+                                   (when (not= method :options)
+                                     (merge {}
+                                            (when-let [x (get-in ctx [:response :representation :content-type])]
+                                              {"content-type" (mime/media-type->string x)})
+                                            (when-let [x (get-in ctx [:response :representation :language])]
+                                              {"content-language" x})
+                                            (when-let [x (get-in ctx [:response :last-modified])]
+                                              {"last-modified" x})
+                                            (when-let [x (get-in ctx [:response :vary])]
+                                              {"vary" (negotiation/to-vary-header x)})
+                                            (when-let [x (get-in ctx [:response :etag])]
+                                              {"etag" x})))
+                                   (when-let [x (get-in ctx [:response :content-length])]
+                                     {"content-length" x})
 
                                    #_(when true
                                        {"access-control-allow-origin" "*"})
