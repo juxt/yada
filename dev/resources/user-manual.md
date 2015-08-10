@@ -178,7 +178,10 @@ web server that yada currently supports).
   {:port 3000})
 ```
 
-Once we have bound this handler to the path `/hello`, we're able to make the following HTTP request :-
+Alternatively, you can following along by referencing and experimenting with the code in `dev/src/yada/dev/hello.clj`. See the [installation](#Installation) chapter.
+
+Once we have bound this handler to the path `/hello`, we're able to make
+the following HTTP request :-
 
 ```nohighlight
 curl -i http://localhost:8090/hello
