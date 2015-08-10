@@ -68,7 +68,24 @@
       [:headers "allow" parse-csv set] := #{"OPTIONS" "GET" "HEAD"}
       :body := nil)))
 
-;; TODO: mutable-hello
+(deftest atom-options-test
+  (let [resource (hello/hello-atom)]
+    (given @(resource (request :options "/"))
+      :status := 200
+      [:headers keys set] := #{"allow"}
+      [:headers validate-headers?] := []
+      [:headers "allow" parse-csv set] := #{"OPTIONS" "GET" "HEAD" "PUT" "POST" "DELETE"}
+      :body := nil)))
+
+#_(deftest put-test
+  (let [resource (hello/hello-atom)]
+    (given @(resource (merge (request :put "/")
+                             {:body "Hello Dolly!"}))
+      ;; What should a PUT return in this case?
+      :status := 204
+      [:headers keys set] := #{}
+      [:headers validate-headers?] := []
+      :body := nil)))
 
 ;; TODO: head request
 
