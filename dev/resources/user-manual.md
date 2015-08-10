@@ -359,8 +359,9 @@ Content-Length: 0
 
 The response status is `405 Method Not Allowed`, telling us that our
 request was unacceptable. There is also an __Allow__ header, telling us
-which methods are allowed. One of these methods is OPTIONS. Let's try
-this.
+which methods are allowed. One of these methods is OPTIONS, which we
+could have used to check whether PUT was available without actually
+attempting it.
 
 ```nohighlight
 curl -i http://localhost:8090/hello -X OPTIONS
@@ -368,37 +369,36 @@ curl -i http://localhost:8090/hello -X OPTIONS
 
 ```http
 HTTP/1.1 200 OK
-Last-Modified: Thu, 23 Jul 2015 14:21:21 GMT
 Allow: GET, HEAD, OPTIONS
-Content-Type: text/plain;charset=utf-8
-Vary: accept-charset
 Server: Aleph/0.4.0
 Connection: Keep-Alive
 Date: Thu, 23 Jul 2015 14:22:12 GMT
 Content-Length: 0
 ```
 
-An `OPTIONS` response contains an __Allow__ header which tells us that `PUT` isn't possible.
+Both the `PUT` and the `OPTIONS` response contain an __Allow__ header
+which tells us that `PUT` isn't possible. This makes sense, because we can't mutate a Java string.
 
-We can't mutate a Java string, but we can wrap it with a Clojure reference which can be changed to point at different Java strings.
+We could, however, wrap the Java string with a Clojure reference which
+could be changed to point at different Java strings.
 
 To demonstrate this, yada contains support for atoms. Let's add a new
-resource with the identifier `http://localhost:8090/mutable-hello`.
+resource with the identifier `http://localhost:8090/hello-atom`.
 
 ```clojure
 (yada/resource (atom "Hello World!"))
 ```
 
-We can now make another `OPTIONS` request to see whether `PUT` is available.
+We can now make another `OPTIONS` request to see whether `PUT` is
+available, before trying it.
 
 ```nohighlight
-curl -i http://localhost:8090/mutable-hello -X OPTIONS
+curl -i http://localhost:8090/hello-atom -X OPTIONS
 ```
 
 ```http
 HTTP/1.1 200 OK
 Allow: GET, DELETE, HEAD, POST, OPTIONS, PUT
-ETag: -2092611972
 Server: Aleph/0.4.0
 Connection: Keep-Alive
 Date: Sun, 09 Aug 2015 07:56:20 GMT
@@ -408,13 +408,13 @@ Content-Length: 0
 It is! So let's try it.
 
 ```nohighlight
-curl http://localhost:8090/mutable-hello -X PUT -d "Hello Dolly!"
+curl -i http://localhost:8090/hello-atom -X PUT -d "Hello Dolly!"
 ```
 
 And now let's see if we've managed to change the state of the resource.
 
 ```nohighlight
-curl -i http://localhost:8090/mutable-hello
+curl -i http://localhost:8090/hello-atom
 ```
 
 ```http
@@ -431,14 +431,20 @@ Content-Length: 14
 Hello Dolly!
 ```
 
-As long as someone else hasn't sneaked in a different state between your `PUT` and `GET`, and the server hasn't been restarted, you should see the new state of the resource is "Hello Dolly!".
+As long as someone else hasn't sneaked in a different state between your
+`PUT` and subsequent `GET`, you should see the new state of the resource
+is "Hello Dolly!".
 
-If someone did manage to sneak in and change the state their changes would now be lost. That might not be what you wanted. To ensure we don't override someone's change, we could have set the __If-Match__ header using the __ETag__ value.
+But what if someone _did_ manage to `PUT` their change ahead of yours?
+Their version would now be overwritten. That might not be what you
+wanted. To ensure we don't override someone's change, we could have set
+the __If-Match__ header using the __ETag__ value.
 
-Let's try this now, using the ETag value we got before we sent our `PUT` request.
+Let's test this now, using the ETag value we got before we sent our
+`PUT` request.
 
 ```nohighlight
-curl -i http://localhost:8090/hello -X PUT -H "If-Match: 123" -d "Hello Dolly!"
+curl -i http://localhost:8090/hello -X PUT -H "If-Match: 1462348343" -d "Hello Dolly!"
 ```
 
 [fill out]
