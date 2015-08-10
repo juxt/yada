@@ -3,8 +3,6 @@
 (ns yada.core
   (:require
    [byte-streams :refer (convert)]
-   [bidi.bidi :refer (Matched succeed)]
-   [bidi.ring :refer (Ring)]
    [cheshire.core :as json]
    [clojure.core.async :as a]
    [clojure.java.io :as io]
@@ -51,12 +49,7 @@
   clojure.lang.IFn
   (invoke [_ req]
     (let [ctx (make-context)]
-      (handler req ctx)))
-  Matched
-  (resolve-handler [this m]
-    (succeed this m))
-  (unresolve-handler [this m]
-    (when (#{id this} (:handler m)) "")))
+      (handler req ctx))))
 
 ;; "It is better to have 100 functions operate on one data structure
 ;; than 10 functions on 10 data structures." — Alan Perlis

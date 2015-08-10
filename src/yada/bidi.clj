@@ -24,7 +24,15 @@
 (extend-type HttpResource
   Ring
   (request [this req m]
-    ((:handler this) req (make-context))))
+    ((:handler this) req (make-context)))
+  Matched
+  (resolve-handler [this m]
+    (succeed this m))
+  (unresolve-handler [this m]
+    (when
+        (or (= this (:handler m))
+            (when-let [id (:id this)] (= id (:handler m))))
+      "")))
 
 ;; A bidi endpoint that captures a path remainder as path-info
 (defrecord ResourceBranchEndpoint [resource options]
