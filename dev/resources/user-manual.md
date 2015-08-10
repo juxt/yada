@@ -569,7 +569,7 @@ we have seen is hardcoded or contrived. Much of the behavior was
 inferred from the types of the first argument given to the
 `yada/resource` properties, in this case, the Java string. And yada
 includes support for many other basic types (atoms, Clojure collections,
-URLs, files, directories…).
+files, directories, Java resources…).
 
 But the real power of yada comes when you define your own resource
 types, as we shall discover in subsequent chapters. But first, let's see
