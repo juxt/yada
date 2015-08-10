@@ -27,7 +27,7 @@
    (remove nil?) vec))
 
 (deftest string-test
-  (let [resource hello/hello]
+  (let [resource (hello/hello)]
     (given @(resource (request :get "/"))
       :status := 200
       [:headers keys set] := #{"last-modified" "content-type" "content-length" "vary" "etag"}
@@ -39,7 +39,7 @@
       [:body to-string] := "Hello World!\n")))
 
 (deftest swagger-intro-test
-  (let [resource hello/hello-api]
+  (let [resource (hello/hello-api)]
     (given @(resource (request :get "/swagger.json"))
       :status := 200
       [:headers keys set] := #{"last-modified" "content-type" "content-length" "vary" "etag"}
@@ -51,7 +51,7 @@
 ;; TODO: conditional request
 
 (deftest put-not-allowed-test
-  (let [resource hello/hello]
+  (let [resource (hello/hello)]
     (given @(resource (request :put "/"))
       :status := 405
       [:headers keys set] := #{"allow"}
@@ -60,7 +60,7 @@
       :body := nil)))
 
 (deftest options-test
-  (let [resource hello/hello]
+  (let [resource (hello/hello)]
     (given @(resource (request :options "/"))
       :status := 200
       [:headers keys set] := #{"allow"}
