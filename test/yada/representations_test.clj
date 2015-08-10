@@ -3,104 +3,74 @@
 (ns yada.representations-test
   (:require
    [clojure.test :refer :all]
+   [clojure.string :as str]
    [yada.charset :as charset]
    [yada.mime :as mime]
+   [yada.util :refer (parse-csv)]
    [yada.negotiation :as negotiation]))
 
-;; Transducers
 
-(defn acceptable-content-type [accept-content-type]
-  (filter (fn [{:keys [content-type]}]
-            (#{"*" (:type content-type)} (-> accept-content-type :type)))))
+(defn content-type-acceptable?
+  "Compare a single acceptable mime-type (extracted from an Accept
+  header) and a candidate. If the candidate is acceptable, return a
+  sortable vector [acceptable-weight specificity parameter-count
+  candidate-weight]. Specificity prefers text/html over text/* over
+  */*. Parameter count gives preference to candidates with a greater
+  number of parameters, which prefers text/html;level=1 over
+  text/html. This meets the criteria in the HTTP
+  specifications. Although the preference that should result with
+  multiple parameters is not specified formally, candidates that have a
+  greater number of parameters are preferred."
+  [candidate acceptable]
+  (when
+      (= (:parameters acceptable) (:parameters candidate))
+    (cond
+      (and (= (:type acceptable) (:type candidate))
+           (= (:subtype acceptable) (:subtype candidate)))
+      [(:weight acceptable) 3 (count (:parameters candidate)) (:weight candidate)]
 
-(defn acceptable-content-subtype [accept-content-type]
-  (filter (fn [{:keys [content-type]}]
-            (#{"*" (:subtype content-type)} (-> accept-content-type :subtype)))))
+      (and (= (:type acceptable) (:type candidate))
+           (= (:subtype acceptable) "*"))
+      [(:weight acceptable) 2 (count (:parameters candidate)) (:weight candidate)]
 
-(defn acceptable-content-type-parameters [accept-content-type]
-  (filter (fn [{:keys [content-type]}]
-            (= (-> accept-content-type :parameters) (-> content-type :parameters)))))
+      (and (= (mime/media-type acceptable) "*/*"))
+      [(:weight acceptable) 1 (count (:parameters candidate)) (:weight candidate)])))
 
-#_(defn acceptable-charset [accept-charset]
-  (filter (fn [{:keys [charset]}]
-            (or
-             (nil? accept-charset)
-             (= "*" accept-charset)
-                )
+(defn skip-rejected [f]
+  (fn [rep]
+    (if (:rejected rep) rep (f rep))))
 
-            )))
+(defn wrap-weigher [f k]
+  (fn [rep]
+    (if-let [weight (f rep)]
+      (assoc-in rep [:weights k] weight)
+      (assoc rep :rejected k))))
 
-(defn make-filter
-  [acceptance]
-  (let [accept-content-type
-        (mime/string->media-type
-         (or (:content-type acceptance)
-             ;; "A request without any Accept header
-             ;; field implies that the user agent
-             ;; will accept any media type in response."
-             ;; -- RFC 7231 Section 5.3.2
-             "*/*"))]
+(defn make-content-type-weigher
+  [req k]
+  (let [accepts (->> (get-in req [:headers "accept"]) parse-csv (map mime/string->media-type)
+                     (sort-by :weight (comp - compare)))]
+    (->
+     (fn [rep]
+       (some (partial content-type-acceptable? (:content-type rep)) accepts))
+     (wrap-weigher :content-type)
+     skip-rejected)))
 
-    (comp
-     (acceptable-content-type accept-content-type)
-     (acceptable-content-subtype accept-content-type)
-     (acceptable-content-type-parameters accept-content-type)
-     #_(acceptable-charset (:charset acceptance)))
+;; Add lots of tests for this
 
-    #_(fn [{:keys [content-type charset encoding language]}]
-      (and
-       ;; Let's compose via transducers for speed rather than a big
-       ;; undebugale conjunction.
-       (= (-> accept-content-type :parameters) (-> content-type :parameters))
-       (#{"*" (:type content-type)} (-> accept-content-type :type))
-       (#{"*" (:subtype content-type)} (-> accept-content-type :subtype))
-       (or (when-let [accept-charset (:charset acceptance)]
-             (or
-              (= "*" accept-charset)
-              (= (charset/canonical-name (charset/to-charset-map accept-charset))
-                 (charset/canonical-name charset))))
+(deftest content-type-test
+  (let [req {:headers {"accept" "text/xml;q=0.8"}}
+        f (make-content-type-weigher req :content-type)]
 
-           ;; "A request without any Accept-Charset header field implies
-           ;; that the user agent will accept any charset in response. "
-           ;; -- RFC 7231 Section 5.3.3
-           true
-           )))))
+    (is (= (get-in (f {:content-type (mime/string->media-type "text/xml")})
+                   [:weights :content-type])
+           [(float 0.8) 3 0 (float 1.0)]))))
 
-(defn- acceptable? [acceptance candidate]
-  (not-empty (sequence (make-filter acceptance) [candidate])))
+;; "A request without any Accept header
+;; field implies that the user agent
+;; will accept any media type in response."
+;; -- RFC 7231 Section 5.3.2
 
-(deftest filter-test
-  ;; Content-types match
-  (is (acceptable? {:content-type "text/html"}
-                   {:content-type (mime/string->media-type "text/html")}))
-
-  ;; Content-types don't match
-  (is (not (acceptable? {:content-type "text/plain"}
-                        {:content-type (mime/string->media-type "text/html")})))
-
-  ;; General wildcard
-  (is (acceptable?
-       {:content-type "*/*"}
-       {:content-type (mime/string->media-type "application/edn")}))
-
-  ;; Sub-type wildcard
-  (is (acceptable?
-       {:content-type "text/*"}
-       {:content-type (mime/string->media-type "text/plain")}))
-
-  ;; Parameters match
-  (is (acceptable?
-       {:content-type "text/plain;level=1"}
-       {:content-type (mime/string->media-type "text/plain;level=1")}))
-
-  ;; Parameters don't match
-  (is (not (acceptable?
-            {:content-type "text/plain;level=1"}
-            {:content-type (mime/string->media-type "text/plain;level=2")})))
-
-  ;; Charsets
-  #_(is (acceptable?
-       {:charset "utf-8"}
-       {:charset (charset/to-charset-map "UTF-8")}))
-
-  )
+;; "A request without any Accept-Charset header field implies
+;; that the user agent will accept any charset in response. "
+;; -- RFC 7231 Section 5.3.3
