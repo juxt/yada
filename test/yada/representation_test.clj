@@ -107,6 +107,24 @@
             {:charset (charset/to-charset-map "utf-8")})
            [(float 1.0) (float 1.0)])))
 
+  (testing "Basic match with wildcard"
+    (is (= (get-highest-charset-quality
+            {:headers {"accept-charset" "*"}}
+            {:charset (charset/to-charset-map "utf-8")})
+           [(float 1.0) (float 1.0)])))
+
+  (testing "Basic match with wildcard, multiple choices"
+    (is (= (get-highest-charset-quality
+            {:headers {"accept-charset" "*;q=0.9,utf-8"}}
+            {:charset (charset/to-charset-map "utf-8")})
+           [(float 1.0) (float 1.0)])))
+
+  (testing "Basic match with wildcard, multiple choices, matches wildcard"
+    (is (= (get-highest-charset-quality
+            {:headers {"accept-charset" "*;q=0.9,utf-8"}}
+            {:charset (charset/to-charset-map "us-ascii")})
+           [(float 0.9) (float 1.0)])))
+
   (testing "Quality values"
     (is (= (get-highest-charset-quality
             {:headers {"accept-charset" "utf-8;q=0.8"}}
