@@ -125,6 +125,18 @@
             {:charset (charset/to-charset-map "utf-8")})
            [(float 1.0) (float 1.0)])))
 
+  (testing "Basic match with zero accept quality"
+    (is (= (get-highest-charset-quality
+            {:headers {"accept-charset" "utf-8;q=0"}}
+            {:charset (charset/to-charset-map "utf-8")})
+           :rejected)))
+
+  (testing "Basic match with zero rep quality"
+    (is (= (get-highest-charset-quality
+            {:headers {"accept-charset" "utf-8"}}
+            {:charset (charset/to-charset-map "utf-8;q=0")})
+           :rejected)))
+
   (testing "Basic match with wildcard, multiple choices"
     (is (= (get-highest-charset-quality
             {:headers {"accept-charset" "*;q=0.9,utf-8"}}
