@@ -129,66 +129,76 @@
         (when (:rejected rep) :rejected))))
 
 (deftest content-type-test
-  ;; Basic match
-  (is (= (get-content-type-quality
-          {:headers {"accept" "text/html"}}
-          {:content-type (mime/string->media-type "text/html")})
-         [(float 1.0) 3 0 (float 1.0)]))
 
-  ;; Basic match, with multiple options
-  (is (= (get-content-type-quality
-          {:headers {"accept" "image/png,text/html"}}
-          {:content-type (mime/string->media-type "text/html")})
-         [(float 1.0) 3 0 (float 1.0)]))
+  (testing "Basic match"
+    (is (= (get-content-type-quality
+            {:headers {"accept" "text/html"}}
+            {:content-type (mime/string->media-type "text/html")})
+           [(float 1.0) 3 0 (float 1.0)])))
 
-  ;; Basic match, with multiple options and q values
-  (is (= (get-content-type-quality
-          {:headers {"accept" "image/png,text/html;q=0.9"}}
-          {:content-type (mime/string->media-type "text/html;q=0.8")})
-         [(float 0.9) 3 0 (float 0.8)]))
 
-  ;; Basic reject
-  (is (= (get-content-type-quality
-          {:headers {"accept" "text/html"}}
-          {:content-type (mime/string->media-type "text/plain")})
-         :rejected))
+  (testing "Basic match, with multiple options"
+    (is (= (get-content-type-quality
+            {:headers {"accept" "image/png,text/html"}}
+            {:content-type (mime/string->media-type "text/html")})
+           [(float 1.0) 3 0 (float 1.0)]))
 
-  ;; Basic reject with multiple options
-  (is (= (get-content-type-quality
-          {:headers {"accept" "image/png,text/html"}}
-          {:content-type (mime/string->media-type "text/plain")})
-         :rejected))
+    (testing "Basic match, with multiple options and q values"
+      (is (= (get-content-type-quality
+              {:headers {"accept" "image/png,text/html;q=0.9"}}
+              {:content-type (mime/string->media-type "text/html;q=0.8")})
+             [(float 0.9) 3 0 (float 0.8)]))))
 
-  ;; Wildcard match
-  (is (= ((get-content-type-quality
-           {:headers {"accept" "image/png,text/*"}}
-           {:content-type (mime/string->media-type "text/html")}) 1)
-         ;; We get a match with a specificty score of 2
-         2))
 
-  ;; Specific match beats wildcard
-  (is (= ((get-content-type-quality
-           {:headers {"accept" "image/png,text/*,text/html"}}
-           {:content-type (mime/string->media-type "text/html")}) 1)
-         ;; We get a specificty score of 3, indicating we matched on the
-         ;; text/html rather than the preceeding text/*
-         3))
+  (testing "Basic reject"
+    (is (= (get-content-type-quality
+            {:headers {"accept" "text/html"}}
+            {:content-type (mime/string->media-type "text/plain")})
+           :rejected)))
 
-  ;; Specific match beats wildcard, different order
-  (is (= ((get-content-type-quality
-           {:headers {"accept" "text/html,text/*,image/png"}}
-           {:content-type (mime/string->media-type "text/html")}) 1)
-         3))
 
-  ;; Greater number of parameters matches
-  (is (= ((get-content-type-quality
-           {:headers {"accept" "text/html,text/html;level=1"}}
-           {:content-type (mime/string->media-type "text/html;level=1")}) 2)
-         ;; We get a specificty score of 3, indicating we matched on the
-         ;; text/html rather than the preceeding text/*
-         1))
+  (testing "Basic reject with multiple options"
+    (is (= (get-content-type-quality
+            {:headers {"accept" "image/png,text/html"}}
+            {:content-type (mime/string->media-type "text/plain")})
+           :rejected)))
 
-  ;; TODO: Test content type parameters
+  (testing "Wildcard match"
+    (is (= ((get-content-type-quality
+             {:headers {"accept" "image/png,text/*"}}
+             {:content-type (mime/string->media-type "text/html")}) 1)
+           ;; We get a match with a specificty score of 2
+           2)))
+
+  (testing "Specific match beats wildcard"
+    (is (= ((get-content-type-quality
+             {:headers {"accept" "image/png,text/*,text/html"}}
+             {:content-type (mime/string->media-type "text/html")}) 1)
+           ;; We get a specificty score of 3, indicating we matched on the
+           ;; text/html rather than the preceeding text/*
+           3)))
+
+  (testing "Specific match beats wildcard, different order"
+    (is (= ((get-content-type-quality
+             {:headers {"accept" "text/html,text/*,image/png"}}
+             {:content-type (mime/string->media-type "text/html")}) 1)
+           3)))
+
+  (testing "Parameter alignment"
+    (is (= (get-content-type-quality
+            {:headers {"accept" "text/html;level=2"}}
+            {:content-type (mime/string->media-type "text/html;level=1")})
+           ;; We get a specificty score of 3, indicating we matched on the
+           ;; text/html rather than the preceeding text/*
+           :rejected)))
+
+  (testing "Greater number of parameters matches"
+    (is (= ((get-content-type-quality
+             {:headers {"accept" "text/html,text/html;level=1"}}
+             {:content-type (mime/string->media-type "text/html;level=1")}) 2)
+           ;; We get a specificty score of 3, indicating we matched on the
+           ;; text/html rather than the preceeding text/*
+           1)))
 
   ;; TODO: Test charsets
 
