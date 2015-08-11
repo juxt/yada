@@ -65,3 +65,43 @@
 
 (defn parse-csv [v]
   (map str/trim (str/split v #"\s*,\s*")))
+
+
+;; Selection
+
+(defn best
+  "Pick the best item from a collection. Since we are only interested in
+  the best, we can avoid sorting the entire collection, which could be
+  inefficient with large collections. The best element is selected by
+  comparing items. An optional comparator can be given."
+  ([coll]
+   (best compare coll))
+  ([^java.util.Comparator comp coll]
+   (reduce
+    (fn [x y]
+      (case (. comp (compare x y)) (0 1) x -1 y))
+    coll)))
+
+(defn best-by
+  "Pick the best item from a collection. Since we are only interested in
+  the best, we can avoid sorting the entire collection, which could be
+  inefficient with large collections. The best element is selected by
+  applying the function given by keyfn to each item and comparing the
+  result. An optional comparator can be given. The implementation uses a
+  pair to keep hold of the result of applying the keyfn function, to
+  avoid the redundancy of calling keyfn unnecessarily."
+  ([keyfn coll]
+   (best-by keyfn compare coll))
+  ([keyfn ^java.util.Comparator comp coll]
+   (first ;; of the pair
+    (reduce (fn [x y]
+              (if-not x
+                ;; Our first pair
+                [y (keyfn y)]
+                ;; Otherwise compare
+                (let [py (keyfn y)]
+                  (case (. comp (compare (second x) py))
+                    (0 1) x
+                    -1 [y py]))))
+            nil ;; seed
+            coll))))

@@ -7,22 +7,124 @@
    [byte-streams :as bs]
    [cheshire.core :as json]
    [clojure.java.io :as io]
+   [clojure.walk :refer (keywordize-keys)]
    [hiccup.core :refer [html]]
    [hiccup.page :refer (html5)]
+   [json-html.core :as jh]
    [manifold.stream :refer [->source transform]]
    [ring.swagger.schema :as rs]
    [ring.util.codec :as codec]
+   [yada.charset :as charset]
    [yada.mime :as mime]
    [yada.negotiation :as negotiation]
    [yada.resource :as res]
-   [clojure.walk :refer (keywordize-keys)]
-   [json-html.core :as jh]
+   [yada.util :refer (best best-by parse-csv)]
    manifold.stream.async
    clojure.core.async.impl.channels)
   (:import [clojure.core.async.impl.channels ManyToManyChannel]
            [java.io File]
            [java.net URL]
            [manifold.stream.async CoreAsyncSource]))
+
+
+;; Proactive negotiation
+
+;; These are higher-order wrappers used by all dimensios of proactive
+;; negotiation.
+
+(defn- skip-rejected
+  "Short-circuit attempts to process already rejected representation
+  metadata."
+  [f]
+  (fn [rep]
+    (if (:rejected rep) rep (f rep))))
+
+(defn- wrap-quality-assessor
+  "Return a function that will either reject, or associate a quality, to
+  the given representation metadata."
+  [f k]
+  (fn [rep]
+    (if-let [quality (f rep)]
+      (assoc-in rep [:qualities k] quality)
+      (assoc rep :rejected k))))
+
+;; Content type negotiation
+
+(defn content-type-acceptable?
+  "Compare a single acceptable mime-type (extracted from an Accept
+  header) and a candidate. If the candidate is acceptable, return a
+  sortable vector [acceptable-quality specificity parameter-count
+  candidate-quality]. Specificity prefers text/html over text/* over
+  */*. Parameter count gives preference to candidates with a greater
+  number of parameters, which prefers text/html;level=1 over
+  text/html. This meets the criteria in the HTTP
+  specifications. Although the preference that should result with
+  multiple parameters is not specified formally, candidates that have a
+  greater number of parameters are preferred."
+  ;; It is possible that these qualities could be coded into a long, since
+  ;; "A sender of qvalue MUST NOT generate more than three digits after
+  ;; the decimal point.  User configuration of these values ought to be
+  ;; limited in the same fashion." -- RFC 7231 Section 5.3.1
+  [rep acceptable]
+  (when
+      ;; TODO: Case sensitivity/insensitivity requirements
+      (= (:parameters acceptable) (:parameters rep))
+    (cond
+      (and (= (:type acceptable) (:type rep))
+           (= (:subtype acceptable) (:subtype rep)))
+      [(:quality acceptable) 3 (count (:parameters rep)) (:quality rep)]
+
+      (and (= (:type acceptable) (:type rep))
+           (= (:subtype acceptable) "*"))
+      [(:quality acceptable) 2 (count (:parameters rep)) (:quality rep)]
+
+      (and (= (mime/media-type acceptable) "*/*"))
+      [(:quality acceptable) 1 (count (:parameters rep)) (:quality rep)])))
+
+(defn highest-content-type-quality
+  "Given a collection of acceptable mime-types, return a function that will return the quality."
+  [accepts]
+  (fn [rep]
+    (best (map (partial content-type-acceptable? (:content-type rep)) accepts))))
+
+(defn make-content-type-quality-assessor
+  [req k]
+  (->
+   (->> (get-in req [:headers "accept"]) parse-csv (map mime/string->media-type))
+   highest-content-type-quality
+   (wrap-quality-assessor :content-type)
+   skip-rejected))
+
+;; Charsets ------------------------------------
+
+(defn charset-acceptable? [rep acceptable-charset]
+  (when
+      (or (= (charset/charset acceptable-charset) "*")
+          (and
+           (some? (charset/charset acceptable-charset))
+           (= (charset/charset acceptable-charset)
+              (charset/charset rep)))
+          ;; Finally, let's see if their canonical names match
+          (and
+           (some? (charset/canonical-name acceptable-charset))
+           (= (charset/canonical-name acceptable-charset)
+              (charset/canonical-name rep))))
+    [(:quality acceptable-charset) (:quality rep)]))
+
+(defn highest-charset-quality
+  "Given a collection of acceptable charsets, return a function that
+  will return the quality."
+  [accepts]
+  (fn [rep]
+    (best (map (partial charset-acceptable? (:charset rep)) accepts))))
+
+(defn make-charset-quality-assessor
+  [req k]
+  (->
+   (->> (get-in req [:headers "accept-charset"]) parse-csv (map charset/to-charset-map))
+   highest-charset-quality
+   (wrap-quality-assessor :charset)
+   skip-rejected))
 
 ;; From representation
 
