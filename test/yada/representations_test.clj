@@ -105,7 +105,7 @@
       (and (= (mime/media-type acceptable) "*/*"))
       [(:quality acceptable) 1 (count (:parameters rep)) (:quality rep)])))
 
-(defn best-content-type-acceptable?
+(defn highest-content-type-quality
   "Given a collection of acceptable mime-types, return a function that will return the quality."
   [accepts]
   (fn [rep]
@@ -115,63 +115,64 @@
   [req k]
   (->
    (->> (get-in req [:headers "accept"]) parse-csv (map mime/string->media-type))
-   best-content-type-acceptable?
+   highest-content-type-quality
    (wrap-quality-assessor :content-type)
    skip-rejected))
 
-(defn get-content-type-quality
-  "Given the request and a representation, get the quality of the representation."
+(defn- get-highest-content-type-quality
+  "Given the request and a representation, get the highest possible
+  quality value. Convenience function for independent testing. "
   [req rep]
   (let [k :content-type
-        f (make-content-type-quality-assessor req k)
-        rep (f rep)]
+        qa (make-content-type-quality-assessor req k)
+        rep (qa rep)]
     (or (get-in rep [:qualities k])
         (when (:rejected rep) :rejected))))
 
 (deftest content-type-test
 
   (testing "Basic match"
-    (is (= (get-content-type-quality
+    (is (= (get-highest-content-type-quality
             {:headers {"accept" "text/html"}}
             {:content-type (mime/string->media-type "text/html")})
            [(float 1.0) 3 0 (float 1.0)])))
 
 
   (testing "Basic match, with multiple options"
-    (is (= (get-content-type-quality
+    (is (= (get-highest-content-type-quality
             {:headers {"accept" "image/png,text/html"}}
             {:content-type (mime/string->media-type "text/html")})
            [(float 1.0) 3 0 (float 1.0)]))
 
     (testing "Basic match, with multiple options and q values"
-      (is (= (get-content-type-quality
+      (is (= (get-highest-content-type-quality
               {:headers {"accept" "image/png,text/html;q=0.9"}}
               {:content-type (mime/string->media-type "text/html;q=0.8")})
              [(float 0.9) 3 0 (float 0.8)]))))
 
 
   (testing "Basic reject"
-    (is (= (get-content-type-quality
+    (is (= (get-highest-content-type-quality
             {:headers {"accept" "text/html"}}
             {:content-type (mime/string->media-type "text/plain")})
            :rejected)))
 
 
   (testing "Basic reject with multiple options"
-    (is (= (get-content-type-quality
+    (is (= (get-highest-content-type-quality
             {:headers {"accept" "image/png,text/html"}}
             {:content-type (mime/string->media-type "text/plain")})
            :rejected)))
 
   (testing "Wildcard match"
-    (is (= ((get-content-type-quality
+    (is (= ((get-highest-content-type-quality
              {:headers {"accept" "image/png,text/*"}}
              {:content-type (mime/string->media-type "text/html")}) 1)
            ;; We get a match with a specificty score of 2
            2)))
 
   (testing "Specific match beats wildcard"
-    (is (= ((get-content-type-quality
+    (is (= ((get-highest-content-type-quality
              {:headers {"accept" "image/png,text/*,text/html"}}
              {:content-type (mime/string->media-type "text/html")}) 1)
            ;; We get a specificty score of 3, indicating we matched on the
@@ -179,13 +180,13 @@
            3)))
 
   (testing "Specific match beats wildcard, different order"
-    (is (= ((get-content-type-quality
+    (is (= ((get-highest-content-type-quality
              {:headers {"accept" "text/html,text/*,image/png"}}
              {:content-type (mime/string->media-type "text/html")}) 1)
            3)))
 
   (testing "Parameter alignment"
-    (is (= (get-content-type-quality
+    (is (= (get-highest-content-type-quality
             {:headers {"accept" "text/html;level=2"}}
             {:content-type (mime/string->media-type "text/html;level=1")})
            ;; We get a specificty score of 3, indicating we matched on the
@@ -193,7 +194,7 @@
            :rejected)))
 
   (testing "Greater number of parameters matches"
-    (is (= ((get-content-type-quality
+    (is (= ((get-highest-content-type-quality
              {:headers {"accept" "text/html,text/html;level=1"}}
              {:content-type (mime/string->media-type "text/html;level=1")}) 2)
            ;; We get a specificty score of 3, indicating we matched on the
