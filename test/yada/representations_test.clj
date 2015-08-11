@@ -54,105 +54,146 @@
   (is (= (best-by first (comp - compare) [[3 9] [2 20] [3 -2] [nil 0] [19 10]]) [nil 0]))
   (is (= (best-by first (comp - compare) [[3 9] [2 20] [3 -2] [-2 0] [19 10]]) [-2 0])))
 
+;; These are higher-order wrappers used by all dimensios of proactive
+;; negotiation.
+
+(defn- skip-rejected
+  "Short-circuit attempts to process already rejected representation
+  metadata."
+  [f]
+  (fn [rep]
+    (if (:rejected rep) rep (f rep))))
+
+(defn- wrap-quality-assessor
+  "Return a function that will either reject, or associate a quality, to
+  the given representation metadata."
+  [f k]
+  (fn [rep]
+    (if-let [quality (f rep)]
+      (assoc-in rep [:qualities k] quality)
+      (assoc rep :rejected k))))
+
+;; Content type negotation
+
 (defn content-type-acceptable?
   "Compare a single acceptable mime-type (extracted from an Accept
   header) and a candidate. If the candidate is acceptable, return a
-  sortable vector [acceptable-weight specificity parameter-count
-  candidate-weight]. Specificity prefers text/html over text/* over
+  sortable vector [acceptable-quality specificity parameter-count
+  candidate-quality]. Specificity prefers text/html over text/* over
   */*. Parameter count gives preference to candidates with a greater
   number of parameters, which prefers text/html;level=1 over
   text/html. This meets the criteria in the HTTP
   specifications. Although the preference that should result with
   multiple parameters is not specified formally, candidates that have a
   greater number of parameters are preferred."
-  [candidate acceptable]
+  ;; It is possible that these qualities could be coded into a long, since
+  ;; "A sender of qvalue MUST NOT generate more than three digits after
+  ;; the decimal point.  User configuration of these values ought to be
+  ;; limited in the same fashion." -- RFC 7231 Section 5.3.1
+  [rep acceptable]
   (when
-      (= (:parameters acceptable) (:parameters candidate))
+      (= (:parameters acceptable) (:parameters rep))
     (cond
-      (and (= (:type acceptable) (:type candidate))
-           (= (:subtype acceptable) (:subtype candidate)))
-      [(:weight acceptable) 3 (count (:parameters candidate)) (:weight candidate)]
+      (and (= (:type acceptable) (:type rep))
+           (= (:subtype acceptable) (:subtype rep)))
+      [(:quality acceptable) 3 (count (:parameters rep)) (:quality rep)]
 
-      (and (= (:type acceptable) (:type candidate))
+      (and (= (:type acceptable) (:type rep))
            (= (:subtype acceptable) "*"))
-      [(:weight acceptable) 2 (count (:parameters candidate)) (:weight candidate)]
+      [(:quality acceptable) 2 (count (:parameters rep)) (:quality rep)]
 
       (and (= (mime/media-type acceptable) "*/*"))
-      [(:weight acceptable) 1 (count (:parameters candidate)) (:weight candidate)])))
+      [(:quality acceptable) 1 (count (:parameters rep)) (:quality rep)])))
 
-(defn best-content-type-acceptable? [accepts]
+(defn best-content-type-acceptable?
+  "Given a collection of acceptable mime-types, return a function that will return the quality."
+  [accepts]
   (fn [rep]
-    (best-by identity (map (partial content-type-acceptable? (:content-type rep)) accepts))))
+    (best (map (partial content-type-acceptable? (:content-type rep)) accepts))))
 
-(defn skip-rejected [f]
-  (fn [rep]
-    (if (:rejected rep) rep (f rep))))
-
-(defn wrap-weigher [f k]
-  (fn [rep]
-    (if-let [weight (f rep)]
-      (assoc-in rep [:weights k] weight)
-      (assoc rep :rejected k))))
-
-(defn make-content-type-weigher
+(defn make-content-type-quality-assessor
   [req k]
   (->
-   (->> (get-in req [:headers "accept"]) parse-csv (map mime/string->media-type)
-        (sort-by :weight (comp - compare)))
+   (->> (get-in req [:headers "accept"]) parse-csv (map mime/string->media-type))
    best-content-type-acceptable?
-   (wrap-weigher :content-type)
+   (wrap-quality-assessor :content-type)
    skip-rejected))
 
-(defn get-content-type-weight
-  "Given the request and a representation, get the weight of the representation."
+(defn get-content-type-quality
+  "Given the request and a representation, get the quality of the representation."
   [req rep]
   (let [k :content-type
-        weigher-fn (make-content-type-weigher req k)
-        rep (weigher-fn rep)]
-    (or (get-in rep [:weights k])
+        f (make-content-type-quality-assessor req k)
+        rep (f rep)]
+    (or (get-in rep [:qualities k])
         (when (:rejected rep) :rejected))))
 
 (deftest content-type-test
   ;; Basic match
-  (is (= (get-content-type-weight
+  (is (= (get-content-type-quality
           {:headers {"accept" "text/html"}}
           {:content-type (mime/string->media-type "text/html")})
          [(float 1.0) 3 0 (float 1.0)]))
 
   ;; Basic match, with multiple options
-  (is (= (get-content-type-weight
+  (is (= (get-content-type-quality
           {:headers {"accept" "image/png,text/html"}}
           {:content-type (mime/string->media-type "text/html")})
          [(float 1.0) 3 0 (float 1.0)]))
 
+  ;; Basic match, with multiple options and q values
+  (is (= (get-content-type-quality
+          {:headers {"accept" "image/png,text/html;q=0.9"}}
+          {:content-type (mime/string->media-type "text/html;q=0.8")})
+         [(float 0.9) 3 0 (float 0.8)]))
+
   ;; Basic reject
-  (is (= (get-content-type-weight
+  (is (= (get-content-type-quality
           {:headers {"accept" "text/html"}}
           {:content-type (mime/string->media-type "text/plain")})
          :rejected))
 
   ;; Basic reject with multiple options
-  (is (= (get-content-type-weight
+  (is (= (get-content-type-quality
           {:headers {"accept" "image/png,text/html"}}
           {:content-type (mime/string->media-type "text/plain")})
          :rejected))
 
   ;; Wildcard match
-  (is (= (second (get-content-type-weight
-                  {:headers {"accept" "image/png,text/*"}}
-                  {:content-type (mime/string->media-type "text/html")}))
+  (is (= ((get-content-type-quality
+           {:headers {"accept" "image/png,text/*"}}
+           {:content-type (mime/string->media-type "text/html")}) 1)
          ;; We get a match with a specificty score of 2
          2))
 
   ;; Specific match beats wildcard
-  (is (= (second (get-content-type-weight
-                  {:headers {"accept" "image/png,text/*,text/html"}}
-                  {:content-type (mime/string->media-type "text/html")}))
+  (is (= ((get-content-type-quality
+           {:headers {"accept" "image/png,text/*,text/html"}}
+           {:content-type (mime/string->media-type "text/html")}) 1)
          ;; We get a specificty score of 3, indicating we matched on the
          ;; text/html rather than the preceeding text/*
          3))
 
-  ;; TODO: More tests
+  ;; Specific match beats wildcard, different order
+  (is (= ((get-content-type-quality
+           {:headers {"accept" "text/html,text/*,image/png"}}
+           {:content-type (mime/string->media-type "text/html")}) 1)
+         3))
+
+  ;; Greater number of parameters matches
+  (is (= ((get-content-type-quality
+           {:headers {"accept" "text/html,text/html;level=1"}}
+           {:content-type (mime/string->media-type "text/html;level=1")}) 2)
+         ;; We get a specificty score of 3, indicating we matched on the
+         ;; text/html rather than the preceeding text/*
+         1))
+
+  ;; TODO: Test content type parameters
+
+  ;; TODO: Test charsets
+
+  ;; TODO: Test encodings
+
   )
 
 ;; "A request without any Accept header

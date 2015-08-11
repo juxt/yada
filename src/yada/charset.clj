@@ -34,7 +34,7 @@
   (canonical-name [_] "")
   (preferred-alias [_]))
 
-(defrecord CharsetMap [alias weight]
+(defrecord CharsetMap [alias quality]
   Charset
   (charset [_] alias)
   (canonical-name [_] (get alias->name (.toUpperCase alias)))
@@ -82,4 +82,4 @@
   [cs ^java.io.Writer writer]
   (.write writer (format "%s%s"
                          (charset cs)
-                         (when-let [w (:weight cs)] (str ";q=" w)))))
+                         (when-let [w (:quality cs)] (str ";q=" w)))))

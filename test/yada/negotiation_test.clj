@@ -126,7 +126,7 @@
                          }]))))
          ["utf-8" "utf-8"])))
 
-(st/deftest content-type-weight-removed []
+(st/deftest content-type-quality-removed []
   (given (:content-type (interpret-negotiation
                          (first
                           (negotiate {:method :get :accept "text/html"}

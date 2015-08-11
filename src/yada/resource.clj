@@ -135,7 +135,7 @@
 (def platform-charsets
   (->> (concat
         [(to-charset-map default-platform-charset)]
-        (map #(assoc % :weight 0.9) (map to-charset-map (keys (java.nio.charset.Charset/availableCharsets)))))
+        (map #(assoc % :quality 0.9) (map to-charset-map (keys (java.nio.charset.Charset/availableCharsets)))))
        ;; Tune down the number of charsets to manageable level by
        ;; excluding those prefixed by x- and 'IBM'.
        (filter (comp not (partial re-matches #"(x-|IBM).*") :alias))

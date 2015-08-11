@@ -35,7 +35,7 @@
       [:headers "content-type"] := "text/plain;charset=utf-8"
       [:headers "content-length"] := 13
       [:headers "vary" parse-csv set] := #{"accept-charset"}
-      [:headers "etag"] := "1462348343"
+      [:headers "etag"] := "2043391791"
       [:body to-string] := "Hello World!\n")))
 
 (deftest swagger-intro-test
@@ -46,7 +46,7 @@
       [:headers "content-type"] := "application/json"
       [:headers "content-length"] := 473 ; brittle but a useful check nonetheless
       [:headers "vary" parse-csv set] := #{"accept" "accept-charset"}
-      [:headers "etag"] := "943983445")))
+      [:headers "etag"] := "-677992441")))
 
 ;; TODO: conditional request
 

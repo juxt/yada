@@ -6,7 +6,7 @@
 ;; types as records rather than encode in Strings which require
 ;; reparsing. This is the sole purpose of the MediaTypeMap record below.
 
-(defrecord MediaTypeMap [type subtype parameters weight])
+(defrecord MediaTypeMap [type subtype parameters quality])
 
 (defn media-type [mt] (when mt (str (:type mt) "/" (:subtype mt))))
 
@@ -48,6 +48,6 @@
   [mt ^java.io.Writer writer]
   (.write writer (format "#yada.media-type[%s%s%s]"
                          (media-type mt)
-                         (when-let [w (:weight mt)] (str ";q=" w))
+                         (when-let [w (:quality mt)] (str ";q=" w))
                          (apply str (for [[k v] (:parameters mt)]
                                       (format ";%s=%s" k v))))))

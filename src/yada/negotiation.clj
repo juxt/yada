@@ -23,9 +23,9 @@
 (defn- content-type-acceptable?
   "Compare a single acceptable mime-type (extracted from an Accept
   header) and a candidate. If the candidate is acceptable, return a
-  sortable vector [acceptable candidate weight1 weight2]. Weight1
+  sortable vector [acceptable candidate quality1 quality2]. Quality1
   prefers specificity, e.g. prefers text/html over text/* over
-  */*. Weight2 gives preference to candidates with a greater number of
+  */*. Quality2 gives preference to candidates with a greater number of
   parameters, which preferes text/html;level=1 over text/html. This
   meets the criteria in the HTTP specifications. Although the preference
   that should result with multiple parameters is not specified formally,
@@ -38,14 +38,14 @@
     (cond
       (and (= (:type acceptable) (:type candidate))
            (= (:subtype acceptable) (:subtype candidate)))
-      [acceptable candidate {:weight 3} {:weight (count (:parameters candidate))}]
+      [acceptable candidate {:quality 3} {:quality (count (:parameters candidate))}]
 
       (and (= (:type acceptable) (:type candidate))
            (= (:subtype acceptable) "*"))
-      [acceptable candidate {:weight 2} {:weight (count (:parameters candidate))}]
+      [acceptable candidate {:quality 2} {:quality (count (:parameters candidate))}]
 
       (and (= (mime/media-type acceptable) "*/*"))
-      [acceptable candidate {:weight 1} {:weight (count (:parameters candidate))}])))
+      [acceptable candidate {:quality 1} {:quality (count (:parameters candidate))}])))
 
 (defn- any-content-type-acceptable? [acceptables candidate]
   (some #(content-type-acceptable? % candidate) acceptables))
@@ -55,12 +55,12 @@
   [acceptables candidates]
   (->> candidates
        (keep (partial any-content-type-acceptable? acceptables))
-       (sort-by #(vec (map :weight %)))
-       reverse ;; highest weight wins
+       (sort-by #(vec (map :quality %)))
+       reverse ;; highest quality wins
        first ;; winning pair
        second ;; extract the server provided mime-type
        ;; Commented because the caller needs this in order to sort now
-       ;; (#(dissoc % :weight))
+       ;; (#(dissoc % :quality))
        ))
 
 (defn negotiate-content-type [accept-header available]
@@ -100,8 +100,8 @@
   (let [winner
         (->> candidates
              (keep (partial any-charset-acceptable? acceptables))
-             (sort-by #(vec (map :weight %)))
-             reverse ;; highest weight wins
+             (sort-by #(vec (map :quality %)))
+             reverse ;; highest quality wins
              first ;; winning pair
              )]
     (when winner
@@ -129,7 +129,7 @@
         (re-matches (re-pattern (str "("  "(?:" http-token "|\\*)" ")(?:(?:;q=)(" http-token "))?"))
                     s)]
     {:encoding encoding
-     :weight (if q (try
+     :quality (if q (try
                      (Float/parseFloat q)
                      (catch java.lang.NumberFormatException e
                        1.0))
@@ -180,7 +180,7 @@
    (s/optional-key :content-type) (s/maybe {:type s/Str
                                             :subtype s/Str
                                             :parameters {s/Str s/Str}
-                                            :weight s/Num})
+                                            :quality s/Num})
    (s/optional-key :charset) (s/maybe (s/pair s/Str "known-by-client" s/Str "known-by-server"))
    (s/optional-key :encoding) (s/maybe s/Str)
    (s/optional-key :language) (s/maybe s/Str)
@@ -245,7 +245,7 @@
   :- [NegotiationResult]
   (->> server-offers
        (keep (partial acceptable? request))
-       (sort-by (juxt (comp :weight :content-type) (comp :charset)
+       (sort-by (juxt (comp :quality :content-type) (comp :charset)
                       ;; TODO: Add encoding and language
                       )
                 ;; Trick to get sort-by to reverse sort
