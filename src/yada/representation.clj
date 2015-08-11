@@ -132,7 +132,27 @@
    (wrap-quality-assessor :charset)
    skip-rejected))
 
-;; From representation
+;; Encodings ------------------------------------
+
+(defn encoding-acceptable? [rep acceptable-encoding]
+  (:quality rep))
+
+(defn highest-encoding-quality
+  "Given a collection of acceptable encodings, return a function that
+  will return the quality."
+  [accepts]
+  (fn [rep]
+    (best (map (partial encoding-acceptable? (:encoding rep)) accepts))))
+
+(defn make-encoding-quality-assessor
+  [req k]
+  (->
+   (->> (get-in req [:headers "accept-encoding"]) parse-csv)
+   highest-encoding-quality
+   (wrap-quality-assessor :encoding)
+   skip-rejected))
+
+;; From representation ------------------------------
 
 (defmulti from-representation (fn [representation media-type & args] media-type))
 

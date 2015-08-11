@@ -12,7 +12,7 @@
 
 (defn- get-highest-content-type-quality
   "Given the request and a representation, get the highest possible
-  quality value. Convenience function for independent testing. "
+  quality value."
   [req rep]
   (let [k :content-type
         qa (rep/make-content-type-quality-assessor req k)
@@ -103,7 +103,7 @@
 
 (defn- get-highest-charset-quality
   "Given the request and a representation, get the highest possible
-  quality value. Convenience function for independent testing."
+  quality value."
   [req rep]
   (let [k :charset
         qa (rep/make-charset-quality-assessor req k)
@@ -167,9 +167,29 @@
             {:charset (charset/to-charset-map "utf-8")})
            :rejected))))
 
-;; TODO: q=0 means 'not acceptable' - 5.3.1, so need to code for this
+(defn- get-highest-encoding-quality
+  "Given the request and a representation, get the highest possible
+  encoding value."
+  [req rep]
+  (let [k :encoding
+        qa (rep/make-encoding-quality-assessor req k)
+        rep (qa rep)]
+    (or (get-in rep [:qualities k])
+        (when (:rejected rep) :rejected))))
+
+(deftest encoding-test
+
+  (testing "Basic match"
+    (is (= (get-highest-encoding-quality
+            {:headers {"accept-encoding" "utf-8"}}
+            {:charset "utf-8"})
+           :rejected)))
+
+  )
 
 ;; TODO: Test encodings - note that encodings can be combined
+
+;; "gzip, deflate, sdch"
 
 ;; TODO: Test languages
 
