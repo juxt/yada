@@ -68,7 +68,9 @@
   [rep acceptable]
   (when
       ;; TODO: Case sensitivity/insensitivity requirements
-      (= (:parameters acceptable) (:parameters rep))
+      (and (= (:parameters acceptable) (:parameters rep))
+           (pos? (:quality acceptable))
+           (pos? (:quality rep)))
     (cond
       (and (= (:type acceptable) (:type rep))
            (= (:subtype acceptable) (:subtype rep)))
@@ -99,16 +101,20 @@
 
 (defn charset-acceptable? [rep acceptable-charset]
   (when
-      (or (= (charset/charset acceptable-charset) "*")
-          (and
-           (some? (charset/charset acceptable-charset))
-           (= (charset/charset acceptable-charset)
-              (charset/charset rep)))
-          ;; Finally, let's see if their canonical names match
-          (and
-           (some? (charset/canonical-name acceptable-charset))
-           (= (charset/canonical-name acceptable-charset)
-              (charset/canonical-name rep))))
+      (and
+       (or (= (charset/charset acceptable-charset) "*")
+           (and
+            (some? (charset/charset acceptable-charset))
+            (= (charset/charset acceptable-charset)
+               (charset/charset rep)))
+           ;; Finally, let's see if their canonical names match
+           (and
+            (some? (charset/canonical-name acceptable-charset))
+            (= (charset/canonical-name acceptable-charset)
+               (charset/canonical-name rep))))
+       (pos? (:quality acceptable-charset))
+       (pos? (:quality rep)))
+
     [(:quality acceptable-charset) (:quality rep)]))
 
 (defn highest-charset-quality

@@ -52,6 +52,18 @@
             {:content-type (mime/string->media-type "text/plain")})
            :rejected)))
 
+  (testing "Basic reject due to zero accept quality"
+    (is (= (get-highest-content-type-quality
+            {:headers {"accept" "text/html;q=0"}}
+            {:content-type (mime/string->media-type "text/html")})
+           :rejected)))
+
+  (testing "Basic reject due to zero representation quality"
+    (is (= (get-highest-content-type-quality
+            {:headers {"accept" "text/html"}}
+            {:content-type (mime/string->media-type "text/html;q=0")})
+           :rejected)))
+
   (testing "Wildcard match"
     (is (= ((get-highest-content-type-quality
              {:headers {"accept" "image/png,text/*"}}
@@ -142,6 +154,8 @@
             {:headers {"accept-charset" "us-ascii,Shift_JIS"}}
             {:charset (charset/to-charset-map "utf-8")})
            :rejected))))
+
+;; TODO: q=0 means 'not acceptable' - 5.3.1, so need to code for this
 
 ;; TODO: Test encodings - note that encodings can be combined
 
