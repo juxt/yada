@@ -2,16 +2,19 @@
 
 (ns yada.representation
   (:require
-   [clojure.tools.logging :refer :all]
+   [clojure.java.io :as io]
    [clojure.pprint :refer (pprint)]
+   [clojure.string :as str]
+   [clojure.tools.logging :refer :all]
+   [clojure.walk :refer (keywordize-keys)]
+
    [byte-streams :as bs]
    [cheshire.core :as json]
-   [clojure.java.io :as io]
-   [clojure.walk :refer (keywordize-keys)]
    [hiccup.core :refer [html]]
    [hiccup.page :refer (html5)]
    [json-html.core :as jh]
    [manifold.stream :refer [->source transform]]
+   [schema.core :as s]
    [ring.swagger.schema :as rs]
    [ring.util.codec :as codec]
    [yada.charset :as charset]
@@ -136,6 +139,11 @@
 
 ;; Encodings ------------------------------------
 
+;; weight = OWS ";" OWS "q=" qvalue
+
+;;   qvalue = ( "0" [ "." 0*3DIGIT ] )
+;;            / ( "1" [ "." 0*3("0") ] )
+
 (defn parse-encoding [s]
   (let [[_ coding qvalue]
         (re-matches
@@ -146,11 +154,6 @@
     (when coding
       {:coding coding
        :quality (if qvalue (Float/parseFloat qvalue) (float 1.0))})))
-
-;; weight = OWS ";" OWS "q=" qvalue
-
-;;   qvalue = ( "0" [ "." 0*3DIGIT ] )
-;;            / ( "1" [ "." 0*3("0") ] )
 
 (defn encoding-acceptable? [rep acceptable-encoding]
   (when (and (#{"*" (:coding rep)} (:coding acceptable-encoding))
@@ -163,8 +166,8 @@
     (:quality acceptable-encoding)))
 
 (defn highest-encoding-quality
-  "Given a collection of acceptable encoding, return a function that
-  will return the quality."
+  "Given a collection of acceptable encodings, return a function that
+  will return the quality for a given representation."
   [accepts]
   (fn [rep]
     (if-let [encoding (:encoding rep)]
@@ -180,7 +183,6 @@
         ;; No identity mentioned, it's acceptable
         [(float 1.0) (float 1.0)]))))
 
-
 (defn make-encoding-quality-assessor
   [req k]
   (let [acceptable-encodings (->> (get-in req [:headers "accept-encoding"])
@@ -188,6 +190,56 @@
     (-> acceptable-encodings
         highest-encoding-quality
         (wrap-quality-assessor :encoding)
+        skip-rejected)))
+
+;; Languages ------------------------------------
+
+(defn parse-language [s]
+  (let [[_ lang qvalue]
+        (re-matches
+         (re-pattern
+          (str "(" http-token ")(?:" OWS ";" OWS "q=(0(?:.\\d{0,3})?|1(?:.0{0,3})?))?"))
+         s)]
+    ;; qvalue could be nil
+    (when lang
+      {:language (vec (map str/lower-case (str/split lang #"-")))
+       :quality (if qvalue (Float/parseFloat qvalue) (float 1.0))})))
+
+(s/defn lang-matches?
+  "See RFC 4647 Basic Filtering"
+  [rep :- [s/Str] accepts :- [s/Str]]
+  (every? some?
+          (map #(#{%1 "*"} %2)
+               rep
+               (concat accepts (repeat nil)))))
+
+(s/defn language-acceptable?
+  [rep :- {:language [s/Str]
+           :quality java.lang.Float}
+   acceptable-language :- {:language [s/Str]
+                           :quality java.lang.Float}]
+  (when
+      (and
+       (lang-matches? (:language rep) (:language acceptable-language))
+       (pos? (:quality acceptable-language))
+       (pos? (:quality rep)))
+
+    [(:quality acceptable-language) (:quality rep)]))
+
+(defn highest-language-quality
+  "Given a collection of acceptable languages, return a function that
+  will return the quality for a given representation."
+  [accepts]
+  (fn [rep]
+    (best (map (partial language-acceptable? (:language rep)) accepts))))
+
+(defn make-language-quality-assessor
+  [req k]
+  (let [acceptable-langs (->> (get-in req [:headers "accept-language"])
+                              parse-csv (map parse-language))]
+    (-> acceptable-langs
+        highest-language-quality
+        (wrap-quality-assessor :language)
         skip-rejected)))
 
 ;; From representation ------------------------------

@@ -4,6 +4,7 @@
   (:require
    [clojure.test :refer :all]
    [clojure.string :as str]
+   [schema.test :as st]
    [yada.charset :as charset]
    [yada.mime :as mime]
    [yada.util :refer (parse-csv best best-by http-token OWS)]
@@ -12,7 +13,7 @@
 
 (defn- get-highest-content-type-quality
   "Given the request and a representation, get the highest possible
-  quality value."
+  quality value for the representation's content-type."
   [req rep]
   (let [k :content-type
         qa (rep/make-content-type-quality-assessor req k)
@@ -103,7 +104,7 @@
 
 (defn- get-highest-charset-quality
   "Given the request and a representation, get the highest possible
-  quality value."
+  qvalue for the representation's charset."
   [req rep]
   (let [k :charset
         qa (rep/make-charset-quality-assessor req k)
@@ -167,9 +168,21 @@
             {:charset (charset/to-charset-map "utf-8")})
            :rejected))))
 
+(deftest parse-encoding-test
+  (testing "basic"
+    (is (= (rep/parse-encoding "abc;q=0.90") {:coding "abc" :quality (float 0.9)})))
+  (testing "qvalue defaults to 1.0"
+    (is (= (rep/parse-encoding "abc") {:coding "abc" :quality (float 1.0)})))
+  (testing "qvalue must be a number"
+    (is (nil? (rep/parse-encoding "abc;q=foo"))))
+  (testing "qvalue cannot contain more than 3 decimal places"
+    (is (nil? (rep/parse-encoding "abc;q=0.1234"))))
+  (testing "qvalue cannot be more than 1"
+    (is (nil? (rep/parse-encoding "abc;q=1.001")))))
+
 (defn- get-highest-encoding-quality
   "Given the request and a representation, get the highest possible
-  encoding value."
+  qvalue for the representation's encoding."
   [req rep]
   (let [k :encoding
         qa (rep/make-encoding-quality-assessor req k)
@@ -213,27 +226,80 @@
     (is (= (get-highest-encoding-quality
             {:headers {"accept-encoding" "gzip, compress"}}
             {:encoding (rep/parse-encoding "deflate;q=0.4")})
+           :rejected)))
+
+  (testing "Empty accept encoding header field value"
+    ;; The client does NOT want any codings
+    (is (= (get-highest-encoding-quality
+            {:headers {"accept-encoding" ""}}
+            {:encoding (rep/parse-encoding "deflate,gzip;q=0.4")})
            :rejected))))
 
-(deftest parse-encoding-test
+(deftest parse-language-test
   (testing "basic"
-    (is (= (rep/parse-encoding "abc;q=0.90") {:coding "abc" :quality (float 0.9)})))
-  (testing "qvalue defaults to 1.0"
-    (is (= (rep/parse-encoding "abc") {:coding "abc" :quality (float 1.0)})))
-  (testing "qvalue must be a number"
-    (is (nil? (rep/parse-encoding "abc;q=foo"))))
-  (testing "qvalue cannot contain more than 3 decimal places"
-    (is (nil? (rep/parse-encoding "abc;q=0.1234"))))
-  (testing "qvalue cannot be more than 1"
-    (is (nil? (rep/parse-encoding "abc;q=1.001")))))
+    (is (= (rep/parse-language "en-US;q=0.8")
+           {:language ["en" "us"] :quality (float 0.8)})))
+  (testing "wildcard"
+    (is (= (rep/parse-language "en-*")
+           {:language ["en" "*"] :quality (float 1.0)}))))
 
-;; TODO: Test languages
+(defn- lang-matches? [rep accepts]
+  (rep/lang-matches?
+   (:language (rep/parse-language rep))
+   (:language (rep/parse-language accepts))))
+
+(deftest lang-matches-test
+  (is (lang-matches? "en" "en"))
+  (is (lang-matches? "en" "en-US"))
+  (is (lang-matches? "en-US" "en-US"))
+  (is (not (lang-matches? "en-US" "en")))
+  (is (lang-matches? "en-US" "en-*"))
+  (is (not (lang-matches? "en-US-fr" "en-*")))
+  (is (lang-matches? "en-US-fr" "en-*-fr"))
+  (is (lang-matches? "en-US-fr" "en-US-fr")))
+
+(defn- get-highest-language-quality
+  "Given the request and a representation, get the highest possible
+  qvalue for the representation's language-tag."
+  [req rep]
+  (let [k :language
+        qa (rep/make-language-quality-assessor req k)
+        rep (qa rep)]
+    (or (get-in rep [:qualities k])
+        (when (:rejected rep) :rejected))))
+
+(st/deftest language-test
+
+  (testing "Basic match"
+    (is (= (get-highest-language-quality
+            {:headers {"accept-language" "en"}}
+            {:language (rep/parse-language "en")})
+           [(float 1.0) (float 1.0)])))
+
+  (testing "Wildcard match"
+    (is (= (get-highest-language-quality
+            {:headers {"accept-language" "en-*;q=0.8"}}
+            {:language (rep/parse-language "en-US;q=0.7")})
+           [(float 0.8) (float 0.7)])))
+
+  (testing "Reject"
+    (is (= (get-highest-language-quality
+            {:headers {"accept-language" "en"}}
+            {:language (rep/parse-language "en-US")})
+           :rejected))))
 
 ;; TODO: Put the whole thing together, where an accept header corresponds to
 ;; the construction of a transducer that filters all the possible
 ;; (not-rejected) representations, then a pro-active pick of the 'best'
 ;; one, by some determination (content-type first, total quality
 ;; degradation, etc.)
+
+;; TODO: Special case: when the accept-encoding header field value is
+;; empty, the encoding is set to identity, no matter what. When creating
+;; a list of representations, always create identity versions. See 5.3.4
+;; This can be done by interpretting :encoding "gzip, deflate" to be
+;; :encoding "gzip, deflate, identity;q=0.001" and applying
+;; clojure.core/distinct on the final set of representations.
 
 ;; "A request without any Accept header
 ;; field implies that the user agent
