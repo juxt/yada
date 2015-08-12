@@ -94,7 +94,7 @@
 
 (defn make-content-type-quality-assessor
   [req k]
-  (let [acceptable-types (->> (get-in req [:headers "accept"])
+  (let [acceptable-types (->> (or (get-in req [:headers "accept"]) "*/*")
                               parse-csv (map mime/string->media-type))]
     (-> acceptable-types
         highest-content-type-quality
@@ -277,7 +277,9 @@
    (make-charset-quality-assessor req :charset)
    (make-content-type-quality-assessor req :content-type)))
 
-(def prefer-by-sequence-ordering
+(def ^{:doc "A selection algorithm that compares each quality in turn,
+  only moving to the next quality if the comparison is a draw."}
+  agent-preference-sequential-compare
   (juxt
    (comp first :content-type)
    (comp first :charset)
@@ -288,13 +290,34 @@
    (comp second :encoding)
    (comp second :language)))
 
-(defn select-representation [req reps]
-  (let [best
-        (->> reps
-             (map (make-combined-quality-assessor req))
-             (filter (comp not :rejected))
-             (best-by (comp prefer-by-sequence-ordering :qualities)))]
-    (dissoc best :qualities)))
+(def ^{:doc "A selection algorithm that multiples qualities together,
+  before comparing."}
+  agent-preference-compound-quality
+  (juxt
+   #(* (or (-> % :content-type first) 1)
+       (or (-> % :charset first) 1)
+       (or (-> % :encoding first) 1)
+       (or (-> % :language first) 1))
+   #(* (or (-> % :content-type second) 1)
+       (or (-> % :charset second) 1)
+       (or (-> % :encoding second) 1)
+       (or (-> % :language second) 1))))
+
+(defn select-representation
+  "Given a request and a collection of representations, pick the best
+  representation. This scores each representation against each of 4
+  dimensions, each score contributes to its overall rating, the best
+  being decided by the given algorithm, which defaults to
+  'agent-preference-sequential-compare'."
+  ([req reps]
+   (select-representation req reps agent-preference-sequential-compare))
+  ([req reps rater]
+   (let [best
+         (->> reps
+              (map (make-combined-quality-assessor req))
+              (filter (comp not :rejected))
+              (best-by (comp rater :qualities)))]
+     (dissoc best :qualities))))
 
 ;; From representation ------------------------------
 

@@ -311,16 +311,22 @@
 ;; -- RFC 7231 Section 5.3.3
 
 (deftest select-representation-test
-  (testing "Basic matching"
+  (testing "No headers. Implied Accept: */*"
     (let [reps [{:content-type (mime/string->media-type "text/html")
-                 :charset (charset/to-charset-map "utf-8")}]]
-      (is (= (rep/select-representation
-              {:headers {"accept" "text/html"}}
-              reps)
+                 :charset (charset/to-charset-map "utf-8")}
+                {:content-type (mime/string->media-type "text/xml;q=0.9")
+                 :charset (charset/to-charset-map "utf-8")}
+                {:content-type (mime/string->media-type "image/png;q=0.9")}]]
 
+      (is (= (rep/select-representation
+              {:headers {}}
+              reps
+              ;;rep/agent-preference-compound-quality
+              )
              (reps 0))))))
 
 
-                       ;;                     "accept-charset" "utf-8"
-                       ;;                     "accept-encoding" "gzip"
-                       ;;                     "accept-language" "en"
+
+;;                     "accept-charset" "utf-8"
+;;                     "accept-encoding" "gzip"
+;;                     "accept-language" "en"
