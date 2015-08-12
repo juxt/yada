@@ -18,7 +18,7 @@
    [yada.mime :as mime]
    [yada.negotiation :as negotiation]
    [yada.resource :as res]
-   [yada.util :refer (best best-by parse-csv)]
+   [yada.util :refer (best best-by parse-csv http-token OWS)]
    manifold.stream.async
    clojure.core.async.impl.channels)
   (:import [clojure.core.async.impl.channels ManyToManyChannel]
@@ -91,11 +91,12 @@
 
 (defn make-content-type-quality-assessor
   [req k]
-  (->
-   (->> (get-in req [:headers "accept"]) parse-csv (map mime/string->media-type))
-   highest-content-type-quality
-   (wrap-quality-assessor :content-type)
-   skip-rejected))
+  (let [acceptable-types (->> (get-in req [:headers "accept"])
+                              parse-csv (map mime/string->media-type))]
+    (-> acceptable-types
+        highest-content-type-quality
+        (wrap-quality-assessor :content-type)
+        skip-rejected)))
 
 ;; Charsets ------------------------------------
 
@@ -126,31 +127,68 @@
 
 (defn make-charset-quality-assessor
   [req k]
-  (->
-   (->> (get-in req [:headers "accept-charset"]) parse-csv (map charset/to-charset-map))
-   highest-charset-quality
-   (wrap-quality-assessor :charset)
-   skip-rejected))
+  (let [acceptable-charsets (->> (get-in req [:headers "accept-charset"])
+                                 parse-csv (map charset/to-charset-map))]
+    (-> acceptable-charsets
+        highest-charset-quality
+        (wrap-quality-assessor :charset)
+        skip-rejected)))
 
 ;; Encodings ------------------------------------
 
+(defn parse-encoding [s]
+  (let [[_ coding qvalue]
+        (re-matches
+         (re-pattern
+          (str "(" http-token ")(?:" OWS ";" OWS "q=(0(?:.\\d{0,3})?|1(?:.0{0,3})?))?"))
+         s)]
+    ;; qvalue could be nil
+    (when coding
+      {:coding coding
+       :quality (if qvalue (Float/parseFloat qvalue) (float 1.0))})))
+
+;; weight = OWS ";" OWS "q=" qvalue
+
+;;   qvalue = ( "0" [ "." 0*3DIGIT ] )
+;;            / ( "1" [ "." 0*3("0") ] )
+
 (defn encoding-acceptable? [rep acceptable-encoding]
-  (:quality rep))
+  (when (and (#{"*" (:coding rep)} (:coding acceptable-encoding))
+             (pos? (:quality acceptable-encoding))
+             (pos? (:quality rep)))
+    [(:quality acceptable-encoding) (:quality rep)]))
+
+(defn identity-acceptable? [acceptable-encoding]
+  (when (and (#{"*" "identity"} (:coding acceptable-encoding)))
+    (:quality acceptable-encoding)))
 
 (defn highest-encoding-quality
-  "Given a collection of acceptable encodings, return a function that
+  "Given a collection of acceptable encoding, return a function that
   will return the quality."
   [accepts]
   (fn [rep]
-    (best (map (partial encoding-acceptable? (:encoding rep)) accepts))))
+    (if-let [encoding (:encoding rep)]
+      (best (map (partial encoding-acceptable? encoding) accepts))
+      ;; No representation encoding, rule 2 applies.  If the
+      ;; representation has no content-coding, then it is acceptable by
+      ;; default unless specifically excluded by the Accept-Encoding
+      ;; field stating either "identity;q=0" or "*;q=0" without a more
+      ;; specific entry for "identity". -- RFC 7231 Section 5.3.4
+
+      (if-let [identity-quality (best (map identity-acceptable? accepts))]
+        (if (zero? identity-quality) :rejected [identity-quality (float 1.0)])
+        ;; No identity mentioned, it's acceptable
+        [(float 1.0) (float 1.0)]))))
+
 
 (defn make-encoding-quality-assessor
   [req k]
-  (->
-   (->> (get-in req [:headers "accept-encoding"]) parse-csv)
-   highest-encoding-quality
-   (wrap-quality-assessor :encoding)
-   skip-rejected))
+  (let [acceptable-encodings (->> (get-in req [:headers "accept-encoding"])
+                                  parse-csv (map parse-encoding))]
+    (-> acceptable-encodings
+        highest-encoding-quality
+        (wrap-quality-assessor :encoding)
+        skip-rejected)))
 
 ;; From representation ------------------------------
 

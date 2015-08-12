@@ -50,6 +50,8 @@
 
 ;; Parsing
 
+(def OWS #"[ \t]*")
+
 (def http-token #"[!#$%&'*+-\.\^_`|~\p{Alnum}]+")
 
 ;; ETags

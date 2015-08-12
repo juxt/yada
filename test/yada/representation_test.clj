@@ -6,7 +6,7 @@
    [clojure.string :as str]
    [yada.charset :as charset]
    [yada.mime :as mime]
-   [yada.util :refer (parse-csv best best-by)]
+   [yada.util :refer (parse-csv best best-by http-token OWS)]
    [yada.negotiation :as negotiation]
    [yada.representation :as rep]))
 
@@ -179,17 +179,53 @@
 
 (deftest encoding-test
 
-  (testing "Basic match"
+  (testing "Representation has no encoding, it is acceptable, rule 2"
     (is (= (get-highest-encoding-quality
-            {:headers {"accept-encoding" "utf-8"}}
-            {:charset "utf-8"})
+            {:headers {"accept-encoding" "gzip"}}
+            {})
+           [1.0 1.0])))
+
+  (testing "... except when not"
+    (is (= (get-highest-encoding-quality
+            {:headers {"accept-encoding" "gzip, identity;q=0"}}
+            {})
            :rejected)))
 
-  )
+  (testing "... except when not with wildcard"
+    (is (= (get-highest-encoding-quality
+            {:headers {"accept-encoding" "gzip, *;q=0"}}
+            {})
+           :rejected)))
 
-;; TODO: Test encodings - note that encodings can be combined
+  (testing "... except when not"
+    (is (= (get-highest-encoding-quality
+            {:headers {"accept-encoding" "gzip, identity;q=0.5, *;q=0"}}
+            {})
+           [0.5 1.0])))
 
-;; "gzip, deflate, sdch"
+  (testing "Basic match"
+    (is (= (get-highest-encoding-quality
+            {:headers {"accept-encoding" "gzip, compress"}}
+            {:encoding (rep/parse-encoding "gzip;q=0.7")})
+           [(float 1.0) (float 0.7)])))
+
+  (testing "Basic reject"
+    (is (= (get-highest-encoding-quality
+            {:headers {"accept-encoding" "gzip, compress"}}
+            {:encoding (rep/parse-encoding "deflate;q=0.4")})
+           :rejected))))
+
+(deftest parse-encoding-test
+  (testing "basic"
+    (is (= (rep/parse-encoding "abc;q=0.90") {:coding "abc" :quality (float 0.9)})))
+  (testing "qvalue defaults to 1.0"
+    (is (= (rep/parse-encoding "abc") {:coding "abc" :quality (float 1.0)})))
+  (testing "qvalue must be a number"
+    (is (nil? (rep/parse-encoding "abc;q=foo"))))
+  (testing "qvalue cannot contain more than 3 decimal places"
+    (is (nil? (rep/parse-encoding "abc;q=0.1234"))))
+  (testing "qvalue cannot be more than 1"
+    (is (nil? (rep/parse-encoding "abc;q=1.001")))))
 
 ;; TODO: Test languages
 
