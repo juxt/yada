@@ -125,13 +125,20 @@
   "Given a collection of acceptable charsets, return a function that
   will return the quality."
   [accepts]
-  (fn [rep]
-    (best (map (partial charset-acceptable? (:charset rep)) accepts))))
+  (cond
+    (nil? accepts)
+    ;; No accept-charset header - means the client will accept any charset.
+    (fn [rep]
+      [(float 1.0) (:quality rep)])
+
+    :otherwise
+    (fn [rep]
+      (best (map (partial charset-acceptable? (:charset rep)) accepts)))))
 
 (defn make-charset-quality-assessor
   [req k]
-  (let [acceptable-charsets (->> (get-in req [:headers "accept-charset"])
-                                 parse-csv (map charset/to-charset-map))]
+  (let [acceptable-charsets (some->> (get-in req [:headers "accept-charset"])
+                                     parse-csv (map charset/to-charset-map))]
     (-> acceptable-charsets
         highest-charset-quality
         (wrap-quality-assessor :charset)
@@ -169,24 +176,34 @@
   "Given a collection of acceptable encodings, return a function that
   will return the quality for a given representation."
   [accepts]
-  (fn [rep]
-    (if-let [encoding (:encoding rep)]
-      (best (map (partial encoding-acceptable? encoding) accepts))
-      ;; No representation encoding, rule 2 applies.  If the
-      ;; representation has no content-coding, then it is acceptable by
-      ;; default unless specifically excluded by the Accept-Encoding
-      ;; field stating either "identity;q=0" or "*;q=0" without a more
-      ;; specific entry for "identity". -- RFC 7231 Section 5.3.4
+  (cond
+    (nil? accepts)
+    ;; No accept-encoding header - means the client will accept any encoding
+    (fn [rep]
+      [(float 1.0) (:quality rep)])
 
-      (if-let [identity-quality (best (map identity-acceptable? accepts))]
-        (if (zero? identity-quality) :rejected [identity-quality (float 1.0)])
-        ;; No identity mentioned, it's acceptable
-        [(float 1.0) (float 1.0)]))))
+    (empty? accepts)
+    (throw (ex-info "TODO" {}))
+
+    :otherwise
+    (fn [rep]
+      (if-let [encoding (:encoding rep)]
+        (best (map (partial encoding-acceptable? encoding) accepts))
+        ;; No representation encoding, rule 2 applies.  If the
+        ;; representation has no content-coding, then it is acceptable by
+        ;; default unless specifically excluded by the Accept-Encoding
+        ;; field stating either "identity;q=0" or "*;q=0" without a more
+        ;; specific entry for "identity". -- RFC 7231 Section 5.3.4
+
+        (if-let [identity-quality (best (map identity-acceptable? accepts))]
+          (if (zero? identity-quality) :rejected [identity-quality (float 1.0)])
+          ;; No identity mentioned, it's acceptable
+          [(float 1.0) (float 1.0)])))))
 
 (defn make-encoding-quality-assessor
   [req k]
-  (let [acceptable-encodings (->> (get-in req [:headers "accept-encoding"])
-                                  parse-csv (map parse-encoding))]
+  (let [acceptable-encodings (some->> (get-in req [:headers "accept-encoding"])
+                                      parse-csv (map parse-encoding))]
     (-> acceptable-encodings
         highest-encoding-quality
         (wrap-quality-assessor :encoding)
@@ -230,17 +247,54 @@
   "Given a collection of acceptable languages, return a function that
   will return the quality for a given representation."
   [accepts]
-  (fn [rep]
-    (best (map (partial language-acceptable? (:language rep)) accepts))))
+  (if accepts
+    (fn [rep]
+      (if-let [language (:language rep)]
+        (best (map (partial language-acceptable? language) accepts))
+        ;; If there is no language in the representation, don't reject,
+        ;; just give the lowest score possible.
+        [(float 0.001) (float 0.001)]
+        ))
+    ;; No accept-language here, that's OK, accept anything
+    (fn [rep]
+      [(float 1.0) (:quality rep)])))
 
 (defn make-language-quality-assessor
   [req k]
-  (let [acceptable-langs (->> (get-in req [:headers "accept-language"])
-                              parse-csv (map parse-language))]
+  (let [acceptable-langs (some->> (get-in req [:headers "accept-language"])
+                                  parse-csv (map parse-language))]
     (-> acceptable-langs
         highest-language-quality
         (wrap-quality-assessor :language)
         skip-rejected)))
+
+;; Combined proactive negotiation of representations
+
+(defn make-combined-quality-assessor [req]
+  (comp
+   (make-language-quality-assessor req :language)
+   (make-encoding-quality-assessor req :encoding)
+   (make-charset-quality-assessor req :charset)
+   (make-content-type-quality-assessor req :content-type)))
+
+(def prefer-by-sequence-ordering
+  (juxt
+   (comp first :content-type)
+   (comp first :charset)
+   (comp first :encoding)
+   (comp first :language)
+   (comp second :content-type)
+   (comp second :charset)
+   (comp second :encoding)
+   (comp second :language)))
+
+(defn select-representation [req reps]
+  (let [best
+        (->> reps
+             (map (make-combined-quality-assessor req))
+             (filter (comp not :rejected))
+             (best-by (comp prefer-by-sequence-ordering :qualities)))]
+    (dissoc best :qualities)))
 
 ;; From representation ------------------------------
 

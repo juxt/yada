@@ -309,3 +309,18 @@
 ;; "A request without any Accept-Charset header field implies
 ;; that the user agent will accept any charset in response. "
 ;; -- RFC 7231 Section 5.3.3
+
+(deftest select-representation-test
+  (testing "Basic matching"
+    (let [reps [{:content-type (mime/string->media-type "text/html")
+                 :charset (charset/to-charset-map "utf-8")}]]
+      (is (= (rep/select-representation
+              {:headers {"accept" "text/html"}}
+              reps)
+
+             (reps 0))))))
+
+
+                       ;;                     "accept-charset" "utf-8"
+                       ;;                     "accept-encoding" "gzip"
+                       ;;                     "accept-language" "en"
