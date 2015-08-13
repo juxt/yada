@@ -318,6 +318,17 @@
 (deftest ^{:doc "If you find bugs in yada with end-to-end (proactive)
   content negotiation, here's a good place to put a test."}
   select-representation-test
+
+  (testing "Best quality charset"
+    (is (= (rep/select-representation
+            {:headers {"accept" "text/html"}}
+            [{:content-type (mime/string->media-type "text/html")
+              :charset (charset/to-charset-map "windows-1255;q=0.9")}
+             {:content-type (mime/string->media-type "text/html")
+              :charset (charset/to-charset-map "utf-8")}])
+           {:content-type (mime/string->media-type "text/html")
+            :charset (charset/to-charset-map "utf-8")})))
+
   (let [reps [{:content-type (mime/string->media-type "text/html")
                :charset (charset/to-charset-map "utf-8")}
               {:content-type (mime/string->media-type "text/xml;q=0.9")
@@ -350,7 +361,10 @@
       (is (= (rep/select-representation
               {:headers {"accept" "image/*"}}
               reps)
-             {:content-type (mime/string->media-type "image/png")})))))
+             {:content-type (mime/string->media-type "image/png")})))
+
+
+    ))
 
 
 ;;                     "accept-charset" "utf-8"

@@ -129,7 +129,7 @@
     (nil? accepts)
     ;; No accept-charset header - means the client will accept any charset.
     (fn [rep]
-      [(float 1.0) (:quality rep)])
+      [(float 1.0) (-> rep :charset :quality)])
 
     :otherwise
     (fn [rep]
@@ -180,7 +180,7 @@
     (nil? accepts)
     ;; No accept-encoding header - means the client will accept any encoding
     (fn [rep]
-      [(float 1.0) (:quality rep)])
+      [(float 1.0) (-> rep :encoding :quality)])
 
     (empty? accepts)
     (throw (ex-info "TODO" {}))
@@ -257,7 +257,7 @@
         ))
     ;; No accept-language here, that's OK, accept anything
     (fn [rep]
-      [(float 1.0) (:quality rep)])))
+      [(float 1.0) (-> rep :language :quality)])))
 
 (defn make-language-quality-assessor
   [req k]
@@ -312,6 +312,7 @@
   ([req reps]
    (select-representation req reps agent-preference-sequential-compare))
   ([req reps rater]
+   (infof "reps to choose from: %s" (seq reps))
    (let [best
          (->> reps
               (map (make-combined-quality-assessor req))

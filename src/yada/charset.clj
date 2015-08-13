@@ -62,8 +62,8 @@
             (try
               (Float/parseFloat q)
               (catch java.lang.NumberFormatException e
-                1.0))
-            1.0)))))))
+                (float 1.0)))
+            (float 1.0))))))))
 
 (defn- string->charsetmap [s]
   (string->charset* (str/trim s)))
@@ -78,7 +78,7 @@
   (to-charset-map [s]
     (string->charsetmap s)))
 
-(defmethod clojure.core/print-method CharsetMap
+#_(defmethod clojure.core/print-method CharsetMap
   [cs ^java.io.Writer writer]
   (.write writer (format "%s%s"
                          (charset cs)

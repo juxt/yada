@@ -355,16 +355,17 @@
                     (let [representation
                           (rep/select-representation req representations)]
 
+                      (infof "selected representation is %s" representation)
+
                       (if (nil? representation)
                         (d/error-deferred (ex-info "" {:status 406
                                                        ::http-response true}))
 
-                        #_(let [vary (negotiation/vary method representations)]
-                          (cond-> ctx
-                            negotiated (assoc-in [:response :representation] negotiated)
-                            ;; TODO: Merge these
-                            selected-representation (assoc-in [:response :selected-representation] selected-representation)
-                            vary (assoc-in [:response :vary] vary)))))))
+                        ;; vary (representation/vary representation)
+                        (cond-> ctx
+                          representation (assoc-in [:response :representation] representation)
+                          ;;vary (assoc-in [:response :vary] vary)
+                          )))))
 
                 ;; A current representation for the resource exists?
                 (link ctx
@@ -447,7 +448,7 @@
                         ;; resource state didn't change), then this
                         ;; etag will do for the response.
                         (assoc-in ctx [:response :etag]
-                                  (get etags (:selected-representation ctx)))))))
+                                  (get etags (:representation ctx)))))))
 
                 ;; Methods
                 (fn [ctx]
@@ -472,7 +473,7 @@
                     ;; only if the resource hasn't already set an etag
                     (when-let [version (or (-> ctx :response :version)
                                            (res/version (:resource ctx) ctx))]
-                      (let [etag (res/to-etag version (get-in ctx [:response :selected-representation]))]
+                      (let [etag (res/to-etag version (get-in ctx [:response :representation]))]
                         (assoc-in ctx [:response :etag] etag)))))
 
                 ;; If we have just mutated the resource, we should
@@ -505,7 +506,11 @@
                                    (when (not= method :options)
                                      (merge {}
                                             (when-let [x (get-in ctx [:response :representation :content-type])]
-                                              {"content-type" (mime/media-type->string x)})
+                                              (if-let [y (get-in ctx [:response :representation :charset])]
+                                                {"content-type" (mime/media-type->string (assoc-in x [:parameters "charset"] (charset/charset y)))}
+                                                {"content-type" (mime/media-type->string x)}))
+                                            (when-let [x (get-in ctx [:response :representation :encoding])]
+                                              {"content-encoding" x})
                                             (when-let [x (get-in ctx [:response :representation :language])]
                                               {"content-language" x})
                                             (when-let [x (get-in ctx [:response :last-modified])]

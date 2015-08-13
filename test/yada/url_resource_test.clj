@@ -25,4 +25,5 @@
       :status := 200
       [:headers "content-type"] := "text/css;charset=utf-8"
       [:headers "content-length"] :? nil?
-      :body :? (partial instance? BufferedReader))))
+      :body :instanceof BufferedReader
+      )))

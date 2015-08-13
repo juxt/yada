@@ -31,8 +31,8 @@
         (try
           (Float/parseFloat q)
           (catch java.lang.NumberFormatException e
-            1.0))
-        1.0)))))
+            (float 1.0)))
+        (float 1.0))))))
 
 ;; TODO: Replace memoize with cache to avoid memory exhaustion attacks
 (memoize
