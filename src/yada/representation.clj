@@ -312,7 +312,6 @@
   ([req reps]
    (select-representation req reps agent-preference-sequential-compare))
   ([req reps rater]
-   (infof "reps to choose from: %s" (seq reps))
    (let [best
          (->> reps
               (map (make-combined-quality-assessor req))
@@ -350,9 +349,9 @@
             (throw (ex-info (format "Resource or service declares it produces an unknown charset: %s" bad-charset) {:charset bad-charset})))
 
         (when-let [enc (:encoding rep)]
-          {:encoding (conj (to-set enc) "identity")})
+          {:encoding (set (map parse-encoding (conj (to-set enc) "identity")))})
         (when-let [langs (:language rep)]
-          {:language (to-set langs)})))
+          {:language (set (map parse-language (to-set langs)))})))
      reps)))
 
 (defn representation-seq
@@ -370,15 +369,31 @@
      (when language {:language language})
      (when encoding {:encoding encoding}))))
 
-(defn to-vary-header [vary]
+(defn vary
+  "From a representation-seq, find the variable dimensions"
+  [reps]
+  (cond-> #{}
+    (< 1 (count (distinct (keep (comp #(when % (mime/media-type %)) :content-type) reps))))
+    (conj :content-type)
+
+    (< 1 (count (distinct (keep (comp #(when % (charset/charset %)) :charset) reps))))
+    (conj :charset)
+
+    (< 1 (count (distinct (keep (comp :coding :encoding) reps))))
+    (conj :encoding)
+
+    (< 1 (count (distinct (keep (comp :language :language) reps))))
+    (conj :language)))
+
+(defn to-vary-header
+  "From the result of vary, construct a header"
+  [vary]
   (str/join ", "
-            ;; TODO: Is this really about removing nils. Replace with
-            ;; keep?
-            (filter string? (map {:charset "accept-charset"
-                                  :content-type "accept"
-                                  :encoding "accept-encoding"
-                                  :language "accept-language"}
-                                 vary))))
+            (keep {:charset "accept-charset"
+                   :content-type "accept"
+                   :encoding "accept-encoding"
+                   :language "accept-language"}
+                  vary)))
 
 ;; From representation ------------------------------
 

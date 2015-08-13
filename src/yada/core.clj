@@ -158,6 +158,8 @@
                             (when (satisfies? res/ResourceRepresentations resource)
                               (res/representations resource)))))
 
+         vary (rep/vary representations)
+
          ;; Calls to satisfies? have relatively poor performance, but
          ;; since this won't change we can do an ahead-of-time check.
          version? (satisfies? res/ResourceVersion resource)
@@ -174,6 +176,7 @@
        :allowed-methods allowed-methods
        :parameters parameters
        :representations representations
+       :vary vary
        :security security
        :authorization authorization
        :handler
@@ -355,8 +358,6 @@
                     (let [representation
                           (rep/select-representation req representations)]
 
-                      (infof "selected representation is %s" representation)
-
                       (if (nil? representation)
                         (d/error-deferred (ex-info "" {:status 406
                                                        ::http-response true}))
@@ -364,7 +365,7 @@
                         ;; vary (representation/vary representation)
                         (cond-> ctx
                           representation (assoc-in [:response :representation] representation)
-                          ;;vary (assoc-in [:response :vary] vary)
+                          vary (assoc-in [:response :vary] vary)
                           )))))
 
                 ;; A current representation for the resource exists?
@@ -506,17 +507,18 @@
                                    (when (not= method :options)
                                      (merge {}
                                             (when-let [x (get-in ctx [:response :representation :content-type])]
-                                              (if-let [y (get-in ctx [:response :representation :charset])]
-                                                {"content-type" (mime/media-type->string (assoc-in x [:parameters "charset"] (charset/charset y)))}
-                                                {"content-type" (mime/media-type->string x)}))
+                                              (let [y (get-in ctx [:response :representation :charset])]
+                                                (if (and y (= (:type x) "text"))
+                                                  {"content-type" (mime/media-type->string (assoc-in x [:parameters "charset"] (charset/charset y)))}
+                                                  {"content-type" (mime/media-type->string x)})))
                                             (when-let [x (get-in ctx [:response :representation :encoding])]
                                               {"content-encoding" x})
                                             (when-let [x (get-in ctx [:response :representation :language])]
                                               {"content-language" x})
                                             (when-let [x (get-in ctx [:response :last-modified])]
                                               {"last-modified" x})
-                                            #_(when-let [x (get-in ctx [:response :vary])]
-                                              {"vary" (negotiation/to-vary-header x)})
+                                            (when-let [x (get-in ctx [:response :vary])]
+                                              {"vary" (rep/to-vary-header x)})
                                             (when-let [x (get-in ctx [:response :etag])]
                                               {"etag" x})))
                                    (when-let [x (get-in ctx [:response :content-length])]

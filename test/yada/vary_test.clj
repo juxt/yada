@@ -5,46 +5,36 @@
    [clojure.test :refer :all]
    [clojure.string :as str]
    [yada.yada :as yada]
+   [yada.charset :as charset]
+   [yada.mime :as mime]
+   [yada.util :refer (parse-csv)]
    [ring.mock.request :refer (request)]
    [juxt.iota :refer (given)]
    [schema.test :as st]
-   [yada.representation :refer (coerce-representations)]))
+   [yada.representation :refer (coerce-representations representation-seq vary)]))
 
-#_(st/deftest vary-test
+;; TODO: Fix up these tests
+
+(st/deftest vary-test
   (given
-    (vary :get
-          (coerce-representations [{:content-type #{"text/plain" "text/html"}}]))
+    (vary
+     (representation-seq (coerce-representations [{:content-type #{"text/plain" "text/html"}}])))
     identity := #{:content-type})
 
   (given
-    (vary :get
-          (coerce-representations [{:charset #{"UTF-8" "Latin-1"}}]))
+    (vary
+     (representation-seq (coerce-representations [{:charset #{"UTF-8" "Latin-1"}}])))
     identity := #{:charset})
 
   (given
-    (vary :get
-          (coerce-representations [{:content-type #{"text/plain" "text/html"}
-                                   :charset #{"UTF-8" "Latin-1"}}]))
+    (vary
+     (representation-seq (coerce-representations [{:content-type #{"text/plain" "text/html"}
+                                                   :charset #{"UTF-8" "Latin-1"}}])))
     identity := #{:content-type :charset})
 
-  (testing "method guards"
-      (given
-        (vary :post
-              (coerce-representations [{:method #{:post}
-                                       :content-type #{"application/json"}}
-                                      {:method #{:get}
-                                       :content-type #{"text/plain" "text/html"}
-                                       :charset #{"UTF-8" "Latin-1"}}]))
-        identity := nil)
-    (given
-        (vary :get
-              (coerce-representations [{:content-type #{"application/json"}}
-                                      {:method #{:get}
-                                       :content-type #{"text/plain"}
-                                       :charset #{"UTF-8"}}]))
-        identity := #{:content-type})))
+  )
 
-#_(st/deftest vary-header-test []
+(st/deftest vary-header-test []
   (let [resource "Hello World!"
         handler (yada/resource resource {:content-type #{"text/plain" "text/html"}})
         request (request :head "/")
@@ -52,5 +42,5 @@
     (given response
       :status := 200
       [:headers "vary"] :? some?
-      [:headers "vary" parse-csv] := #{"accept"}
+      [:headers "vary" parse-csv set] := #{"accept"}
       )))
