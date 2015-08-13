@@ -85,7 +85,9 @@
   (allowed-methods [_] #{:get :head :put :delete})
 
   ResourceExistence
-  (exists? [_ ctx] (.exists f))
+  (exists? [_ ctx]
+    (infof "Calling exists on %s, result is %s" f (.exists f))
+    (.exists f))
 
   ResourceModification
   (last-modified [_ ctx] (Date. (.lastModified f)))
@@ -108,15 +110,7 @@
     ;; response body and have aleph efficiently stream it via NIO. This
     ;; code allows the same efficiency for file uploads.
 
-    (if (.exists f)
-      ;; We need to return the file, but also we need to neg content-type
-      (let [neg (negotiate-file-info f ctx)]
-        (cond-> (:response ctx)
-          f (assoc :body f)
-          neg (assoc-in [:response :representation] neg)))
-
-      ;; Otherwise if file doesn't exist
-      (throw (ex-info "Not found" {:status 404 :yada.core/http-response true}))))
+    (assoc (:response ctx) :body f))
 
   Put
   (PUT [_ ctx] (bs/transfer (-> ctx :request :body) f))
@@ -126,10 +120,10 @@
 
   ResourceRepresentations
   (representations [_]
-    [{:method #{:get :head}
-      :content-type (set (remove nil? [(ext-mime-type (.getName f))]))}]))
+    ;; TODO: Rename :content-type to :media-type
+    [{:content-type (or (ext-mime-type (.getName f)) "application/octet-stream")}]))
 
-(defrecord DirectoryResource [dir]
+#_(defrecord DirectoryResource [dir]
   ResourceAllowedMethods
   (allowed-methods [_] #{:get :head :put :delete})
 
@@ -221,5 +215,6 @@
   File
   (make-resource [f]
     (if (.isDirectory f)
-      (->DirectoryResource f)
+      (throw (ex-info "TODO: No implementation yet for directories" {}))
+      #_(->DirectoryResource f)
       (->FileResource f))))

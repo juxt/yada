@@ -342,31 +342,18 @@
                 ;; TODO: Unknown Content-Type? (incorporate this into conneg)
                 (link ctx
 
-                  ;; We do not do negotiation for representations if the
-                  ;; request has some path-info - that makes it
-                  ;; context-sensitive and negotiation must be done
-                  ;; dynamically in the resource implementation.
+                  (let [representation
+                        (rep/select-representation req representations)]
 
-                  ;; (TODO: We should apply the same rationale to methods
-                  ;; and parameters)
+                    (if (nil? representation)
+                      (d/error-deferred (ex-info "" {:status 406
+                                                     ::http-response true}))
 
-                  ;; TODO: It is better that we simply filter out
-                  ;; representations that are guarded by a path-info
-                  ;; pattern in the representations.
-                  (when (nil? (:path-info req))
-
-                    (let [representation
-                          (rep/select-representation req representations)]
-
-                      (if (nil? representation)
-                        (d/error-deferred (ex-info "" {:status 406
-                                                       ::http-response true}))
-
-                        ;; vary (representation/vary representation)
-                        (cond-> ctx
-                          representation (assoc-in [:response :representation] representation)
-                          vary (assoc-in [:response :vary] vary)
-                          )))))
+                      ;; vary (representation/vary representation)
+                      (cond-> ctx
+                        representation (assoc-in [:response :representation] representation)
+                        vary (assoc-in [:response :vary] vary)
+                        ))))
 
                 ;; A current representation for the resource exists?
                 (link ctx
@@ -376,6 +363,10 @@
                      (fn [exists?]
                        (assoc ctx :exists? exists?)))
                     (assoc ctx :exists? true)))
+
+                (link ctx
+                  (infof "Exists set on context: %s" (:exists? ctx))
+                  )
 
                 ;; Conditional requests - last modified time
                 (fn [ctx]
@@ -518,7 +509,8 @@
                                             (when-let [x (get-in ctx [:response :last-modified])]
                                               {"last-modified" x})
                                             (when-let [x (get-in ctx [:response :vary])]
-                                              {"vary" (rep/to-vary-header x)})
+                                              (when (not-empty x)
+                                                {"vary" (rep/to-vary-header x)}))
                                             (when-let [x (get-in ctx [:response :etag])]
                                               {"etag" x})))
                                    (when-let [x (get-in ctx [:response :content-length])]
@@ -537,6 +529,8 @@
                ;; Handle exits
                (d/catch clojure.lang.ExceptionInfo
                    #(let [data (ex-data %)]
+                      (infof "Catching ex-info")
+
                       (if (::http-response data)
                         (if-let [debug-data (when debug (::debug data))]
                           (assoc data :body (prn-str debug-data))

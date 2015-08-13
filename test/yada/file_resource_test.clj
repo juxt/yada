@@ -110,13 +110,17 @@
 
             (is (not (exists? f)))
 
+            (infof "START")
+
             (given @(handler (request :get "/"))
               :status := 404
-              :body :? nil?))
+              :body :? nil?)
+
+            (infof "END"))
 
           (is (not (.exists f)) "File should have been deleted by the DELETE"))))))
 
-(st/deftest temp-dir-test
+#_(st/deftest temp-dir-test
   (let [dir (.toFile (java.nio.file.Files/createTempDirectory "yada" (make-array java.nio.file.attribute.FileAttribute 0)))]
     (is (exists? dir))
 

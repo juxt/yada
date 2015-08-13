@@ -115,8 +115,8 @@
   (idempotent? [_] true)
   (request [this ctx]
     (when (false? (:exists? ctx))
-      (d/error-deferred (ex-info "" {:status 404
-                                     :yada.core/http-response true})))
+      (throw (ex-info "" {:status 404
+                          :yada.core/http-response true})))
 
     (d/chain
      ;; GET request normally returns a (possibly deferred) body.
