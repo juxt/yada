@@ -317,7 +317,7 @@
               (map (make-combined-quality-assessor req))
               (filter (comp not :rejected))
               (best-by (comp rater :qualities)))]
-     (dissoc best :qualities))))
+     (-> best (dissoc :qualities)))))
 
 ;; From representation ------------------------------
 

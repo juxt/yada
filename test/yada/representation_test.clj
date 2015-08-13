@@ -69,8 +69,14 @@
     (is (= ((get-highest-content-type-quality
              {:headers {"accept" "image/png,text/*"}}
              {:content-type (mime/string->media-type "text/html")}) 1)
-           ;; We get a match with a specificty score of 2
+           ;; We get a match with a specificity score of 2
            2)))
+
+  (testing "Wildcard type mismatch"
+    (is (= (get-highest-content-type-quality
+            {:headers {"accept" "text/*"}}
+            {:content-type (mime/string->media-type "image/png")})
+           :rejected)))
 
   (testing "Specific match beats wildcard"
     (is (= ((get-highest-content-type-quality
@@ -310,21 +316,42 @@
 ;; that the user agent will accept any charset in response. "
 ;; -- RFC 7231 Section 5.3.3
 
-(deftest select-representation-test
-  (testing "No headers. Implied Accept: */*"
-    (let [reps [{:content-type (mime/string->media-type "text/html")
-                 :charset (charset/to-charset-map "utf-8")}
-                {:content-type (mime/string->media-type "text/xml;q=0.9")
-                 :charset (charset/to-charset-map "utf-8")}
-                {:content-type (mime/string->media-type "image/png;q=0.9")}]]
+(deftest ^{:doc "If you find bugs in yada with end-to-end (proactive)
+  content negotiation, here's a good place to put a test."}
+  select-representation-test
+  (let [reps [{:content-type (mime/string->media-type "text/html")
+               :charset (charset/to-charset-map "utf-8")}
+              {:content-type (mime/string->media-type "text/xml;q=0.9")
+               :charset (charset/to-charset-map "utf-8")}
+              {:content-type (mime/string->media-type "text/xml;q=0.9")
+               :charset (charset/to-charset-map "us-ascii")}
+              {:content-type (mime/string->media-type "image/png")}]]
+
+    (testing "No headers. Implied Accept: */*"
+      (is (= (rep/select-representation
+              {:headers {}} reps)
+             {:content-type (mime/string->media-type "text/html")
+              :charset (charset/to-charset-map "utf-8")})))
+
+    (testing "Basic match"
+      (is (= (rep/select-representation
+              {:headers {"accept" "text/html"}} reps)
+             {:content-type (mime/string->media-type "text/html")
+              :charset (charset/to-charset-map "utf-8")}))
+
+      (is (= (rep/select-representation {:headers {"accept" "text/xml"}} reps)
+             {:content-type (mime/string->media-type "text/xml;q=0.9")
+              :charset (charset/to-charset-map "utf-8")}))
 
       (is (= (rep/select-representation
-              {:headers {}}
-              reps
-              ;;rep/agent-preference-compound-quality
-              )
-             (reps 0))))))
+              {:headers {"accept" "image/png"}} reps)
+             {:content-type (mime/string->media-type "image/png")})))
 
+    (testing "Wildcard match"
+      (is (= (rep/select-representation
+              {:headers {"accept" "image/*"}}
+              reps)
+             {:content-type (mime/string->media-type "image/png")})))))
 
 
 ;;                     "accept-charset" "utf-8"
