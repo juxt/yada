@@ -12,7 +12,7 @@
             [yada.resource :refer [ResourceAllowedMethods ResourceExistence ResourceModification ResourceRepresentations ResourceFetch ResourceCoercion representations platform-charsets]]
             [yada.representation :as rep]
             [yada.methods :refer (Get GET Put PUT Post POST Delete DELETE)]
-            [yada.negotiation :as negotiation]
+
             [yada.mime :as mime])
   (:import [java.io File]
            [java.util Date TimeZone]
@@ -71,15 +71,14 @@
                     (java.util.Date. (.lastModified child)))]])]]]]))))
 
 (defn negotiate-file-info [f ctx]
-  (let [neg
-        (negotiation/interpret-negotiation
-         (first (negotiation/negotiate
-                 (negotiation/extract-request-info (:request ctx))
-                 (negotiation/coerce-representations
-                  [{:content-type (set (remove nil? [(ext-mime-type (.getName f))]))}]))))]
-    (when-let [status (:status neg)]
-      (throw (ex-info "" {:status status :yada.core/http-response true})))
-    neg))
+  (let [representation
+        (rep/select-representation
+         (:request ctx)
+         (rep/coerce-representations
+          [{:content-type (set (remove nil? [(ext-mime-type (.getName f))]))}]))]
+    (when-not representation
+      (throw (ex-info "" {:status 406 :yada.core/http-response true})))
+    representation))
 
 (defrecord FileResource [f]
   ResourceAllowedMethods
@@ -151,39 +150,37 @@
   (GET [this ctx]
     (if-let [path-info (-> ctx :request :path-info)]
       (if (= path-info "")
-        (let [neg (negotiation/interpret-negotiation
-                   (first (negotiation/negotiate
-                           (negotiation/extract-request-info (:request ctx))
-                           (negotiation/coerce-representations (representations this)))))
-              ct (:content-type neg)]
+        (let [representation (rep/select-representation
+                              (:request ctx)
+                              (rep/coerce-representations (representations this)))
+              ct (:content-type representation)]
 
           (cond-> (:response ctx)
-            true (assoc :body (rep/to-body (dir-index dir ct) neg))
-            neg (assoc :representation neg)))
+            true (assoc :body (rep/to-body (dir-index dir ct) representation))
+            representation (assoc :representation representation)))
 
         (let [f (child-file dir path-info)]
           (cond
 
             (.isFile f)
             ;; If it's a file, we must negotiate the content-type
-            (let [neg (negotiate-file-info f ctx)]
+            (let [representation (negotiate-file-info f ctx)]
               (cond-> (:response ctx)
                 f (assoc :body f)
-                (:content-type neg) (assoc :content-type (:content-type neg))))
+                (:content-type representation) (assoc :content-type (:content-type representation))))
 
             (.isDirectory f)
             ;; This is sub-directory, with path-info, so no
             ;; negotiation has been done (see yada.core which explains
             ;; why negotiation is not done when there's a path-info in
             ;; the request)
-            (let [neg (negotiation/interpret-negotiation
-                       (first (negotiation/negotiate
-                               (negotiation/extract-request-info (:request ctx))
-                               (negotiation/coerce-representations (representations this)))))
-                  ct (:content-type neg)]
+            (let [representation (rep/select-representation
+                                  (:request ctx)
+                                  (rep/coerce-representations (representations this)))
+                  ct (:content-type representation)]
               (cond-> (:response ctx)
-                true (assoc :body (rep/to-body (dir-index f ct) neg))
-                neg (assoc :representation neg)))
+                true (assoc :body (rep/to-body (dir-index f ct) representation))
+                representation (assoc :representation representation)))
 
             :otherwise
             (throw (ex-info "File not found" {:status 404 :yada.core/http-response true})))))

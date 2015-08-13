@@ -8,7 +8,6 @@
    [yada.charset :as charset]
    [yada.mime :as mime]
    [yada.util :refer (parse-csv best best-by http-token OWS)]
-   [yada.negotiation :as negotiation]
    [yada.representation :as rep]))
 
 (defn- get-highest-content-type-quality

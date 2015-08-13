@@ -17,9 +17,9 @@
    [schema.core :as s]
    [ring.swagger.schema :as rs]
    [ring.util.codec :as codec]
+   [yada.coerce :refer (to-set to-list)]
    [yada.charset :as charset]
    [yada.mime :as mime]
-   [yada.negotiation :as negotiation]
    [yada.resource :as res]
    [yada.util :refer (best best-by parse-csv http-token OWS)]
    manifold.stream.async
@@ -318,6 +318,66 @@
               (filter (comp not :rejected))
               (best-by (comp rater :qualities)))]
      (-> best (dissoc :qualities)))))
+
+(defn coerce-representations
+  "For performance reasons it is sensible to coerce the representations
+  ahead of time, rather than on each request."
+  [reps]
+  (when reps
+    (mapv
+     (fn [rep]
+       (merge
+        (select-keys rep [:method])
+        (when-let [ct (:content-type rep)]
+          {:content-type (set (map mime/string->media-type (to-set ct)))})
+        (when-let [cs (:charset rep)]
+          {:charset (set (map charset/to-charset-map (to-set cs)))})
+
+        ;; Check to see if the server-specified charset is
+        ;; recognized (registered with IANA). If it isn't we
+        ;; throw a 500, as this is a server error. (It might be
+        ;; necessary to disable this check in future but a
+        ;; balance should be struck between giving the
+        ;; developer complete control to dictate charsets, and
+        ;; error-proofing. It might be possible to disable
+        ;; this check for advanced users if a reasonable case
+        ;; is made.)
+        #_(when-let [bad-charset
+                     (some (fn [mt] (when-let [charset (some-> mt :parameters (get "charset"))]
+                                     (when-not (charset/valid-charset? charset) charset)))
+                           available-content-types)]
+            (throw (ex-info (format "Resource or service declares it produces an unknown charset: %s" bad-charset) {:charset bad-charset})))
+
+        (when-let [enc (:encoding rep)]
+          {:encoding (conj (to-set enc) "identity")})
+        (when-let [langs (:language rep)]
+          {:language (to-set langs)})))
+     reps)))
+
+(defn representation-seq
+  "Return a sequence of all possible individual representations from the
+  result of coerce-representations."
+  [reps]
+  (for [rep reps
+        content-type (or (:content-type rep) [nil])
+        charset (or (:charset rep) [nil])
+        language (or (:language rep) [nil])
+        encoding (or (:encoding rep) [nil])]
+    (merge
+     (when content-type {:content-type content-type})
+     (when charset {:charset charset})
+     (when language {:language language})
+     (when encoding {:encoding encoding}))))
+
+(defn to-vary-header [vary]
+  (str/join ", "
+            ;; TODO: Is this really about removing nils. Replace with
+            ;; keep?
+            (filter string? (map {:charset "accept-charset"
+                                  :content-type "accept"
+                                  :encoding "accept-encoding"
+                                  :language "accept-language"}
+                                 vary))))
 
 ;; From representation ------------------------------
 

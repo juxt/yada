@@ -29,7 +29,6 @@
    [yada.response :refer (->Response)]
    [yada.representation :as rep]
    [yada.methods :as methods]
-   [yada.negotiation :as negotiation]
    [yada.service :as service]
    [yada.resource :as res]
    [yada.mime :as mime]
@@ -149,17 +148,15 @@
                         (when (satisfies? res/ResourceParameters resource)
                           (res/parameters resource)))
 
-         representations (negotiation/coerce-representations
-                          (or
-                           (:representations options)
-                           (when-let [rep (:representation options)] [rep])
-                           (let [m (select-keys options [:content-type :charset :encoding :language])]
-                             (when (not-empty m) [m]))
-                           (when (satisfies? res/ResourceRepresentations resource)
-                             (res/representations resource))))
-
-         ;; TODO: Merge with representations above
-         all-representations (set (negotiation/representation-seq representations))
+         representations (rep/representation-seq
+                          (rep/coerce-representations
+                           (or
+                            (:representations options)
+                            (when-let [rep (:representation options)] [rep])
+                            (let [m (select-keys options [:content-type :charset :encoding :language])]
+                              (when (not-empty m) [m]))
+                            (when (satisfies? res/ResourceRepresentations resource)
+                              (res/representations resource)))))
 
          ;; Calls to satisfies? have relatively poor performance, but
          ;; since this won't change we can do an ahead-of-time check.
@@ -177,7 +174,6 @@
        :allowed-methods allowed-methods
        :parameters parameters
        :representations representations
-       :all-representations all-representations
        :security security
        :authorization authorization
        :handler
@@ -356,44 +352,14 @@
                   ;; pattern in the representations.
                   (when (nil? (:path-info req))
 
-                    ;; TODO Use yada.resource/Negotiable, cache the
-                    ;; satisfies? on the resource first, it's expensive to
-                    ;; do on every request
+                    (let [representation
+                          (rep/select-representation req representations)]
 
-                    (let [neg (first
-                               (negotiation/negotiate
-                                (negotiation/extract-request-info req)
-                                representations))
+                      (if (nil? representation)
+                        (d/error-deferred (ex-info "" {:status 406
+                                                       ::http-response true}))
 
-                          selected-representation (when neg
-                                                    (merge {}
-                                                           (when-let [x (:content-type neg)] {:content-type x})
-                                                           (when-let [x (-> neg :charset second)] {:charset (charset/to-charset-map x)})
-                                                           (when-let [x (:encoding neg)] {:encoding x})
-                                                           (when-let [x (:language neg)] {:language x})
-                                                           ))
-
-
-                          negotiated (when neg
-                                       (negotiation/interpret-negotiation neg))]
-
-                      ;; When representations and all-representations
-                      ;; have been merged (i.e. when negotiate has been
-                      ;; rewritten to select out of
-                      ;; all-representations), this assertion can be
-                      ;; removed. Until then, it serves as a useful
-                      ;; check.
-                      (when neg
-                        (when-not (contains? all-representations selected-representation)
-                          (throw (ex-info "Selected representation not known"
-                                          {:selected-representation selected-representation
-                                           :all-representations all-representations
-                                           :neg neg}))))
-
-                      (if (:status negotiated)
-                        (d/error-deferred (ex-info "" (merge negotiated {::http-response true})))
-
-                        (let [vary (negotiation/vary method representations)]
+                        #_(let [vary (negotiation/vary method representations)]
                           (cond-> ctx
                             negotiated (assoc-in [:response :representation] negotiated)
                             ;; TODO: Merge these
@@ -455,7 +421,7 @@
 
                     ;; We have an If-Match to process
                     (cond
-                      (and (contains? matches "*") (pos? (count all-representations)))
+                      (and (contains? matches "*") (pos? (count representations)))
                       ;; No need to compute etag, exit
                       ctx
 
@@ -465,7 +431,7 @@
                       ;; Create a map of representation -> etag
                       version?
                       (let [version (res/version (:resource ctx) ctx)
-                            etags (into {} (map (juxt identity (partial res/to-etag version)) all-representations))]
+                            etags (into {} (map (juxt identity (partial res/to-etag version)) representations))]
 
                         (when (empty? (set/intersection matches (set (vals etags))))
                           (throw
@@ -544,7 +510,7 @@
                                               {"content-language" x})
                                             (when-let [x (get-in ctx [:response :last-modified])]
                                               {"last-modified" x})
-                                            (when-let [x (get-in ctx [:response :vary])]
+                                            #_(when-let [x (get-in ctx [:response :vary])]
                                               {"vary" (negotiation/to-vary-header x)})
                                             (when-let [x (get-in ctx [:response :etag])]
                                               {"etag" x})))
