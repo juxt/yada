@@ -7,9 +7,6 @@
    clojure.core.async.impl.protocols)
   (:import [clojure.core.async.impl.protocols ReadPort]))
 
-(defmacro link [ctx body]
-  `(fn [~ctx] (or ~body ~ctx)))
-
 ;; Old comment :-
 ;; If this is something we can take from, in the core.async
 ;; sense, then call body again. We need this clause here

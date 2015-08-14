@@ -24,7 +24,7 @@
 (extend-type HttpResource
   Ring
   (request [this req m]
-    ((:handler this) req (make-context)))
+    (this req))
   Matched
   (resolve-handler [this m]
     (succeed this m))

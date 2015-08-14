@@ -10,7 +10,6 @@
    [yada.representation :as rep]
    [yada.resource :as res]
    [yada.service :as service]
-   [yada.util :refer (link)]
    yada.response)
   (:import
    [yada.response Response]
@@ -38,7 +37,7 @@
   (idempotent? [_] "Is the method considered idempotent? Return a boolean")
   (request [_ ctx] "Apply the method to the resource"))
 
-(defn methods
+(defn known-methods
   "Return a map of method instances"
   []
   (into {}
@@ -268,8 +267,9 @@
   (safe? [_] true)
   (idempotent? [_] true)
   (request [_ ctx]
+    (infof "ctx is %s" ctx)
     (let [ctx (assoc-in ctx [:response :headers "allow"]
-                        (str/join ", " (map (comp (memfn toUpperCase) name) (:allowed-methods ctx))))]
+                        (str/join ", " (map (comp (memfn toUpperCase) name) (-> ctx :allowed-methods))))]
       ;; TODO: Build in explicit support for CORS pre-flight requests
       (if (satisfies? Options (:resource ctx))
         (d/chain
