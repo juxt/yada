@@ -141,7 +141,7 @@ However, yada is not a fully-fledged 'batteries-included' web
 'framework'. It does not offer URI routing and link formation, nor does
 it offer views and templating. It does, however, integrate seamlessly
 with its sibling library [bidi](https://github.com/juxt/bidi (for URI
-routing and formation) and other routing libraries. It can integrated
+routing and formation) and other routing libraries. It can be integrated
 with the many template libraries available for Clojure and Java, so you
 can build your own web-framework from yada and other libraries.
 
