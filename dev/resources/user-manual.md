@@ -1008,13 +1008,6 @@ The design of yada differs from the modular approach taken by Ring, and
 instead offers something of a monolith. Arguably, this approach results
 is a more complete and accurate implementation of HTTP.
 
-Given the choice of a home-brew kit for making your own beer, or getting
-your beer from an established brewery, many people opt for the latter.
-
-While yada is still something of a fashionably modern craft beer, it is
-hoped that given time it will mature into a stable and trusted
-foundation for HTTP-based services.
-
 ### Pedestal
 
 yada, like pedestal, is built on an interceptor chain, but this is an
