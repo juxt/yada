@@ -582,7 +582,7 @@ Clojure application with a Leiningen `project.clj` file, include the
 following in the file's __:dependencies__ section.
 
 ```clojure
-[yada "1.0.0-20150804.111215-2"]
+[yada "1.0.0-20150815.084135-3"]
 [aleph "0.4.0"]
 ```
 
