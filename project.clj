@@ -33,7 +33,7 @@
   {:dev {:main yada.dev.main ; needs dev profile: lein with-profile dev
                              ; trampoline run
          :dependencies
-         [[org.clojure/clojure "1.7.0-RC2"]
+         [[org.clojure/clojure "1.7.0"]
 
           [org.clojure/tools.logging "0.3.1"]
           [org.clojure/tools.trace "0.7.8"]
