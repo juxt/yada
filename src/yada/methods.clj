@@ -7,7 +7,7 @@
    [clojure.tools.logging :refer :all]
    [manifold.deferred :as d]
    [yada.mime :as mime]
-   [yada.representation :as rep]
+   [yada.body :as body]
    [yada.resource :as res]
    [yada.service :as service]
    yada.response)
@@ -127,10 +127,10 @@
      (fn [ctx]
        (let [representation (get-in ctx [:response :representation])]
          ;; representation could be nil, for example, resource could be a java.io.File
-         (update-in ctx [:response :body] rep/to-body representation)))
+         (update-in ctx [:response :body] body/to-body representation)))
 
      (fn [ctx]
-       (let [content-length (rep/content-length (get-in ctx [:response :body]))]
+       (let [content-length (body/content-length (get-in ctx [:response :body]))]
          (cond-> ctx content-length (assoc-in [:response :content-length] content-length)))))))
 
 ;; --------------------------------------------------------------------------------

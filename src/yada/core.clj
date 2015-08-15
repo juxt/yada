@@ -15,6 +15,7 @@
    [ring.util.request :as req]
    ring.util.time
    schema.utils
+   [yada.body :as body]
    [yada.charset :as charset]
    [yada.methods :as methods]
    [yada.representation :as rep]
@@ -146,7 +147,7 @@
                         :body
                         (when-let [schema (get-in parameters [method :body])]
                           (let [body (read-body (-> ctx :request))]
-                            (rep/coerce-request-body body (req/content-type request) schema)))
+                            (body/coerce-request-body body (req/content-type request) schema)))
 
                         :form
                         ;; TODO: Can we use rep:from-representation
