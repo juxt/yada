@@ -213,7 +213,7 @@
 
 (extend-protocol ResourceCoercion
   File
-  (make-resource [f]
+  (as-resource [f]
     (if (.isDirectory f)
       (throw (ex-info "TODO: No implementation yet for directories" {}))
       #_(->DirectoryResource f)

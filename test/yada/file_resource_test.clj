@@ -124,7 +124,7 @@
 
       (testing "Start with 0 files"
         (given dir
-          [p/make-resource #(p/exists? % {})] :? true?
+          [p/as-resource #(p/exists? % {})] :? true?
           [(memfn listFiles) count] := 0))
 
       (testing "PUT a new file"

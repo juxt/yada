@@ -29,5 +29,5 @@
 
 (extend-protocol p/ResourceCoercion
   String
-  (make-resource [s]
+  (as-resource [s]
     (->StringResource s (to-date (now)))))

@@ -52,7 +52,7 @@
 
 (deftest allowed-methods-test
   (testing "methods-deduced"
-    (are [r e] (= (p/allowed-methods (p/make-resource r)) e)
+    (are [r e] (= (p/allowed-methods (p/as-resource r)) e)
       nil #{:get}
       "Hello" #{:get}
       (reify Get (GET [_ _] "foo")) #{:get}

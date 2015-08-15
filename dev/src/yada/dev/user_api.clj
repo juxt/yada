@@ -52,7 +52,7 @@
                                    :responses {200 {:description "Known user"}
                                                404 {:description "Unknown user"}}}}
                    :parameters {:get {:path {:username s/Str}}}
-                   :representations (p/representations (p/make-resource {}))})
+                   :representations (p/representations (p/as-resource {}))})
 
               "/posts" (yada/resource
                         (fn [ctx] nil)

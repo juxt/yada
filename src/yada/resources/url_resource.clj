@@ -33,4 +33,4 @@
       (.openStream u)))
 
   p/ResourceCoercion
-  (make-resource [url] url))
+  (as-resource [url] url))

@@ -25,5 +25,5 @@
 
 (extend-protocol p/ResourceCoercion
   APersistentMap
-  (make-resource [m]
+  (as-resource [m]
     (->MapResource m (to-date (now)))))

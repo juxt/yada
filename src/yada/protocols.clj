@@ -13,7 +13,7 @@
 ;; Resource protocols
 
 (defprotocol ResourceCoercion
-  (make-resource [_] "Coerce to a resource. Often, resources need to be
+  (as-resource [_] "Coerce to a resource. Often, resources need to be
   coerced rather than simply extending types with the Resource
   protocol. We can exploit the time of coercion to know the time of
   birth for the resource, which supports time-based conditional
@@ -23,10 +23,10 @@
 
 (extend-protocol ResourceCoercion
   Object
-  (make-resource [o] o)
+  (as-resource [o] o)
 
   nil
-  (make-resource [_] nil))
+  (as-resource [_] nil))
 
 ;; Fetch
 

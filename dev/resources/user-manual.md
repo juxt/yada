@@ -761,7 +761,7 @@ resources.
 
 (extend-protocol ResourceCoercion
   String
-  (make-resource [s]
+  (as-resource [s]
     (->StringResource s (to-date (now)))))
 ```
 
@@ -771,13 +771,13 @@ Recall the _Hello World!_ example.
 (yada/resource "Hello World!")
 ```
 
-yada calls `make-resource` on the argument. This declaration causes a
+yada calls `as-resource` on the argument. This declaration causes a
 new instance of the `StringResource` record to be created.
 
 ```clojure
 (extend-protocol ResourceCoercion
   String
-  (make-resource [s]
+  (as-resource [s]
   (->StringResource s (to-date (now)))))
 ```
 

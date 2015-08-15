@@ -62,5 +62,5 @@
 
 (extend-protocol p/ResourceCoercion
   clojure.lang.Atom
-  (make-resource [a]
-    (wrap-atom (p/make-resource @a) a)))
+  (as-resource [a]
+    (wrap-atom (p/as-resource @a) a)))

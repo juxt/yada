@@ -26,5 +26,5 @@
 
 (extend-protocol p/ResourceCoercion
   ReadPort
-  (make-resource [ch]
+  (as-resource [ch]
     (->ChannelResource (mult ch))))

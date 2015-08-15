@@ -469,7 +469,7 @@
    (let [base resource
 
          resource (if (satisfies? p/ResourceCoercion resource)
-                    (p/make-resource resource)
+                    (p/as-resource resource)
                     resource)
 
          known-methods (methods/known-methods)
