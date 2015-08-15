@@ -129,7 +129,7 @@ leaving you with far less handler code to write and maintain.
 
 yada is built on a fully asynchronous core, allowing you to
 exploit the asynchronous features of modern web servers, to achieve
-greater scalability for Clojure-powered your websites and APIs.
+greater scalability for your Clojure-powered websites and APIs.
 
 yada is data-centric, letting you specify your web resources
 as _data_. This has some compelling advantages, such as being able to
