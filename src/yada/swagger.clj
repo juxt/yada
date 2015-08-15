@@ -35,9 +35,6 @@
         http-resource (-> route :handler)
         {:keys [resource options allowed-methods parameters representations]} http-resource
         swagger (:swagger options)]
-
-    (infof "representations = %s" (seq representations))
-
     [path
      (merge-with merge
                  (into {}

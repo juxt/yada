@@ -85,9 +85,7 @@
   (allowed-methods [_] #{:get :head :put :delete})
 
   ResourceExistence
-  (exists? [_ ctx]
-    (infof "Calling exists on %s, result is %s" f (.exists f))
-    (.exists f))
+  (exists? [_ ctx] (.exists f))
 
   ResourceModification
   (last-modified [_ ctx] (Date. (.lastModified f)))

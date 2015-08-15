@@ -110,13 +110,9 @@
 
             (is (not (exists? f)))
 
-            (infof "START")
-
             (given @(handler (request :get "/"))
               :status := 404
-              :body :? nil?)
-
-            (infof "END"))
+              :body :? nil?))
 
           (is (not (.exists f)) "File should have been deleted by the DELETE"))))))
 
