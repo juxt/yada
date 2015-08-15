@@ -19,7 +19,8 @@
    [clojure.core.async.impl.channels ManyToManyChannel]
    [java.io File]
    [java.net URL]
-   [manifold.stream.async CoreAsyncSource]))
+   [manifold.stream.async CoreAsyncSource]
+   [manifold.stream SourceProxy]))
 
 ;; Coerce request body  ------------------------------
 
@@ -88,6 +89,10 @@
 
   java.io.Reader
   (to-body [r _] r)
+  (content-length [_] nil)
+
+  SourceProxy
+  (to-body [s _] s)
   (content-length [_] nil)
 
   Object

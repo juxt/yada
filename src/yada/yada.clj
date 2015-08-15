@@ -11,6 +11,7 @@
    yada.resources.misc
    yada.resources.string-resource
    yada.resources.url-resource
+   yada.resources.sse
    [potemkin :refer (import-vars)]))
 
 (import-vars
