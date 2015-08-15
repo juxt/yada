@@ -29,9 +29,6 @@
 (defn make-context []
   {:response (->Response)})
 
-(defmacro link [ctx body]
-  `(fn [~ctx] (or ~body ~ctx)))
-
 ;; TODO: Read and understand the date algo presented in RFC7232 2.2.1
 
 (defn round-seconds-up
@@ -88,42 +85,47 @@
           (d/chain
 
            ;; Available?
-           (link ctx
+           (fn [ctx]
              (let [res (service/service-available? (:service-available? http-resource) ctx)]
                (if-not (service/interpret-service-available res)
                  (d/error-deferred
                   (ex-info "" (merge {:status 503
                                       ::http-response true}
-                                     (when-let [retry-after (service/retry-after res)] {:headers {"retry-after" retry-after}})))))))
+                                     (when-let [retry-after (service/retry-after res)] {:headers {"retry-after" retry-after}}))))
+                 ctx)))
 
            ;; Known method?
-           (link ctx
-             (when-not (:method-instance ctx)
-               (d/error-deferred (ex-info "" {:status 501 ::method method ::http-response true}))))
+           (fn [ctx]
+             (if-not (:method-instance ctx)
+               (d/error-deferred (ex-info "" {:status 501 ::method method ::http-response true}))
+               ctx))
 
            ;; URI too long?
-           (link ctx
-             (when (service/request-uri-too-long? (:request-uri-too-long? options) (:uri request))
+           (fn [ctx]
+             (if (service/request-uri-too-long? (:request-uri-too-long? options) (:uri request))
                (d/error-deferred (ex-info "" {:status 414
-                                              ::http-response true}))))
+                                              ::http-response true}))
+               ctx))
 
            ;; TRACE
-           (link ctx
-             (when (#{:trace} method)
+           (fn [ctx]
+             (if (#{:trace} method)
                (if (false? (:trace options))
                  (d/error-deferred (ex-info "Method Not Allowed"
                                             {:status 405
                                              ::http-response true}))
-                 (methods/request (:method-instance ctx) ctx))))
+                 (methods/request (:method-instance ctx) ctx))
+               ctx))
 
            ;; Is method allowed on this resource?
-           (link ctx
-             (when-not (contains? (:allowed-methods http-resource) method)
+           (fn [ctx]
+             (if-not (contains? (:allowed-methods http-resource) method)
                (d/error-deferred
                 (ex-info "Method Not Allowed"
                          {:status 405
                           :headers {"allow" (str/join ", " (map (comp (memfn toUpperCase) name) (:allowed-methods http-resource)))}
-                          ::http-response true}))))
+                          ::http-response true})))
+             ctx)
 
            ;; Malformed? (parameters)
            (fn [ctx]
@@ -133,37 +135,37 @@
 
                    parameters
                    (when parameters
-                       {:path
-                        (when-let [schema (get-in parameters [method :path])]
-                          (rs/coerce schema (:route-params request) :query))
+                     {:path
+                      (when-let [schema (get-in parameters [method :path])]
+                        (rs/coerce schema (:route-params request) :query))
 
-                        :query
-                        (when-let [schema (get-in parameters [method :query])]
-                          ;; We'll call assoc-query-params with the negotiated charset, falling back to UTF-8.
-                          ;; Also, read this:
-                          ;; http://www.w3.org/TR/html5/forms.html#application/x-www-form-urlencoded-encoding-algorithm
-                          (rs/coerce schema (-> request (assoc-query-params (or (:charset ctx) "UTF-8")) :query-params keywordize) :query))
+                      :query
+                      (when-let [schema (get-in parameters [method :query])]
+                        ;; We'll call assoc-query-params with the negotiated charset, falling back to UTF-8.
+                        ;; Also, read this:
+                        ;; http://www.w3.org/TR/html5/forms.html#application/x-www-form-urlencoded-encoding-algorithm
+                        (rs/coerce schema (-> request (assoc-query-params (or (:charset ctx) "UTF-8")) :query-params keywordize) :query))
 
-                        :body
-                        (when-let [schema (get-in parameters [method :body])]
-                          (let [body (read-body (-> ctx :request))]
-                            (body/coerce-request-body body (req/content-type request) schema)))
+                      :body
+                      (when-let [schema (get-in parameters [method :body])]
+                        (let [body (read-body (-> ctx :request))]
+                          (body/coerce-request-body body (req/content-type request) schema)))
 
-                        :form
-                        ;; TODO: Can we use rep:from-representation
-                        ;; instead? It's virtually the same logic for
-                        ;; url encoded forms
-                        (when-let [schema (get-in parameters [method :form])]
-                          (when (req/urlencoded-form? request)
-                            (let [fp (keywordize-keys
-                                      (ring.util.codec/form-decode (read-body (-> ctx :request))
-                                                                   (req/character-encoding request)))]
-                              (rs/coerce schema fp :json))))
+                      :form
+                      ;; TODO: Can we use rep:from-representation
+                      ;; instead? It's virtually the same logic for
+                      ;; url encoded forms
+                      (when-let [schema (get-in parameters [method :form])]
+                        (when (req/urlencoded-form? request)
+                          (let [fp (keywordize-keys
+                                    (ring.util.codec/form-decode (read-body (-> ctx :request))
+                                                                 (req/character-encoding request)))]
+                            (rs/coerce schema fp :json))))
 
-                        :header
-                        (when-let [schema (get-in parameters [method :header])]
-                          (let [params (select-keys (-> request :headers keywordize-keys) (keys schema))]
-                            (rs/coerce schema params :query)))})]
+                      :header
+                      (when-let [schema (get-in parameters [method :header])]
+                        (let [params (select-keys (-> request :headers keywordize-keys) (keys schema))]
+                          (rs/coerce schema params :query)))})]
 
                (let [errors (filter (comp schema.utils/error? second) parameters)]
                  (if (not-empty errors)
@@ -232,8 +234,7 @@
 
            ;; Content negotiation
            ;; TODO: Unknown Content-Type? (incorporate this into conneg)
-           (link ctx
-
+           (fn [ctx]
              (let [representation
                    (rep/select-representation request (:representations http-resource))]
 
@@ -247,12 +248,13 @@
                    ))))
 
            ;; A current representation for the resource exists?
-           (link ctx
+           (fn [ctx]
              (if (:existence? http-resource)
                (d/chain
                 (res/exists? (:resource ctx) ctx)
                 (fn [exists?]
                   (assoc ctx :exists? exists?)))
+               ;; Default
                (assoc ctx :exists? true)))
 
            ;; Conditional requests - last modified time
@@ -293,11 +295,11 @@
            ;; section 2.3.3 of RFC 7232.
 
            ;; If-Match check
-           (link ctx
+           (fn [ctx]
 
-             (when-let [matches (some->> (get-in request [:headers "if-match"])
-                                         (parse-csv)
-                                         set)]
+             (if-let [matches (some->> (get-in request [:headers "if-match"])
+                                       (parse-csv)
+                                       set)]
 
                ;; We have an If-Match to process
                (cond
@@ -313,8 +315,8 @@
                  (let [version (res/version (:resource ctx) ctx)
                        etags (into {} (map (juxt identity (partial res/to-etag version)) (:representations http-resource)))]
 
-                   (when (empty? (set/intersection matches (set (vals etags))))
-                     (throw
+                   (if (empty? (set/intersection matches (set (vals etags))))
+                     (d/error-deferred
                       (ex-info "Precondition failed"
                                {:status 412
                                 ::http-response true})))
@@ -327,7 +329,9 @@
                    ;; resource state didn't change), then this
                    ;; etag will do for the response.
                    (assoc-in ctx [:response :etag]
-                             (get etags (:representation ctx)))))))
+                             (get etags (:representation ctx)))))
+               ctx
+               ))
 
            ;; Methods
            (fn [ctx]
@@ -346,14 +350,15 @@
            ;; representation, as determined at the conclusion of
            ;; handling the request. RFC 7232 section 2.3
 
-           (link ctx
+           (fn [ctx]
              ;; only if resource supports etags
-             (when (:version? http-resource)
+             (if (:version? http-resource)
                ;; only if the resource hasn't already set an etag
                (when-let [version (or (-> ctx :response :version)
                                       (res/version (:resource ctx) ctx))]
                  (let [etag (res/to-etag version (get-in ctx [:response :representation]))]
-                   (assoc-in ctx [:response :etag] etag)))))
+                   (assoc-in ctx [:response :etag] etag)))
+               ctx))
 
            ;; If we have just mutated the resource, we should
            ;; recompute the etag
