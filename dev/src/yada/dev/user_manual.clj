@@ -20,7 +20,6 @@
    [modular.component.co-dependency :refer (co-using)]
    [yada.yada :as yada]
    [yada.mime :as mime]
-   [yada.resource :as res]
    [yada.swagger :refer (swaggered)]
    [ring.util.time :as rt]
    yada.resources.string-resource

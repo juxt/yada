@@ -2,7 +2,7 @@
 
 (ns yada.resource-test
   (:require
-   [yada.resource :refer [to-etag]]
+   [yada.protocols :refer [to-etag]]
    [clojure.test :refer :all]
    [juxt.iota :refer [given]]))
 

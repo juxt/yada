@@ -4,7 +4,7 @@
   (:require
    [clojure.java.io :as io]
    [yada.charset :as charset]
-   [yada.resource :refer (RepresentationExistence ResourceModification ResourceRepresentations ResourceCoercion)]
+   [yada.protocols :as p]
    [yada.methods :refer (Get)]
    [ring.util.mime-type :refer (ext-mime-type)])
   (:import [java.net URL]
@@ -14,13 +14,13 @@
 ;; A UrlResource is a Java resource.
 
 (extend-type URL
-  ResourceModification
+  p/ResourceModification
   (last-modified [u ctx]
     (let [f (io/file (.getFile u))]
       (when (.exists f)
         (Date. (.lastModified f)))))
 
-  ResourceRepresentations
+  p/ResourceRepresentations
   (representations [u]
     [{:content-type #{(ext-mime-type (.getPath u))}
       :charset charset/platform-charsets}])
@@ -32,5 +32,5 @@
        (InputStreamReader. (.openStream u) (or (get-in ctx [:response :server-charset]) "UTF-8")))
       (.openStream u)))
 
-  ResourceCoercion
+  p/ResourceCoercion
   (make-resource [url] url))

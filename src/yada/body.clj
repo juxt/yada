@@ -13,8 +13,7 @@
    [ring.util.codec :as codec]
    [ring.swagger.schema :as rs]
    [yada.charset :as charset]
-   [yada.mime :as mime]
-   [yada.resource :as res])
+   [yada.mime :as mime])
   (:import
    [clojure.core.async.impl.channels ManyToManyChannel]
    [java.io File]

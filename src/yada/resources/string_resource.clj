@@ -5,12 +5,12 @@
    [clj-time.core :refer (now)]
    [clj-time.coerce :refer (to-date)]
    [yada.charset :as charset]
-   [yada.resource :refer [RepresentationExistence ResourceModification ResourceRepresentations ResourceVersion ResourceCoercion]]
+   [yada.protocols :as p]
    [yada.methods :refer [Get Options]]
    [yada.util :refer (md5-hash)]))
 
 (defrecord StringResource [s last-modified]
-  ResourceRepresentations
+  p/ResourceRepresentations
   (representations [_]
     [{ ;; Without attempting to actually parse it (which isn't completely
       ;; impossible) we're not able to guess the media-type of this
@@ -18,16 +18,16 @@
       :content-type "text/plain"
       :charset charset/platform-charsets}])
 
-  ResourceModification
+  p/ResourceModification
   (last-modified [_ _] last-modified)
 
-  ResourceVersion
+  p/ResourceVersion
   (version [_ _] s)
 
   Get
   (GET [_ _] s))
 
-(extend-protocol ResourceCoercion
+(extend-protocol p/ResourceCoercion
   String
   (make-resource [s]
     (->StringResource s (to-date (now)))))

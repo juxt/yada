@@ -1,6 +1,6 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(ns yada.resource
+(ns yada.protocols
   (:require [clojure.tools.logging :refer :all]
             [manifold.deferred :as d]
             [yada.charset :refer (to-charset-map)]

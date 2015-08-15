@@ -1,16 +1,15 @@
 (ns yada.parameters-test
   (:require
-   [byte-streams :as bs]
+   [clojure.tools.logging :refer :all]
    [clojure.edn :as edn]
    [clojure.test :refer :all]
-   [yada.yada :as yada]
-   [yada.resource :as res]
+   [byte-streams :as bs]
    [juxt.iota :refer (given)]
    [ring.mock.request :as mock]
    [ring.util.codec :as codec]
    [schema.core :as s]
    [yada.resources.misc :refer (just-methods)]
-   [clojure.tools.logging :refer :all]))
+   [yada.yada :as yada]))
 
 (deftest post-test
   (let [handler (yada/resource

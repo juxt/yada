@@ -19,7 +19,7 @@
    [yada.charset :as charset]
    [yada.methods :as methods]
    [yada.representation :as rep]
-   [yada.resource :as res]
+   [yada.protocols :as p]
    [yada.response :refer (->Response)]
    [yada.service :as service]
    [yada.mime :as mime]
@@ -223,7 +223,7 @@
            ;; The fetch can return a deferred result.
            (fn [ctx]
              (d/chain
-              (res/fetch (:resource http-resource) ctx)
+              (p/fetch (:resource http-resource) ctx)
               (fn [res]
                 (assoc ctx :resource res))))
 
@@ -251,7 +251,7 @@
            (fn [ctx]
              (if (:existence? http-resource)
                (d/chain
-                (res/exists? (:resource ctx) ctx)
+                (p/exists? (:resource ctx) ctx)
                 (fn [exists?]
                   (assoc ctx :exists? exists?)))
                ;; Default
@@ -261,8 +261,8 @@
            (fn [ctx]
              (d/chain
               (or
-               (res/last-modified (:last-modified options) ctx)
-               (res/last-modified (:resource ctx) ctx))
+               (p/last-modified (:last-modified options) ctx)
+               (p/last-modified (:resource ctx) ctx))
 
               (fn [last-modified]
                 (if-let [last-modified (round-seconds-up last-modified)]
@@ -312,8 +312,8 @@
 
                  ;; Create a map of representation -> etag
                  (:version? http-resource)
-                 (let [version (res/version (:resource ctx) ctx)
-                       etags (into {} (map (juxt identity (partial res/to-etag version)) (:representations http-resource)))]
+                 (let [version (p/version (:resource ctx) ctx)
+                       etags (into {} (map (juxt identity (partial p/to-etag version)) (:representations http-resource)))]
 
                    (if (empty? (set/intersection matches (set (vals etags))))
                      (d/error-deferred
@@ -355,8 +355,8 @@
              (if (:version? http-resource)
                ;; only if the resource hasn't already set an etag
                (when-let [version (or (-> ctx :response :version)
-                                      (res/version (:resource ctx) ctx))]
-                 (let [etag (res/to-etag version (get-in ctx [:response :representation]))]
+                                      (p/version (:resource ctx) ctx))]
+                 (let [etag (p/to-etag version (get-in ctx [:response :representation]))]
                    (assoc-in ctx [:response :etag] etag)))
                ctx))
 
@@ -468,8 +468,8 @@
   ([resource options]
    (let [base resource
 
-         resource (if (satisfies? res/ResourceCoercion resource)
-                    (res/make-resource resource)
+         resource (if (satisfies? p/ResourceCoercion resource)
+                    (p/make-resource resource)
                     resource)
 
          known-methods (methods/known-methods)
@@ -477,12 +477,12 @@
          allowed-methods (conj
                           (set
                            (or (:allowed-methods options)
-                               (res/allowed-methods resource)))
+                               (p/allowed-methods resource)))
                           :head :options)
 
          parameters (or (:parameters options)
-                        (when (satisfies? res/ResourceParameters resource)
-                          (res/parameters resource)))
+                        (when (satisfies? p/ResourceParameters resource)
+                          (p/parameters resource)))
 
          representations (rep/representation-seq
                           (rep/coerce-representations
@@ -491,8 +491,8 @@
                             (when-let [rep (:representation options)] [rep])
                             (let [m (select-keys options [:content-type :charset :encoding :language])]
                               (when (not-empty m) [m]))
-                            (when (satisfies? res/ResourceRepresentations resource)
-                              (res/representations resource)))))
+                            (when (satisfies? p/ResourceRepresentations resource)
+                              (p/representations resource)))))
 
          vary (rep/vary representations)]
 
@@ -509,6 +509,6 @@
        :security (as-sequential (:security options))
        :service-available? (:service-available? options)
        :authorization (or (:authorization options) (NoAuthorizationSpecified.))
-       :version? (satisfies? res/ResourceVersion resource)
-       :existence? (satisfies? res/RepresentationExistence resource)
+       :version? (satisfies? p/ResourceVersion resource)
+       :existence? (satisfies? p/RepresentationExistence resource)
        }))))

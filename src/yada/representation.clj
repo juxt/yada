@@ -10,12 +10,9 @@
    [yada.coerce :refer (to-set to-list)]
    [yada.charset :as charset]
    [yada.mime :as mime]
-   [yada.resource :as res]
    [yada.util :refer (best best-by parse-csv http-token OWS)]
    manifold.stream.async
-   clojure.core.async.impl.channels)
-  )
-
+   clojure.core.async.impl.channels))
 
 ;; Proactive negotiation
 

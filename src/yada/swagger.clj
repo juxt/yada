@@ -18,7 +18,7 @@
    [yada.charset :as charset]
    [yada.methods :refer (Get GET)]
    [yada.mime :as mime]
-   [yada.resource :refer (ResourceModification ResourceRepresentations ResourceVersion ResourceCoercion make-resource) :as res]
+   [yada.protocols :as p]
    [yada.core :as yada]
    [yada.util :refer (md5-hash)])
   (:import (clojure.lang PersistentVector Keyword)))
@@ -51,13 +51,13 @@
                  swagger)]))
 
 (defrecord SwaggerSpec [spec created-at content-type]
-  ResourceModification
+  p/ResourceModification
   (last-modified [_ ctx] created-at)
 
-  ResourceVersion
+  p/ResourceVersion
   (version [_ ctx] spec)
 
-  ResourceRepresentations
+  p/ResourceRepresentations
   (representations [_]
     (case content-type
       "text/html" [{:content-type "text/html"

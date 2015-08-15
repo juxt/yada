@@ -5,7 +5,7 @@
    [clj-time.core :refer [now]]
    [clj-time.coerce :refer [to-date]]
    [yada.charset :as charset]
-   [yada.resource :refer (ResourceCoercion ResourceAllowedMethods ResourceModification ResourceRepresentations representations make-resource ResourceParameters parameters allowed-methods ResourceVersion version)]
+   [yada.protocols :as p]
    [yada.methods :refer (Get Put)]
    [schema.core :as s]
    yada.resources.string-resource)
@@ -15,28 +15,28 @@
   (wrap-atom [init-state a] "Given the initial value on derefencing an atom, construct a record which will manage the reference."))
 
 (defrecord AtomResource [*a wrapper *last-mod]
-  ResourceAllowedMethods
-  (allowed-methods [_] (conj (set (allowed-methods wrapper)) :put :post :delete))
+  p/ResourceAllowedMethods
+  (allowed-methods [_] (conj (set (p/allowed-methods wrapper)) :put :post :delete))
 
-  ResourceModification
+  p/ResourceModification
   (last-modified [_ ctx]
     (when-let [lm @*last-mod] lm))
 
-  ResourceParameters
+  p/ResourceParameters
   (parameters [_] (merge
-                   (when (satisfies? ResourceParameters wrapper)
-                     (parameters wrapper))
+                   (when (satisfies? p/ResourceParameters wrapper)
+                     (p/parameters wrapper))
                    {:put {:body s/Str}})) ;; TODO: Not just a string, depends on wrapper
 
-  ResourceRepresentations
+  p/ResourceRepresentations
   (representations [_]
-    (when (satisfies? ResourceRepresentations wrapper)
-      (representations wrapper)))
+    (when (satisfies? p/ResourceRepresentations wrapper)
+      (p/representations wrapper)))
 
-  ResourceVersion
+  p/ResourceVersion
   (version [_ ctx]
-    (when (satisfies? ResourceVersion wrapper)
-      (version wrapper ctx)))
+    (when (satisfies? p/ResourceVersion wrapper)
+      (p/version wrapper ctx)))
 
   Get
   (GET [_ ctx] @*a)
@@ -60,7 +60,7 @@
   StringResource
   (wrap-atom [this *a] (wrap-with-watch this *a)))
 
-(extend-protocol ResourceCoercion
+(extend-protocol p/ResourceCoercion
   clojure.lang.Atom
   (make-resource [a]
-    (wrap-atom (make-resource @a) a)))
+    (wrap-atom (p/make-resource @a) a)))

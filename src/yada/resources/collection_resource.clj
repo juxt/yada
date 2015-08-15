@@ -6,27 +6,24 @@
    [clj-time.core :refer (now)]
    [clj-time.coerce :refer (to-date)]
    [yada.charset :as charset]
-   [yada.mime :refer (media-type)]
-   [yada.resource :refer (ResourceModification ResourceRepresentations ResourceCoercion)]
-   [yada.methods :refer [Get GET]]
-   [cheshire.core :as json]
-   [json-html.core :as jh])
+   [yada.protocols :as p]
+   [yada.methods :refer [Get GET]])
   (:import [clojure.lang APersistentMap]))
 
 (defrecord MapResource [m last-modified]
-  ResourceModification
+  p/ResourceModification
   (last-modified [_ ctx] last-modified)
 
-  Get
-  (GET [_ ctx] m)
-
-  ResourceRepresentations
+  p/ResourceRepresentations
   (representations [_]
     [{:method #{:get :head}
       :content-type #{"application/edn" "application/json;q=0.9" "text/html;q=0.8"}
-      :charset charset/platform-charsets}]))
+      :charset charset/platform-charsets}])
 
-(extend-protocol ResourceCoercion
+  Get
+  (GET [_ ctx] m))
+
+(extend-protocol p/ResourceCoercion
   APersistentMap
   (make-resource [m]
     (->MapResource m (to-date (now)))))

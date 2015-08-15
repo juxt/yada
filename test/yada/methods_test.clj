@@ -10,7 +10,7 @@
    [schema.core :as s]
    [yada.methods :refer (Get Post)]
    [yada.resources.misc :refer (just-methods)]
-   [yada.resource :refer [ResourceAllowedMethods allowed-methods ResourceVersion make-resource ResourceRepresentations]]
+   [yada.protocols :as p]
    [yada.test.util :refer (etag?)]
    [yada.yada :as yada]))
 
@@ -52,7 +52,7 @@
 
 (deftest allowed-methods-test
   (testing "methods-deduced"
-    (are [r e] (= (allowed-methods (make-resource r)) e)
+    (are [r e] (= (p/allowed-methods (p/make-resource r)) e)
       nil #{:get}
       "Hello" #{:get}
       (reify Get (GET [_ _] "foo")) #{:get}
@@ -65,9 +65,9 @@
 ;; TODO Extract out into dedicated ns.
 
 (defrecord ETagTestResource [v]
-  ResourceVersion
+  p/ResourceVersion
   (version [_ ctx] @v)
-  ResourceRepresentations
+  p/ResourceRepresentations
   (representations [_] [{:content-type "text/plain"}])
   Get
   (GET [_ ctx] "foo")

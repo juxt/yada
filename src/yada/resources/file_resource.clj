@@ -11,7 +11,7 @@
    [ring.util.response :refer (redirect)]
    [ring.util.time :refer (format-date)]
    [yada.charset :as charset]
-   [yada.resource :refer [ResourceAllowedMethods RepresentationExistence ResourceModification ResourceRepresentations ResourceFetch ResourceCoercion representations]]
+   [yada.protocols :refer [ResourceAllowedMethods RepresentationExistence ResourceModification ResourceRepresentations ResourceFetch ResourceCoercion representations]]
    [yada.representation :as rep]
    [yada.methods :refer (Get GET Put PUT Post POST Delete DELETE)]
 

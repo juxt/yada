@@ -8,7 +8,7 @@
    [manifold.deferred :as d]
    [yada.mime :as mime]
    [yada.body :as body]
-   [yada.resource :as res]
+   [yada.protocols :as p]
    [yada.service :as service]
    yada.response)
   (:import
@@ -366,6 +366,6 @@
     (satisfies? Delete o) (conj :put)
     (satisfies? Options o) (conj :options)))
 
-(extend-protocol res/ResourceAllowedMethods
+(extend-protocol p/ResourceAllowedMethods
   Object
-  (res/allowed-methods [o] (infer-methods o)))
+  (p/allowed-methods [o] (infer-methods o)))

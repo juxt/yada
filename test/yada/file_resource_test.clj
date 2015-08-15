@@ -13,7 +13,7 @@
    [schema.test :as st]
    ;;[yada.bidi :as yb]
    [yada.yada :as yada]
-   [yada.resource :as yst]
+   [yada.protocols :as p]
    [yada.resources.file-resource :refer :all]
    [juxt.iota :refer [given]])
   (:import [java.io File ByteArrayInputStream]
@@ -124,7 +124,7 @@
 
       (testing "Start with 0 files"
         (given dir
-          [yst/make-resource #(yst/exists? % {})] :? true?
+          [p/make-resource #(p/exists? % {})] :? true?
           [(memfn listFiles) count] := 0))
 
       (testing "PUT a new file"
