@@ -930,7 +930,7 @@ served by, which are often written in Java. The contract involves
 specifying nature of the interface (request/response) and the structure
 of the maps are used to represent the request and response.
 
-In additional, Ring offers a set of modular and composable higher-order
+In addition, Ring offers a set of modular and composable higher-order
 functions, called Ring middleware, from which a single Ring-compatible
 handler can be composed featuring a rich set of behaviour. It is also
 straight-forward to create bespoke middleware for specialised
