@@ -124,8 +124,8 @@
                 (ex-info "Method Not Allowed"
                          {:status 405
                           :headers {"allow" (str/join ", " (map (comp (memfn toUpperCase) name) (:allowed-methods http-resource)))}
-                          ::http-response true})))
-             ctx)
+                          ::http-response true}))
+               ctx))
 
            ;; Malformed? (parameters)
            (fn [ctx]
@@ -319,17 +319,17 @@
                      (d/error-deferred
                       (ex-info "Precondition failed"
                                {:status 412
-                                ::http-response true})))
+                                ::http-response true}))
 
-                   ;; Otherwise, let's use the etag we've just
-                   ;; computed. Note, this might yet be
-                   ;; overridden by the (unsafe) method returning
-                   ;; a modified response. But if the method
-                   ;; chooses not to reset the etag (perhaps the
-                   ;; resource state didn't change), then this
-                   ;; etag will do for the response.
-                   (assoc-in ctx [:response :etag]
-                             (get etags (:representation ctx)))))
+                     ;; Otherwise, let's use the etag we've just
+                     ;; computed. Note, this might yet be
+                     ;; overridden by the (unsafe) method returning
+                     ;; a modified response. But if the method
+                     ;; chooses not to reset the etag (perhaps the
+                     ;; resource state didn't change), then this
+                     ;; etag will do for the response.
+                     (assoc-in ctx [:response :etag]
+                               (get etags (:representation ctx))))))
                ctx
                ))
 
