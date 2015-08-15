@@ -833,7 +833,7 @@ On sending the request, we could create a promise which is given to the callback
 
 Some time later the callback function will be called, and its implementation will _deliver_ the promise with the response value. That will cause the continuation of processing of the original request. Note that _at no time is any thread blocked by I/O_.
 
-![Swagger](static/img/hello-async.png)
+![Async](static/img/hello-async.png)
 
 Actually, if we use Aleph or http-kit as our HTTP client the code is
 even simpler, since each return promises from their request functions.
