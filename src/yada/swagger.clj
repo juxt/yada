@@ -36,6 +36,8 @@
         {:keys [resource options allowed-methods parameters representations]} http-resource
         swagger (:swagger options)]
 
+    (infof "representations = %s" (seq representations))
+
     [path
      (merge-with merge
                  (into {}
@@ -43,10 +45,11 @@
                              :let [parameters (get parameters method)
                                    representations (filter (fn [rep] (or (nil? (:method rep))
                                                                         (contains? (:method rep) method))) representations)
-                                   produces (map mime/media-type (mapcat (comp :content-type) representations))]]
+                                   produces (when (#{:get} method)
+                                              (distinct (map mime/media-type (map :content-type representations))))]]
                          ;; Responses must be added in the static swagger section
-                         {method {:produces produces
-                                  :parameters parameters}}))
+                         {method (merge (when produces {:produces produces})
+                                        {:parameters parameters})}))
                  swagger)]))
 
 (defrecord SwaggerSpec [spec created-at content-type]

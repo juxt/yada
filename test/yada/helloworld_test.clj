@@ -4,6 +4,8 @@
   yada.helloworld-test
   (:require
    [clojure.test :refer :all]
+   [cheshire.core :as json]
+   [byte-streams :as bs]
    [juxt.iota :refer (given)]
    [ring.mock.request :refer [request]]
    [ring.util.time :refer (parse-date format-date)]
@@ -39,14 +41,22 @@
       [:body to-string] := "Hello World!\n")))
 
 (deftest swagger-intro-test
-  (let [resource (hello/hello-api)]
-    (given @(resource (request :get "/swagger.json"))
+  (let [resource (hello/hello-api)
+        response @(resource (request :get "/swagger.json"))]
+    (given response
       :status := 200
       [:headers keys set] := #{"last-modified" "content-type" "content-length" "vary" "etag"}
       [:headers "content-type"] := "application/json"
-      [:headers "content-length"] := 2834
+      [:headers "content-length"] := 421
       [:headers "vary" parse-csv set] := #{"accept-charset"}
-      [:headers "etag"] := "-572113603"
+      [:headers "etag"] := "-761415623"
+      )
+    (given (-> response :body to-string json/decode)
+      ["swagger"] := "2.0"
+      ["info" "title"] := "Hello World!"
+      ["info" "version"] := "1.0"
+      ["info" "description"] := "Demonstrating yada + swagger"
+      ["paths" "/hello" "get" "produces"] := ["text/plain"]
       )))
 
 ;; TODO: conditional request

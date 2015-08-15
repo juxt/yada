@@ -454,7 +454,7 @@ Before reverting our code back to the original, without the atom, let's see the 
 
 ![Swagger](static/img/mutable-hello-swagger.png)
 
-We now have a few more methods. [See for your self](http://localhost:8090/swagger-ui/index.html?url=/mutable-hello-api/swagger.json).
+We now have a few more methods. [See for your self](http://localhost:8090/swagger-ui/index.html?url=/hello-atom-api/swagger.json).
 
 #### A HEAD request
 
