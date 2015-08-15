@@ -111,7 +111,7 @@ approach, focussing on what a web _resource_ is really about: _state_.
 
 ### What is yada?
 
-yada is a Clojure library that lets you create powerful and Ring
+yada is a Clojure library that lets you create powerful Ring
 handlers that are fully compliant with HTTP specifications.
 
 Underlying yada is a number of Clojure protocols. Any Clojure data type
@@ -478,7 +478,7 @@ Content-Length: 0
 The response does not have a body, but tells us the headers we would get
 if we were to try a `GET` request.
 
-For more details about HREAD queries, see [insert reference here].
+For more details about HEAD queries, see [insert reference here].
 
 #### Parameters
 
