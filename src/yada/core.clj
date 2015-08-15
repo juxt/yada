@@ -416,8 +416,6 @@
           ;; Handle exits
           (d/catch clojure.lang.ExceptionInfo
               #(let [data (ex-data %)]
-                 (infof "Catching ex-info")
-
                  (if (::http-response data)
                    (if-let [debug-data (when debug (::debug data))]
                      (assoc data :body (prn-str debug-data))
