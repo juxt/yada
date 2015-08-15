@@ -395,56 +395,44 @@
                    :language "accept-language"}
                   vary)))
 
-;; From representation ------------------------------
+;; Coerce request body  ------------------------------
 
-(defmulti from-representation (fn [representation media-type & args] media-type))
+(defmulti coerce-request-body (fn [representation media-type & args] media-type))
 
-(defmethod from-representation "application/json"
+(defmethod coerce-request-body "application/json"
   ([representation media-type schema]
-   (rs/coerce schema (from-representation representation media-type) :json))
+   (rs/coerce schema (coerce-request-body representation media-type) :json))
   ([representation media-type]
    (json/decode representation keyword)))
 
-(defmethod from-representation nil
+(defmethod coerce-request-body nil
   ([representation media-type schema]
    nil)
   ([representation media-type]
    nil))
 
-(defmethod from-representation "application/x-www-form-urlencoded"
+(defmethod coerce-request-body "application/x-www-form-urlencoded"
   ([representation media-type schema]
-   (rs/coerce schema (from-representation representation media-type) :query))
+   (rs/coerce schema (coerce-request-body representation media-type) :query))
   ([representation media-type]
    (keywordize-keys (codec/form-decode representation))
    ))
 
-;; Representation means the representation of state, for the purposes of network communication.
-
-(defprotocol Representation
+(defprotocol MessageBody
   (to-body [resource representation] "Construct the reponse body for the given resource, given the negotiated representation (metadata)")
   (content-length [_] "Return the size of the resource's representation, if this can possibly be known up-front (return nil if this is unknown)"))
 
 (defmulti render-map (fn [resource representation] (-> representation :content-type mime/media-type)))
 (defmulti render-seq (fn [resource representation] (-> representation :content-type mime/media-type)))
 
-(extend-protocol Representation
+(extend-protocol MessageBody
 
   String
   ;; A String is already its own representation, all we must do now is encode it to a char buffer
   (to-body [s representation]
-    (or
-     ;; We need to understand what is the negotiated encoding of the
-     ;; string.
-
-     ;; TODO: This actually requires that the implementation has access
-     ;; to the negotiated, or server presented, charset. First, the
-     ;; parameter needs to be the negotiation result, not just the
-     ;; media-type (it might also need transfer encoding
-     ;; transformations)
-
-     (bs/convert s java.nio.ByteBuffer
-                 {:encoding (or (:server-charset representation)
-                                res/default-platform-charset)})))
+    (bs/convert s java.nio.ByteBuffer
+                {:encoding (or (some-> representation :charset charset/charset)
+                               res/default-platform-charset)}))
 
   ;; The content-length is NOT the length of the string, but the
   ;; "decimal number of octets, for a potential payload body".
@@ -455,9 +443,6 @@
   clojure.lang.APersistentMap
   (to-body [m representation]
     (to-body (render-map m representation) representation))
-
-  CoreAsyncSource
-  (content-length [_] nil)
 
   File
   (to-body [f _]

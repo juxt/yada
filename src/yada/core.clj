@@ -146,7 +146,7 @@
                         :body
                         (when-let [schema (get-in parameters [method :body])]
                           (let [body (read-body (-> ctx :request))]
-                            (rep/from-representation body (req/content-type request) schema)))
+                            (rep/coerce-request-body body (req/content-type request) schema)))
 
                         :form
                         ;; TODO: Can we use rep:from-representation

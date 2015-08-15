@@ -6,7 +6,6 @@
    [clj-time.coerce :refer (to-date)]
    [yada.resource :refer [ResourceExistence ResourceModification ResourceRepresentations ResourceVersion ResourceCoercion platform-charsets]]
    [yada.methods :refer [Get Options]]
-   [yada.representation :refer [Representation]]
    [yada.util :refer (md5-hash)]))
 
 (defrecord StringResource [s last-modified]
