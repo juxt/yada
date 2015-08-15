@@ -9,7 +9,7 @@
             [ring.util.mime-type :refer (ext-mime-type)]
             [ring.util.response :refer (redirect)]
             [ring.util.time :refer (format-date)]
-            [yada.resource :refer [ResourceAllowedMethods ResourceExistence ResourceModification ResourceRepresentations ResourceFetch ResourceCoercion representations platform-charsets]]
+            [yada.resource :refer [ResourceAllowedMethods RepresentationExistence ResourceModification ResourceRepresentations ResourceFetch ResourceCoercion representations platform-charsets]]
             [yada.representation :as rep]
             [yada.methods :refer (Get GET Put PUT Post POST Delete DELETE)]
 
@@ -84,7 +84,7 @@
   ResourceAllowedMethods
   (allowed-methods [_] #{:get :head :put :delete})
 
-  ResourceExistence
+  RepresentationExistence
   (exists? [_ ctx] (.exists f))
 
   ResourceModification
@@ -125,7 +125,7 @@
   ResourceAllowedMethods
   (allowed-methods [_] #{:get :head :put :delete})
 
-  ResourceExistence
+  RepresentationExistence
   (exists? [_ ctx] (.exists dir))
 
   ResourceModification

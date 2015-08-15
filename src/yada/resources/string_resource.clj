@@ -4,7 +4,7 @@
   (:require
    [clj-time.core :refer (now)]
    [clj-time.coerce :refer (to-date)]
-   [yada.resource :refer [ResourceExistence ResourceModification ResourceRepresentations ResourceVersion ResourceCoercion platform-charsets]]
+   [yada.resource :refer [RepresentationExistence ResourceModification ResourceRepresentations ResourceVersion ResourceCoercion platform-charsets]]
    [yada.methods :refer [Get Options]]
    [yada.util :refer (md5-hash)]))
 

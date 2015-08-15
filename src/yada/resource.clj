@@ -22,13 +22,6 @@
   Last-Modified-Date."))
 
 (extend-protocol ResourceCoercion
-  clojure.lang.Fn
-  (make-resource [f]
-    ;; In the case of a function, we assume the function is dynamic
-    ;; (taking the request context), so we return it ready for its
-    ;; default Resource implementation (above)
-    f)
-
   Object
   (make-resource [o] o)
 
@@ -38,14 +31,11 @@
 ;; Fetch
 
 (defprotocol ResourceFetch
-  (fetch [this ctx] "Fetch the resource, such that questions can be
-  answered about it. Anything you return from this function will be
-  available in the :resource entry of ctx and will form the type that
-  will be used to dispatch other functions in this protocol. You can
-  return a deferred if necessary (indeed, you should do so if you have
-  to perform some IO in this function). Often, you will return 'this',
-  perhaps augmented with some additional state. Sometimes you will
-  return something else."))
+  (fetch [this ctx] "Fetch representation metadata, such that questions
+  can be answered about it. You can return a deferred if
+  necessary (indeed, you should do so if you have to perform some IO in
+  this function). Often, you will return 'this', perhaps augmented with
+  some additional state. Sometimes you will return something else."))
 
 ;; Fetch happens before negotiation, so must only return resource data,
 ;; nothing to do with the representation itself. Negotiation information
@@ -75,17 +65,18 @@
 
 ;; Existence
 
-(defprotocol ResourceExistence
-  "Optional protocol for a resource to indicate the existence of the
-  given representation. If no representation exists, this results in a
+(defprotocol RepresentationExistence
+  "Optional protocol for a resource to indicate the existence of a
+  current representation. If no representation exists, this results in a
   404 response."
   (exists? [_ ctx]
-    "Whether or not the resource actually exists. Is context sensitive,
-    since existence can often depend on request context, such as
-    parameters. Therefore the context is given as an argument. Return
-    truthy if the resource exists. Can return a deferred value."))
+    "Whether or not the resource contains a current representation. Is
+    context sensitive, since the existence of a representation can often
+    depend on request context, such as parameters. Therefore the context
+    is given as an argument. Return truthy if a representation
+    exists. Can return a deferred value."))
 
-(extend-protocol ResourceExistence
+(extend-protocol RepresentationExistence
   Object (exists? [_ ctx] true)
   nil (exists? [_ ctx] false))
 

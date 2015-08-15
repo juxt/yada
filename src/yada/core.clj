@@ -510,5 +510,5 @@
        :service-available? (:service-available? options)
        :authorization (or (:authorization options) (NoAuthorizationSpecified.))
        :version? (satisfies? res/ResourceVersion resource)
-       :existence? (satisfies? res/ResourceExistence resource)
+       :existence? (satisfies? res/RepresentationExistence resource)
        }))))
