@@ -34,32 +34,31 @@
       templater
       "templates/page.html.mustache"
       {:content
-       (let [header [:button.btn.btn-primary {:onClick "testAll()"} "Repeat tests"]]
-         (html
-          [:div.container
-           [:h2 "Welcome to " [:span.yada "yada"] "!"]
-           [:ol
-            [:li [:a {:href (path-for @*router :yada.dev.user-manual/user-manual)} "User manual"] " (and " [:a {:href (path-for @*router :yada.dev.user-manual/tests)} "tests"] ")"]
-            [:li "HTTP and related specifications"
-             [:ul
-              [:li [:a {:href "/static/spec/rfc2616.html"} "RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1"]]
-              (for [i (range 7230 (inc 7240))]
-                [:li [:a {:href (format "/static/spec/rfc%d.html" i)}
-                      (format "RFC %d: %s" i (or (get titles i) ""))]])]]
-            [:li [:a {:href
-                      (format "%s/index.html?url=%s/swagger.json"
-                              (path-for @*router :swagger-ui)
-                              (path-for @*router :yada.dev.user-api/user-api)
-                              )}
-                  "Swagger UI"]
-             " - to demonstrate Swagger integration"]
-            [:li [:a {:href
-                      (format "%s/index.html?url=%s/swagger.json"
-                              (path-for @*router :swagger-ui)
-                              (path-for @*router :hello-api)
-                              )}
-                  "Swagger UI (hello)"]
-             ]]]))}))
+       (html
+        [:div.container
+         [:h2 "Welcome to " [:span.yada "yada"] "!"]
+         [:ol
+          [:li [:a {:href (path-for @*router :yada.dev.user-manual/user-manual)} "User manual"]]
+          [:li "HTTP and related specifications"
+           [:ul
+            [:li [:a {:href "/static/spec/rfc2616.html"} "RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1"]]
+            (for [i (range 7230 (inc 7240))]
+              [:li [:a {:href (format "/static/spec/rfc%d.html" i)}
+                    (format "RFC %d: %s" i (or (get titles i) ""))]])]]
+          [:li [:a {:href
+                    (format "%s/index.html?url=%s/swagger.json"
+                            (path-for @*router :swagger-ui)
+                            (path-for @*router :yada.dev.user-api/user-api)
+                            )}
+                "Swagger UI"]
+           " - to demonstrate Swagger integration"]
+          [:li [:a {:href
+                    (format "%s/index.html?url=%s/swagger.json"
+                            (path-for @*router :swagger-ui)
+                            (path-for @*router :hello-api)
+                            )}
+                "Swagger UI (hello)"]
+           ]]])}))
    {:id ::index
     :representations [{:content-type #{"text/html"}
                        :charset #{"utf-8"}
