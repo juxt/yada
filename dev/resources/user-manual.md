@@ -478,7 +478,7 @@ Content-Length: 0
 The response does not have a body, but tells us the headers we would get
 if we were to try a `GET` request.
 
-For more details about HREAD queries, see [insert reference here].
+For more details about HEAD queries, see [insert reference here].
 
 #### Parameters
 
