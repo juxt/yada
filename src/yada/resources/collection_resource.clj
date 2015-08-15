@@ -5,8 +5,9 @@
    [clojure.tools.logging :refer :all]
    [clj-time.core :refer (now)]
    [clj-time.coerce :refer (to-date)]
+   [yada.charset :as charset]
    [yada.mime :refer (media-type)]
-   [yada.resource :refer (ResourceModification ResourceRepresentations ResourceCoercion platform-charsets)]
+   [yada.resource :refer (ResourceModification ResourceRepresentations ResourceCoercion)]
    [yada.methods :refer [Get GET]]
    [cheshire.core :as json]
    [json-html.core :as jh])
@@ -23,7 +24,7 @@
   (representations [_]
     [{:method #{:get :head}
       :content-type #{"application/edn" "application/json;q=0.9" "text/html;q=0.8"}
-      :charset platform-charsets}]))
+      :charset charset/platform-charsets}]))
 
 (extend-protocol ResourceCoercion
   APersistentMap

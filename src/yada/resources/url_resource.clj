@@ -3,7 +3,8 @@
 (ns yada.resources.url-resource
   (:require
    [clojure.java.io :as io]
-   [yada.resource :refer (RepresentationExistence ResourceModification ResourceRepresentations ResourceCoercion platform-charsets)]
+   [yada.charset :as charset]
+   [yada.resource :refer (RepresentationExistence ResourceModification ResourceRepresentations ResourceCoercion)]
    [yada.methods :refer (Get)]
    [ring.util.mime-type :refer (ext-mime-type)])
   (:import [java.net URL]
@@ -22,7 +23,7 @@
   ResourceRepresentations
   (representations [u]
     [{:content-type #{(ext-mime-type (.getPath u))}
-      :charset platform-charsets}])
+      :charset charset/platform-charsets}])
 
   Get
   (GET [u ctx]

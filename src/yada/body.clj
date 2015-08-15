@@ -59,7 +59,7 @@
   (to-body [s representation]
     (bs/convert s java.nio.ByteBuffer
                 {:encoding (or (some-> representation :charset charset/charset)
-                               res/default-platform-charset)}))
+                               charset/default-platform-charset)}))
 
   ;; The content-length is NOT the length of the string, but the
   ;; "decimal number of octets, for a potential payload body".

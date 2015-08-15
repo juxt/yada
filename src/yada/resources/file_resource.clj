@@ -1,19 +1,21 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.resources.file-resource
-  (:require [byte-streams :as bs]
-            [clojure.java.io :as io]
-            [clojure.string :as str]
-            [clojure.tools.logging :refer :all]
-            [hiccup.core :refer (html h)]
-            [ring.util.mime-type :refer (ext-mime-type)]
-            [ring.util.response :refer (redirect)]
-            [ring.util.time :refer (format-date)]
-            [yada.resource :refer [ResourceAllowedMethods RepresentationExistence ResourceModification ResourceRepresentations ResourceFetch ResourceCoercion representations platform-charsets]]
-            [yada.representation :as rep]
-            [yada.methods :refer (Get GET Put PUT Post POST Delete DELETE)]
+  (:require
+   [byte-streams :as bs]
+   [clojure.java.io :as io]
+   [clojure.string :as str]
+   [clojure.tools.logging :refer :all]
+   [hiccup.core :refer (html h)]
+   [ring.util.mime-type :refer (ext-mime-type)]
+   [ring.util.response :refer (redirect)]
+   [ring.util.time :refer (format-date)]
+   [yada.charset :as charset]
+   [yada.resource :refer [ResourceAllowedMethods RepresentationExistence ResourceModification ResourceRepresentations ResourceFetch ResourceCoercion representations]]
+   [yada.representation :as rep]
+   [yada.methods :refer (Get GET Put PUT Post POST Delete DELETE)]
 
-            [yada.mime :as mime])
+   [yada.mime :as mime])
   (:import [java.io File]
            [java.util Date TimeZone]
            [java.text SimpleDateFormat]
@@ -136,7 +138,7 @@
     ;; For when path-info is nil
     [{:method #{:get :head}
       :content-type #{"text/html" "text/plain"}
-      :charset platform-charsets}])
+      :charset charset/platform-charsets}])
 
   Get
   (GET [this ctx]

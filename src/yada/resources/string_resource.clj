@@ -4,7 +4,8 @@
   (:require
    [clj-time.core :refer (now)]
    [clj-time.coerce :refer (to-date)]
-   [yada.resource :refer [RepresentationExistence ResourceModification ResourceRepresentations ResourceVersion ResourceCoercion platform-charsets]]
+   [yada.charset :as charset]
+   [yada.resource :refer [RepresentationExistence ResourceModification ResourceRepresentations ResourceVersion ResourceCoercion]]
    [yada.methods :refer [Get Options]]
    [yada.util :refer (md5-hash)]))
 
@@ -15,7 +16,7 @@
       ;; impossible) we're not able to guess the media-type of this
       ;; string, so we return text/plain.
       :content-type "text/plain"
-      :charset platform-charsets}])
+      :charset charset/platform-charsets}])
 
   ResourceModification
   (last-modified [_ _] last-modified)

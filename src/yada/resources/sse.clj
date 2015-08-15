@@ -3,9 +3,10 @@
 (ns yada.resources.sse
   (:require
    [clojure.core.async :refer [chan mult tap]]
-   [yada.resource :refer [ResourceRepresentations platform-charsets ResourceCoercion]]
-   [yada.methods :refer [Get]]
    [manifold.stream :refer [->source transform]]
+   [yada.charset :as charset]
+   [yada.resource :refer [ResourceRepresentations ResourceCoercion]]
+   [yada.methods :refer [Get]]
    clojure.core.async.impl.channels
    clojure.core.async.impl.protocols
    manifold.stream.async)
@@ -15,7 +16,7 @@
   ResourceRepresentations
   (representations [_]
     [{:content-type "text/event-stream"
-      :charset platform-charsets}])
+      :charset charset/platform-charsets}])
 
   Get
   (GET [_ _]

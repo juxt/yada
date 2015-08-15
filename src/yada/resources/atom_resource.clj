@@ -4,7 +4,8 @@
   (:require
    [clj-time.core :refer [now]]
    [clj-time.coerce :refer [to-date]]
-   [yada.resource :refer (ResourceCoercion ResourceAllowedMethods ResourceModification ResourceRepresentations representations platform-charsets make-resource ResourceParameters parameters allowed-methods ResourceVersion version)]
+   [yada.charset :as charset]
+   [yada.resource :refer (ResourceCoercion ResourceAllowedMethods ResourceModification ResourceRepresentations representations make-resource ResourceParameters parameters allowed-methods ResourceVersion version)]
    [yada.methods :refer (Get Put)]
    [schema.core :as s]
    yada.resources.string-resource)

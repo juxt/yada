@@ -78,8 +78,13 @@
   (to-charset-map [s]
     (string->charsetmap s)))
 
-#_(defmethod clojure.core/print-method CharsetMap
-  [cs ^java.io.Writer writer]
-  (.write writer (format "%s%s"
-                         (charset cs)
-                         (when-let [w (:quality cs)] (str ";q=" w)))))
+(def default-platform-charset (.name (java.nio.charset.Charset/defaultCharset)))
+
+(def platform-charsets
+  (->> (concat
+        [(to-charset-map default-platform-charset)]
+        (map #(assoc % :quality 0.9) (map to-charset-map (keys (java.nio.charset.Charset/availableCharsets)))))
+       ;; Tune down the number of charsets to manageable level by
+       ;; excluding those prefixed by x- and 'IBM'.
+       (filter (comp not (partial re-matches #"(x-|IBM).*") :alias))
+       set))

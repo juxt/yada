@@ -15,9 +15,10 @@
    [ring.swagger.swagger2 :as rs]
    [ring.util.response :refer (redirect)]
    [schema.core :as s]
+   [yada.charset :as charset]
    [yada.methods :refer (Get GET)]
    [yada.mime :as mime]
-   [yada.resource :refer (ResourceModification ResourceRepresentations ResourceVersion ResourceCoercion platform-charsets make-resource) :as res]
+   [yada.resource :refer (ResourceModification ResourceRepresentations ResourceVersion ResourceCoercion make-resource) :as res]
    [yada.core :as yada]
    [yada.util :refer (md5-hash)])
   (:import (clojure.lang PersistentVector Keyword)))
@@ -60,7 +61,7 @@
   (representations [_]
     (case content-type
       "text/html" [{:content-type "text/html"
-                    :charset platform-charsets}]
+                    :charset charset/platform-charsets}]
       "application/edn" [{:content-type #{"application/edn"
                                           "application/edn;pretty=true"}
                           :charset #{"UTF-8"}}]

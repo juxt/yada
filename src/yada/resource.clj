@@ -121,17 +121,6 @@
   clojure.lang.PersistentVector (representations [v] v)
   nil (representations [_] nil))
 
-(def default-platform-charset (.name (java.nio.charset.Charset/defaultCharset)))
-
-(def platform-charsets
-  (->> (concat
-        [(to-charset-map default-platform-charset)]
-        (map #(assoc % :quality 0.9) (map to-charset-map (keys (java.nio.charset.Charset/availableCharsets)))))
-       ;; Tune down the number of charsets to manageable level by
-       ;; excluding those prefixed by x- and 'IBM'.
-       (filter (comp not (partial re-matches #"(x-|IBM).*") :alias))
-       set))
-
 (defprotocol ResourceParameters
   "Declare the resource's parameters"
   (parameters [_] "Return the parameters, by method. Must not return a deferred value."))
