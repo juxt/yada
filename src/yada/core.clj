@@ -410,6 +410,7 @@
   "Handle Ring request"
   [http-resource request]
   (let [method (:request-method request)
+        interceptors (:interceptors http-resource)
         options (:options http-resource)
         ;; TODO: Document this debug feature
         debug (boolean (get-in request [:headers "x-yada-debug"]))
@@ -417,33 +418,12 @@
              (make-context)
              {:method method
               :method-instance (get (:known-methods http-resource) method)
+              :interceptors interceptors
               :http-resource http-resource
               :resource (:resource http-resource)
               :request request
               :allowed-methods (:allowed-methods http-resource)
-              :options options})
-        interceptors
-        [
-         available?
-         known-method?
-         uri-too-long?
-         TRACE
-         method-allowed?
-         malformed?
-         authentication
-         authorization
-         fetch
-         ;; TODO: Unknown or unsupported Content-* header
-         ;; TODO: Request entity too large - shouldn't we do this later,
-         ;; when we determine we actually need to read the request body?
-         select-representation
-         exists?
-         check-modification-time
-         if-match
-         invoke-method
-         compute-etag
-         create-response]
-        ]
+              :options options})]
 
     (->
      (apply d/chain ctx interceptors)
@@ -516,12 +496,35 @@
                             (when (satisfies? p/Representations resource)
                               (p/representations resource)))))
 
-         vary (rep/vary representations)]
+         vary (rep/vary representations)
+
+         interceptors
+         [
+          available?
+          known-method?
+          uri-too-long?
+          TRACE
+          method-allowed?
+          malformed?
+          authentication
+          authorization
+          fetch
+          ;; TODO: Unknown or unsupported Content-* header
+          ;; TODO: Request entity too large - shouldn't we do this later,
+          ;; when we determine we actually need to read the request body?
+          select-representation
+          exists?
+          check-modification-time
+          if-match
+          invoke-method
+          compute-etag
+          create-response]]
 
      (map->HttpResource
       {:id (or (:id options) (java.util.UUID/randomUUID))
        :resource resource
        :base base
+       :interceptors interceptors
        :options options
        :allowed-methods allowed-methods
        :known-methods known-methods
