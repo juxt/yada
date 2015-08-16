@@ -406,83 +406,72 @@
     (debugf "Returning response: %s" (dissoc response :body))
     response))
 
-(defn- handle-request [http-resource request]
-  (let [ctx (make-context)]
-    (let [method (:request-method request)
-          options (:options http-resource)
+(defn- handle-request
+  "Handle Ring request"
+  [http-resource request]
+  (let [method (:request-method request)
+        options (:options http-resource)
+        ;; TODO: Document this debug feature
+        debug (boolean (get-in request [:headers "x-yada-debug"]))
+        ctx (merge
+             (make-context)
+             {:method method
+              :method-instance (get (:known-methods http-resource) method)
+              :http-resource http-resource
+              :resource (:resource http-resource)
+              :request request
+              :allowed-methods (:allowed-methods http-resource)
+              :options options})
+        ]
 
-          ;; TODO: Document this debug feature
-          debug (boolean (get-in request [:headers "x-yada-debug"]))]
+    (->
+     (d/chain
+      ctx
+      available?
+      known-method?
+      uri-too-long?
+      TRACE
+      method-allowed?
+      malformed?
+      authentication
+      authorization
+      fetch
+      ;; TODO: Unknown or unsupported Content-* header
+      ;; TODO: Request entity too large - shouldn't we do this later,
+      ;; when we determine we actually need to read the request body?
+      select-representation
+      exists?
+      check-modification-time
+      if-match
+      invoke-method
+      compute-etag
+      create-response)
 
-      (-> ctx
+     ;; Handle exits
+     (d/catch clojure.lang.ExceptionInfo
+         #(let [data (ex-data %)]
+            (if (::http-response data)
+              (if-let [debug-data (when debug (::debug data))]
+                (assoc data :body (prn-str debug-data))
+                data)
 
-          ;; Populate context
-          (merge
-           {:method method
-            :method-instance (get (:known-methods http-resource) method)
-            :http-resource http-resource
-            :resource (:resource http-resource)
-            :request request
-            :allowed-methods (:allowed-methods http-resource)
-            :options options})
+              (throw (ex-info "Internal Server Error (ex-info)" data %))
+              #_{:status 500
+                 :body (format "Internal Server Error: %s" (prn-str data))})))
 
-          (d/chain
-
-           available?
-           known-method?
-           uri-too-long?
-           TRACE
-           method-allowed?
-           malformed?
-           authentication
-           authorization
-           fetch
-
-           ;; TODO: Unknown or unsupported Content-* header
-
-           ;; TODO: Request entity too large - shouldn't we do this later,
-           ;; when we determine we actually need to read the request body?
-
-           select-representation
-           exists?
-           check-modification-time
-           if-match
-           invoke-method
-           compute-etag
-           create-response)
-
-          ;; Handle exits
-          (d/catch clojure.lang.ExceptionInfo
-              #(let [data (ex-data %)]
-                 (if (::http-response data)
-                   (if-let [debug-data (when debug (::debug data))]
-                     (assoc data :body (prn-str debug-data))
-                     data)
-
-                   (throw (ex-info "Internal Server Error (ex-info)" data %))
-                   #_{:status 500
-                      :body (format "Internal Server Error: %s" (prn-str data))})))
-
-          (d/catch #(identity
-                     (throw (ex-info "Internal Server Error" {:request request} %))
-                     #_{:status 500 :body
-                        (html
-                         [:body
-                          [:h1 "Internal Server Error"]
-                          [:p (str %)]
-                          [:pre (with-out-str (apply str (interpose "\n" (seq (.getStackTrace %)))))]])}))))))
+     (d/catch #(identity
+                (throw (ex-info "Internal Server Error" {:request request} %))
+                #_{:status 500 :body
+                   (html
+                    [:body
+                     [:h1 "Internal Server Error"]
+                     [:p (str %)]
+                     [:pre (with-out-str (apply str (interpose "\n" (seq (.getStackTrace %)))))]])})))))
 
 (defrecord HttpResource [resource id handler]
   clojure.lang.IFn
   (invoke [this req]
     (handle-request this req)))
-
-(defn spyctx [label & [korks]]
-  (fn [ctx]
-    (infof "SPYCTX %s: Context is %s"
-            label
-            (pr-str (if korks (get-in ctx (if (sequential? korks) korks [korks])) ctx)))
-    ctx))
 
 (defrecord NoAuthorizationSpecified []
   service/Service
