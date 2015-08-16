@@ -75,14 +75,14 @@ $ lein test
 Thanks to the following people for contributions, feedback and
 suggestions.
 
-Malcolm Sparks
-Martin Trojer
-Philipp Meier
-Stijn Opheide
-Frankie Sardo
-Jon Pither
-Håkan Råberg
-Ernestas Lisauskas
+* Malcolm Sparks
+* Martin Trojer
+* Philipp Meier
+* Stijn Opheide
+* Frankie Sardo
+* Jon Pither
+* Håkan Råberg
+* Ernestas Lisauskas
 
 ## Copyright & License
 
