@@ -422,30 +422,31 @@
               :request request
               :allowed-methods (:allowed-methods http-resource)
               :options options})
+        interceptors
+        [
+         available?
+         known-method?
+         uri-too-long?
+         TRACE
+         method-allowed?
+         malformed?
+         authentication
+         authorization
+         fetch
+         ;; TODO: Unknown or unsupported Content-* header
+         ;; TODO: Request entity too large - shouldn't we do this later,
+         ;; when we determine we actually need to read the request body?
+         select-representation
+         exists?
+         check-modification-time
+         if-match
+         invoke-method
+         compute-etag
+         create-response]
         ]
 
     (->
-     (d/chain
-      ctx
-      available?
-      known-method?
-      uri-too-long?
-      TRACE
-      method-allowed?
-      malformed?
-      authentication
-      authorization
-      fetch
-      ;; TODO: Unknown or unsupported Content-* header
-      ;; TODO: Request entity too large - shouldn't we do this later,
-      ;; when we determine we actually need to read the request body?
-      select-representation
-      exists?
-      check-modification-time
-      if-match
-      invoke-method
-      compute-etag
-      create-response)
+     (apply d/chain ctx interceptors)
 
      ;; Handle exits
      (d/catch clojure.lang.ExceptionInfo
