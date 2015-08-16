@@ -122,14 +122,14 @@ others.
 
 This approach has a number of advantages. Many things you would expect
 to have to code yourself are taken care of automatically, such as
-request validation, content negotation, conditional requests, HEAD,
+request validation, content negotiation, conditional requests, HEAD,
 OPTIONS and TRACE methods, cache-control, CORS and much more, leaving
 you time to focus on the functional parts of your application and
 leaving you with far less handler code to write and maintain.
 
 yada is built on a fully asynchronous core, allowing you to
 exploit the asynchronous features of modern web servers, to achieve
-greater scaleability for Clojure-powered your websites and APIs.
+greater scalability for your Clojure-powered websites and APIs.
 
 yada is data-centric, letting you specify your web resources
 as _data_. This has some compelling advantages, such as being able to
@@ -141,7 +141,7 @@ However, yada is not a fully-fledged 'batteries-included' web
 'framework'. It does not offer URI routing and link formation, nor does
 it offer views and templating. It does, however, integrate seamlessly
 with its sibling library [bidi](https://github.com/juxt/bidi (for URI
-routing and formation) and other routing libraries. It can integrated
+routing and formation) and other routing libraries. It can be integrated
 with the many template libraries available for Clojure and Java, so you
 can build your own web-framework from yada and other libraries.
 
@@ -664,17 +664,17 @@ Declaring your parameters in resource descriptions comes with numerous advantage
 
 If you think of a web resource in MVC terms, representations are the
 different views of a resource. Representations are the means by which a
-resource's state can be tranferred to different parts of the web.
+resource's state can be transferred to different parts of the web.
 
 The actual content of a representation is determined by the outcome of a
 process known as _content negotiation_.
 
-Content negotation is an important feature of HTTP, allowing clients and
+Content negotiation is an important feature of HTTP, allowing clients and
 servers to agree on how a resource can be represented to best meet the
 availability, compatibility and preferences of both parties.
 
 There are 2 types of
-[content neogiation](http://localhost:8090/static/spec/rfc7231.html#section-3.4)
+[content negotiation](http://localhost:8090/static/spec/rfc7231.html#section-3.4)
 described in HTTP.
 
 ### Proactive negotiation
@@ -727,7 +727,7 @@ Content-Length: 9
 
 ### Reactive negotiation
 
-The second type of negotiation is termed _reactive negotation_ where the
+The second type of negotiation is termed _reactive negotiation_ where the
 agent chooses from a list of representations provided by the server.
 
 
@@ -740,7 +740,7 @@ Let's delve a little deeper into how the _Hello World!_ example works.
 
 Here is the actual code that tells yada about Java strings. The
 namespace declaration and comments have been removed, but otherwise this
-is all the code that is required to adatp Java strings into yada
+is all the code that is required to adapt Java strings into yada
 resources.
 
 ```clojure
@@ -861,7 +861,7 @@ For a fuller explanation as to why asynchronous programming models are
 beneficial, see the [Ratpack](http://ratpack.io) documentation. Note
 that yada provides all the features of Ratpack, and more, but native to
 Clojure. The combination of Clojure and yada significantly reduces the
-amount of code you have to write to create scaleable web APIs for your
+amount of code you have to write to create scalable web APIs for your
 applications.
 
 ## Methods
@@ -930,13 +930,13 @@ served by, which are often written in Java. The contract involves
 specifying nature of the interface (request/response) and the structure
 of the maps are used to represent the request and response.
 
-In additional, Ring offers a set of modular and composeable higher-order
+In addition, Ring offers a set of modular and composable higher-order
 functions, called Ring middleware, from which a single Ring-compatible
 handler can be composed featuring a rich set of behaviour. It is also
 straight-forward to create bespoke middleware for specialised
 requirements.
 
-While Ring is incredibly flexible, the fine-grained modularity if offers
+While Ring is incredibly flexible, the fine-grained modularity it offers
 comes with some trade-offs.
 
 #### Everything always from the ground up
@@ -954,7 +954,7 @@ yada starts you off at full HTTP functionality.
 
 Ring is optimised for implementing _bare-bones_ web services
 quickly. Since that is what developers are so often asked to do, it is
-no wonder Ring is so ppoular.
+no wonder Ring is so popular.
 
 There do exist projects (such as noir and ring-defaults) that offer
 pre-constructed stacks of Ring middleware which provide a reasonable
