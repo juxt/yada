@@ -22,12 +22,12 @@
 
   p/Representations
   (representations [u]
-    [{:content-type #{(ext-mime-type (.getPath u))}
+    [{:media-type #{(ext-mime-type (.getPath u))}
       :charset charset/platform-charsets}])
 
   Get
   (GET [u ctx]
-    (if (= (get-in ctx [:response :representation :content-type :type]) "text")
+    (if (= (get-in ctx [:response :representation :media-type :type]) "text")
       (BufferedReader.
        (InputStreamReader. (.openStream u) (or (get-in ctx [:response :server-charset]) "UTF-8")))
       (.openStream u)))

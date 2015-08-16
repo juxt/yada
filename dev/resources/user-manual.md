@@ -699,10 +699,10 @@ sets of possible representation.
     (case (get-in ctx [:response :representation :language])
             "zh-ch" "你好世界!\n"
             "en" "Hello World!\n"))
-  :representations [{:content-type "text/plain"
+  :representations [{:media-type "text/plain"
                      :language #{"en" "zh-ch"}
                      :charset "UTF-8"}
-                    {:content-type "text/plain"
+                    {:media-type "text/plain"
                      :language "zh-ch"
                      :charset "Shift_JIS;q=0.9"}])
 ```
@@ -748,7 +748,7 @@ resources.
 
   Representations
   (representations [_]
-    [{:content-type "text/plain" :charset platform-charsets}])
+    [{:media-type "text/plain" :charset platform-charsets}])
 
   ResourceModification
   (last-modified [_ _] last-modified)

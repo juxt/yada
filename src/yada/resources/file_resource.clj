@@ -76,7 +76,7 @@
         (rep/select-representation
          (:request ctx)
          (rep/coerce-representations
-          [{:content-type (set (remove nil? [(ext-mime-type (.getName f))]))}]))]
+          [{:media-type (set (remove nil? [(ext-mime-type (.getName f))]))}]))]
     (when-not representation
       (throw (ex-info "" {:status 406 :yada.core/http-response true})))
     representation))
@@ -93,8 +93,7 @@
 
   p/Representations
   (representations [_]
-    ;; TODO: Rename :content-type to :media-type
-    [{:content-type (or (ext-mime-type (.getName f)) "application/octet-stream")}])
+    [{:media-type (or (ext-mime-type (.getName f)) "application/octet-stream")}])
 
   Get
   (GET [_ ctx]
@@ -138,7 +137,7 @@
   (representations [_]
     ;; For when path-info is nil
     [{:method #{:get :head}
-      :content-type #{"text/html" "text/plain"}
+      :media-type #{"text/html" "text/plain"}
       :charset charset/platform-charsets}])
 
   Get
@@ -148,7 +147,7 @@
         (let [representation (rep/select-representation
                               (:request ctx)
                               (rep/coerce-representations (representations this)))
-              ct (:content-type representation)]
+              ct (:media-type representation)]
 
           (cond-> (:response ctx)
             true (assoc :body (rep/to-body (dir-index dir ct) representation))
@@ -162,7 +161,7 @@
             (let [representation (negotiate-file-info f ctx)]
               (cond-> (:response ctx)
                 f (assoc :body f)
-                (:content-type representation) (assoc :content-type (:content-type representation))))
+                (:media-type representation) (assoc :media-type (:media-type representation))))
 
             (.isDirectory f)
             ;; This is sub-directory, with path-info, so no
@@ -172,7 +171,7 @@
             (let [representation (rep/select-representation
                                   (:request ctx)
                                   (rep/coerce-representations (representations this)))
-                  ct (:content-type representation)]
+                  ct (:media-type representation)]
               (cond-> (:response ctx)
                 true (assoc :body (rep/to-body (dir-index f ct) representation))
                 representation (assoc :representation representation)))

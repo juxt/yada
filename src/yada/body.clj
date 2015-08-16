@@ -48,8 +48,8 @@
   (to-body [resource representation] "Construct the reponse body for the given resource, given the negotiated representation (metadata)")
   (content-length [_] "Return the size of the resource's representation, if this can possibly be known up-front (return nil if this is unknown)"))
 
-(defmulti render-map (fn [resource representation] (-> representation :content-type mt/media-type)))
-(defmulti render-seq (fn [resource representation] (-> representation :content-type mt/media-type)))
+(defmulti render-map (fn [resource representation] (-> representation :media-type mt/media-type)))
+(defmulti render-seq (fn [resource representation] (-> representation :media-type mt/media-type)))
 
 (extend-protocol MessageBody
 
@@ -119,26 +119,26 @@
 
 (defmethod render-map "application/json"
   [m representation]
-  (let [pretty (get-in representation [:content-type :parameters "pretty"])]
+  (let [pretty (get-in representation [:media-type :parameters "pretty"])]
     (str (json/encode m {:pretty pretty}) \newline)))
 
 (defmethod render-seq "application/json"
   [s representation]
-  (let [pretty (get-in representation [:content-type :parameters "pretty"])]
+  (let [pretty (get-in representation [:media-type :parameters "pretty"])]
     (str (json/encode s {:pretty pretty}) \newline)))
 
 ;; application/edn
 
 (defmethod render-map "application/edn"
   [m representation]
-  (let [pretty (get-in representation [:content-type :parameters "pretty"])]
+  (let [pretty (get-in representation [:media-type :parameters "pretty"])]
     (if pretty
       (with-out-str (pprint m))
       (prn-str m))))
 
 (defmethod render-seq "application/edn"
   [s representation]
-  (let [pretty (get-in representation [:content-type :parameters "pretty"])]
+  (let [pretty (get-in representation [:media-type :parameters "pretty"])]
     (if pretty
       (with-out-str (pprint s))
       (prn-str s))))

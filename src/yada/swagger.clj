@@ -44,7 +44,7 @@
                                    representations (filter (fn [rep] (or (nil? (:method rep))
                                                                         (contains? (:method rep) method))) representations)
                                    produces (when (#{:get} method)
-                                              (distinct (map mt/media-type (map :content-type representations))))]]
+                                              (distinct (map mt/media-type (map :media-type representations))))]]
                          ;; Responses must be added in the static swagger section
                          {method (merge (when produces {:produces produces})
                                         {:parameters parameters})}))
@@ -60,13 +60,13 @@
   p/Representations
   (representations [_]
     (case content-type
-      "text/html" [{:content-type "text/html"
+      "text/html" [{:media-type "text/html"
                     :charset charset/platform-charsets}]
-      "application/edn" [{:content-type #{"application/edn"
+      "application/edn" [{:media-type #{"application/edn"
                                           "application/edn;pretty=true"}
                           :charset #{"UTF-8"}}]
 
-      "application/json" [{:content-type #{"application/json"
+      "application/json" [{:media-type #{"application/json"
                                            "application/json;pretty=true"}
                            :charset #{"UTF-8" "UTF-16;q=0.9" "UTF-32;q=0.9"}}]))
 

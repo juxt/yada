@@ -68,7 +68,7 @@
   p/ResourceVersion
   (version [_ ctx] @v)
   p/Representations
-  (representations [_] [{:content-type "text/plain"}])
+  (representations [_] [{:media-type "text/plain"}])
   Get
   (GET [_ ctx] "foo")
   Post

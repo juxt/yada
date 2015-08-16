@@ -389,7 +389,7 @@
                               ;; effect of this change.
                               (when (not= method :options)
                                 (merge {}
-                                       (when-let [x (get-in ctx [:response :representation :content-type])]
+                                       (when-let [x (get-in ctx [:response :representation :media-type])]
                                          (let [y (get-in ctx [:response :representation :charset])]
                                            (if (and y (= (:type x) "text"))
                                              {"content-type" (mt/media-type->string (assoc-in x [:parameters "charset"] (charset/charset y)))}
@@ -489,7 +489,7 @@
                            (or
                             (:representations options)
                             (when-let [rep (:representation options)] [rep])
-                            (let [m (select-keys options [:content-type :charset :encoding :language])]
+                            (let [m (select-keys options [:media-type :charset :encoding :language])]
                               (when (not-empty m) [m]))
                             (when (satisfies? p/Representations resource)
                               (p/representations resource)))))

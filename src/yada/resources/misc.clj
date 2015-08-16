@@ -18,7 +18,7 @@
                  (assoc acc k (:parameters v))) {} this))
 
   p/Representations
-  (representations [_] [{:content-type #{"text/plain"}}])
+  (representations [_] [{:media-type #{"text/plain"}}])
 
   Get
   (GET [this ctx]

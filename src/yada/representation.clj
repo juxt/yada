@@ -74,7 +74,7 @@
   "Given a collection of acceptable mime-types, return a function that will return the quality."
   [accepts]
   (fn [rep]
-    (best (map (partial content-type-acceptable? (:content-type rep)) accepts))))
+    (best (map (partial content-type-acceptable? (:media-type rep)) accepts))))
 
 (defn make-content-type-quality-assessor
   [req k]
@@ -82,7 +82,7 @@
                               parse-csv (map mt/string->media-type))]
     (-> acceptable-types
         highest-content-type-quality
-        (wrap-quality-assessor :content-type)
+        (wrap-quality-assessor :media-type)
         skip-rejected)))
 
 ;; Charsets ------------------------------------
@@ -259,13 +259,13 @@
    (make-language-quality-assessor req :language)
    (make-encoding-quality-assessor req :encoding)
    (make-charset-quality-assessor req :charset)
-   (make-content-type-quality-assessor req :content-type)))
+   (make-content-type-quality-assessor req :media-type)))
 
 (def ^{:doc "A selection algorithm that compares each quality in turn,
   only moving to the next quality if the comparison is a draw."}
   agent-preference-sequential-compare
   (juxt
-   :content-type
+   :media-type
    :charset
    :encoding
    :language))
@@ -274,11 +274,11 @@
   before comparing."}
   agent-preference-compound-quality
   (juxt
-   #(* (or (-> % :content-type first) 1)
+   #(* (or (-> % :media-type first) 1)
        (or (-> % :charset first) 1)
        (or (-> % :encoding first) 1)
        (or (-> % :language first) 1))
-   #(* (or (-> % :content-type second) 1)
+   #(* (or (-> % :media-type second) 1)
        (or (-> % :charset second) 1)
        (or (-> % :encoding second) 1)
        (or (-> % :language second) 1))))
@@ -308,8 +308,8 @@
      (fn [rep]
        (merge
         (select-keys rep [:method])
-        (when-let [ct (:content-type rep)]
-          {:content-type (set (map mt/string->media-type (to-set ct)))})
+        (when-let [ct (:media-type rep)]
+          {:media-type (set (map mt/string->media-type (to-set ct)))})
         (when-let [cs (:charset rep)]
           {:charset (set (map charset/to-charset-map (to-set cs)))})
 
@@ -339,12 +339,12 @@
   result of coerce-representations."
   [reps]
   (for [rep reps
-        content-type (or (:content-type rep) [nil])
+        content-type (or (:media-type rep) [nil])
         charset (or (:charset rep) [nil])
         language (or (:language rep) [nil])
         encoding (or (:encoding rep) [nil])]
     (merge
-     (when content-type {:content-type content-type})
+     (when content-type {:media-type content-type})
      (when charset {:charset charset})
      (when language {:language language})
      (when encoding {:encoding encoding}))))
@@ -353,8 +353,8 @@
   "From a representation-seq, find the variable dimensions"
   [reps]
   (cond-> #{}
-    (< 1 (count (distinct (keep (comp #(when % (mt/media-type %)) :content-type) reps))))
-    (conj :content-type)
+    (< 1 (count (distinct (keep (comp #(when % (mt/media-type %)) :media-type) reps))))
+    (conj :media-type)
 
     (< 1 (count (distinct (keep (comp #(when % (charset/charset %)) :charset) reps))))
     (conj :charset)
@@ -369,8 +369,8 @@
   "From the result of vary, construct a header"
   [vary]
   (str/join ", "
-            (keep {:charset "accept-charset"
-                   :content-type "accept"
+            (keep {:media-type "accept"
+                   :charset "accept-charset"
                    :encoding "accept-encoding"
                    :language "accept-language"}
                   vary)))

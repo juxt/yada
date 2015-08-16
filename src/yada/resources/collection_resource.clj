@@ -17,7 +17,7 @@
   p/Representations
   (representations [_]
     [{:method #{:get :head}
-      :content-type #{"application/edn" "application/json;q=0.9" "text/html;q=0.8"}
+      :media-type #{"application/edn" "application/json;q=0.9" "text/html;q=0.8"}
       :charset charset/platform-charsets}])
 
   Get

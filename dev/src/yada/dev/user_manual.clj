@@ -183,7 +183,7 @@
        [
 
         #_["petstore-simple.json" (yada/resource (json/decode (slurp (io/file "dev/resources/petstore/petstore-simple.json")))
-                                               {:representations [{:content-type #{"application/json"
+                                               {:representations [{:media-type #{"application/json"
                                                                                    "text/html;q=0.9"
                                                                                    "application/edn;q=0.8"}
                                                                    :charset #{"UTF-8"}}]})]
@@ -219,7 +219,7 @@
                                (body component
                                      (post-process-doc component xbody config)
                                      config))
-                             {:representations [{:content-type #{"text/html"} :charset #{"utf-8"}}]
+                             {:representations [{:media-type #{"text/html"} :charset #{"utf-8"}}]
                               :last-modified (io/file "dev/resources/user-manual.md")
                               :id ::user-manual})))]
 

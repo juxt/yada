@@ -37,7 +37,7 @@
       [:headers "content-type"] := "text/plain;charset=utf-8"
       [:headers "content-length"] := 13
       [:headers "vary" parse-csv set] := #{"accept-charset"}
-      [:headers "etag"] := "67591358"
+      [:headers "etag"] := "-117889259"
       [:body to-string] := "Hello World!\n")))
 
 (deftest swagger-intro-test
@@ -49,7 +49,7 @@
       [:headers "content-type"] := "application/json"
       [:headers "content-length"] := 421
       [:headers "vary" parse-csv set] := #{"accept-charset"}
-      [:headers "etag"] := "173524339"
+      [:headers "etag"] := "1169415660"
       )
     (given (-> response :body to-string json/decode)
       ["swagger"] := "2.0"

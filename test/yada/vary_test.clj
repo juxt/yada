@@ -17,8 +17,8 @@
 (st/deftest vary-test
   (given
     (vary
-     (representation-seq (coerce-representations [{:content-type #{"text/plain" "text/html"}}])))
-    identity := #{:content-type})
+     (representation-seq (coerce-representations [{:media-type #{"text/plain" "text/html"}}])))
+    identity := #{:media-type})
 
   (given
     (vary
@@ -27,15 +27,15 @@
 
   (given
     (vary
-     (representation-seq (coerce-representations [{:content-type #{"text/plain" "text/html"}
+     (representation-seq (coerce-representations [{:media-type #{"text/plain" "text/html"}
                                                    :charset #{"UTF-8" "Latin-1"}}])))
-    identity := #{:content-type :charset})
+    identity := #{:media-type :charset})
 
   )
 
 (st/deftest vary-header-test []
   (let [resource "Hello World!"
-        handler (yada/resource resource {:content-type #{"text/plain" "text/html"}})
+        handler (yada/resource resource {:media-type #{"text/plain" "text/html"}})
         request (request :head "/")
         response @(handler request)]
     (given response

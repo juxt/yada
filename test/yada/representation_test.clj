@@ -14,7 +14,7 @@
   "Given the request and a representation, get the highest possible
   quality value for the representation's content-type."
   [req rep]
-  (let [k :content-type
+  (let [k :media-type
         qa (rep/make-content-type-quality-assessor req k)
         rep (qa rep)]
     (or (get-in rep [:qualities k])
@@ -25,62 +25,62 @@
   (testing "Basic match"
     (is (= (get-highest-content-type-quality
             {:headers {"accept" "text/html"}}
-            {:content-type (mt/string->media-type "text/html")})
+            {:media-type (mt/string->media-type "text/html")})
            [(float 1.0) 3 0 (float 1.0)])))
 
   (testing "Basic match, with multiple options"
     (is (= (get-highest-content-type-quality
             {:headers {"accept" "image/png,text/html"}}
-            {:content-type (mt/string->media-type "text/html")})
+            {:media-type (mt/string->media-type "text/html")})
            [(float 1.0) 3 0 (float 1.0)])))
 
   (testing "Basic match, with multiple options and q values"
       (is (= (get-highest-content-type-quality
               {:headers {"accept" "image/png,text/html;q=0.9"}}
-              {:content-type (mt/string->media-type "text/html;q=0.8")})
+              {:media-type (mt/string->media-type "text/html;q=0.8")})
              [(float 0.9) 3 0 (float 0.8)])))
 
   (testing "Basic reject"
     (is (= (get-highest-content-type-quality
             {:headers {"accept" "text/html"}}
-            {:content-type (mt/string->media-type "text/plain")})
+            {:media-type (mt/string->media-type "text/plain")})
            :rejected)))
 
   (testing "Basic reject with multiple options"
     (is (= (get-highest-content-type-quality
             {:headers {"accept" "image/png,text/html"}}
-            {:content-type (mt/string->media-type "text/plain")})
+            {:media-type (mt/string->media-type "text/plain")})
            :rejected)))
 
   (testing "Basic reject due to zero accept quality"
     (is (= (get-highest-content-type-quality
             {:headers {"accept" "text/html;q=0"}}
-            {:content-type (mt/string->media-type "text/html")})
+            {:media-type (mt/string->media-type "text/html")})
            :rejected)))
 
   (testing "Basic reject due to zero representation quality"
     (is (= (get-highest-content-type-quality
             {:headers {"accept" "text/html"}}
-            {:content-type (mt/string->media-type "text/html;q=0")})
+            {:media-type (mt/string->media-type "text/html;q=0")})
            :rejected)))
 
   (testing "Wildcard match"
     (is (= ((get-highest-content-type-quality
              {:headers {"accept" "image/png,text/*"}}
-             {:content-type (mt/string->media-type "text/html")}) 1)
+             {:media-type (mt/string->media-type "text/html")}) 1)
            ;; We get a match with a specificity score of 2
            2)))
 
   (testing "Wildcard type mismatch"
     (is (= (get-highest-content-type-quality
             {:headers {"accept" "text/*"}}
-            {:content-type (mt/string->media-type "image/png")})
+            {:media-type (mt/string->media-type "image/png")})
            :rejected)))
 
   (testing "Specific match beats wildcard"
     (is (= ((get-highest-content-type-quality
              {:headers {"accept" "image/png,text/*,text/html"}}
-             {:content-type (mt/string->media-type "text/html")}) 1)
+             {:media-type (mt/string->media-type "text/html")}) 1)
            ;; We get a specificty score of 3, indicating we matched on the
            ;; text/html rather than the preceeding text/*
            3)))
@@ -88,13 +88,13 @@
   (testing "Specific match beats wildcard, different order"
     (is (= ((get-highest-content-type-quality
              {:headers {"accept" "text/html,text/*,image/png"}}
-             {:content-type (mt/string->media-type "text/html")}) 1)
+             {:media-type (mt/string->media-type "text/html")}) 1)
            3)))
 
   (testing "Parameter alignment"
     (is (= (get-highest-content-type-quality
             {:headers {"accept" "text/html;level=2"}}
-            {:content-type (mt/string->media-type "text/html;level=1")})
+            {:media-type (mt/string->media-type "text/html;level=1")})
            ;; We get a specificty score of 3, indicating we matched on the
            ;; text/html rather than the preceeding text/*
            :rejected)))
@@ -102,7 +102,7 @@
   (testing "Greater number of parameters matches"
     (is (= ((get-highest-content-type-quality
              {:headers {"accept" "text/html,text/html;level=1"}}
-             {:content-type (mt/string->media-type "text/html;level=1")}) 2)
+             {:media-type (mt/string->media-type "text/html;level=1")}) 2)
            ;; We get a specificty score of 3, indicating we matched on the
            ;; text/html rather than the preceeding text/*
            1))))
@@ -322,46 +322,46 @@
   (testing "Best quality charset"
     (is (= (rep/select-representation
             {:headers {"accept" "text/html"}}
-            [{:content-type (mt/string->media-type "text/html")
+            [{:media-type (mt/string->media-type "text/html")
               :charset (charset/to-charset-map "windows-1255;q=0.9")}
-             {:content-type (mt/string->media-type "text/html")
+             {:media-type (mt/string->media-type "text/html")
               :charset (charset/to-charset-map "utf-8")}])
-           {:content-type (mt/string->media-type "text/html")
+           {:media-type (mt/string->media-type "text/html")
             :charset (charset/to-charset-map "utf-8")})))
 
-  (let [reps [{:content-type (mt/string->media-type "text/html")
+  (let [reps [{:media-type (mt/string->media-type "text/html")
                :charset (charset/to-charset-map "utf-8")}
-              {:content-type (mt/string->media-type "text/xml;q=0.9")
+              {:media-type (mt/string->media-type "text/xml;q=0.9")
                :charset (charset/to-charset-map "utf-8")}
-              {:content-type (mt/string->media-type "text/xml;q=0.9")
+              {:media-type (mt/string->media-type "text/xml;q=0.9")
                :charset (charset/to-charset-map "us-ascii")}
-              {:content-type (mt/string->media-type "image/png")}]]
+              {:media-type (mt/string->media-type "image/png")}]]
 
     (testing "No headers. Implied Accept: */*"
       (is (= (rep/select-representation
               {:headers {}} reps)
-             {:content-type (mt/string->media-type "text/html")
+             {:media-type (mt/string->media-type "text/html")
               :charset (charset/to-charset-map "utf-8")})))
 
     (testing "Basic match"
       (is (= (rep/select-representation
               {:headers {"accept" "text/html"}} reps)
-             {:content-type (mt/string->media-type "text/html")
+             {:media-type (mt/string->media-type "text/html")
               :charset (charset/to-charset-map "utf-8")}))
 
       (is (= (rep/select-representation {:headers {"accept" "text/xml"}} reps)
-             {:content-type (mt/string->media-type "text/xml;q=0.9")
+             {:media-type (mt/string->media-type "text/xml;q=0.9")
               :charset (charset/to-charset-map "utf-8")}))
 
       (is (= (rep/select-representation
               {:headers {"accept" "image/png"}} reps)
-             {:content-type (mt/string->media-type "image/png")})))
+             {:media-type (mt/string->media-type "image/png")})))
 
     (testing "Wildcard match"
       (is (= (rep/select-representation
               {:headers {"accept" "image/*"}}
               reps)
-             {:content-type (mt/string->media-type "image/png")})))
+             {:media-type (mt/string->media-type "image/png")})))
 
 
     ))

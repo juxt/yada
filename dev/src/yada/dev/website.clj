@@ -53,7 +53,7 @@
                 "Swagger UI"]
            " - to demonstrate Swagger integration"]]])}))
    {:id ::index
-    :representations [{:content-type #{"text/html"}
+    :representations [{:media-type #{"text/html"}
                        :charset #{"utf-8"}
                        }]}))
 

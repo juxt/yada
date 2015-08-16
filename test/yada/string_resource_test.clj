@@ -23,7 +23,7 @@
           handler
           (yada/resource
            resource
-           {:representations [{:content-type #{"text/plain"}
+           {:representations [{:media-type #{"text/plain"}
                                ;; TODO: See comment above, this
                                ;; should not be necessary, somehow
                                ;; the charset should default to

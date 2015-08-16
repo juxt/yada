@@ -15,7 +15,7 @@
 (defrecord ChannelResource [mult]
   p/Representations
   (representations [_]
-    [{:content-type "text/event-stream"
+    [{:media-type "text/event-stream"
       :charset charset/platform-charsets}])
 
   Get
