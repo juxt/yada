@@ -170,9 +170,11 @@
   [ctx]
   (cond-> ctx
     (not-empty (filter (comp (partial = :basic) :type) (-> ctx :http-resource :security)))
-    (assoc :authentication (:basic-authentication (ring.middleware.basic-authentication/basic-authentication-request (:request ctx) (fn [user password] {:user user :password password}))))))
+    (assoc :authentication
+           (:basic-authentication (ring.middleware.basic-authentication/basic-authentication-request
+                                   (:request ctx)
+                                   (fn [user password] {:user user :password password}))))))
 
-;; Authorization
 (defn authorization
   "Authorization"
   [ctx]
@@ -183,13 +185,13 @@
                 (merge
                  {:status 401 ::http-response true}
                  (when-let [basic-realm (first (sequence realms-xf (-> ctx :http-resource :security)))]
-                   {:headers {"www-authenticate" (format "Basic realm=\"%s\"" basic-realm)}}))
-                ))
+                   {:headers {"www-authenticate" (format "Basic realm=\"%s\"" basic-realm)}}))))
+
       (if-let [auth (service/authorization res)]
         (assoc ctx :authorization auth)
         ctx))
-    (d/error-deferred (ex-info "" {:status 403
-                                   ::http-response true}))))
+
+    (d/error-deferred (ex-info "" {:status 403 ::http-response true}))))
 
 ;; Now we do a fetch, so the resource has a chance to
 ;; load any metadata it may need to answer the questions
@@ -252,19 +254,17 @@
    (fn [last-modified]
      (if-let [last-modified (round-seconds-up last-modified)]
 
-       (if-let [if-modified-since (some-> (:request ctx)
-                                          (get-in [:headers "if-modified-since"])
-                                          ring.util.time/parse-date)]
-
+       (if-let [if-modified-since
+                (some-> (:request ctx)
+                        (get-in [:headers "if-modified-since"])
+                        ring.util.time/parse-date)]
          (if (<=
               (.getTime last-modified)
               (.getTime if-modified-since))
 
            ;; exit with 304
            (d/error-deferred
-            (ex-info "" (merge {:status 304
-                                ::http-response true}
-                               ctx)))
+            (ex-info "" (merge {:status 304 ::http-response true} ctx)))
 
            (assoc-in ctx [:response :last-modified] (ring.util.time/format-date last-modified)))
 
@@ -283,9 +283,7 @@
 (defn if-match
   [ctx]
 
-  (if-let [matches (some->> (get-in (:request ctx) [:headers "if-match"])
-                            (parse-csv)
-                            set)]
+  (if-let [matches (some->> (get-in (:request ctx) [:headers "if-match"]) parse-csv set)]
 
     ;; We have an If-Match to process
     (cond
@@ -299,7 +297,8 @@
       ;; Create a map of representation -> etag
       (-> ctx :http-resource :version?)
       (let [version (p/version (:resource ctx) ctx)
-            etags (into {} (map (juxt identity (partial p/to-etag version)) (-> ctx :http-resource :representations)))]
+            etags (into {} (map (juxt identity (partial p/to-etag version))
+                                (-> ctx :http-resource :representations)))]
 
         (if (empty? (set/intersection matches (set (vals etags))))
           (d/error-deferred
@@ -316,8 +315,7 @@
           ;; etag will do for the response.
           (assoc-in ctx [:response :etag]
                     (get etags (:representation ctx))))))
-    ctx
-    ))
+    ctx))
 
 (defn invoke-method
   "Methods"
@@ -544,5 +542,4 @@
        :service-available? (:service-available? options)
        :authorization (or (:authorization options) (NoAuthorizationSpecified.))
        :version? (satisfies? p/ResourceVersion resource)
-       :existence? (satisfies? p/RepresentationExistence resource)
-       }))))
+       :existence? (satisfies? p/RepresentationExistence resource)}))))
