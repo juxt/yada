@@ -30,7 +30,7 @@ For the latest release, use the following and run the documentation
 offline (details below).
 
 ```clojure
-[yada "1.0.0-20150815.084135-3"]
+[yada "1.0.0-20150816.005601-4"]
 ```
 
 ## Status
