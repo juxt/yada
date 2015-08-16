@@ -462,6 +462,27 @@
 (defn as-sequential [s]
   (if (sequential? s) s [s]))
 
+(def default-interceptor-chain
+  [available?
+   known-method?
+   uri-too-long?
+   TRACE
+   method-allowed?
+   malformed?
+   authentication
+   authorization
+   fetch
+   ;; TODO: Unknown or unsupported Content-* header
+   ;; TODO: Request entity too large - shouldn't we do this later,
+   ;; when we determine we actually need to read the request body?
+   select-representation
+   exists?
+   check-modification-time
+   if-match
+   invoke-method
+   compute-etag
+   create-response])
+
 (defn resource
   "Create a yada resource (Ring handler)"
   ([resource]                   ; Single-arity form with default options
@@ -497,34 +518,13 @@
                               (p/representations resource)))))
 
          vary (rep/vary representations)
-
-         interceptors
-         [
-          available?
-          known-method?
-          uri-too-long?
-          TRACE
-          method-allowed?
-          malformed?
-          authentication
-          authorization
-          fetch
-          ;; TODO: Unknown or unsupported Content-* header
-          ;; TODO: Request entity too large - shouldn't we do this later,
-          ;; when we determine we actually need to read the request body?
-          select-representation
-          exists?
-          check-modification-time
-          if-match
-          invoke-method
-          compute-etag
-          create-response]]
+         ]
 
      (map->HttpResource
       {:id (or (:id options) (java.util.UUID/randomUUID))
        :resource resource
        :base base
-       :interceptors interceptors
+       :interceptors default-interceptor-chain
        :options options
        :allowed-methods allowed-methods
        :known-methods known-methods
