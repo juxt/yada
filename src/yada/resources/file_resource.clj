@@ -83,7 +83,7 @@
     representation))
 
 (defrecord FileResource [f]
-  p/ResourceAllowedMethods
+  p/AllowedMethods
   (allowed-methods [_] #{:get :head :put :delete})
 
   p/RepresentationExistence
@@ -126,7 +126,7 @@
   )
 
 #_(defrecord DirectoryResource [dir]
-  ResourceAllowedMethods
+  AllowedMethods
   (allowed-methods [_] #{:get :head :put :delete})
 
   p/RepresentationExistence

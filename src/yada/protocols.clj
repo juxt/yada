@@ -49,13 +49,13 @@
   Object
   (fetch [o ctx] o))
 
-(defprotocol ResourceAllowedMethods
+(defprotocol AllowedMethods
   "Optional protocol for resources to indicate which methods are allowed."
   (allowed-methods [_]
     "Return the allowed methods. Context-agnostic - can be introspected
     by tools (e.g. swagger)"))
 
-(extend-protocol ResourceAllowedMethods
+(extend-protocol AllowedMethods
   clojure.lang.Fn
   (allowed-methods [_] #{:get})
   nil

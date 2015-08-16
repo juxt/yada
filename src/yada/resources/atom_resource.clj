@@ -15,7 +15,7 @@
   (wrap-atom [init-state a] "Given the initial value on derefencing an atom, construct a record which will manage the reference."))
 
 (defrecord AtomResource [*a wrapper *last-mod]
-  p/ResourceAllowedMethods
+  p/AllowedMethods
   (allowed-methods [_] (conj (set (p/allowed-methods wrapper)) :put :post :delete))
 
   p/ResourceModification

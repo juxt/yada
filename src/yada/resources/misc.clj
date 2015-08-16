@@ -6,7 +6,7 @@
 ;; Each kv-arg must be off the form [method {:parameters {...} :response {...}}]
 
 (defrecord JustMethods []
-  p/ResourceAllowedMethods
+  p/AllowedMethods
   (allowed-methods [this] (keys this))
 
   p/ResourceModification

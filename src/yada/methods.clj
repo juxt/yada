@@ -366,6 +366,6 @@
     (satisfies? Delete o) (conj :put)
     (satisfies? Options o) (conj :options)))
 
-(extend-protocol p/ResourceAllowedMethods
+(extend-protocol p/AllowedMethods
   Object
   (p/allowed-methods [o] (infer-methods o)))
