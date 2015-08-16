@@ -1,7 +1,7 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (defproject yada "1.0.0-SNAPSHOT"
-  :description "A library for Clojure web APIs"
+  :description "A powerful Clojure web library, full HTTP, full async"
   :url "http://github.com/juxt/yada"
   :license {:name "The MIT License"
             :url "http://opensource.org/licenses/MIT"}
