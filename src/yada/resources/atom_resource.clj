@@ -28,9 +28,9 @@
                      (p/parameters wrapper))
                    {:put {:body s/Str}})) ;; TODO: Not just a string, depends on wrapper
 
-  p/ResourceRepresentations
+  p/Representations
   (representations [_]
-    (when (satisfies? p/ResourceRepresentations wrapper)
+    (when (satisfies? p/Representations wrapper)
       (p/representations wrapper)))
 
   p/ResourceVersion

@@ -10,7 +10,7 @@
    [yada.util :refer (md5-hash)]))
 
 (defrecord StringResource [s last-modified]
-  p/ResourceRepresentations
+  p/Representations
   (representations [_]
     [{ ;; Without attempting to actually parse it (which isn't completely
       ;; impossible) we're not able to guess the media-type of this

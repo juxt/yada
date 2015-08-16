@@ -14,7 +14,7 @@
   p/ResourceModification
   (last-modified [_ ctx] last-modified)
 
-  p/ResourceRepresentations
+  p/Representations
   (representations [_]
     [{:method #{:get :head}
       :content-type #{"application/edn" "application/json;q=0.9" "text/html;q=0.8"}

@@ -20,7 +20,7 @@
       (when (.exists f)
         (Date. (.lastModified f)))))
 
-  p/ResourceRepresentations
+  p/Representations
   (representations [u]
     [{:content-type #{(ext-mime-type (.getPath u))}
       :charset charset/platform-charsets}])

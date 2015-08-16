@@ -70,8 +70,6 @@
       [:headers "allow" parse-csv set] := #{"OPTIONS" "GET" "HEAD"}
       :body := nil)))
 
-(:allowed-methods (hello/hello))
-
 (deftest options-test
   (let [resource (hello/hello)]
     (given @(resource (request :options "/"))

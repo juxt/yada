@@ -11,8 +11,8 @@
    [ring.util.response :refer (redirect)]
    [ring.util.time :refer (format-date)]
    [yada.charset :as charset]
-   [yada.protocols :refer [ResourceAllowedMethods RepresentationExistence ResourceModification ResourceRepresentations ResourceFetch ResourceCoercion representations]]
    [yada.representation :as rep]
+   [yada.protocols :as p]
    [yada.methods :refer (Get GET Put PUT Post POST Delete DELETE)]
 
    [yada.mime :as mime])
@@ -83,14 +83,19 @@
     representation))
 
 (defrecord FileResource [f]
-  ResourceAllowedMethods
+  p/ResourceAllowedMethods
   (allowed-methods [_] #{:get :head :put :delete})
 
-  RepresentationExistence
+  p/RepresentationExistence
   (exists? [_ ctx] (.exists f))
 
-  ResourceModification
+  p/ResourceModification
   (last-modified [_ ctx] (Date. (.lastModified f)))
+
+  p/Representations
+  (representations [_]
+    ;; TODO: Rename :content-type to :media-type
+    [{:content-type (or (ext-mime-type (.getName f)) "application/octet-stream")}])
 
   Get
   (GET [_ ctx]
@@ -118,22 +123,19 @@
   Delete
   (DELETE [_ ctx] (.delete f))
 
-  ResourceRepresentations
-  (representations [_]
-    ;; TODO: Rename :content-type to :media-type
-    [{:content-type (or (ext-mime-type (.getName f)) "application/octet-stream")}]))
+  )
 
 #_(defrecord DirectoryResource [dir]
   ResourceAllowedMethods
   (allowed-methods [_] #{:get :head :put :delete})
 
-  RepresentationExistence
+  p/RepresentationExistence
   (exists? [_ ctx] (.exists dir))
 
-  ResourceModification
+  p/ResourceModification
   (last-modified [_ ctx] (Date. (.lastModified dir)))
 
-  ResourceRepresentations
+  p/Representations
   (representations [_]
     ;; For when path-info is nil
     [{:method #{:get :head}
@@ -211,7 +213,7 @@
               (.delete f)
               (throw (ex-info {:status 404 :yada.core/http-response true})))))))))
 
-(extend-protocol ResourceCoercion
+(extend-protocol p/ResourceCoercion
   File
   (as-resource [f]
     (if (.isDirectory f)

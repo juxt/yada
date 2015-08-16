@@ -100,7 +100,7 @@
 
 ;; Negotiation
 
-(defprotocol ResourceRepresentations
+(defprotocol Representations
   ;; Context-agnostic
   (representations [_] "Declare the resource's capabilities. Return a
   sequence, each item of which specifies the methods, content-types,
@@ -117,7 +117,7 @@
 ;; would have access to the static result, via the context, and could
 ;; choose how to augment these (override completely, concat, etc.)
 
-(extend-protocol ResourceRepresentations
+(extend-protocol Representations
   clojure.lang.PersistentVector (representations [v] v)
   nil (representations [_] nil))
 
@@ -127,7 +127,7 @@
 
 (defprotocol ResourceVersion
   "Entity tags. Satisfying resources MUST also satisfy
-  ResourceRepresentations, providing at least one
+  Representations, providing at least one
   representation (because the representation data is used in
   constructing the ETag header in the response)."
   (version [_ ctx] "Return the version of a resource. This is useful for

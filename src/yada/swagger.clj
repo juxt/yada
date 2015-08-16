@@ -57,7 +57,7 @@
   p/ResourceVersion
   (version [_ ctx] spec)
 
-  p/ResourceRepresentations
+  p/Representations
   (representations [_]
     (case content-type
       "text/html" [{:content-type "text/html"

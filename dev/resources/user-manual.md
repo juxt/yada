@@ -746,7 +746,7 @@ resources.
 ```clojure
 (defrecord StringResource [s last-modified]
 
-  ResourceRepresentations
+  Representations
   (representations [_]
     [{:content-type "text/plain" :charset platform-charsets}])
 
@@ -785,7 +785,7 @@ The original string (`Hello World!`) and the current date is captured
 and provided to the `StringResource` record. (The only reason for using
 `clj-time` rather than `java.util.Date` is to facilitate testing).
 
-The `StringResource` resource satisfies the `ResourceRepresentations`
+The `StringResource` resource satisfies the `Representations`
 protocol, which means it can specify which types of representation it is
 able to generate. The `representations` function must return a list of
 _representation declarations_, which declare all the possible

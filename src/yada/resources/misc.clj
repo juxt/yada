@@ -17,7 +17,7 @@
     (reduce-kv (fn [acc k v]
                  (assoc acc k (:parameters v))) {} this))
 
-  p/ResourceRepresentations
+  p/Representations
   (representations [_] [{:content-type #{"text/plain"}}])
 
   Get

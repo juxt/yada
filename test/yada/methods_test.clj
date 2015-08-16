@@ -67,7 +67,7 @@
 (defrecord ETagTestResource [v]
   p/ResourceVersion
   (version [_ ctx] @v)
-  p/ResourceRepresentations
+  p/Representations
   (representations [_] [{:content-type "text/plain"}])
   Get
   (GET [_ ctx] "foo")

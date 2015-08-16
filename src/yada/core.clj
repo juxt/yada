@@ -491,7 +491,7 @@
                             (when-let [rep (:representation options)] [rep])
                             (let [m (select-keys options [:content-type :charset :encoding :language])]
                               (when (not-empty m) [m]))
-                            (when (satisfies? p/ResourceRepresentations resource)
+                            (when (satisfies? p/Representations resource)
                               (p/representations resource)))))
 
          vary (rep/vary representations)]
