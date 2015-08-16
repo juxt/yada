@@ -70,6 +70,16 @@ tests pass prior to submission.
 $ lein test
 ```
 
+## Acknowledgments
+
+Thanks to the following people for contributions, feedback and
+suggestions.
+
+Malcolm Sparks (primary author)
+Philipp Meier
+Martin Trojer
+Ernestas Lisauskas
+
 ## Copyright & License
 
 The MIT License (MIT)
