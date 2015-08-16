@@ -126,10 +126,9 @@
   (parameters [_] "Return the parameters, by method. Must not return a deferred value."))
 
 (defprotocol ResourceVersion
-  "Entity tags. Satisfying resources MUST also satisfy
-  Representations, providing at least one
-  representation (because the representation data is used in
-  constructing the ETag header in the response)."
+  "Entity tags. Satisfying resources MUST also satisfy Representations,
+  providing at least one representation (because the representation data
+  is used in constructing the ETag header in the response)."
   (version [_ ctx] "Return the version of a resource. This is useful for
   conflict-detection. Can return nil, meaning no ETag."))
 
