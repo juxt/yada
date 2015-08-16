@@ -1,14 +1,9 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.protocols
-  (:require [clojure.tools.logging :refer :all]
-            [manifold.deferred :as d]
-            [yada.charset :refer (to-charset-map)]
-            [yada.mime :as mime]
-            [yada.util :refer (deferrable?)])
-  (:import [clojure.core.async.impl.protocols ReadPort]
-           [java.io File InputStream]
-           [java.util Date]))
+  (:import
+   [java.io File]
+   [java.util Date]))
 
 ;; Resource protocols
 
@@ -91,7 +86,7 @@
     deferred value."))
 
 (extend-protocol ResourceModification
-  java.io.File
+  File
   (last-modified [f ctx] (Date. (.lastModified f)))
   Object
   (last-modified [_ ctx] nil)

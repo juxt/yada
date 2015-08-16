@@ -4,18 +4,21 @@
   (:require
    [clojure.test :refer :all]
    [clojure.tools.logging :refer :all]
+   [clojure.pprint :refer [pprint]]
    [ring.mock.request :as mock]
    [clojure.java.io :as io]
    [ring.util.time :refer (parse-date format-date)]
+   [yada.representation :as rep]
    [juxt.iota :refer (given)]
+   [yada.test.util :refer (to-string)]
    [yada.yada :refer [resource]]))
 
 ;; Collections can be resources too, we should test them
 
+
 (deftest map-resource-test
   (testing "map"
-    (let [resource {:name "Frank"}
-          handler (yada.yada/resource resource)
+    (let [handler (resource {:name "Frank"})
           request (mock/request :get "/")
           response @(handler request)
           last-modified (parse-date (-> response :headers (get "last-modified")))]

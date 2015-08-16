@@ -6,7 +6,6 @@
    [clojure.string :as str]
    [yada.yada :as yada]
    [yada.charset :as charset]
-   [yada.mime :as mime]
    [yada.util :refer (parse-csv)]
    [ring.mock.request :refer (request)]
    [juxt.iota :refer (given)]

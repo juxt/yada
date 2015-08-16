@@ -1,6 +1,8 @@
-(ns yada.mime-test
+;; Copyright © 2015, JUXT LTD.
+
+(ns yada.media-type-test
   (:refer-clojure :exclude [type])
-  (:require [yada.mime :refer :all]
+  (:require [yada.media-type :refer :all]
             [clojure.test :refer :all]
             [juxt.iota :refer (given)]))
 

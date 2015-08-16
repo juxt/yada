@@ -19,7 +19,6 @@
    [modular.template :as template :refer (render-template)]
    [modular.component.co-dependency :refer (co-using)]
    [yada.yada :as yada]
-   [yada.mime :as mime]
    [yada.swagger :refer (swaggered)]
    [ring.util.time :as rt]
    yada.resources.string-resource

@@ -10,7 +10,7 @@
    [ring.mock.request :refer [request]]
    [ring.util.time :refer (parse-date format-date)]
    [yada.dev.hello :as hello]
-   [yada.mime :as mime]
+   [yada.media-type :as mt]
    [yada.util :refer (parse-csv)]
    [yada.test.util :refer (etag? to-string)]
    [yada.yada :as yada]))
@@ -20,7 +20,7 @@
    (for [[k v] headers]
      (case k
        "content-length" (when-not (and (number? v) (not (neg? v)) ) "content-length not a non-negative number")
-       "content-type" (when-not (mime/string->media-type v) "mime-type not valid")
+       "content-type" (when-not (mt/string->media-type v) "mime-type not valid")
        "last-modified" (when-not (instance? java.util.Date (parse-date v)) "last-modified not a date")
        "vary" (when-not (pos? (count (parse-csv v))) "vary empty")
        "allow" (when-not (pos? (count (parse-csv v))) "allow empty")
@@ -37,7 +37,7 @@
       [:headers "content-type"] := "text/plain;charset=utf-8"
       [:headers "content-length"] := 13
       [:headers "vary" parse-csv set] := #{"accept-charset"}
-      [:headers "etag"] := "1639783536"
+      [:headers "etag"] := "67591358"
       [:body to-string] := "Hello World!\n")))
 
 (deftest swagger-intro-test
@@ -49,7 +49,7 @@
       [:headers "content-type"] := "application/json"
       [:headers "content-length"] := 421
       [:headers "vary" parse-csv set] := #{"accept-charset"}
-      [:headers "etag"] := "-761415623"
+      [:headers "etag"] := "173524339"
       )
     (given (-> response :body to-string json/decode)
       ["swagger"] := "2.0"

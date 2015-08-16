@@ -22,7 +22,7 @@
    [yada.protocols :as p]
    [yada.response :refer (->Response)]
    [yada.service :as service]
-   [yada.mime :as mime]
+   [yada.media-type :as mt]
    [yada.util :refer (parse-csv)])
   (:import (java.util Date)))
 
@@ -392,8 +392,8 @@
                                        (when-let [x (get-in ctx [:response :representation :content-type])]
                                          (let [y (get-in ctx [:response :representation :charset])]
                                            (if (and y (= (:type x) "text"))
-                                             {"content-type" (mime/media-type->string (assoc-in x [:parameters "charset"] (charset/charset y)))}
-                                             {"content-type" (mime/media-type->string x)})))
+                                             {"content-type" (mt/media-type->string (assoc-in x [:parameters "charset"] (charset/charset y)))}
+                                             {"content-type" (mt/media-type->string x)})))
                                        (when-let [x (get-in ctx [:response :representation :encoding])]
                                          {"content-encoding" x})
                                        (when-let [x (get-in ctx [:response :representation :language])]

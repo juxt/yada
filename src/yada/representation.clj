@@ -9,7 +9,7 @@
    [schema.core :as s]
    [yada.coerce :refer (to-set to-list)]
    [yada.charset :as charset]
-   [yada.mime :as mime]
+   [yada.media-type :as mt]
    [yada.util :refer (best best-by parse-csv http-token OWS)]
    manifold.stream.async
    clojure.core.async.impl.channels))
@@ -67,7 +67,7 @@
            (= (:subtype acceptable) "*"))
       [(:quality acceptable) 2 (count (:parameters rep)) (:quality rep)]
 
-      (and (= (mime/media-type acceptable) "*/*"))
+      (and (= (mt/media-type acceptable) "*/*"))
       [(:quality acceptable) 1 (count (:parameters rep)) (:quality rep)])))
 
 (defn highest-content-type-quality
@@ -79,7 +79,7 @@
 (defn make-content-type-quality-assessor
   [req k]
   (let [acceptable-types (->> (or (get-in req [:headers "accept"]) "*/*")
-                              parse-csv (map mime/string->media-type))]
+                              parse-csv (map mt/string->media-type))]
     (-> acceptable-types
         highest-content-type-quality
         (wrap-quality-assessor :content-type)
@@ -265,16 +265,12 @@
   only moving to the next quality if the comparison is a draw."}
   agent-preference-sequential-compare
   (juxt
-   (comp first :content-type)
-   (comp first :charset)
-   (comp first :encoding)
-   (comp first :language)
-   (comp second :content-type)
-   (comp second :charset)
-   (comp second :encoding)
-   (comp second :language)))
+   :content-type
+   :charset
+   :encoding
+   :language))
 
-(def ^{:doc "A selection algorithm that multiples qualities together,
+#_(def ^{:doc "A selection algorithm that multiples qualities together,
   before comparing."}
   agent-preference-compound-quality
   (juxt
@@ -313,7 +309,7 @@
        (merge
         (select-keys rep [:method])
         (when-let [ct (:content-type rep)]
-          {:content-type (set (map mime/string->media-type (to-set ct)))})
+          {:content-type (set (map mt/string->media-type (to-set ct)))})
         (when-let [cs (:charset rep)]
           {:charset (set (map charset/to-charset-map (to-set cs)))})
 
@@ -357,7 +353,7 @@
   "From a representation-seq, find the variable dimensions"
   [reps]
   (cond-> #{}
-    (< 1 (count (distinct (keep (comp #(when % (mime/media-type %)) :content-type) reps))))
+    (< 1 (count (distinct (keep (comp #(when % (mt/media-type %)) :content-type) reps))))
     (conj :content-type)
 
     (< 1 (count (distinct (keep (comp #(when % (charset/charset %)) :charset) reps))))

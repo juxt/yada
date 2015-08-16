@@ -13,7 +13,7 @@
    [ring.util.codec :as codec]
    [ring.swagger.schema :as rs]
    [yada.charset :as charset]
-   [yada.mime :as mime])
+   [yada.media-type :as mt])
   (:import
    [clojure.core.async.impl.channels ManyToManyChannel]
    [java.io File]
@@ -48,8 +48,8 @@
   (to-body [resource representation] "Construct the reponse body for the given resource, given the negotiated representation (metadata)")
   (content-length [_] "Return the size of the resource's representation, if this can possibly be known up-front (return nil if this is unknown)"))
 
-(defmulti render-map (fn [resource representation] (-> representation :content-type mime/media-type)))
-(defmulti render-seq (fn [resource representation] (-> representation :content-type mime/media-type)))
+(defmulti render-map (fn [resource representation] (-> representation :content-type mt/media-type)))
+(defmulti render-seq (fn [resource representation] (-> representation :content-type mt/media-type)))
 
 (extend-protocol MessageBody
 

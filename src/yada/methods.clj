@@ -6,7 +6,6 @@
    [clojure.string :as str]
    [clojure.tools.logging :refer :all]
    [manifold.deferred :as d]
-   [yada.mime :as mime]
    [yada.body :as body]
    [yada.protocols :as p]
    [yada.service :as service]

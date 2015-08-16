@@ -17,7 +17,7 @@
    [schema.core :as s]
    [yada.charset :as charset]
    [yada.methods :refer (Get GET)]
-   [yada.mime :as mime]
+   [yada.media-type :as mt]
    [yada.protocols :as p]
    [yada.core :as yada]
    [yada.util :refer (md5-hash)])
@@ -44,7 +44,7 @@
                                    representations (filter (fn [rep] (or (nil? (:method rep))
                                                                         (contains? (:method rep) method))) representations)
                                    produces (when (#{:get} method)
-                                              (distinct (map mime/media-type (map :content-type representations))))]]
+                                              (distinct (map mt/media-type (map :content-type representations))))]]
                          ;; Responses must be added in the static swagger section
                          {method (merge (when produces {:produces produces})
                                         {:parameters parameters})}))

@@ -1,4 +1,6 @@
-(ns yada.mime
+;; Copyright © 2015, JUXT LTD.
+
+(ns yada.media-type
   (:refer-clojure :exclude [type])
   (:require [yada.util :refer (http-token)]))
 

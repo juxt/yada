@@ -14,8 +14,7 @@
    [yada.representation :as rep]
    [yada.protocols :as p]
    [yada.methods :refer (Get GET Put PUT Post POST Delete DELETE)]
-
-   [yada.mime :as mime])
+   [yada.media-type :as mt])
   (:import [java.io File]
            [java.util Date TimeZone]
            [java.text SimpleDateFormat]
@@ -43,7 +42,7 @@
 
 (defn dir-index [dir content-type]
   (assert content-type)
-  (case (mime/media-type content-type)
+  (case (mt/media-type content-type)
     "text/plain"
     (apply str
            (for [child (sort (.listFiles dir))]
