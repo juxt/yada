@@ -406,14 +406,24 @@
     (debugf "Returning response: %s" (dissoc response :body))
     response))
 
+(defn wrap-trace [link]
+  (fn [ctx]
+    (let [t0 (System/nanoTime)]
+      (d/chain
+       (link ctx)
+       (fn [newctx]
+         (let [t1 (System/nanoTime)]
+           (update-in newctx [:chain] conj {:link link
+                                            :old (dissoc ctx :chain)
+                                            :new (dissoc newctx :chain)
+                                            :t0 t0 :t1 t1})))))))
+
 (defn- handle-request
   "Handle Ring request"
   [http-resource request]
   (let [method (:request-method request)
         interceptors (:interceptors http-resource)
         options (:options http-resource)
-        ;; TODO: Document this debug feature
-        debug (boolean (get-in request [:headers "x-yada-debug"]))
         ctx (merge
              (make-context)
              {:method method
@@ -426,28 +436,17 @@
               :options options})]
 
     (->
-     (apply d/chain ctx interceptors)
+     (->> interceptors
+          (map wrap-trace)
+          (apply d/chain ctx))
 
-     ;; Handle exits
-     (d/catch clojure.lang.ExceptionInfo
-         #(let [data (ex-data %)]
-            (if (::http-response data)
-              (if-let [debug-data (when debug (::debug data))]
-                (assoc data :body (prn-str debug-data))
-                data)
-
-              (throw (ex-info "Internal Server Error (ex-info)" data %))
-              #_{:status 500
-                 :body (format "Internal Server Error: %s" (prn-str data))})))
-
-     (d/catch #(identity
-                (throw (ex-info "Internal Server Error" {:request request} %))
-                #_{:status 500 :body
-                   (html
-                    [:body
-                     [:h1 "Internal Server Error"]
-                     [:p (str %)]
-                     [:pre (with-out-str (apply str (interpose "\n" (seq (.getStackTrace %)))))]])})))))
+     ;; Handle non-local exits
+     (d/catch
+         (fn [e]
+           (let [data (when (instance? clojure.lang.ExceptionInfo e) (ex-data e))]
+             (if (::http-response data)
+               data
+               (throw (ex-info "Internal Server Error (ex-info)" data e)))))))))
 
 (defrecord HttpResource [resource id handler]
   clojure.lang.IFn
