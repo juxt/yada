@@ -1,3 +1,5 @@
+;; Copyright © 2015, JUXT LTD.
+
 (ns yada.dev.hello
   (:require
    [clojure.core.async :refer (chan go <! >! timeout go-loop)]
@@ -41,9 +43,8 @@
   (start [component]
     (assoc component :channel (chan 10)))
 
-  (stop [component]
-    component
-    )
+  (stop [component] component)
+
   RouteProvider
   (routes [_]
     [""

@@ -21,6 +21,7 @@
 
    [yada.dev.async :refer (new-handler)]
    [yada.dev.hello :refer (new-hello-world-example)]
+   [yada.dev.error-example :refer (new-error-example)]
    [aero.core :refer (read-config)]))
 
 (defn config
@@ -93,6 +94,11 @@
    system
    :hello-world (new-hello-world-example)))
 
+(defn error-components [system config]
+  (assoc
+   system
+   :error-example (new-error-example)))
+
 (defn new-system-map
   [config]
   (apply system-map
@@ -105,6 +111,7 @@
         (router-components config)
         (http-server-components config)
         (hello-world-components config)
+        (error-components config)
         (assoc :redirect (new-redirect :from "/" :to :yada.dev.website/index))
         ))))
 
@@ -114,6 +121,7 @@
    :user-manual {:templater :clostache-templater}
    :router [:swagger-ui
             :hello-world
+            :error-example
             :user-api
             :user-manual
             :website

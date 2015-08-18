@@ -2,11 +2,13 @@
 
 (ns yada.core
   (:require
-   [byte-streams :as bs]
    [clojure.set :as set]
    [clojure.string :as str]
    [clojure.tools.logging :refer :all :exclude [trace]]
    [clojure.walk :refer (keywordize-keys)]
+   [byte-streams :as bs]
+   [bidi.bidi :as bidi]
+   [hiccup.core :as h]
    [manifold.deferred :as d]
    ring.middleware.basic-authentication
    [ring.middleware.params :refer (assoc-query-params)]
@@ -17,13 +19,15 @@
    schema.utils
    [yada.body :as body]
    [yada.charset :as charset]
+   [yada.journal :as journal]
    [yada.methods :as methods]
    [yada.representation :as rep]
    [yada.protocols :as p]
    [yada.response :refer (->Response)]
    [yada.service :as service]
    [yada.media-type :as mt]
-   [yada.util :refer (parse-csv)])
+   [yada.util :refer (parse-csv)]
+   )
   (:import (java.util Date)))
 
 (defn make-context []
@@ -406,17 +410,20 @@
     (debugf "Returning response: %s" (dissoc response :body))
     response))
 
-(defn wrap-trace [link]
-  (fn [ctx]
-    (let [t0 (System/nanoTime)]
-      (d/chain
-       (link ctx)
-       (fn [newctx]
-         (let [t1 (System/nanoTime)]
-           (update-in newctx [:chain] conj {:link link
-                                            :old (dissoc ctx :chain)
-                                            :new (dissoc newctx :chain)
-                                            :t0 t0 :t1 t1})))))))
+(defn wrap-journaling [journal-entry]
+  (fn [link]
+    (fn [ctx]
+      (let [t0 (System/nanoTime)]
+        (d/chain
+         (link ctx)
+         (fn [res]
+           (let [t1 (System/nanoTime)]
+             (swap! journal-entry
+                    update-in [:chain] conj {:link link
+                                             :old (dissoc ctx :journal)
+                                             :new (dissoc res :journal)
+                                             :t0 t0 :t1 t1})
+             res)))))))
 
 (defn- handle-request
   "Handle Ring request"
@@ -424,20 +431,24 @@
   (let [method (:request-method request)
         interceptors (:interceptors http-resource)
         options (:options http-resource)
+        journal-entry (atom {:chain []})
+        id (java.util.UUID/randomUUID)
         ctx (merge
              (make-context)
-             {:method method
+             {:id id
+              :method method
               :method-instance (get (:known-methods http-resource) method)
               :interceptors interceptors
               :http-resource http-resource
               :resource (:resource http-resource)
               :request request
               :allowed-methods (:allowed-methods http-resource)
-              :options options})]
+              :options options
+              :journal journal-entry})]
 
     (->
      (->> interceptors
-          (map wrap-trace)
+          (mapv (wrap-journaling journal-entry))
           (apply d/chain ctx))
 
      ;; Handle non-local exits
@@ -446,9 +457,38 @@
            (let [data (when (instance? clojure.lang.ExceptionInfo e) (ex-data e))]
              (if (::http-response data)
                data
-               (throw (ex-info "Internal Server Error (ex-info)" data e)))))))))
+               (do
+                 (when-let [journal (:journal http-resource)]
+                   (swap! journal assoc id (swap! journal-entry assoc :error {:exception e :data data})))
 
-(defrecord HttpResource [resource id handler]
+                 {:status 500
+                  ;; Renegotiate representation
+                  :body (h/html
+                         [:body
+                          [:p "Internal Server Error"]
+                          (when-let [path (:journal-browser-path options)]
+                            [:div
+                             [:p "Details"]
+                             [:a {:href (str path (journal/path-for :entry :id id))} id]])]
+                         )}))))))))
+
+(defrecord HttpResource
+    [id
+     resource
+     base
+     interceptors
+     options
+     allowed-methods
+     known-methods
+     parameters
+     representations
+     vary
+     security
+     service-available?
+     authorization
+     version?
+     existence?
+     journal]
   clojure.lang.IFn
   (invoke [this req]
     (handle-request this req)))
@@ -517,21 +557,25 @@
                               (p/representations resource)))))
 
          vary (rep/vary representations)
+
+         journal (:journal options)
          ]
 
      (map->HttpResource
-      {:id (or (:id options) (java.util.UUID/randomUUID))
-       :resource resource
-       :base base
-       :interceptors default-interceptor-chain
-       :options options
-       :allowed-methods allowed-methods
-       :known-methods known-methods
-       :parameters parameters
-       :representations representations
-       :vary vary
-       :security (as-sequential (:security options))
-       :service-available? (:service-available? options)
-       :authorization (or (:authorization options) (NoAuthorizationSpecified.))
-       :version? (satisfies? p/ResourceVersion resource)
-       :existence? (satisfies? p/RepresentationExistence resource)}))))
+      (merge
+       {:id (:id options)
+        :resource resource
+        :base base
+        :interceptors default-interceptor-chain
+        :options options
+        :allowed-methods allowed-methods
+        :known-methods known-methods
+        :parameters parameters
+        :representations representations
+        :vary vary
+        :security (as-sequential (:security options))
+        :service-available? (:service-available? options)
+        :authorization (or (:authorization options) (NoAuthorizationSpecified.))
+        :version? (satisfies? p/ResourceVersion resource)
+        :existence? (satisfies? p/RepresentationExistence resource)}
+       (when journal {:journal journal}))))))

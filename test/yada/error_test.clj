@@ -8,11 +8,14 @@
    [ring.mock.request :refer [request]]))
 
 (deftest error-test
-  (let [resource (yada/resource
-                  (fn [ctx] (throw (ex-info "TODO" {})))
+  (let [journal (atom {})
+        resource (yada/resource
+                  (fn [ctx] (throw (ex-info "Problem!" {:data 123})))
                   {:allowed-methods #{:get}
-                   :media-type "text/html"})]
+                   :media-type "text/html"
+                   :journal journal})]
     (given @(resource (request :get "/"))
-      :status := 500
-
-      )))
+      :status := 500)
+    (given @journal
+      first :? vector?
+      [first second :error :data] := {:data 123})))
