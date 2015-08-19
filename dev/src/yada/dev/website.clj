@@ -26,6 +26,11 @@
    7239 "Forwarded HTTP Extension"
    7240 "Prefer Header for HTTP"})
 
+(defn rfc []
+  (fn [req]
+    (let [source (io/resource (format "static/spec/rfc%s.html" (get-in req [:route-params :rfc])))]
+      ((yada/resource source) req))))
+
 (defn index [{:keys [*router templater]}]
   (yada/resource
    (fn [ctx]
@@ -41,9 +46,9 @@
           [:li [:a {:href (path-for @*router :yada.dev.user-manual/user-manual)} "User manual"]]
           [:li "HTTP and related specifications"
            [:ul
-            [:li [:a {:href "/static/spec/rfc2616.html"} "RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1"]]
+            [:li [:a {:href "/spec/rfc2616"} "RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1"]]
             (for [i (range 7230 (inc 7240))]
-              [:li [:a {:href (format "/static/spec/rfc%d.html" i)}
+              [:li [:a {:href (format "/spec/rfc%d" i)}
                     (format "RFC %d: %s" i (or (get titles i) ""))]])]]
           [:li [:a {:href
                     (format "%s/index.html?url=%s/swagger.json"
@@ -62,6 +67,7 @@
   (routes [component]
     ["/"
      [["index.html" (index component)]
+      [["spec/rfc" :rfc] (rfc)]
       ["dir/" (-> (yada.bidi/resource-branch (io/file "dev/resources"))
                   (tag ::dir))]]]))
 
