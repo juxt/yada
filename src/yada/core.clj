@@ -225,17 +225,20 @@
 ;; TODO: Unknown Content-Type? (incorporate this into conneg)
 (defn select-representation
   [ctx]
-  (let [representation
-        (rep/select-representation (:request ctx) (-> ctx :http-resource :representations))]
+  (if-let [representation
+           (rep/select-representation (:request ctx)
+                                      (-> ctx :http-resource :representations))]
 
-    (if (nil? representation)
-      (d/error-deferred
-       (ex-info "" {:status 406
-                    ::http-response true}))
+    (cond-> ctx
+      representation
+      (assoc-in [:response :representation] representation)
 
-      (cond-> ctx
-        representation (assoc-in [:response :representation] representation)
-        (-> ctx :http-resource :vary) (assoc-in [:response :vary] (-> ctx :http-resource :vary))))))
+      (-> ctx :http-resource :vary)
+      (assoc-in [:response :vary] (-> ctx :http-resource :vary)))
+
+    (d/error-deferred
+     (ex-info "" {:status 406
+                  ::http-response true}))))
 
 (defn exists?
   "A current representation for the resource exists?"
