@@ -11,7 +11,7 @@
    [com.stuartsierra.component :refer (system-map system-using using)]
    [modular.maker :refer (make)]
    [modular.bidi :refer (new-router new-web-resources new-archived-web-resources new-redirect)]
-   [modular.clostache :refer (new-clostache-templater)]
+   [modular.stencil :refer (new-stencil-templater)]
    [yada.dev.website :refer (new-website)]
    [yada.dev.user-manual :refer (new-user-manual)]
    [yada.dev.database :refer (new-database)]
@@ -45,7 +45,7 @@
 (defn website-components [system config]
   (assoc
    system
-   :clostache-templater (make new-clostache-templater config)
+   :stencil-templater (make new-stencil-templater config)
    :user-manual (make new-user-manual config
                       :prefix ""
                       :ext-prefix "")
@@ -118,7 +118,7 @@
 (defn new-dependency-map
   []
   {:http-server {:request-handler :router}
-   :user-manual {:templater :clostache-templater}
+   :user-manual {:templater :stencil-templater}
    :router [:swagger-ui
             :hello-world
             :error-example
@@ -129,7 +129,7 @@
             :web-resources
             :highlight-js-resources
             :redirect]
-   :website {:templater :clostache-templater}})
+   :website {:templater :stencil-templater}})
 
 (defn new-co-dependency-map
   []
