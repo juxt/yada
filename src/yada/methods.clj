@@ -47,7 +47,6 @@
          (extenders Method))))
 
 ;; --------------------------------------------------------------------------------
-
 (deftype HeadMethod [])
 
 (extend-protocol Method
@@ -60,6 +59,11 @@
     (when (false? (:exists? ctx))
       (d/error-deferred (ex-info "" {:status 404
                                      :yada.core/http-response true})))
+
+    (when-not (:representation ctx)
+      (d/error-deferred
+       (ex-info "" {:status 406
+                    :yada.core/http-response true})))
 
     ;; HEAD is implemented without delegating to the resource.
 
@@ -115,6 +119,11 @@
     (when (false? (:exists? ctx))
       (throw (ex-info "" {:status 404
                           :yada.core/http-response true})))
+
+    (when-not (:representation ctx)
+      (d/error-deferred
+       (ex-info "" {:status 406
+                    :yada.core/http-response true})))
 
     (d/chain
      ;; GET request normally returns a (possibly deferred) body.

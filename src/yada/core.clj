@@ -225,20 +225,16 @@
 ;; TODO: Unknown Content-Type? (incorporate this into conneg)
 (defn select-representation
   [ctx]
-  (if-let [representation
-           (rep/select-representation (:request ctx)
-                                      (-> ctx :http-resource :representations))]
+  (let [representation
+        (rep/select-representation (:request ctx)
+                                   (-> ctx :http-resource :representations))]
 
     (cond-> ctx
       representation
       (assoc-in [:response :representation] representation)
 
-      (-> ctx :http-resource :vary)
-      (assoc-in [:response :vary] (-> ctx :http-resource :vary)))
-
-    (d/error-deferred
-     (ex-info "" {:status 406
-                  ::http-response true}))))
+      (and representation (-> ctx :http-resource :vary))
+      (assoc-in [:response :vary] (-> ctx :http-resource :vary)))))
 
 (defn exists?
   "A current representation for the resource exists?"
@@ -517,8 +513,8 @@
    ;; TODO: Unknown or unsupported Content-* header
    ;; TODO: Request entity too large - shouldn't we do this later,
    ;; when we determine we actually need to read the request body?
-   select-representation
    exists?
+   select-representation
    check-modification-time
    if-match
    invoke-method
