@@ -674,7 +674,7 @@ servers to agree on how a resource can be represented to best meet the
 availability, compatibility and preferences of both parties.
 
 There are 2 types of
-[content negotiation](http://localhost:8090/static/spec/rfc7231.html#section-3.4)
+[content negotiation](/spec/rfc7231#section-3.4)
 described in HTTP.
 
 ### Proactive negotiation
@@ -730,11 +730,13 @@ Content-Length: 9
 The second type of negotiation is termed _reactive negotiation_ where the
 agent chooses from a list of representations provided by the server.
 
-
 ## Resources
 
 Different types of resources are added to yada by defining Clojure types
-that satisfy one or more of yada's built-in protocols.
+that satisfy one or more of yada's [protocols](#Protocols). The core request
+handling logic determines whether the resource type satisfies a protocol
+and uses the results of applying these protocol functions in determining
+the response.
 
 Let's delve a little deeper into how the _Hello World!_ example works.
 
@@ -825,7 +827,7 @@ built into yada. For further details, see Zach Tellman's
 [manifold](https://github.com/ztellman/manifold) library.
 
 In almost all cases, it is possible to return a _deferred value_ from
-any of the functions that make up our resource record or options.
+any of the functions that make up our resource record or handler options.
 
 For example, suppose our resource retrieves its state from another internal web API. This would be a common pattern with µ-services. Let's assume you are using an HTTP client library that is asynchronous, and requires you provide a _callback_ function that will be called when the HTTP response is ready.
 
@@ -864,8 +866,6 @@ Clojure. The combination of Clojure and yada significantly reduces the
 amount of code you have to write to create scalable web APIs for your
 applications.
 
-## Methods
-
 ## Routing
 
 Since the `yada.yada/resource` function returns a Ring-compatible
@@ -897,8 +897,8 @@ compatible with the bidi routing library.
 
 The 2 routes, `/api/protected/a` and `/api/protected/b` are wrapped with
 `basic-auth`. This function simply walks the tree and augments each yada
-resource it finds with some additional options, effectively securing
-both with HTTP Basic Authentication.
+resource it finds with some additional handler options, effectively
+securing both with HTTP Basic Authentication.
 
 If we examine the source code in the `yada.walk` namespace we see that
 there is no clever trickery involved, merely a `clojure.walk/postwalk`
@@ -911,6 +911,47 @@ kinds of additional functionality. This is the advantage that choosing a
 data-centric approach gives you. When both your routes and resources are
 data, they are amenable to programmatic transformation, making your
 future options virtually limitless.
+
+## Reference
+
+### Protocols
+
+yada defines a number of protocols which extend Clojure types.
+
+#### ResourceCoercion
+
+#### ResourceFetch
+
+#### AllowedMethods
+
+#### RepresentationExistence
+
+#### ResourceModification
+
+#### Representations
+
+#### ResourceParameters
+
+#### ResourceVersion
+
+#### ETag
+
+### Handler options
+
+Various options can be given in the option map given as the optional
+second argument to yada's `resource` function.
+
+Options tend to define the service rather than the resource, but
+generally take precedence over any resource protocol function.
+
+[todo]
+
+### Handler data
+
+Once a handler has been built, it can be treated as a map with the
+following structure.
+
+[todo]
 
 ## Comparison guide
 

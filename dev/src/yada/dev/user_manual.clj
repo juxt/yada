@@ -113,6 +113,12 @@
         :attrs {:class "chapter"}
         :content [{:tag :a :attrs {:name (chapter content)} :content []} el]}
 
+       (= tag :h3)
+       {:tag :div
+        :attrs {:class "chapter"}
+        :content [{:tag :a :attrs (if-not (re-matches #".*yada.*" (chapter content))
+                                    {:name (chapter content)} {}) :content []} el]}
+
        (= tag :include)
        ;; Include some content
        {:tag :div
