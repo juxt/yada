@@ -4,14 +4,14 @@
   (:require
    [yada.core :refer (resource)]
    [clojure.walk :refer (postwalk)])
-  (:import [yada.core HttpResource]))
+  (:import [yada.core Handler]))
 
 ;; Functions to update inner routes
 
 (defn update-routes [routes f & args]
   (postwalk
    (fn [x]
-     (if (instance? HttpResource x)
+     (if (instance? Handler x)
        (apply f x args)
        x))
    routes))

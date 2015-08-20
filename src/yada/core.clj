@@ -71,7 +71,7 @@
 (defn available?
   "Is the service available?"
   [ctx]
-  (let [res (service/service-available? (-> ctx :http-resource :service-available?) ctx)]
+  (let [res (service/service-available? (-> ctx :handler :service-available?) ctx)]
     (if-not (service/interpret-service-available res)
       (d/error-deferred
        (ex-info "" (merge {:status 503
@@ -108,7 +108,7 @@
     (d/error-deferred
      (ex-info "Method Not Allowed"
               {:status 405
-               :headers {"allow" (str/join ", " (map (comp (memfn toUpperCase) name) (-> ctx :http-resource :allowed-methods)))}
+               :headers {"allow" (str/join ", " (map (comp (memfn toUpperCase) name) (-> ctx :handler :allowed-methods)))}
                ::http-response true}))
     ctx))
 
@@ -119,7 +119,7 @@
         request (:request ctx)
         keywordize (fn [m] (into {} (for [[k v] m] [(keyword k) v])))
 
-        parameters (-> ctx :http-resource :parameters)
+        parameters (-> ctx :handler :parameters)
 
         parameters
         (when parameters
@@ -173,7 +173,7 @@
   "Authentication"
   [ctx]
   (cond-> ctx
-    (not-empty (filter (comp (partial = :basic) :type) (-> ctx :http-resource :security)))
+    (not-empty (filter (comp (partial = :basic) :type) (-> ctx :handler :security)))
     (assoc :authentication
            (:basic-authentication (ring.middleware.basic-authentication/basic-authentication-request
                                    (:request ctx)
@@ -182,13 +182,13 @@
 (defn authorization
   "Authorization"
   [ctx]
-  (if-let [res (service/authorize (-> ctx :http-resource :authorization) ctx)]
+  (if-let [res (service/authorize (-> ctx :handler :authorization) ctx)]
     (if (= res :not-authorized)
       (d/error-deferred
        (ex-info ""
                 (merge
                  {:status 401 ::http-response true}
-                 (when-let [basic-realm (first (sequence realms-xf (-> ctx :http-resource :security)))]
+                 (when-let [basic-realm (first (sequence realms-xf (-> ctx :handler :security)))]
                    {:headers {"www-authenticate" (format "Basic realm=\"%s\"" basic-realm)}}))))
 
       (if-let [auth (service/authorization res)]
@@ -227,19 +227,19 @@
   [ctx]
   (let [representation
         (rep/select-representation (:request ctx)
-                                   (-> ctx :http-resource :representations))]
+                                   (-> ctx :handler :representations))]
 
     (cond-> ctx
       representation
       (assoc-in [:response :representation] representation)
 
-      (and representation (-> ctx :http-resource :vary))
-      (assoc-in [:response :vary] (-> ctx :http-resource :vary)))))
+      (and representation (-> ctx :handler :vary))
+      (assoc-in [:response :vary] (-> ctx :handler :vary)))))
 
 (defn exists?
   "A current representation for the resource exists?"
   [ctx]
-  (if (-> ctx :http-resource :existence?)
+  (if (-> ctx :handler :existence?)
     (d/chain
      (p/exists? (:resource ctx) ctx)
      (fn [exists?]
@@ -290,7 +290,7 @@
 
     ;; We have an If-Match to process
     (cond
-      (and (contains? matches "*") (-> ctx :http-resource :representations count pos?))
+      (and (contains? matches "*") (-> ctx :handler :representations count pos?))
       ;; No need to compute etag, exit
       ctx
 
@@ -298,10 +298,10 @@
       ;; representation of the resource
 
       ;; Create a map of representation -> etag
-      (-> ctx :http-resource :version?)
+      (-> ctx :handler :version?)
       (let [version (p/version (:resource ctx) ctx)
             etags (into {} (map (juxt identity (partial p/to-etag version))
-                                (-> ctx :http-resource :representations)))]
+                                (-> ctx :handler :representations)))]
 
         (if (empty? (set/intersection matches (set (vals etags))))
           (d/error-deferred
@@ -344,7 +344,7 @@
 (defn compute-etag
   [ctx]
   ;; only if resource supports etags
-  (if (-> ctx :http-resource :version?)
+  (if (-> ctx :handler :version?)
     ;; only if the resource hasn't already set an etag
     (when-let [version (or (-> ctx :response :version)
                            (p/version (:resource ctx) ctx))]
@@ -369,7 +369,7 @@
   [ctx]
   (let [response
         {:status (or (get-in ctx [:response :status])
-                     (service/status (-> ctx :http-resource :options :status) ctx)
+                     (service/status (-> ctx :handler :options :status) ctx)
                      200)
          :headers (merge
                    (get-in ctx [:response :headers])
@@ -402,7 +402,7 @@
                        {"access-control-allow-origin" "*"})
 
                    ;; TODO: Resources can add headers via their methods
-                   (service/headers (-> ctx :http-resource :options :headers) ctx))
+                   (service/headers (-> ctx :handler :options :headers) ctx))
 
          ;; TODO :status and :headers should be implemented like this in all cases
          :body (get-in ctx [:response :body])}]
@@ -426,22 +426,22 @@
 
 (defn- handle-request
   "Handle Ring request"
-  [http-resource request]
+  [handler request]
   (let [method (:request-method request)
-        interceptors (:interceptors http-resource)
-        options (:options http-resource)
+        interceptors (:interceptors handler)
+        options (:options handler)
         journal-entry (atom {:chain []})
         id (java.util.UUID/randomUUID)
         ctx (merge
              (make-context)
              {:id id
               :method method
-              :method-instance (get (:known-methods http-resource) method)
+              :method-instance (get (:known-methods handler) method)
               :interceptors interceptors
-              :http-resource http-resource
-              :resource (:resource http-resource)
+              :handler handler
+              :resource (:resource handler)
               :request request
-              :allowed-methods (:allowed-methods http-resource)
+              :allowed-methods (:allowed-methods handler)
               :options options
               :journal journal-entry})]
 
@@ -457,7 +457,7 @@
              (if (::http-response data)
                data
                (do
-                 (when-let [journal (:journal http-resource)]
+                 (when-let [journal (:journal handler)]
                    (swap! journal assoc id (swap! journal-entry assoc :error {:exception e :data data})))
 
                  {:status 500
@@ -471,7 +471,7 @@
                              [:a {:href (str path (journal/path-for :entry :id id))} id]])]
                          )}))))))))
 
-(defrecord HttpResource
+(defrecord Handler
     [id
      resource
      base
@@ -560,7 +560,7 @@
          journal (:journal options)
          ]
 
-     (map->HttpResource
+     (map->Handler
       (merge
        {:id (:id options)
         :resource resource

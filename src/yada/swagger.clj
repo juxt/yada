@@ -33,8 +33,8 @@
 
 (defn to-path [route]
   (let [path (->> route :path (map encode) (apply str))
-        http-resource (-> route :handler)
-        {:keys [resource options allowed-methods parameters representations]} http-resource
+        handler (-> route :handler)
+        {:keys [resource options allowed-methods parameters representations]} handler
         swagger (:swagger options)]
     [path
      (merge-with merge
