@@ -1,0 +1,27 @@
+<html>
+  <head>
+    <title>yada console</title>
+    <link rel="stylesheet" href="/material.min.css">
+    <script src="/mdl/material.min.js"></script>
+    <link rel="stylesheet" href="/fonts.css">
+  </head>
+  <body>
+    <h1>yada console</h1>
+
+    <!-- Accent-colored raised button with ripple -->
+<button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent">
+  Button
+</button>
+<!-- Colored FAB button -->
+<button class="mdl-button mdl-js-button mdl-button--fab mdl-button--colored">
+  <i class="material-icons">add</i>
+</button>
+
+    <div id="app"/>
+    <script src="/react/react.min.js"></script>
+    <script src="/cljs/out/goog/base.js"></script>
+    <script src="/cljs/console.js"></script>
+    <script type="text/javascript">goog.require("yada.console.core");</script>
+    <script>yada.console.core.init()</script>
+  </body>
+</html>

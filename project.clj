@@ -11,7 +11,7 @@
                org.clojure/clojure]
 
   :dependencies
-  [[bidi "1.20.3"]
+  [[bidi "1.21.0"]
    [byte-streams "0.2.0" :exclusions [clj-tuple]]
    [camel-snake-kebab "0.1.4"]
    [cheshire "5.4.0"]
@@ -30,10 +30,25 @@
                  :welcome (println "Type (dev) to start")}
 
   :profiles
-  {:dev {:main yada.dev.main ; needs dev profile: lein with-profile dev
-                             ; trampoline run
+  {:dev {:main yada.dev.main
+
+         :plugins [[lein-cljsbuild "1.0.6"]
+                   ;;[lein-less "1.7.5"]
+                   [lein-figwheel "0.3.7" :exclusions [[org.clojure/clojure]
+                                                       [org.codehaus.plexus/plexus-utils]
+                                                       #_[org.clojure/tools.reader]
+                                                       ]]]
+
+         :cljsbuild {:builds
+                     {:console {:source-paths ["console/src-cljs"]
+                                :figwheel {:on-jsload "yada.console.core/reload-hook"}
+                                :compiler {:output-to "target/cljs/console.js"
+                                           :pretty-print true}}}}
+
          :dependencies
          [[org.clojure/clojure "1.7.0"]
+          [org.clojure/clojurescript "1.7.58"]
+
 
           [org.clojure/tools.logging "0.3.1"]
           [org.clojure/tools.trace "0.7.8"]
@@ -59,13 +74,21 @@
           [juxt.modular/co-dependency "0.2.1"]
           [juxt.modular/maker "0.5.0"]
           [juxt.modular/test "0.1.0"]
-          [juxt.modular/template "0.6.2"]
+          [juxt.modular/template "0.6.3"]
 
           [org.webjars/swagger-ui "2.1.1"]
           [org.webjars/jquery "2.1.3"]
-          [org.webjars/bootstrap "3.3.2"]]
+          [org.webjars/bootstrap "3.3.2"]
+          [org.webjars.bower/material-design-lite "1.0.2" :scope "test"]
+
+          [cljsjs/react "0.13.3-0"]
+          [reagent "0.5.0"]
+          [re-frame "0.4.1"]
+          [kibu/pushy "0.3.2"]]
 
          :source-paths ["dev/src"]
          :resource-paths ["dev/resources"]}
    :test
-   {:source-paths ["yada.test/src"]}})
+   {:source-paths ["yada.test/src"]}
+
+   })
