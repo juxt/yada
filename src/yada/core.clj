@@ -521,10 +521,10 @@
    compute-etag
    create-response])
 
-(defn resource
-  "Create a yada resource (Ring handler)"
+(defn handler
+  "Create a Ring handler"
   ([resource]                   ; Single-arity form with default options
-   (yada.core/resource resource {}))
+   (yada.core/handler resource {}))
 
   ([resource options]
    (let [base resource
@@ -578,3 +578,8 @@
         :version? (satisfies? p/ResourceVersion resource)
         :existence? (satisfies? p/RepresentationExistence resource)}
        (when journal {:journal journal}))))))
+
+
+(def yada handler)
+
+(def ^:deprecated resource handler)

@@ -15,7 +15,7 @@
    [potemkin :refer (import-vars)]))
 
 (import-vars
- [yada.core resource]
+ [yada.core yada handler resource]
  [yada.swagger swaggered])
 
 ;; Convenience functions, allowing us to encapsulate the context
