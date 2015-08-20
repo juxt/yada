@@ -1,17 +1,19 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.dev.website
-  (:require [bidi.bidi :refer (RouteProvider tag)]
-            [clojure.java.io :as io]
-            [com.stuartsierra.component :refer (using)]
-            [hiccup.core :refer (html)]
-            [modular.bidi :refer (path-for)]
-            [modular.component.co-dependency :refer (co-using)]
-            [modular.template :as template :refer (render-template)]
-            [schema.core :as s]
-            yada.bidi
-            yada.resources.file-resource
-            [yada.yada :as yada]))
+  (:require
+   [clojure.java.io :as io]
+   [clojure.tools.logging :refer :all]
+   [bidi.bidi :refer (RouteProvider tag)]
+   [com.stuartsierra.component :refer (using)]
+   [hiccup.core :refer (html)]
+   [modular.bidi :refer (path-for)]
+   [modular.component.co-dependency :refer (co-using)]
+   [modular.template :as template :refer (render-template)]
+   [schema.core :as s]
+   yada.bidi
+   yada.resources.file-resource
+   [yada.yada :as yada]))
 
 (def titles
   {7230 "Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing"
@@ -28,7 +30,8 @@
 
 (defn rfc []
   (fn [req]
-    (let [source (io/resource (format "static/spec/rfc%s.html" (get-in req [:route-params :rfc])))]
+    (let [source (io/resource (format "spec/rfc%s.html" (get-in req [:route-params :rfc])))]
+      (infof "source is %s" source)
       ((yada/resource source) req))))
 
 (defn index [{:keys [*router templater]}]
