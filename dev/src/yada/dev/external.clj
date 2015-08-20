@@ -27,8 +27,6 @@
 
       ]]))
 
-#_(io/resource "META-INF/resources/webjars/material-design-lite/1.0.2/material.css")
-
 (defn new-external-content [& {:as opts}]
   (-> (->> opts
            (merge {})
