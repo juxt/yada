@@ -13,6 +13,7 @@
    [modular.bidi :refer (new-router new-web-resources new-archived-web-resources new-redirect)]
    [modular.stencil :refer (new-stencil-templater)]
    [yada.dev.website :refer (new-website)]
+   [yada.dev.external :refer (new-external-content)]
    [yada.dev.user-manual :refer (new-user-manual)]
    [yada.dev.database :refer (new-database)]
    [yada.dev.user-api :refer (new-verbose-user-api)]
@@ -64,6 +65,8 @@
                         :resource-prefix "static")
    :highlight-js-resources
    (make new-archived-web-resources config :archive (io/resource "highlight.zip") :uri-context "/hljs/")
+
+   :external-content (make new-external-content config)
    ))
 
 (defn swagger-ui-components [system config]
@@ -74,20 +77,22 @@
                :uri-context "/swagger-ui"
                :resource-prefix "META-INF/resources/webjars/swagger-ui/2.1.0")))
 
-(defn router-components [system config]
-  (assoc system
-    :router
-    (make new-router config)))
-
 (defn http-server-components [system config]
   (assoc system
-    :http-server
-    (make new-webserver config
-          :port 8090
-          ;; raw-stream? = true gives us a manifold stream of io.netty.buffer.ByteBuf instances
-          ;; Use to convert to a stream bs/to-input-stream
-          :raw-stream? true
-          )))
+         :http-server
+         (make new-webserver config
+               :port 8090
+               ;; raw-stream? = true gives us a manifold stream of io.netty.buffer.ByteBuf instances
+               ;; Use to convert to a stream bs/to-input-stream
+               :raw-stream? true)
+
+         :router
+         (make new-router config)
+
+         :http-server-external
+         (make new-webserver config :port 8091)
+         :router-external
+         (make new-router config)))
 
 (defn hello-world-components [system config]
   (assoc
@@ -108,17 +113,20 @@
         (api-components config)
         (website-components config)
         (swagger-ui-components config)
-        (router-components config)
         (http-server-components config)
         (hello-world-components config)
         (error-components config)
         (assoc :redirect (new-redirect :from "/" :to :yada.dev.website/index))
+        (assoc :redirect-external (new-redirect :from "/" :to :yada.dev.external/index))
         ))))
 
 (defn new-dependency-map
   []
   {:http-server {:request-handler :router}
+   :http-server-external {:request-handler :router-external}
+
    :user-manual {:templater :stencil-templater}
+
    :router [:swagger-ui
             :hello-world
             :error-example
@@ -129,6 +137,9 @@
             :web-resources
             :highlight-js-resources
             :redirect]
+   :router-external [:external-content :redirect-external]
+
+   :external-content {:templater :stencil-templater}
    :website {:templater :stencil-templater}})
 
 (defn new-co-dependency-map
