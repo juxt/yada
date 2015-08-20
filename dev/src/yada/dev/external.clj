@@ -14,16 +14,16 @@
   RouteProvider
   (routes [component]
     ["/"
-     [["console/home" (yada/resource (io/file "console/resources/static/index.html") {:id ::index})]
-      ["react/react.min.js" (yada/resource (io/resource "cljsjs/production/react.min.inc.js"))]
+     [["console/home" (-> "console/resources/static/index.html" io/file (yada/resource {:id ::index}))]
+      ["react/react.min.js" (-> "cljsjs/production/react.min.inc.js" io/resource yada/resource)]
       ["cljs" (files {:dir "target/cljs"})]
 
       ;; Customized css
-      ["material.min.css" (yada/resource (io/file "console/resources/static/material.min.css"))]
-      ["fonts.css" (yada/resource (io/file "console/resources/static/fonts.css"))]
-      ["mdl.woff2" (yada/resource (io/file "console/resources/static/mdl.woff2"))]
+      ["material.min.css" (-> "console/resources/static/material.min.css" io/file yada/resource)]
+      ["fonts.css" (-> "console/resources/static/fonts.css" io/file yada/resource)]
+      ["mdl.woff2" (-> "console/resources/static/mdl.woff2" io/file yada/resource)]
 
-      ["mdl" (resources-maybe {:prefix "META-INF/resources/webjars/material-design-lite/1.0.2"})]
+      ["mdl/" (resources-maybe {:prefix "META-INF/resources/webjars/material-design-lite/1.0.2/"})]
 
       ]]))
 
