@@ -155,12 +155,12 @@ interoperable and interconnected systems which are built to last.
 
 Let's introduce yada properly by writing some code. Let's start with some state, a string: `Hello World!`. We'll be able to give an overview of many of yada's features using this simple example.
 
-We pass the string as a single argument to yada's `resource` function, and yada returns a web _resource_.
+We pass the string as a single argument to yada's `yada` function, and yada returns a Ring handler.
 
 ```clojure
-(require '[yada.yada :as yada])
+(require '[yada.yada :refer [yada]])
 
-(yada/resource "Hello World!\n")
+(yada "Hello World!\n")
 ```
 
 This web resource can be used as a Ring handler. By combining this handler with a web-server, we can start the service.
@@ -170,11 +170,11 @@ Here's how you can start the service using
 web server that yada currently supports).
 
 ```clojure
-(require '[yada.yada :as yada]
+(require '[yada.yada :refer [yada]]
          '[aleph.http :refer [start-server]])
 
 (start-server
-  (yada/resource "Hello World!\n")
+  (yada "Hello World!\n")
   {:port 3000})
 ```
 
@@ -269,14 +269,14 @@ First, let's require the support we need in the `ns` declaration.
 ```clojure
 (require '[aleph.http :refer [start-server]]
          '[bidi.ring :refer [make-handler]]
-         '[yada.yada :as yada])
+         '[yada.yada :refer [yada] :as yada])
 ```
 
 Now for our resource.
 
 ```clojure
 (def hello
-  (yada/resource "Hello World!\n"))
+  (yada "Hello World!\n"))
 ```
 
 Now let's create a route structure housing this resource. This is our API.
@@ -386,7 +386,7 @@ To demonstrate this, yada contains support for atoms. Let's add a new
 resource with the identifier `http://localhost:8090/hello-atom`.
 
 ```clojure
-(yada/resource (atom "Hello World!"))
+(yada (atom "Hello World!"))
 ```
 
 We can now make another `OPTIONS` request to see whether `PUT` is
@@ -490,7 +490,7 @@ function takes a single parameter called the _request context_, denoted
 by the symbol `ctx`.
 
 ```clojure
-(yada/resource
+(yada
   (fn [ctx] (format "Hello %s!\n" (get-in ctx [:parameters :p])))
   :parameters {:get {:query {:p String}}})
 ```
@@ -529,7 +529,7 @@ Chinese and English.
 We add an option indicating the language codes of the two languages we are going to support. We can then
 
 ```clojure
-(yada/resource
+(yada
   (fn [ctx]
     (case (yada/language ctx)
       "zh-ch" "你好世界!\n"
@@ -567,7 +567,7 @@ This simple example demonstrated how a rich and functional HTTP resource
 was created with a tiny amount of code. And yet, none of the behaviour
 we have seen is hardcoded or contrived. Much of the behavior was
 inferred from the types of the first argument given to the
-`yada/resource` properties, in this case, the Java string. And yada
+`yada` function, in this case, the Java string. And yada
 includes support for many other basic types (atoms, Clojure collections,
 files, directories, Java resources…).
 
@@ -694,7 +694,7 @@ Recall our `Hello World!` example. Let's extend this by specifying 2
 sets of possible representation.
 
 ```clojure
-(yada/resource
+(yada
   (fn [ctx]
     (case (get-in ctx [:response :representation :language])
             "zh-ch" "你好世界!\n"
@@ -770,7 +770,7 @@ resources.
 Recall the _Hello World!_ example.
 
 ```clojure
-(yada/resource "Hello World!")
+(yada "Hello World!")
 ```
 
 yada calls `as-resource` on the argument. This declaration causes a
@@ -868,7 +868,7 @@ applications.
 
 ## Routing
 
-Since the `yada.yada/resource` function returns a Ring-compatible
+Since the `yada` function returns a Ring-compatible
 handler, it is compatible with any Clojure URI router.
 
 If you use a data-structure for your routes, you can walk the tree to
@@ -882,7 +882,7 @@ compatible with the bidi routing library.
 (require '[yada.walk :refer [basic-auth]])
 
 ["/api"
-   {"/status" (yada/resource "API working!")
+   {"/status" (yada "API working!")
     "/hello" (fn [req] {:body "hello"})
     "/protected" (basic-auth
                   "Protected" (fn [ctx]
@@ -891,8 +891,8 @@ compatible with the bidi routing library.
                                    (= ((juxt :user :password) auth)
                                       ["alice" "password"]))
                                  :not-authorized))
-                  {"/a" (yada/resource "Secret area A")
-                   "/b" (yada/resource "Secret area B")})}]
+                  {"/a" (yada "Secret area A")
+                   "/b" (yada "Secret area B")})}]
 ```
 
 The 2 routes, `/api/protected/a` and `/api/protected/b` are wrapped with
