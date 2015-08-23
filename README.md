@@ -9,28 +9,27 @@ It has the following features
 
 * Comprehensive HTTP coverage
 * Parameter coercion, automatic Swagger support
-* Asynch foundation based on [manifold](https://github.com/ztellman/manifold)
+* Async foundation based on [manifold](https://github.com/ztellman/manifold)
 * Protocol extensibility
 
-Full documentation for 0.4.3 is available at
-[http://yada.juxt.pro](http://yada.juxt.pro) or offline (see below).
+Full documentation for the latest 'beta' release is available at
+[http://yada.juxt.pro](http://yada.juxt.pro) and offline (see below).
 
 Incomplete documentation for 1.0.x is available [here](dev/resources/user-manual.md).
 
 ## Installation
 
-For the latest stable release, add the following dependency to your
+For the latest 'beta' release, add the following dependency to your
 `project.clj` file
 
 ```clojure
-[yada "0.4.3"]
+[yada "1.0.0-20150823.133532-5"]
 ```
 
-For the latest release, use the following and run the documentation
-offline (details below).
+For the previous 0.4.3 'alpha' release, which is now deprecated, use the following and run the documentation offline (details below).
 
 ```clojure
-[yada "1.0.0-20150823.133532-5"]
+[yada "0.4.3"]
 ```
 
 ## Status
