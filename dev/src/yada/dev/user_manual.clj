@@ -151,7 +151,7 @@
       (str/replace #"\{\{(.+)\}\}" #(System/getProperty (last %)))
       (str/replace #"<p>\s*</p>" "")
       (str/replace #"(yada)(?![-/])" "<span class='yada'>yada</span>")
-      (str/replace "localhost:8090" (:prefix replacements))
+      (str/replace "http://localhost:8090" (:prefix replacements))
       ))
 
 (defn body [{:keys [*router templater] :as user-manual} doc replacements]
