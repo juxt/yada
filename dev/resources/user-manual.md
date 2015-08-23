@@ -914,9 +914,43 @@ future options virtually limitless.
 
 ## Reference
 
+### Handler options
+
+Options can be given in the option map given as the optional second
+argument to yada's `resource` function.
+
+```clojure
+(yada resource {:request-uri-too-long? 8192
+                :last-modified (fn [ctx] (.lastModified file))})
+```
+
+Some options are used to override values that would have otherwise come
+from the resource. In these cases, options always take precedence.
+
+#### :allowed-methods
+
+The set of methods that the handler should support.
+
+```clojure
+{:allowed-methods #{:get :put}}
+```
+
+The methods `:head` and `:options` are added implicitly, if yada is able
+to support them on the resource. If you don't want this, use
+`:all-allowed-methods`.
+
+#### :all-allowed-methods (advanced)
+
+Use this is you want to specify exactly which methods are allowed on the resource. This should not be used in conjunction with the :allowed-methods id, but if both are specified, `:all-allowed-methods` will take precedence over `:allowed-methods`.
+
+This option is for advanced users only. Usually you should use
+`:allowed-methods` and let yada add additional methods it is able to
+support.
+
 ### Protocols
 
-yada defines a number of protocols which extend Clojure types.
+yada defines a number of protocols. Existing Clojure types and records
+can be extended with these protocols to adapt them to use with yada.
 
 #### ResourceCoercion
 
@@ -936,22 +970,91 @@ yada defines a number of protocols which extend Clojure types.
 
 #### ETag
 
-### Handler options
-
-Various options can be given in the option map given as the optional
-second argument to yada's `resource` function.
-
-Options tend to define the service rather than the resource, but
-generally take precedence over any resource protocol function.
-
-[todo]
-
 ### Handler data
 
 Once a handler has been built, it can be treated as a map with the
-following structure.
+following entries.
+
+#### :allowed-methods
+
+A set of keywords indicating the methods supported by the handler.
+
+#### :authorization
 
 [todo]
+
+#### :base
+
+The original uncoerced first argument passed to yada's `resource`
+function (or it's `yada` alias).
+
+#### :existence? (performance)
+
+Whether the resource satisfies the `RepresentationExistence` protocol.
+
+This is added to avoid expensive calls to `clojure.core/satisfies?`
+while handling requests.
+
+#### :id
+
+A unique identifier for the individual resource. Defaults to a (random) type-4 UUID but may be overridden with the `:id` option.
+
+#### :interceptor-chain
+
+The sequence of interceptors that will process the request. Mutate this
+if you need to weave in custom functionality.
+
+#### :journal
+
+The database that will store journal entries (one entry per
+request). Can be nil.
+
+#### :known-methods
+
+A set of keywords indicating all the methods that are known by
+yada. This includes custom methods that have been added via protocol
+extension. This set is usually a superset of the methods that are
+allowed on the resource, see __:allowed-methods__. If a request
+containing a method that is not known results in a 501 status code.
+
+#### :options
+#### :parameters
+#### :representations
+#### :resource
+#### :security
+#### :service-available?
+#### :vary
+#### :version?
+
+### Default interceptor chain
+
+The interceptor chain, established on the creation of a handler, is a vector.
+
+#### available?
+
+#### known-method?
+
+#### uri-too-long?
+
+#### TRACE
+
+#### method-allowed?
+
+#### malformed?
+#### authentication
+#### authorization
+
+#### fetch
+   ;; TODO: Unknown or unsupported Content-* header
+   ;; TODO: Request entity too large - shouldn't we do this later,
+   ;; when we determine we actually need to read the request body?
+#### exists?
+#### select-representation
+#### check-modification-time
+#### if-match
+#### invoke-method
+#### compute-etag
+#### create-response
 
 ## Comparison guide
 
