@@ -66,7 +66,7 @@
           [markdown-clj "0.9.62"]
           [ring-mock "0.1.5"]
 
-          [aero "0.1.1"]
+          [aero "0.1.2"]
 
           [juxt.modular/aleph "0.0.8" :exclusions [manifold]]
           [juxt.modular/bidi "0.9.2" :exclusions [bidi]]
