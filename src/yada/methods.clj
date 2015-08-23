@@ -120,8 +120,8 @@
       (throw (ex-info "" {:status 404
                           :yada.core/http-response true})))
 
-    (when-not (:representation ctx)
-      (d/error-deferred
+    (when-not (-> ctx :response :representation)
+      (throw
        (ex-info "" {:status 406
                     :yada.core/http-response true})))
 
