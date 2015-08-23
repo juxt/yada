@@ -943,14 +943,51 @@ to support them on the resource. If you don't want this, use
 
 Use this is you want to specify exactly which methods are allowed on the resource. This should not be used in conjunction with the :allowed-methods id, but if both are specified, `:all-allowed-methods` will take precedence over `:allowed-methods`.
 
+```clojure
+{:all-allowed-methods #{:get :put :options :trace}} ; no :head
+```
+
 This option is for advanced users only. Usually you should use
 `:allowed-methods` and let yada add additional methods it is able to
 support.
+
+#### :authorization
+#### :charset
+#### :encoding
+#### :headers
+#### :id
+#### :language
+#### :last-modified
+#### :journal
+#### :journal-browser-path
+#### :media-type
+#### :parameters
+
+Specify, or override, the parameters of a resource. Since parameters often apply to a method's implementation, these are given on a method by method basis. Each entry in the map must be keyed with the method. Each method parameters is itself a map, keyed by the parameter type.
+
+```clojure
+{:parameters {:get {:query {:p String}
+                    :header {"X-Version" Integer}}}}
+```
+
+The example above declares both a _query_ and _header_ parameter. The
+query parameter is called p and is a String. The header
+parameter is the value of the HTTP request's `X-Version` header and is coerced to an integer.
+
+#### :representation
+#### :representations
+#### :request-uri-too-long?
+#### :security
+#### :service-available?
+#### :status
+#### :trace
 
 ### Protocols
 
 yada defines a number of protocols. Existing Clojure types and records
 can be extended with these protocols to adapt them to use with yada.
+
+Protocols are declared in `yada.protocols`.
 
 #### ResourceCoercion
 
@@ -1018,13 +1055,49 @@ allowed on the resource, see __:allowed-methods__. If a request
 containing a method that is not known results in a 501 status code.
 
 #### :options
+
+The handler options, as given to yada's `resource` function (or it's `yada` alias).
+
 #### :parameters
+
+The resource parameters, as provided by, in order of precedence :-
+
+* the `:parameters` option
+* the `parameters` function of the `ResourceParameters`
+protocol, if the resource's type satisfies it.
+
 #### :representations
+
+The resource representations, as provided by, in order of precedence :-
+
+* the `:representations` option
+* the `:representation` option
+* the `:media-type`, `:charset`, `:encoding` and `:language` option
+* the `representations` function of the `ResourceRepresentations`
+protocol, if the resource's type satisfies it.
+
 #### :resource
+
+The resource (possibly after coercion by the `as-resource` function of the `ResourceCoercion` protocol.
+
 #### :security
-#### :service-available?
+
+[todo]
+
 #### :vary
-#### :version?
+
+The set of axes that can vary during proactive content negotiation
+
+```clojure
+{:vary #{:media-type :language}}
+```
+
+#### :version? (performance)
+
+Whether the resource satisfies the `ResourceVersion` protocol.
+
+This is added to avoid expensive calls to `clojure.core/satisfies?`
+while handling requests.
 
 ### Default interceptor chain
 

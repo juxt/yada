@@ -72,7 +72,7 @@
 (defn available?
   "Is the service available?"
   [ctx]
-  (let [res (service/service-available? (-> ctx :handler :service-available?) ctx)]
+  (let [res (service/service-available? (-> ctx :handler :options :service-available?) ctx)]
     (if-not (service/interpret-service-available res)
       (d/error-deferred
        (ex-info "" (merge {:status 503
@@ -581,7 +581,6 @@
         :representations representations
         :resource resource
         :security (as-sequential (:security options))
-        :service-available? (:service-available? options)
         :vary vary
         :version? (satisfies? p/ResourceVersion resource)}
        (when journal {:journal journal}))))))
