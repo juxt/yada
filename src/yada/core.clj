@@ -24,6 +24,7 @@
    [yada.representation :as rep]
    [yada.protocols :as p]
    [yada.response :refer (->Response)]
+   [yada.resource :as resource]
    [yada.service :as service]
    [yada.media-type :as mt]
    [yada.util :refer (parse-csv)]
@@ -428,7 +429,7 @@
   "Handle Ring request"
   [handler request]
   (let [method (:request-method request)
-        interceptors (:interceptors handler)
+        interceptor-chain (:interceptor-chain handler)
         options (:options handler)
         journal-entry (atom {:chain []})
         id (java.util.UUID/randomUUID)
@@ -437,7 +438,7 @@
              {:id id
               :method method
               :method-instance (get (:known-methods handler) method)
-              :interceptors interceptors
+              :interceptor-chain interceptor-chain
               :handler handler
               :resource (:resource handler)
               :request request
@@ -446,7 +447,7 @@
               :journal journal-entry})]
 
     (->
-     (->> interceptors
+     (->> interceptor-chain
           (mapv (wrap-journaling journal-entry))
           (apply d/chain ctx))
 
@@ -475,7 +476,7 @@
     [id
      resource
      base
-     interceptors
+     interceptor-chain
      options
      allowed-methods
      known-methods
@@ -535,11 +536,17 @@
 
          known-methods (methods/known-methods)
 
-         allowed-methods (conj
-                          (set
-                           (or (:allowed-methods options)
-                               (p/allowed-methods resource)))
-                          :head :options)
+         allowed-methods (or
+                          ;; TODO: Test for this
+                          (when-let [methods (or (:all-allowed-methods options)
+                                                 (and (satisfies? p/AllAllowedMethods resource)
+                                                      (resource/all-allowed-methods resource)))]
+                            (set methods))
+                          (conj
+                           (set
+                            (or (:allowed-methods options)
+                                (resource/allowed-methods resource)))
+                           :head :options))
 
          parameters (or (:parameters options)
                         (when (satisfies? p/ResourceParameters resource)
@@ -562,21 +569,21 @@
 
      (map->Handler
       (merge
-       {:id (:id options)
-        :resource resource
+       {:allowed-methods allowed-methods
+        :authorization (or (:authorization options) (NoAuthorizationSpecified.))
         :base base
-        :interceptors default-interceptor-chain
-        :options options
-        :allowed-methods allowed-methods
+        :existence? (satisfies? p/RepresentationExistence resource)
+        :id (or (:id options) (java.util.UUID/randomUUID))
+        :interceptor-chain default-interceptor-chain
         :known-methods known-methods
+        :options options
         :parameters parameters
         :representations representations
-        :vary vary
+        :resource resource
         :security (as-sequential (:security options))
         :service-available? (:service-available? options)
-        :authorization (or (:authorization options) (NoAuthorizationSpecified.))
-        :version? (satisfies? p/ResourceVersion resource)
-        :existence? (satisfies? p/RepresentationExistence resource)}
+        :vary vary
+        :version? (satisfies? p/ResourceVersion resource)}
        (when journal {:journal journal}))))))
 
 

@@ -45,7 +45,9 @@
   (fetch [o ctx] o))
 
 (defprotocol AllowedMethods
-  "Optional protocol for resources to indicate which methods are allowed."
+  "Optional protocol for resources to indicate which methods are
+  allowed. Other methods, such as :head and :options may be added by
+  yada."
   (allowed-methods [_]
     "Return the allowed methods. Context-agnostic - can be introspected
     by tools (e.g. swagger)"))
@@ -57,6 +59,13 @@
   (allowed-methods [_] #{:get})
   ;; Note that yada.methods also extends this protocol later
   )
+
+(defprotocol AllAllowedMethods
+  "Optional protocol for resources to indicate the complete set of
+  methods which are allowed."
+  (all-allowed-methods [_]
+    "Return the complete set of allowed methods. Context-agnostic - can
+    be introspected by tools (e.g. swagger)"))
 
 ;; Existence
 
