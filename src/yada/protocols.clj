@@ -23,26 +23,7 @@
   nil
   (as-resource [_] nil))
 
-;; Fetch
-
-(defprotocol ResourceFetch
-  (fetch [this ctx] "Fetch representation metadata, such that questions
-  can be answered about it. You can return a deferred if
-  necessary (indeed, you should do so if you have to perform some IO in
-  this function). Often, you will return 'this', perhaps augmented with
-  some additional state. Sometimes you will return something else."))
-
-;; Fetch happens before negotiation, so must only return resource data,
-;; nothing to do with the representation itself. Negotiation information
-;; will not be present in the context, which is provided primarily to
-;; give the resource fetch access to the Ring request and it's own
-;; resource definition.
-
-(extend-protocol ResourceFetch
-  nil ; The user has not elected to specify a resource, that's fine (and common)
-  (fetch [_ ctx] nil)
-  Object
-  (fetch [o ctx] o))
+;; Allowed methods
 
 (defprotocol AllowedMethods
   "Optional protocol for resources to indicate which methods are
@@ -66,6 +47,54 @@
   (all-allowed-methods [_]
     "Return the complete set of allowed methods. Context-agnostic - can
     be introspected by tools (e.g. swagger)"))
+
+;; Representations
+
+(defprotocol Representations
+  ;; Context-agnostic
+  (representations [_] "Declare the resource's capabilities. Return a
+  sequence, each item of which specifies the methods, content-types,
+  charsets, languages and encodings that the resource is capable
+  of. Each of these dimensions may be specified as a set, meaning 'one
+  of'. Drives the default negotiation algorithm."))
+
+;; One idea is to combine 'static' representations with 'dynamic'
+;; ones. Swagger can use the static representations, but these can be
+;; augmented by content-specific ones. DirectoryResource, for example,
+;; would be able to provide some static representations to explain to
+;; swagger that it could be posted to with particular content, but would
+;; change these on a request containing a path-info. The dynamic version
+;; would have access to the static result, via the context, and could
+;; choose how to augment these (override completely, concat, etc.)
+
+(extend-protocol Representations
+  clojure.lang.PersistentVector (representations [v] v)
+  nil (representations [_] nil))
+
+(defprotocol ResourceParameters
+  "Declare the resource's parameters"
+  (parameters [_] "Return the parameters, by method. Must not return a deferred value."))
+
+;; Fetch
+
+(defprotocol ResourceFetch
+  (fetch [this ctx] "Fetch representation metadata, such that questions
+  can be answered about it. You can return a deferred if
+  necessary (indeed, you should do so if you have to perform some IO in
+  this function). Often, you will return 'this', perhaps augmented with
+  some additional state. Sometimes you will return something else."))
+
+;; Fetch happens before negotiation, so must only return resource data,
+;; nothing to do with the representation itself. Negotiation information
+;; will not be present in the context, which is provided primarily to
+;; give the resource fetch access to the Ring request and it's own
+;; resource definition.
+
+(extend-protocol ResourceFetch
+  nil ; The user has not elected to specify a resource, that's fine (and common)
+  (fetch [_ ctx] nil)
+  Object
+  (fetch [o ctx] o))
 
 ;; Existence
 
@@ -102,32 +131,7 @@
   nil
   (last-modified [_ _] nil))
 
-;; Negotiation
-
-(defprotocol Representations
-  ;; Context-agnostic
-  (representations [_] "Declare the resource's capabilities. Return a
-  sequence, each item of which specifies the methods, content-types,
-  charsets, languages and encodings that the resource is capable
-  of. Each of these dimensions may be specified as a set, meaning 'one
-  of'. Drives the default negotiation algorithm."))
-
-;; One idea is to combine 'static' representations with 'dynamic'
-;; ones. Swagger can use the static representations, but these can be
-;; augmented by content-specific ones. DirectoryResource, for example,
-;; would be able to provide some static representations to explain to
-;; swagger that it could be posted to with particular content, but would
-;; change these on a request containing a path-info. The dynamic version
-;; would have access to the static result, via the context, and could
-;; choose how to augment these (override completely, concat, etc.)
-
-(extend-protocol Representations
-  clojure.lang.PersistentVector (representations [v] v)
-  nil (representations [_] nil))
-
-(defprotocol ResourceParameters
-  "Declare the resource's parameters"
-  (parameters [_] "Return the parameters, by method. Must not return a deferred value."))
+;; Versioning
 
 (defprotocol ResourceVersion
   "Entity tags. Satisfying resources MUST also satisfy Representations,
