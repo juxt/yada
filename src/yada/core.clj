@@ -170,7 +170,7 @@
               (not-empty merged-params) (assoc :parameters merged-params)))
           ctx)))))
 
-(defn authentication
+#_(defn authentication
   "Authentication"
   [ctx]
   (cond-> ctx
@@ -180,7 +180,7 @@
                                    (:request ctx)
                                    (fn [user password] {:user user :password password}))))))
 
-(defn authorization
+#_(defn authorization
   "Authorization"
   [ctx]
   (if-let [res (service/authorize (-> ctx :handler :authorization) ctx)]
@@ -498,7 +498,7 @@
   (authorize [b ctx] true)
   (authorization [_] nil))
 
-(defn as-sequential [s]
+#_(defn as-sequential [s]
   (if (sequential? s) s [s]))
 
 (def default-interceptor-chain
@@ -508,8 +508,8 @@
    TRACE
    method-allowed?
    malformed?
-   authentication
-   authorization
+;;   authentication
+;;   authorization
    fetch
    ;; TODO: Unknown or unsupported Content-* header
    ;; TODO: Request entity too large - shouldn't we do this later,
@@ -560,7 +560,8 @@
                             (let [m (select-keys options [:media-type :charset :encoding :language])]
                               (when (not-empty m) [m]))
                             (when (satisfies? p/Representations resource)
-                              (p/representations resource)))))
+                              (p/representations resource))
+                            [{:media-type "application/octet-stream"}])))
 
          vary (rep/vary representations)
 
@@ -570,7 +571,7 @@
      (map->Handler
       (merge
        {:allowed-methods allowed-methods
-        :authorization (or (:authorization options) (NoAuthorizationSpecified.))
+;;        :authorization (or (:authorization options) (NoAuthorizationSpecified.))
         :base base
         :existence? (satisfies? p/RepresentationExistence resource)
         :id (or (:id options) (java.util.UUID/randomUUID))
@@ -580,7 +581,7 @@
         :parameters parameters
         :representations representations
         :resource resource
-        :security (as-sequential (:security options))
+;;        :security (as-sequential (:security options))
         :vary vary
         :version? (satisfies? p/ResourceVersion resource)}
        (when journal {:journal journal}))))))

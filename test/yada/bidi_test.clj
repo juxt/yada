@@ -37,7 +37,7 @@
         :headers :> {"content-length" (count (.getBytes "API working!" "UTF-8"))}
         [:body #(bs/convert % String)] := "API working!"))))
 
-(deftest secure-route
+#_(deftest secure-route
   (let [h (-> (make-api) make-handler)]
     (testing "without-credentials"
       (let [response @(h (request :get "/api/protected/a"))]
