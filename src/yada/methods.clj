@@ -7,6 +7,7 @@
    [clojure.tools.logging :refer :all]
    [manifold.deferred :as d]
    [yada.body :as body]
+   [yada.context :as ctx]
    [yada.protocols :as p]
    [yada.service :as service]
    yada.response)
@@ -56,7 +57,7 @@
   (idempotent? [_] true)
   (request [this ctx]
 
-    (when (false? (:exists? ctx))
+    (when-not (ctx/exists? ctx)
       (d/error-deferred (ex-info "" {:status 404
                                      :yada.core/http-response true})))
 
@@ -116,7 +117,9 @@
   (safe? [_] true)
   (idempotent? [_] true)
   (request [this ctx]
-    (when (false? (:exists? ctx))
+
+    ;; TODO: exists? could be still deferred
+    (when-not (ctx/exists? ctx)
       (throw (ex-info "" {:status 404
                           :yada.core/http-response true})))
 
@@ -165,7 +168,7 @@
                   ;; TODO: A 202 may be not what the developer wants!
                   ;; TODO: See RFC7240
                   (d/deferred? res) 202
-                  (:exists? ctx) 204
+                  (ctx/exists? ctx) 204
                   :otherwise 201)))))
 
 ;; --------------------------------------------------------------------------------
@@ -366,14 +369,14 @@
   Delete (DELETE [f ctx] (f ctx))
   Options (OPTIONS [f ctx] (f ctx)))
 
-(defn infer-methods [o]
+
+(defn infer-methods
+  "Determine methods from an object based on the protocols it
+  satisfies."
+  [o]
   (cond-> #{}
     (satisfies? Get o) (conj :get)
     (satisfies? Put o) (conj :put)
     (satisfies? Post o) (conj :post)
-    (satisfies? Delete o) (conj :put)
+    (satisfies? Delete o) (conj :delete)
     (satisfies? Options o) (conj :options)))
-
-(extend-protocol p/AllowedMethods
-  Object
-  (p/allowed-methods [o] (infer-methods o)))

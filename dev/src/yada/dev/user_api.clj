@@ -13,8 +13,6 @@
    [yada.swagger :refer (swaggered)]
    [yada.yada :as yada]))
 
-;; {"swagger":"2.0","info":{"title":"API","version":"0.0.1"},"produces":["application/json","application/x-yaml","application/edn","application/transit+json","application/transit+msgpack"],"consumes":["application/json","application/x-yaml","application/edn","application/transit+json","application/transit+msgpack"],"basePath":"/","paths":{"/api/users":{"post":{"tags":["registration"],"summary":"Register a user","parameters":[{"in":"body","name":"UserRegistrationSchema","description":"","required":true,"schema":{"$ref":"#/definitions/UserRegistrationSchema"}}],"responses":{"default":{"description":""}}},"get":{"tags":["registration"],"summary":"List users","responses":{"default":{"description":""}}}}},"definitions":{"UserRegistrationSchema":{"type":"object","properties":{"email":{"type":"string"},"password":{"type":"string"}},"required":["email","password"]}}}
-
 (defrecord VerboseUserApi []
   Lifecycle
   (start [component]
@@ -52,7 +50,7 @@
                                    :responses {200 {:description "Known user"}
                                                404 {:description "Unknown user"}}}}
                    :parameters {:get {:path {:username s/Str}}}
-                   :representations (p/representations (p/as-resource {}))})
+                   :representations (:representations (p/resource-properties (p/as-resource {})))})
 
               "/posts" (yada/resource
                         (fn [ctx] nil)

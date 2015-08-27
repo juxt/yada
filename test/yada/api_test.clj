@@ -35,10 +35,10 @@
 
         (given response
           :status := 200
-          ;; TODO: Check whether charsets are applicable to application/json
           :headers :> {"content-type" "application/json"})
 
-        (given (-> response :body (bs/convert String) json/decode)
+        (given (some-> response :body (bs/convert String) json/decode)
+          identity :!= nil
           "swagger" := "2.0"
           ["info" "title"] := "User API"
           ["info" "version"] := "0.0.1"

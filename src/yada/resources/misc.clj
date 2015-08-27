@@ -1,24 +1,19 @@
 (ns yada.resources.misc
   (:require
+   [clj-time.core :refer [now]]
+   [clj-time.coerce :refer [to-date]]
    [yada.protocols :as p]
-   [yada.methods :refer (Get Put Post Delete Options)]))
-
-;; Each kv-arg must be off the form [method {:parameters {...} :response {...}}]
+   [yada.methods :refer [Get Put Post Delete Options]]))
 
 (defrecord JustMethods []
-  p/AllowedMethods
-  (allowed-methods [this] (keys this))
-
-  p/ResourceModification
-  (last-modified [_ ctx] (java.util.Date.))
-
-  p/ResourceParameters
-  (parameters [this]
-    (reduce-kv (fn [acc k v]
-                 (assoc acc k (:parameters v))) {} this))
-
-  p/Representations
-  (representations [_] [{:media-type #{"text/plain"}}])
+  p/ResourceProperties
+  (resource-properties [this]
+    {:allowed-methods (keys this)
+     :parameters (reduce-kv (fn [acc k v]
+                              (assoc acc k (:parameters v))) {} this)
+     :representations [{:media-type #{"text/plain"}}]})
+  (resource-properties [_ ctx]
+    {:last-modified (to-date (now))})
 
   Get
   (GET [this ctx]

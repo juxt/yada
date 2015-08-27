@@ -13,10 +13,11 @@
   (import (clojure.core.async.impl.protocols ReadPort)))
 
 (defrecord ChannelResource [mult]
-  p/Representations
-  (representations [_]
-    [{:media-type "text/event-stream"
-      :charset charset/platform-charsets}])
+  p/ResourceProperties
+  (resource-properties [_]
+    {:representations
+     [{:media-type "text/event-stream"
+       :charset charset/platform-charsets}]})
 
   Get
   (GET [_ _]

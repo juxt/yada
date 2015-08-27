@@ -10,19 +10,18 @@
    [yada.util :refer (md5-hash)]))
 
 (defrecord StringResource [s last-modified]
-  p/Representations
-  (representations [_]
-    [{ ;; Without attempting to actually parse it (which isn't completely
-      ;; impossible) we're not able to guess the media-type of this
-      ;; string, so we return text/plain.
-      :media-type "text/plain"
-      :charset charset/platform-charsets}])
 
-  p/ResourceModification
-  (last-modified [_ _] last-modified)
-
-  p/ResourceVersion
-  (version [_ _] s)
+  p/ResourceProperties
+  (resource-properties [_]
+    {:representations
+     [{ ;; Without attempting to actually parse it (which isn't completely
+       ;; impossible) we're not able to guess the media-type of this
+       ;; string, so we return text/plain.
+       :media-type "text/plain"
+       :charset charset/platform-charsets}]})
+  (resource-properties [_ ctx]
+    {:last-modified last-modified
+     :version s})
 
   Get
   (GET [_ _] s))

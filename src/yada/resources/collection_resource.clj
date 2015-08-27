@@ -11,14 +11,15 @@
   (:import [clojure.lang APersistentMap]))
 
 (defrecord MapResource [m last-modified]
-  p/ResourceModification
-  (last-modified [_ ctx] last-modified)
-
-  p/Representations
-  (representations [_]
-    [{:method #{:get :head}
-      :media-type #{"application/edn" "application/json;q=0.9" "text/html;q=0.8"}
-      :charset charset/platform-charsets}])
+  p/ResourceProperties
+  (resource-properties [_]
+    {:representations
+     [{:method #{:get :head}
+       :media-type
+       #{"application/edn" "application/json;q=0.9" "text/html;q=0.8"}
+       :charset charset/platform-charsets}]})
+  (resource-properties [_ ctx]
+    {:last-modified last-modified})
 
   Get
   (GET [_ ctx] m))

@@ -102,10 +102,20 @@
       (methods/request (:method-instance ctx) ctx))
     ctx))
 
+(defn get-resource-properties
+  [ctx]
+  (let [resource (:resource ctx)]
+    (if (satisfies? p/ResourceProperties resource)
+      (d/chain
+       (resource/resource-properties-on-request resource ctx)
+       (fn [props]
+         (assoc ctx :resource-properties (merge props))))
+      (throw (ex-info (format "Resource must satisfy ResourceProperties (for now), resource is %s" resource) {:resource resource})))))
+
 (defn method-allowed?
   "Is method allowed on this resource?"
   [ctx]
-  (if-not (contains? (-> ctx :allowed-methods) (:method ctx))
+  (if-not (contains? (-> ctx :handler :allowed-methods) (:method ctx))
     (d/error-deferred
      (ex-info "Method Not Allowed"
               {:status 405
@@ -198,30 +208,6 @@
 
     (d/error-deferred (ex-info "" {:status 403 ::http-response true}))))
 
-;; Now we do a fetch, so the resource has a chance to
-;; load any metadata it may need to answer the questions
-;; to follow. It can also load state in this step, if it
-;; wants, but can defer this to the get-state call if it
-;; wants. This would usually depend on the size of the
-;; state. For example, if it's a stream, it would be
-;; returned on get-state.
-
-;; Do the fetch here - this is intended to allow
-;; resources to prepare to answer questions about
-;; themselves. This has to happen _after_ the request
-;; parameters have been established because the fetch
-;; might depend on them in some way. The fetch may
-;; involve a database trip, to load context based on the
-;; request parameters.
-
-;; The fetch can return a deferred result.
-(defn fetch
-  [ctx]
-  (d/chain
-   (p/fetch (:resource ctx) ctx)
-   (fn [res]
-     (assoc ctx :resource res))))
-
 ;; Content negotiation
 ;; TODO: Unknown Content-Type? (incorporate this into conneg)
 (defn select-representation
@@ -237,23 +223,12 @@
       (and representation (-> ctx :handler :vary))
       (assoc-in [:response :vary] (-> ctx :handler :vary)))))
 
-(defn exists?
-  "A current representation for the resource exists?"
-  [ctx]
-  (if (-> ctx :handler :existence?)
-    (d/chain
-     (p/exists? (:resource ctx) ctx)
-     (fn [exists?]
-       (assoc ctx :exists? exists?)))
-    ;; Default
-    (assoc ctx :exists? true)))
-
 ;; Conditional requests - last modified time
 (defn check-modification-time [ctx]
   (d/chain
    (or
-    (p/last-modified (-> ctx :options :last-modified) ctx)
-    (p/last-modified (:resource ctx) ctx))
+    (-> ctx :options :last-modified)
+    (-> ctx :resource-properties :last-modified))
 
    (fn [last-modified]
      (if-let [last-modified (round-seconds-up last-modified)]
@@ -299,10 +274,11 @@
       ;; representation of the resource
 
       ;; Create a map of representation -> etag
-      (-> ctx :handler :version?)
-      (let [version (p/version (:resource ctx) ctx)
-            etags (into {} (map (juxt identity (partial p/to-etag version))
-                                (-> ctx :handler :representations)))]
+      (-> ctx :resource-properties :version)
+      (let [version (-> ctx :resource-properties :version)
+            etags (into {}
+                        (for [rep (-> ctx :handler :representations)]
+                          [rep (p/to-etag version rep)]))]
 
         (if (empty? (set/intersection matches (set (vals etags))))
           (d/error-deferred
@@ -326,6 +302,21 @@
   [ctx]
   (methods/request (:method-instance ctx) ctx))
 
+(defn get-new-resource-properties
+  "If the method is unsafe, call resource-properties again. This will
+  pick up any changes that are used in subsequent interceptors, such as
+  the new version of the resource."
+  [ctx]
+  (let [resource (:resource ctx)]
+    (if (and
+         (not (methods/safe? (:method-instance ctx)))
+         (satisfies? p/ResourceProperties resource))
+      (d/chain
+       (p/resource-properties resource ctx)
+       (fn [props]
+         (assoc ctx :new-resource-properties props)))
+      ctx)))
+
 ;; Compute ETag, if not already done so
 
 ;; Unsafe resources that support etags MUST return a
@@ -345,12 +336,11 @@
 (defn compute-etag
   [ctx]
   ;; only if resource supports etags
-  (if (-> ctx :handler :version?)
-    ;; only if the resource hasn't already set an etag
-    (when-let [version (or (-> ctx :response :version)
-                           (p/version (:resource ctx) ctx))]
-      (let [etag (p/to-etag version (get-in ctx [:response :representation]))]
-        (assoc-in ctx [:response :etag] etag)))
+  (if-let [version (or
+                    (-> ctx :new-resource-properties :version)
+                    (-> ctx :resource-properties :version))]
+    (let [etag (p/to-etag version (get-in ctx [:response :representation]))]
+      (assoc-in ctx [:response :etag] etag))
     ctx))
 
 ;; CORS
@@ -483,11 +473,9 @@
      parameters
      representations
      vary
-     security
+     #_security
      service-available?
-     authorization
-     version?
-     existence?
+     #_authorization
      journal]
   clojure.lang.IFn
   (invoke [this req]
@@ -506,19 +494,28 @@
    known-method?
    uri-too-long?
    TRACE
+
+   get-resource-properties
+
    method-allowed?
    malformed?
+
 ;;   authentication
 ;;   authorization
-   fetch
+
    ;; TODO: Unknown or unsupported Content-* header
    ;; TODO: Request entity too large - shouldn't we do this later,
    ;; when we determine we actually need to read the request body?
-   exists?
-   select-representation
+
    check-modification-time
+
+   select-representation
+   ;; if-match computes the etag of the selected representations, so
+   ;; needs to be run after select-representation
    if-match
+
    invoke-method
+   get-new-resource-properties
    compute-etag
    create-response])
 
@@ -534,23 +531,25 @@
                     (p/as-resource resource)
                     resource)
 
+         resource-properties (when (satisfies? p/ResourceProperties resource)
+                               (resource/resource-properties resource))
+
          known-methods (methods/known-methods)
 
          allowed-methods (or
                           ;; TODO: Test for this
                           (when-let [methods (or (:all-allowed-methods options)
-                                                 (and (satisfies? p/AllAllowedMethods resource)
-                                                      (resource/all-allowed-methods resource)))]
+                                                 (:all-allowed-methods resource-properties))]
                             (set methods))
                           (conj
                            (set
                             (or (:allowed-methods options)
-                                (resource/allowed-methods resource)))
+                                (:allowed-methods resource-properties)
+                                (methods/infer-methods resource)))
                            :head :options))
 
          parameters (or (:parameters options)
-                        (when (satisfies? p/ResourceParameters resource)
-                          (p/parameters resource)))
+                        (:parameters resource-properties))
 
          representations (rep/representation-seq
                           (rep/coerce-representations
@@ -559,8 +558,8 @@
                             (when-let [rep (:representation options)] [rep])
                             (let [m (select-keys options [:media-type :charset :encoding :language])]
                               (when (not-empty m) [m]))
-                            (when (satisfies? p/Representations resource)
-                              (p/representations resource))
+                            (:representations resource-properties)
+                            ;; Default
                             [{:media-type "application/octet-stream"}])))
 
          vary (rep/vary representations)
@@ -573,7 +572,6 @@
        {:allowed-methods allowed-methods
 ;;        :authorization (or (:authorization options) (NoAuthorizationSpecified.))
         :base base
-        :existence? (satisfies? p/RepresentationExistence resource)
         :id (or (:id options) (java.util.UUID/randomUUID))
         :interceptor-chain default-interceptor-chain
         :known-methods known-methods
@@ -582,8 +580,7 @@
         :representations representations
         :resource resource
 ;;        :security (as-sequential (:security options))
-        :vary vary
-        :version? (satisfies? p/ResourceVersion resource)}
+        :vary vary}
        (when journal {:journal journal}))))))
 
 

@@ -51,26 +51,25 @@
                  swagger)]))
 
 (defrecord SwaggerSpec [spec created-at content-type]
-  p/Representations
-  (representations [_]
-    (case content-type
-      "application/json" [{:media-type #{"application/json"
-                                         "application/json;pretty=true"}
-                           :charset #{"UTF-8" "UTF-16;q=0.9" "UTF-32;q=0.9"}}]
-      "text/html" [{:media-type "text/html"
-                    :charset charset/platform-charsets}]
-      "application/edn" [{:media-type #{"application/edn"
-                                        "application/edn;pretty=true"}
-                          :charset #{"UTF-8"}}]))
+  p/ResourceProperties
+  (resource-properties
+    [_]
+    {:representations
+     (case content-type
+       "application/json" [{:media-type #{"application/json"
+                                          "application/json;pretty=true"}
+                            :charset #{"UTF-8" "UTF-16;q=0.9" "UTF-32;q=0.9"}}]
+       "text/html" [{:media-type "text/html"
+                     :charset charset/platform-charsets}]
+       "application/edn" [{:media-type #{"application/edn"
+                                         "application/edn;pretty=true"}
+                           :charset #{"UTF-8"}}])})
+  (resource-properties [_ ctx]
+     {:last-modified created-at
+      :version spec})
 
   Get
-  (GET [_ ctx] (rs/swagger-json spec))
-
-  p/ResourceModification
-  (last-modified [_ ctx] created-at)
-
-  p/ResourceVersion
-  (version [_ ctx] spec))
+  (GET [_ ctx] (rs/swagger-json spec)))
 
 (defrecord Swaggered [spec route spec-handlers]
   Matched

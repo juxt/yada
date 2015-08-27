@@ -12,8 +12,6 @@
    [schema.test :as st]
    [yada.representation :refer (coerce-representations representation-seq vary)]))
 
-;; TODO: Fix up these tests
-
 (st/deftest vary-test
   (given
     (vary

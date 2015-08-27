@@ -6,7 +6,7 @@
    [clj-time.coerce :refer [to-date]]
    [yada.charset :as charset]
    [yada.protocols :as p]
-   [yada.methods :refer (Get Put)]
+   [yada.methods :refer (Get Put) :as methods]
    [schema.core :as s]
    yada.resources.string-resource)
   (:import [yada.resources.string_resource StringResource]))
@@ -15,28 +15,21 @@
   (wrap-atom [init-state a] "Given the initial value on derefencing an atom, construct a record which will manage the reference."))
 
 (defrecord AtomResource [*a wrapper *last-mod]
-  p/AllowedMethods
-  (allowed-methods [_] (conj (set (p/allowed-methods wrapper)) :put :post :delete))
-
-  p/ResourceModification
-  (last-modified [_ ctx]
-    (when-let [lm @*last-mod] lm))
-
-  p/ResourceParameters
-  (parameters [_] (merge
-                   (when (satisfies? p/ResourceParameters wrapper)
-                     (p/parameters wrapper))
-                   {:put {:body s/Str}})) ;; TODO: Not just a string, depends on wrapper
-
-  p/Representations
-  (representations [_]
-    (when (satisfies? p/Representations wrapper)
-      (p/representations wrapper)))
-
-  p/ResourceVersion
-  (version [_ ctx]
-    (when (satisfies? p/ResourceVersion wrapper)
-      (p/version wrapper ctx)))
+  p/ResourceProperties
+  (resource-properties [_]
+    (let [props (p/resource-properties wrapper)]
+      (merge props
+             {:allowed-methods (conj (set (or
+                                           (:allowed-methods props)
+                                           (methods/infer-methods wrapper)))
+                                     :put :post :delete)})))
+  (resource-properties [_ ctx]
+    (merge
+     ;; TODO: Make sure that in the case of the string we are getting
+     ;; the version from the current string, not the original string
+     (p/resource-properties wrapper ctx)
+     (when-let [lm @*last-mod]
+       {:last-modified lm})))
 
   Get
   (GET [_ ctx] @*a)

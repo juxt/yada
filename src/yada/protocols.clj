@@ -9,7 +9,7 @@
 
 (defprotocol ResourceCoercion
   (as-resource [_] "Coerce to a resource. Often, resources need to be
-  coerced rather than simply extending types with the Resource
+  coerced rather than extending types directly with the Resource
   protocol. We can exploit the time of coercion to know the time of
   birth for the resource, which supports time-based conditional
   requests. For example, a simple StringResource is immutable, so by
@@ -23,9 +23,36 @@
   nil
   (as-resource [_] nil))
 
+(defprotocol ResourceProperties
+  (resource-properties [_] [_ ctx] "If the semantics of the method are
+  known to allow mutating the resource (i.e. the method is not 'safe'),
+  the second form will be called twice, once at the start of the request
+  and again after the method has been invoked to determine modified
+  resource properties such as a new version (for determining the final
+  ETag on the response. Any value in the map returned can be deferred,
+  but if the implementation is I/O bound, implementors should attempt to
+  cache the new resource-properties during method invocation, either in
+  an atom or (since methods can return the response) by assoc'ing new
+  new value in a returned response."))
+
+(extend-protocol ResourceProperties
+  clojure.lang.Fn
+  (resource-properties
+    ([_] {:allowed-methods #{:get}})
+    ([_ ctx] {:exists? true}))
+
+  nil
+  (resource-properties
+
+    ([_] {:allowed-methods
+          ;; We do allow :get on nil, but the response will be a 404
+          #{:get}})
+    ([_ ctx] {:exists? false})))
+
+
 ;; Allowed methods
 
-(defprotocol AllowedMethods
+#_(defprotocol AllowedMethods
   "Optional protocol for resources to indicate which methods are
   allowed. Other methods, such as :head and :options may be added by
   yada."
@@ -33,7 +60,7 @@
     "Return the allowed methods. Context-agnostic - can be introspected
     by tools (e.g. swagger)"))
 
-(extend-protocol AllowedMethods
+#_(extend-protocol AllowedMethods
   clojure.lang.Fn
   (allowed-methods [_] #{:get})
   nil
@@ -41,7 +68,7 @@
   ;; Note that yada.methods also extends this protocol later
   )
 
-(defprotocol AllAllowedMethods
+#_(defprotocol AllAllowedMethods
   "Optional protocol for resources to indicate the complete set of
   methods which are allowed."
   (all-allowed-methods [_]
@@ -50,7 +77,7 @@
 
 ;; Representations
 
-(defprotocol Representations
+#_(defprotocol Representations
   ;; Context-agnostic
   (representations [_] "Declare the resource's capabilities. Return a
   sequence, each item of which specifies the methods, content-types,
@@ -67,38 +94,17 @@
 ;; would have access to the static result, via the context, and could
 ;; choose how to augment these (override completely, concat, etc.)
 
-(extend-protocol Representations
+#_(extend-protocol Representations
   clojure.lang.PersistentVector (representations [v] v)
   nil (representations [_] nil))
 
-(defprotocol ResourceParameters
+#_(defprotocol ResourceParameters
   "Declare the resource's parameters"
   (parameters [_] "Return the parameters, by method. Must not return a deferred value."))
 
-;; Fetch
-
-(defprotocol ResourceFetch
-  (fetch [this ctx] "Fetch representation metadata, such that questions
-  can be answered about it. You can return a deferred if
-  necessary (indeed, you should do so if you have to perform some IO in
-  this function). Often, you will return 'this', perhaps augmented with
-  some additional state. Sometimes you will return something else."))
-
-;; Fetch happens before negotiation, so must only return resource data,
-;; nothing to do with the representation itself. Negotiation information
-;; will not be present in the context, which is provided primarily to
-;; give the resource fetch access to the Ring request and it's own
-;; resource definition.
-
-(extend-protocol ResourceFetch
-  nil ; The user has not elected to specify a resource, that's fine (and common)
-  (fetch [_ ctx] nil)
-  Object
-  (fetch [o ctx] o))
-
 ;; Existence
 
-(defprotocol RepresentationExistence
+#_(defprotocol RepresentationExistence
   "Optional protocol for a resource to indicate the existence of a
   current representation. If no representation exists, this results in a
   404 response."
@@ -109,13 +115,13 @@
     is given as an argument. Return truthy if a representation
     exists. Can return a deferred value."))
 
-(extend-protocol RepresentationExistence
+#_(extend-protocol RepresentationExistence
   Object (exists? [_ ctx] true)
   nil (exists? [_ ctx] false))
 
 ;; Modification
 
-(defprotocol ResourceModification
+#_(defprotocol ResourceModification
   "Optional protocol for a resource to indicate when its state was last
   modified."
   (last-modified [_ ctx]
@@ -123,7 +129,7 @@
     sensitive, the context is given as an argument. Can return a
     deferred value."))
 
-(extend-protocol ResourceModification
+#_(extend-protocol ResourceModification
   File
   (last-modified [f ctx] (Date. (.lastModified f)))
   Object
@@ -133,7 +139,7 @@
 
 ;; Versioning
 
-(defprotocol ResourceVersion
+#_(defprotocol ResourceVersion
   "Entity tags. Satisfying resources MUST also satisfy Representations,
   providing at least one representation (because the representation data
   is used in constructing the ETag header in the response)."

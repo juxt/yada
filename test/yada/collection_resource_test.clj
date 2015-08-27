@@ -15,14 +15,14 @@
 
 ;; Collections can be resources too, we should test them
 
-
 (deftest map-resource-test
   (testing "map"
     (let [handler (resource {:name "Frank"})
           request (mock/request :get "/")
           response @(handler request)
-          last-modified (parse-date (-> response :headers (get "last-modified")))]
+          last-modified (some-> response :headers (get "last-modified") parse-date)]
 
+      (is last-modified)
       (is (instance? java.util.Date last-modified))
 
       (given response

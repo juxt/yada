@@ -82,18 +82,14 @@
     representation))
 
 (defrecord FileResource [f]
-  p/AllowedMethods
-  (allowed-methods [_] #{:get :head :put :delete})
+  p/ResourceProperties
+  (resource-properties [_]
+    {:allowed-methods #{:get :head :put :delete}
+     :representations [{:media-type (or (ext-mime-type (.getName f)) "application/octet-stream")}]})
 
-  p/RepresentationExistence
-  (exists? [_ ctx] (.exists f))
-
-  p/ResourceModification
-  (last-modified [_ ctx] (Date. (.lastModified f)))
-
-  p/Representations
-  (representations [_]
-    [{:media-type (or (ext-mime-type (.getName f)) "application/octet-stream")}])
+  (resource-properties [_ ctx]
+    {:exists? (.exists f)
+     :last-modified (Date. (.lastModified f))})
 
   Get
   (GET [_ ctx]

@@ -63,7 +63,8 @@
 ;; CSV
 
 (defn parse-csv [v]
-  (map str/trim (str/split v #"\s*,\s*")))
+  (when v
+    (map str/trim (str/split v #"\s*,\s*"))))
 
 
 ;; Selection

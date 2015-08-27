@@ -14,16 +14,19 @@
 ;; A UrlResource is a Java resource.
 
 (extend-type URL
-  p/ResourceModification
-  (last-modified [u ctx]
-    (let [f (io/file (.getFile u))]
-      (when (.exists f)
-        (Date. (.lastModified f)))))
+  p/ResourceCoercion
+  (as-resource [url] url)
 
-  p/Representations
-  (representations [u]
-    [{:media-type #{(ext-mime-type (.getPath u))}
-      :charset charset/platform-charsets}])
+  p/ResourceProperties
+  (resource-properties
+    ([u]
+     {:representations
+      [{:media-type #{(ext-mime-type (.getPath u))}
+        :charset charset/platform-charsets}]})
+    ([u ctx]
+     {:last-modified (let [f (io/file (.getFile u))]
+                       (when (.exists f)
+                         (Date. (.lastModified f))))}))
 
   ;; TODO: This is wrong. First, an InputStreamReader does not coerce the
   ;; encoding, simply converts a byte stream to a character stream and is
@@ -38,7 +41,4 @@
     (if (= (get-in ctx [:response :representation :media-type :type]) "text")
       (BufferedReader.
        (InputStreamReader. (.openStream u) (or (get-in ctx [:response :server-charset]) "UTF-8")))
-      (.openStream u)))
-
-  p/ResourceCoercion
-  (as-resource [url] url))
+      (.openStream u))))
