@@ -19,7 +19,7 @@
    [hiccup "1.0.5"]
    [json-html "0.3.1"]
    [juxt/iota "0.1.2"]
-   [manifold "0.1.0"]
+   [manifold "0.1.1-alpha4"]
    [metosin/ring-swagger "0.20.2" :exclusions [potemkin]]
    [prismatic/schema "0.4.3" :exclusions [potemkin]]
    [potemkin "0.4.1" :exclusions [riddley]]
