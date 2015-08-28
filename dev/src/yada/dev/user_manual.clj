@@ -222,7 +222,8 @@
                                      (post-process-doc component xbody config)
                                      config))
                              {:representations [{:media-type #{"text/html"} :charset #{"utf-8"}}]
-                              :last-modified (io/file "dev/resources/user-manual.md")
+                              ;; TODO: Should cope with a file - should interpret the result
+                              :last-modified (java.util.Date. (.lastModified (io/file "dev/resources/user-manual.md")))
                               :id ::user-manual})))]
 
 ]]]])))
