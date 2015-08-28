@@ -23,7 +23,7 @@ For the latest 'beta' release, add the following dependency to your
 `project.clj` file
 
 ```clojure
-[yada "1.0.0-20150828.201157-7"]
+[yada "1.0.0-20150828.203727-8"]
 ```
 
 For the previous 0.4.3 'alpha' release, which is now deprecated, use the following and run the documentation offline (details below).
