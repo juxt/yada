@@ -6,14 +6,14 @@
    [ring.mock.request :refer [request]]
    [clojure.java.io :as io]
    [juxt.iota :refer (given)]
-   [yada.yada :refer [resource]]))
+   [yada.yada :refer [yada]]))
 
 ;; TODO: Restore this test once atoms can wrap maps (and other collections)
 
 (deftest atom-test
   #_(testing "atom"
     (let [resource (atom {:name "Frank"})
-          handler (yada.yada/resource resource)
+          handler (yada resource)
           request (request :get "/")
           response @(handler request)]
 

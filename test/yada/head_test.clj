@@ -4,13 +4,13 @@
   (:require
    [clojure.java.io :as io]
    [clojure.test :refer :all]
+   [juxt.iota :refer (given)]
    [ring.mock.request :refer [request]]
-   [yada.yada :as yada]
-   [juxt.iota :refer (given)]))
+   [yada.yada :as yada :refer [yada]]))
 
 (deftest head-test []
   (let [resource "Hello World!"
-        handler (yada/resource resource {:media-type "text/plain"
+        handler (yada resource {:media-type "text/plain"
                                          :charset "UTF-8"})
         request (request :head "/")
         response @(handler request)]

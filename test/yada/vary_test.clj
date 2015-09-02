@@ -4,13 +4,13 @@
   (:require
    [clojure.test :refer :all]
    [clojure.string :as str]
-   [yada.yada :as yada]
-   [yada.charset :as charset]
-   [yada.util :refer (parse-csv)]
-   [ring.mock.request :refer (request)]
    [juxt.iota :refer (given)]
+   [ring.mock.request :refer (request)]
    [schema.test :as st]
-   [yada.representation :refer (coerce-representations representation-seq vary)]))
+   [yada.charset :as charset]
+   [yada.representation :refer (coerce-representations representation-seq vary)]
+   [yada.util :refer (parse-csv)]
+   [yada.yada :as yada :refer [yada]]))
 
 (st/deftest vary-test
   (given
@@ -33,7 +33,7 @@
 
 (st/deftest vary-header-test []
   (let [resource "Hello World!"
-        handler (yada/resource resource {:media-type #{"text/plain" "text/html"}})
+        handler (yada resource {:media-type #{"text/plain" "text/html"}})
         request (request :head "/")
         response @(handler request)]
     (given response

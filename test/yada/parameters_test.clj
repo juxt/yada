@@ -9,10 +9,10 @@
    [ring.util.codec :as codec]
    [schema.core :as s]
    [yada.resources.misc :refer (just-methods)]
-   [yada.yada :as yada]))
+   [yada.yada :as yada :refer [yada]]))
 
 (deftest post-test
-  (let [handler (yada/resource
+  (let [handler (yada
                  (just-methods
                   :post {:parameters {:form {:foo s/Str}}
                          :response (fn [ctx]
@@ -33,7 +33,7 @@
         [:body bs/to-string edn/read-string] := {:foo "bar"}))))
 
 (deftest post-test-with-query-params
-  (let [handler (yada/resource
+  (let [handler (yada
                  (just-methods
                   :post {:parameters {:query {:foo s/Str} :form {:bar s/Str}}
                          :response (fn [ctx] (pr-str (:parameters ctx)))}))]

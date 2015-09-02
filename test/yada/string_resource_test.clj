@@ -1,14 +1,16 @@
+;; Copyright © 2015, JUXT LTD.
+
 (ns yada.string-resource-test
   (:require
+   [clojure.java.io :as io]
    [clojure.string :as str]
+   [clojure.test :refer :all]
    [clj-time.core :as time]
    [clj-time.coerce :refer (to-date)]
-   [ring.util.time :refer (format-date)]
-   [clojure.test :refer :all]
-   [clojure.java.io :as io]
-   [yada.yada :as yada]
+   [juxt.iota :refer [given]]
    [ring.mock.request :refer [request]]
-   [juxt.iota :refer [given]]))
+   [ring.util.time :refer (format-date)]
+   [yada.yada :as yada :refer [yada]]))
 
 (deftest string-test
   (testing "Producing a Java string implies utf-8 charset"
@@ -21,7 +23,7 @@
     ;; that it can output these strings in utf-8.
     (let [resource "Hello World"
           handler
-          (yada/resource
+          (yada
            resource
            {:representations [{:media-type #{"text/plain"}
                                ;; TODO: See comment above, this
@@ -47,7 +49,7 @@
 (deftest hello-world-test
   (testing "hello-world"
     (let [resource "Hello World!"
-          handler (yada/resource resource)
+          handler (yada resource)
           request (request :get "/")
           response @(handler request)]
 
@@ -60,7 +62,7 @@
   (testing "if-last-modified"
     (time/do-at (time/minus (time/now) (time/days 6))
       (let [resource "Hello World!"
-            handler (yada/resource resource)]
+            handler (yada resource)]
 
         (time/do-at (time/minus (time/now) (time/days 3))
 

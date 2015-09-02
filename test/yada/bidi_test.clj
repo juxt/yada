@@ -12,11 +12,11 @@
    [ring.util.codec :as codec]
    yada.bidi
    [yada.walk :refer (basic-auth)]
-   [yada.yada :as yada]))
+   [yada.yada :as yada :refer [yada]]))
 
 (defn make-api []
   ["/api"
-   {"/status" (yada/resource "API working!")
+   {"/status" (yada "API working!")
     "/hello" (fn [req] {:body "hello"})
     "/protected" (basic-auth
                   "Protected" (fn [ctx]
@@ -25,8 +25,8 @@
                                    (= ((juxt :user :password) auth)
                                       ["alice" "password"]))
                                  :not-authorized))
-                  {"/a" (yada/resource "Secret area A")
-                   "/b" (yada/resource "Secret area B")})}])
+                  {"/a" (yada "Secret area A")
+                   "/b" (yada "Secret area B")})}])
 
 (deftest status
   (let [h (-> (make-api) make-handler)

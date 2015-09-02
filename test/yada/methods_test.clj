@@ -14,7 +14,7 @@
    [yada.yada :as yada :refer [yada]]))
 
 (deftest post-test
-  (let [handler (yada/resource
+  (let [handler (yada
                  (just-methods
                   :post {:response (fn [ctx]
                                      (assoc (:response ctx)
@@ -25,7 +25,7 @@
       [:body bs/to-string] := "foo")))
 
 (deftest dynamic-post-test
-  (let [handler (yada/resource
+  (let [handler (yada
                  (just-methods
                   :post {:response (fn [ctx]
                                      (assoc (:response ctx)
@@ -35,7 +35,7 @@
       [:body bs/to-string] := "foo")))
 
 (deftest multiple-headers-test
-  (let [handler (yada/resource
+  (let [handler (yada
                  (just-methods
                   :post {:response (fn [ctx] (assoc (:response ctx)
                                                    :status 201 :headers {"set-cookie" ["a" "b"]}))}))]

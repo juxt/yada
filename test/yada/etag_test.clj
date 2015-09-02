@@ -8,7 +8,7 @@
    [yada.methods :refer [Get Post]]
    [yada.protocols :as p]
    [yada.test.util :refer (etag?)]
-   [yada.yada :as yada]))
+   [yada.yada :as yada :refer [yada]]))
 
 ;; ETags -------------------------------------------------------------
 
@@ -28,7 +28,7 @@
 (deftest etag-test
   (testing "etags-identical-for-consecutive-gets"
     (let [v (atom 1)
-          handler (yada/resource (->ETagTestResource v))
+          handler (yada (->ETagTestResource v))
           r1 @(handler (mock/request :get "/"))
           r2 @(handler (mock/request :get "/"))]
       (given [r1 r2]
@@ -43,7 +43,7 @@
 
   (testing "etags-different-after-post"
     (let [v (atom 1)
-          handler (yada/resource (->ETagTestResource v))
+          handler (yada (->ETagTestResource v))
           r1 @(handler (mock/request :get "/"))
           r2 @(handler (mock/request :post "/"))
           r3 @(handler (mock/request :get "/"))]
@@ -60,7 +60,7 @@
 
   (testing "post-using-etags"
     (let [v (atom 1)
-          handler (yada/resource (->ETagTestResource v))
+          handler (yada (->ETagTestResource v))
           r1 @(handler (mock/request :get "/"))
           ;; Someone else POSTs, causing the etag given in r1 to become stale
           r2 @(handler (mock/request :post "/"))]
