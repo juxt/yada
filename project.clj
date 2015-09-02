@@ -26,6 +26,8 @@
    [ring-basic-authentication "1.0.5"]
    [org.clojure/core.async "0.1.346.0-17112a-alpha"]]
 
+  :pedantic? :abort
+
   :repl-options {:init-ns user
                  :welcome (println "Type (dev) to start")}
 
