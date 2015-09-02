@@ -7,7 +7,7 @@
    [clojure.string :as str]
    [clojure.tools.logging :refer :all]
    [com.stuartsierra.component :refer [Lifecycle]]
-   [modular.template :refer (render-template)]
+   [modular.template :refer [render-template]]
    [ring.util.mime-type :refer (ext-mime-type)]
    [stencil.core :as stencil]
    [stencil.loader :as loader]
@@ -60,7 +60,9 @@
                 {:date (now)
                  :parsed-template (when-let [res (::resource props)] (stencil.parser/parse (slurp res)))}))
       (when-let [pt (:parsed-template @*template)]
-        (stencil/render pt (if (fn? model) (model ctx) model))
+        (stencil/render pt (cond (fn? model) (model ctx)
+                                 (delay? model) @model
+                                 :otherwise model))
         ;; Returning nil causes a 404
         ))))
 

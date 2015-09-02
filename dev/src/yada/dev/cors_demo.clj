@@ -8,7 +8,6 @@
    [com.stuartsierra.component :refer [using]]
    [hiccup.core :refer (html)]
    [modular.component.co-dependency :refer (co-using)]
-   [modular.template :as template :refer (render-template)]
    [schema.core :as s]
    [yada.dev.template :refer [new-template-resource]]
    [yada.yada :as yada :refer [yada]]))

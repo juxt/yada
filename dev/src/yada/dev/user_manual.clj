@@ -16,10 +16,10 @@
    [hiccup.page :refer (html5)]
    [markdown.core :refer (md-to-html-string)]
    [modular.bidi :refer (path-for)]
-   [modular.template :as template :refer (render-template)]
    [modular.component.co-dependency :refer (co-using)]
-   [yada.yada :as yada]
-   [yada.swagger :refer (swaggered)]
+   [yada.yada :as yada :refer [yada]]
+   [yada.swagger :refer [swaggered]]
+   [yada.dev.template :refer [new-template-resource]]
    [ring.util.time :as rt]
    yada.resources.string-resource
    yada.resources.atom-resource
@@ -155,14 +155,11 @@
       ))
 
 (defn body [{:keys [*router templater] :as user-manual} doc replacements]
-  (render-template
-   templater
-   "templates/page.html.mustache"
-   {:content
-    (-> (with-out-str (emit-element doc))
-        (post-process-body replacements)
-        )
-    :scripts []}))
+  {:content
+   (-> (with-out-str (emit-element doc))
+       (post-process-body replacements)
+       )
+   :scripts []})
 
 (defrecord UserManual [*router templater prefix]
   Lifecycle
@@ -185,10 +182,10 @@
        [
 
         #_["petstore-simple.json" (yada/resource (json/decode (slurp (io/file "dev/resources/petstore/petstore-simple.json")))
-                                               {:representations [{:media-type #{"application/json"
+                                                 {:representations [{:media-type #{"application/json"
                                                                                    "text/html;q=0.9"
                                                                                    "application/edn;q=0.8"}
-                                                                   :charset #{"UTF-8"}}]})]
+                                                                     :charset #{"UTF-8"}}]})]
 
         ["user-manual"
          [[".html"
@@ -204,7 +201,7 @@
               ;; resource/request life-cycle, we must provide the
               ;; negotiation data explicitly as an option.
 
-              ;; NB: The reason we are using a function here, rather than a
+              ;; NB: The reason we are using a delay here, rather than a
               ;; 'static' string, is to ensure template expansion happens
               ;; outside the component's start phase, so that the *router
               ;; is bound, which means we can use path-for to generate
@@ -217,16 +214,15 @@
               ;; case. But it works OK for the "Hello World!" example. But
               ;; perhaps the use of 'fetch functions' is a placeholder for
               ;; a better design.
-              (yada/resource (fn [ctx]
-                               (body component
-                                     (post-process-doc component xbody)
-                                     replacements))
-                             {:representations [{:media-type #{"text/html"} :charset #{"utf-8"}}]
-                              ;; TODO: Should cope with a file - should interpret the result
-                              :last-modified (java.util.Date. (.lastModified (io/file "dev/resources/user-manual.md")))
-                              :id ::user-manual})))]
+              (yada (new-template-resource
+                     "templates/page.html"
+                     (delay (body component
+                             (post-process-doc component xbody)
+                             replacements)))
 
-]]]])))
+                    {:id ::user-manual})))]
+
+          ]]]])))
 
 (defmethod clojure.core/print-method UserManual
   [o ^java.io.Writer writer]

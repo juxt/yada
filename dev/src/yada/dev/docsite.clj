@@ -9,10 +9,10 @@
    [hiccup.core :refer (html)]
    [modular.bidi :refer (path-for)]
    [modular.component.co-dependency :refer (co-using)]
-   [modular.template :as template :refer (render-template)]
    [schema.core :as s]
    yada.bidi
    [yada.dev.config :as config]
+   [yada.dev.template :refer [new-template-resource]]
    yada.resources.file-resource
    [yada.yada :as yada :refer [yada]]))
 
@@ -37,38 +37,35 @@
 
 (defn index [{:keys [templater *router *cors-demo-router config]}]
   (yada
-   (fn [ctx]
-     ;; TODO: Replace with template resource
-     (render-template
-      templater
-      "templates/page.html.mustache"
-      {:content
-       (html
-        [:div.container
-         [:h2 "Welcome to " [:span.yada "yada"] "!"]
-         [:ol
-          [:li [:a {:href (path-for @*router :yada.dev.user-manual/user-manual)} "User manual"]]
-          [:li "HTTP and related specifications"
-           [:ul
-            [:li [:a {:href "/spec/rfc2616"} "RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1"]]
-            (for [i (range 7230 (inc 7240))]
-              [:li [:a {:href (format "/spec/rfc%d" i)}
-                    (format "RFC %d: %s" i (or (get titles i) ""))]])]]
-          [:li [:a {:href
-                    (format "%s/index.html?url=%s/swagger.json"
-                            (path-for @*router :swagger-ui)
-                            (path-for @*router :yada.dev.user-api/user-api)
-                            )}
-                "Swagger UI"]
-           " - to demonstrate Swagger integration"]
-          [:li [:a {:href (format "%s%s"
-                                  (config/cors-prefix config)
-                                  (path-for @*cors-demo-router :yada.dev.cors-demo/index))} "CORS demo"] " - to demonstrate CORS support"]]
-         ])}))
-   {:id ::index
-    :representations [{:media-type #{"text/html"}
-                       :charset #{"utf-8"}
-                       }]}))
+   (new-template-resource
+    "templates/page.html"
+    ;; We delay the model until after the component's start phase
+    ;; because we need the *router.
+    (delay {:content
+            (html
+             [:div.container
+              [:h2 "Welcome to " [:span.yada "yada"] "!"]
+              [:ol
+               [:li [:a {:href (path-for @*router :yada.dev.user-manual/user-manual)} "User manual"]]
+               [:li "HTTP and related specifications"
+                [:ul
+                 [:li [:a {:href "/spec/rfc2616"} "RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1"]]
+                 (for [i (range 7230 (inc 7240))]
+                   [:li [:a {:href (format "/spec/rfc%d" i)}
+                         (format "RFC %d: %s" i (or (get titles i) ""))]])]]
+               [:li [:a {:href
+                         (format "%s/index.html?url=%s/swagger.json"
+                                 (path-for @*router :swagger-ui)
+                                 (path-for @*router :yada.dev.user-api/user-api)
+                                 )}
+                     "Swagger UI"]
+                " - to demonstrate Swagger integration"]
+               [:li [:a {:href (format "%s%s"
+                                       (config/cors-prefix config)
+                                       (path-for @*cors-demo-router :yada.dev.cors-demo/index))} "CORS demo"] " - to demonstrate CORS support"]]
+              ])}))
+
+   {:id ::index}))
 
 (defrecord Docsite []
   RouteProvider
