@@ -1,0 +1,15 @@
+$.ajax({
+    beforeSend: function(xhr) {
+//        xhr.setRequestHeader("Authorization", "token 123");
+     },
+    type: "GET",
+//    contentType: 'application/json',
+    url: "{{origin}}/hello1",
+
+    success: function(response) {
+        console.log(response);
+    },
+    error: function(response) {
+        console.log(response);
+    }
+});
