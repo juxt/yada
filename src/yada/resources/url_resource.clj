@@ -2,10 +2,10 @@
 
 (ns yada.resources.url-resource
   (:require
-   [clojure.java.io :as io]
    [yada.charset :as charset]
    [yada.protocols :as p]
    [yada.methods :refer (Get)]
+   [yada.util :refer [as-file]]
    [ring.util.mime-type :refer (ext-mime-type)])
   (:import [java.net URL]
            [java.util Date]
@@ -24,9 +24,9 @@
       [{:media-type #{(ext-mime-type (.getPath u))}
         :charset charset/platform-charsets}]})
     ([u ctx]
-     {:last-modified (let [f (io/file (.getFile u))]
+     {:last-modified (when-let [f (as-file u)]
                        (when (.exists f)
-                         (Date. (.lastModified f))))}))
+                         (.lastModified f)))}))
 
   ;; TODO: This is wrong. First, an InputStreamReader does not coerce the
   ;; encoding, simply converts a byte stream to a character stream and is
