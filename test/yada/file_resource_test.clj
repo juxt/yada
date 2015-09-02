@@ -111,8 +111,7 @@
             (is (not (exists? f)))
 
             (given @(handler (request :get "/"))
-              :status := 404
-              :body :? nil?))
+              :status := 404))
 
           (is (not (.exists f)) "File should have been deleted by the DELETE"))))))
 

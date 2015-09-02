@@ -18,6 +18,7 @@
    schema.utils
    [yada.body :as body]
    [yada.charset :as charset]
+   [yada.coerce :as coerce]
    [yada.journal :as journal]
    [yada.methods :as methods]
    [yada.representation :as rep]
@@ -30,8 +31,10 @@
    )
   (:import (java.util Date)))
 
-(defn make-context []
-  {:response (->Response)})
+(defn make-context [resource-properties]
+  {:resource-properties resource-properties
+   :response (->Response)
+   })
 
 ;; TODO: Read and understand the date algo presented in RFC7232 2.2.1
 
@@ -104,12 +107,18 @@
 (defn get-resource-properties
   [ctx]
   (let [resource (:resource ctx)]
-    (if (satisfies? p/ResourceProperties resource)
-      (d/chain
-       (resource/resource-properties-on-request resource ctx)
-       (fn [props]
-         (assoc ctx :resource-properties (merge props))))
-      (throw (ex-info (format "Resource must satisfy ResourceProperties (for now), resource is %s" resource) {:resource resource})))))
+    (d/chain
+     (resource/resource-properties-on-request resource ctx)
+     (fn [props]
+       (if (schema.utils/error? props)
+         (d/error-deferred
+          ;; TODO: More thorough error handling
+          ;; TODO: Test me!
+          (ex-info "Internal Server Error"
+                   {:status 500
+                    ::http-response true
+                    :error props}))
+         (update-in ctx [:resource-properties] merge props))))))
 
 (defn method-allowed?
   "Is method allowed on this resource?"
@@ -307,13 +316,18 @@
   the new version of the resource."
   [ctx]
   (let [resource (:resource ctx)]
-    (if (and
-         (not (methods/safe? (:method-instance ctx)))
-         (satisfies? p/ResourceProperties resource))
+    (if (not (methods/safe? (:method-instance ctx)))
       (d/chain
-       (p/resource-properties resource ctx)
+       (try
+         (resource/resource-properties-on-request resource ctx)
+         (catch AbstractMethodError e {}))
        (fn [props]
-         (assoc ctx :new-resource-properties props)))
+         (if (schema.utils/error? props)
+           (d/error-deferred
+            (ex-info "Internal Server Error"
+                     {:status 500
+                      ::http-response true}))
+           (assoc ctx :new-resource-properties props))))
       ctx)))
 
 ;; Compute ETag, if not already done so
@@ -342,17 +356,18 @@
       (assoc-in ctx [:response :etag] etag))
     ctx))
 
-;; CORS
-;; TODO: Reinstate
-#_(defn cors [ctx]
-  (if-let [origin (service/allow-origin allow-origin ctx)]
-    (update-in ctx [:response :headers]
-               merge {"access-control-allow-origin"
-                      origin
-                      "access-control-expose-headers"
-                      (apply str
-                             (interpose ", " ["Server" "Date" "Content-Length" "Access-Control-Allow-Origin"]))})
-    ctx))
+(defn access-control-headers [ctx]
+  (let [allow-origin (get-in ctx [:options :access-control :allow-origin])
+        expose-headers (get-in ctx [:options :access-control :expose-headers])
+        allow-origin-result (when allow-origin (service/allow-origin allow-origin ctx))]
+    (cond-> ctx
+      allow-origin-result
+      (assoc-in [:response :headers "access-control-allow-origin"] allow-origin-result)
+
+      expose-headers
+      (assoc-in [:response :headers "access-control-expose-headers"]
+                (apply str
+                       (interpose ", " expose-headers))))))
 
 ;; Response
 (defn create-response
@@ -400,19 +415,23 @@
     response))
 
 (defn wrap-journaling [journal-entry]
-  (fn [link]
+  (fn [interceptor]
     (fn [ctx]
       (let [t0 (System/nanoTime)]
         (d/chain
-         (link ctx)
-         (fn [res]
+         (interceptor ctx)
+         (fn [output]
            (let [t1 (System/nanoTime)]
              (swap! journal-entry
-                    update-in [:chain] conj {:link link
-                                             :old (dissoc ctx :journal)
-                                             :new (dissoc res :journal)
-                                             :t0 t0 :t1 t1})
-             res)))))))
+                    update-in [:chain] conj {:interceptor interceptor
+                                             :old (select-keys ctx [:response])
+                                             :new (cond
+                                                    (instance? yada.response.Response output) output
+                                                    :otherwise (select-keys output [:response]))
+                                             :t0 t0 :t1 t1
+                                             :duration (- t1 t0)})
+             output)))))))
+
 (defn default-error-handler [e]
   (let [data (ex-data e)]
     (when-not (and (:status data) (< (:status data) 500))
@@ -427,8 +446,10 @@
         options (:options handler)
         journal-entry (atom {:chain []})
         id (java.util.UUID/randomUUID)
+        error-handler (or (:error-handler options)
+                          default-error-handler)
         ctx (merge
-             (make-context)
+             (make-context (:resource-properties handler))
              {:id id
               :method method
               :method-instance (get (:known-methods handler) method)
@@ -450,24 +471,34 @@
          (fn [e]
            (error-handler e)
            (let [data (when (instance? clojure.lang.ExceptionInfo e) (ex-data e))]
-             (if (::http-response data)
-               data
-        error-handler (or (:error-handler options)
-                          default-error-handler)
-               (do
-                 (when-let [journal (:journal handler)]
-                   (swap! journal assoc id (swap! journal-entry assoc :error {:exception e :data data})))
+             (do
+               (when-let [journal (:journal handler)]
+                 (swap! journal assoc id (swap! journal-entry assoc :error {:exception e :data data})))
 
-                 {:status 500
-                  ;; Renegotiate representation
-                  :body (h/html
-                         [:body
-                          [:p "Internal Server Error"]
-                          (when-let [path (:journal-browser-path options)]
-                            [:div
-                             [:p "Details"]
-                             [:a {:href (str path (journal/path-for :entry :id id))} id]])]
-                         )}))))))))
+               (let [status (or (:status data) 500)
+                     rep (rep/select-representation
+                          (:request ctx)
+                          (rep/representation-seq
+                           (rep/coerce-representations
+                            ;; Possibly in future it will be possible
+                            ;; to support more media-types to render
+                            ;; errors, including image and video
+                            ;; formats.
+                            [{:media-type #{"text/html"
+                                            "application/edn"
+                                            "application/edn;pretty=true"
+                                            "application/json"
+                                            "application/json;pretty=true"}
+                              :charset charset/platform-charsets}])))]
+                 (d/chain
+                  (cond-> (make-context {})
+                    status (assoc-in [:response :status] status)
+                    (:headers data) (assoc-in [:response :headers] (:headers data))
+                    (not (:body data)) (assoc-in [:response :body]
+                                                 (body/to-body (body/render-error status e rep ctx) rep))
+                    rep (assoc-in [:response :representation] rep))
+                  create-response))
+               )))))))
 
 (defrecord Handler
     [id
@@ -477,7 +508,6 @@
      options
      allowed-methods
      known-methods
-           (error-handler e)
      parameters
      representations
      vary
@@ -493,9 +523,6 @@
   service/Service
   (authorize [b ctx] true)
   (authorization [_] nil))
-
-#_(defn as-sequential [s]
-  (if (sequential? s) s [s]))
 
 (def default-interceptor-chain
   [available?
@@ -525,7 +552,9 @@
    invoke-method
    get-new-resource-properties
    compute-etag
-   create-response])
+   access-control-headers
+   create-response
+   ])
 
 (defn handler
   "Create a Ring handler"
@@ -587,6 +616,8 @@
         :parameters parameters
         :representations representations
         :resource resource
+        :resource-properties resource-properties
+
 ;;        :security (as-sequential (:security options))
         :vary vary}
        (when journal {:journal journal}))))))

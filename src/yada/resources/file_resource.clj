@@ -84,7 +84,7 @@
 (defrecord FileResource [f]
   p/ResourceProperties
   (resource-properties [_]
-    {:allowed-methods #{:get :head :put :delete}
+    {:allowed-methods #{:get :put :delete}
      :representations [{:media-type (or (ext-mime-type (.getName f)) "application/octet-stream")}]})
 
   (resource-properties [_ ctx]
@@ -132,8 +132,7 @@
   p/Representations
   (representations [_]
     ;; For when path-info is nil
-    [{:method #{:get :head}
-      :media-type #{"text/html" "text/plain"}
+    [{:media-type #{"text/html" "text/plain"}
       :charset charset/platform-charsets}])
 
   Get

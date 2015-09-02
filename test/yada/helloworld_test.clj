@@ -65,10 +65,9 @@
   (let [resource (hello/hello)]
     (given @(resource (request :put "/"))
       :status := 405
-      [:headers keys set] := #{"allow"}
+      [:headers keys set] :> #{"allow"}
       [:headers validate-headers?] := []
-      [:headers "allow" parse-csv set] := #{"OPTIONS" "GET" "HEAD"}
-      :body := nil)))
+      [:headers "allow" parse-csv set] := #{"OPTIONS" "GET" "HEAD"})))
 
 (deftest options-test
   (let [resource (hello/hello)]

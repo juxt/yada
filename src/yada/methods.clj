@@ -106,8 +106,10 @@
     (assoc-in ctx [:response :body] o))
   nil
   (interpret-get-result [_ ctx]
-    (throw (ex-info "" {:status 404
-                        :yada.core/http-response true}))))
+    (d/error-deferred (ex-info "" {:status 404
+                                   :yada.core/http-response true}))
+    #_(throw (ex-info "" {:status 404
+                          :yada.core/http-response true}))))
 
 (deftype GetMethod [])
 
@@ -128,21 +130,41 @@
        (ex-info "" {:status 406
                     :yada.core/http-response true})))
 
-    (d/chain
-     ;; GET request normally returns a (possibly deferred) body.
-     (GET (:resource ctx) ctx)
+    (->
+     (d/chain
 
-     (fn [res]
-       (interpret-get-result res ctx))
+      ;; GET request normally returns a (possibly deferred) body.
 
-     (fn [ctx]
-       (let [representation (get-in ctx [:response :representation])]
-         ;; representation could be nil, for example, resource could be a java.io.File
-         (update-in ctx [:response :body] body/to-body representation)))
+      (if (satisfies? Get (:resource ctx))
+        (try
+          (GET (:resource ctx) ctx)
+          (catch Exception e
+            (d/error-deferred e)))
 
-     (fn [ctx]
-       (let [content-length (body/content-length (get-in ctx [:response :body]))]
-         (cond-> ctx content-length (assoc-in [:response :content-length] content-length)))))))
+        ;; No GET
+        (d/error-deferred
+         (ex-info (format "Resource %s does not implement GET" (type (:resource ctx)))
+                  {:status 500
+                   ::http-response true})))
+
+      (fn [res]
+        (interpret-get-result res ctx))
+
+      (fn [ctx]
+        (let [representation (get-in ctx [:response :representation])]
+          ;; representation could be nil, for example, resource could be a java.io.File
+          (update-in ctx [:response :body] body/to-body representation)))
+
+      (fn [ctx]
+        (let [content-length (body/content-length (get-in ctx [:response :body]))]
+          (cond-> ctx content-length (assoc-in [:response :content-length] content-length)))))
+
+     (d/catch
+         (fn [e]
+           ;;(infof e "Error on GET")
+           (if (:yada.core/http-response (ex-data e))
+             (throw e)
+             (throw (ex-info "Error on GET" (select-keys ctx [:response :resource]) e))))))))
 
 ;; --------------------------------------------------------------------------------
 
@@ -334,28 +356,27 @@
   (safe? [_] true)
   (idempotent? [_] true)
   (request [_ ctx]
-    (throw
-     (ex-info "TRACE"
-              (merge
-               {:yada.core/http-response true}
-               (let [body (-> ctx
-                              :request
-                              ;; A client MUST NOT generate header fields in a TRACE request containing sensitive
-                              ;; data that might be disclosed by the response. For example, it would be foolish for
-                              ;; a user agent to send stored user credentials [RFC7235] or cookies [RFC6265] in a
-                              ;; TRACE request.
-                              (update-in [:headers] dissoc "authorization" "cookie")
-                              print-request
-                              with-out-str
-                              ;; only "7bit", "8bit", or "binary" are permitted (RFC 7230 8.3.1)
-                              (to-encoding "utf8"))]
+    (let [body (-> ctx
+                   :request
+                   ;; A client MUST NOT generate header fields in a
+                   ;; TRACE request containing sensitive data that might
+                   ;; be disclosed by the response. For example, it
+                   ;; would be foolish for a user agent to send stored
+                   ;; user credentials [RFC7235] or cookies [RFC6265] in
+                   ;; a TRACE request.
+                   (update-in [:headers] dissoc "authorization" "cookie")
+                   print-request
+                   with-out-str
+                   ;; only "7bit", "8bit", or "binary" are permitted (RFC 7230 8.3.1)
+                   (to-encoding "utf8"))]
 
-                 {:status 200
-                  :headers {"content-type" "message/http;charset=utf8"
-                            ;; TODO: Whoops! http://mark.koli.ch/remember-kids-an-http-content-length-is-the-number-of-bytes-not-the-number-of-characters
-                            "content-length" (.length body)}
-                  :body body
-                  :yada.core/http-response true}))))))
+      (assoc ctx :response
+             {:status 200
+              :headers {"content-type" "message/http;charset=utf8"
+                        ;; TODO: Whoops! http://mark.koli.ch/remember-kids-an-http-content-length-is-the-number-of-bytes-not-the-number-of-characters
+                        "content-length" (.length body)}
+              :body body
+              }))))
 
 
 ;; -----
