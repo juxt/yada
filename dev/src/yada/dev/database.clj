@@ -23,7 +23,4 @@
 (def new-database-schema {})
 
 (defn new-database [& {:as opts}]
-  (->> opts
-    (merge {})
-    (s/validate new-database-schema)
-    map->Database))
+  (map->Database opts))

@@ -8,9 +8,11 @@
    [com.stuartsierra.component :refer [using]]
    [hiccup.core :refer (html)]
    [modular.component.co-dependency :refer (co-using)]
+   [modular.component.co-dependency.schema :refer [co-dep]]
    [schema.core :as s]
    [yada.dev.template :refer [new-template-resource]]
-   [yada.yada :as yada :refer [yada]]))
+   [yada.yada :as yada :refer [yada]])
+  (:import [modular.bidi Router]))
 
 (defn index [{:keys [*router templater]}]
   (yada
@@ -22,7 +24,7 @@
        ])})
    {:id ::index}))
 
-(defrecord CorsDemo [*router templater]
+(s/defrecord CorsDemo [*router :- (co-dep Router)]
   RouteProvider
   (routes [component]
     ["/"
@@ -31,9 +33,5 @@
       ]]))
 
 (defn new-cors-demo [& {:as opts}]
-  (-> (->> opts
-           (merge {})
-           (s/validate {})
-           map->CorsDemo)
-      (using [:templater])
+  (-> (map->CorsDemo opts)
       (co-using [:router])))

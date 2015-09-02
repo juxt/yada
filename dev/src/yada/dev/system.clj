@@ -10,7 +10,6 @@
    [clojure.tools.reader.reader-types :refer (indexing-push-back-reader)]
    [com.stuartsierra.component :refer (system-map system-using using)]
    [modular.bidi :refer (new-router new-web-resources new-archived-web-resources new-redirect)]
-   [modular.stencil :refer (new-stencil-templater)]
    [yada.dev.docsite :refer (new-docsite)]
    [yada.dev.cors-demo :refer (new-cors-demo)]
    [yada.dev.user-manual :refer (new-user-manual)]
@@ -33,7 +32,6 @@
 (defn docsite-components [system config]
   (assoc
    system
-   :stencil-templater (new-stencil-templater)
    :user-manual (new-user-manual :prefix (config/prefix config))
 
    :docsite (new-docsite :config config)
@@ -107,8 +105,6 @@
   {:docsite-server {:request-handler :docsite-router}
    :cors-demo-server {:request-handler :cors-demo-router}
 
-   :user-manual {:templater :stencil-templater}
-
    :docsite-router [:swagger-ui
                     :hello-world
                     :error-example
@@ -124,10 +120,7 @@
                       :jquery :bootstrap
                       :web-resources
                       :highlight-js-resources
-                      :cors-demo-redirect]
-
-   :docsite {:templater :stencil-templater}
-   :cors-demo {:templater :stencil-templater}})
+                      :cors-demo-redirect]})
 
 (defn new-co-dependency-map
   []

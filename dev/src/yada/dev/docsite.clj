@@ -9,12 +9,14 @@
    [hiccup.core :refer (html)]
    [modular.bidi :refer (path-for)]
    [modular.component.co-dependency :refer (co-using)]
+   [modular.component.co-dependency.schema :refer [co-dep]]
    [schema.core :as s]
    yada.bidi
    [yada.dev.config :as config]
    [yada.dev.template :refer [new-template-resource]]
    yada.resources.file-resource
-   [yada.yada :as yada :refer [yada]]))
+   [yada.yada :as yada :refer [yada]])
+  (:import [modular.bidi Router]))
 
 (def titles
   {7230 "Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing"
@@ -35,7 +37,7 @@
       (infof "source is %s" source)
       ((yada source) req))))
 
-(defn index [{:keys [templater *router *cors-demo-router config]}]
+(defn index [{:keys [*router *cors-demo-router config]}]
   (yada
    (new-template-resource
     "templates/page.html"
@@ -67,7 +69,9 @@
 
    {:id ::index}))
 
-(defrecord Docsite []
+(s/defrecord Docsite [*router :- (co-dep Router)
+                      *cors-demo-router :- (co-dep Router)
+                      config :- config/ConfigSchema]
   RouteProvider
   (routes [component]
     ["/"
@@ -77,9 +81,5 @@
                   (tag ::dir))]]]))
 
 (defn new-docsite [& {:as opts}]
-  (-> (->> opts
-           (merge {})
-           (s/validate {:config s/Any})
-           map->Docsite)
-      (using [:templater])
+  (-> (map->Docsite opts)
       (co-using [:router :cors-demo-router])))

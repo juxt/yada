@@ -17,13 +17,15 @@
    [markdown.core :refer (md-to-html-string)]
    [modular.bidi :refer (path-for)]
    [modular.component.co-dependency :refer (co-using)]
+   [modular.component.co-dependency.schema :refer [co-dep]]
    [yada.yada :as yada :refer [yada]]
    [yada.swagger :refer [swaggered]]
    [yada.dev.template :refer [new-template-resource]]
    [ring.util.time :as rt]
+   [schema.core :as s]
    yada.resources.string-resource
-   yada.resources.atom-resource
-   ))
+   yada.resources.atom-resource)
+  (:import [modular.bidi Router]))
 
 (defn emit-element
   ;; An alternative emit-element that doesn't cause newlines to be
@@ -154,14 +156,18 @@
       (str/replace "http://localhost:8090" (:prefix replacements))
       ))
 
-(defn body [{:keys [*router templater] :as user-manual} doc replacements]
+(defn body [{:keys [*router] :as user-manual} doc replacements]
   {:content
    (-> (with-out-str (emit-element doc))
        (post-process-body replacements)
        )
    :scripts []})
 
-(defrecord UserManual [*router templater prefix]
+(s/defrecord UserManual [*router :- (co-dep Router)
+                         prefix :- s/Str
+                         start-time :- java.util.Date
+                         *post-counter
+                         xbody]
   Lifecycle
   (start [component]
     (infof "Starting user-manual")
@@ -220,17 +226,11 @@
                              (post-process-doc component xbody)
                              replacements)))
 
-                    {:id ::user-manual})))]
-
-          ]]]])))
+                    {:id ::user-manual})))]]]]])))
 
 (defmethod clojure.core/print-method UserManual
   [o ^java.io.Writer writer]
   (.write writer "<usermanual>"))
 
 (defn new-user-manual [& {:as opts}]
-  (-> (->> opts
-           (merge {})
-           map->UserManual)
-      (using [:templater])
-      (co-using [:router])))
+  (map->UserManual opts))

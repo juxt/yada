@@ -7,11 +7,13 @@
    [clojure.repl :refer (apropos dir doc find-doc pst source)]
    [clojure.tools.namespace.repl :refer (refresh refresh-all)]
    [clojure.java.io :as io]
+   [bidi.bidi :as bidi]
    [com.stuartsierra.component :as component]
    [modular.component.co-dependency :as co-dependency]
+   [schema.core :as s]
    [yada.dev.config :refer [config]]
    [yada.dev.system :refer (new-system-map new-dependency-map new-co-dependency-map)]
-   [bidi.bidi :as bidi]))
+   ))
 
 (def system nil)
 
@@ -30,12 +32,27 @@
   (alter-var-root #'system
     (constantly (new-dev-system))))
 
+(defn check
+  "Check for component validation errors"
+  []
+  (let [errors
+        (->> system
+             (reduce-kv
+              (fn [acc k v]
+                (assoc acc k (s/check (type v) v)))
+              {})
+             (filter (comp some? second)))]
+
+    (when (seq errors) (into {} errors))))
+
 (defn start
   "Starts the current development system."
   []
   (alter-var-root
    #'system
-   co-dependency/start-system))
+   co-dependency/start-system)
+  (when-let [errors (check)]
+    (println "Warning, component integrity violated!" errors)))
 
 (defn stop
   "Shuts down and destroys the current development system."
