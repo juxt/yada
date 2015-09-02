@@ -3,11 +3,14 @@
 (ns yada.resource
   (:require
    [schema.core :as s]
+   [schema.coerce :as sc]
+   [schema.utils :as su]
    yada.charset
    yada.media-type
    [yada.protocols :as p])
   (:import [yada.charset CharsetMap]
-           [yada.media_type MediaTypeMap]))
+           [yada.media_type MediaTypeMap]
+           [java.util Date]))
 
 (s/defschema MediaTypeSchema
   (s/either String MediaTypeMap))
@@ -15,25 +18,84 @@
 (s/defschema CharsetSchema
   (s/either String CharsetMap))
 
-(s/defn resource-properties
-  :- {(s/optional-key :allowed-methods)
-      (s/either [s/Keyword] #{s/Keyword})
+(s/defschema QualifiedKeyword
+  (s/both s/Keyword (s/pred namespace)))
 
-      (s/optional-key :representations)
-      [{(s/optional-key :media-type) (s/either MediaTypeSchema #{MediaTypeSchema})
-        (s/optional-key :charset) (s/either CharsetSchema #{CharsetSchema})
-        (s/optional-key :encoding) (s/either String #{String})
-        (s/optional-key :language) (s/either String #{String})}]}
+(s/defschema MediaTypeSchemaSet
+  #{MediaTypeSchema})
+
+(s/defschema CharsetSchemaSet
+  #{CharsetSchema})
+
+(s/defschema StringSet
+  #{String})
+
+(s/defschema ResourceProperties
+  {(s/optional-key :allowed-methods)
+   (s/either [s/Keyword] #{s/Keyword})
+
+   (s/optional-key :parameters)
+   {s/Keyword ;; method
+    {(s/optional-key :query) {s/Keyword s/Any}
+     (s/optional-key :path) {s/Keyword s/Any}
+     (s/optional-key :header) {s/Keyword s/Any}
+     (s/optional-key :form) {s/Keyword s/Any}
+     (s/optional-key :body) s/Any}}
+
+   (s/optional-key :representations)
+   [{(s/optional-key :media-type) MediaTypeSchemaSet
+     (s/optional-key :charset) CharsetSchemaSet
+     (s/optional-key :encoding) StringSet
+     (s/optional-key :language) StringSet}]
+
+   QualifiedKeyword s/Any})
+
+(defn as-set [x] (if (coll? x) x (set [x])))
+
+(def +resource-properties-coercions+
+  {Date #(condp instance? %
+           java.lang.Long (Date. %)
+           %)
+   MediaTypeSchemaSet as-set
+   CharsetSchemaSet as-set
+   StringSet as-set})
+
+(def coerce-resource-properties
+  (sc/coercer ResourceProperties +resource-properties-coercions+))
+
+(coerce-resource-properties {:representations [{:media-type "foo"}]})
+
+(s/defn resource-properties :- ResourceProperties
   [r]
-  (p/resource-properties r))
+  (let [res
+        (coerce-resource-properties
+         (try
+           (p/resource-properties r)
+           (catch AbstractMethodError e
+             {})))]
+    (when (su/error? res)
+      (throw (ex-info "Resource properties are not valid" {:error res})))
+    res))
+
+;; ---
+
+(s/defschema ResourcePropertiesOnRequest
+  {:exists? s/Bool
+   (s/optional-key :last-modified) Date
+   (s/optional-key :version) s/Any
+   QualifiedKeyword s/Any})
+
+(def coerce-resource-properties-on-request
+  (sc/coercer ResourcePropertiesOnRequest +resource-properties-coercions+))
 
 ;; The reason we can't have multiple arities is that s/defn has a
 ;; limitation that 'all arities must share the same output schema'.
-(s/defn resource-properties-on-request
-  :- {:exists? s/Bool
-      (s/optional-key :last-modified) java.util.Date
-      (s/optional-key :version) s/Any}
+(s/defn resource-properties-on-request :- ResourcePropertiesOnRequest
   [r ctx]
-  (merge
-   {:exists? true}
-   (p/resource-properties r ctx)))
+  (coerce-resource-properties-on-request
+   (merge
+    {:exists? true}
+    (try
+      (p/resource-properties r ctx)
+      (catch AbstractMethodError e
+        nil)))))
