@@ -14,3 +14,8 @@
   (str (:prefix config)
        (when-let [port (-> config :ports :docsite)]
          (str ":" port))))
+
+(defn cors-prefix [config]
+  (str (:prefix config)
+       (when-let [port (-> config :ports :cors-demo)]
+         (str ":" port))))

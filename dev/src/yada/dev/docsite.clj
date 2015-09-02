@@ -12,6 +12,7 @@
    [modular.template :as template :refer (render-template)]
    [schema.core :as s]
    yada.bidi
+   [yada.dev.config :as config]
    yada.resources.file-resource
    [yada.yada :as yada :refer [yada]]))
 
@@ -34,7 +35,7 @@
       (infof "source is %s" source)
       ((yada source) req))))
 
-(defn index [{:keys [templater *router *cors-demo-router]}]
+(defn index [{:keys [templater *router *cors-demo-router config]}]
   (yada
    (fn [ctx]
      ;; TODO: Replace with template resource
@@ -60,9 +61,8 @@
                             )}
                 "Swagger UI"]
            " - to demonstrate Swagger integration"]
-          [:li [:a {:href (format "%s://%s:8092%s"
-                                  (name (-> ctx :request :scheme))
-                                  (-> ctx :request :server-name)
+          [:li [:a {:href (format "%s%s"
+                                  (config/cors-prefix config)
                                   (path-for @*cors-demo-router :yada.dev.cors-demo/index))} "CORS demo"] " - to demonstrate CORS support"]]
          ])}))
    {:id ::index
@@ -82,7 +82,7 @@
 (defn new-docsite [& {:as opts}]
   (-> (->> opts
            (merge {})
-           (s/validate {})
+           (s/validate {:config s/Any})
            map->Docsite)
       (using [:templater])
       (co-using [:router :cors-demo-router])))

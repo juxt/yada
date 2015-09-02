@@ -36,7 +36,7 @@
    :stencil-templater (new-stencil-templater)
    :user-manual (new-user-manual :prefix (config/prefix config))
 
-   :docsite (new-docsite)
+   :docsite (new-docsite :config config)
    :jquery (new-web-resources
             :key :jquery
             :uri-context "/jquery"

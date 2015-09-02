@@ -1,4 +1,5 @@
 {:prefix #cond {:dev "http://localhost"
                 :prod "http://yada.juxt.pro"}
 
- :ports {:docsite #cond {:dev 8090 :prod nil}}}
+ :ports {:docsite #cond {:dev 8090 :prod nil}
+         :cors-demo 8092}}
