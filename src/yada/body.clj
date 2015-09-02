@@ -4,6 +4,7 @@
   (:require
    [clojure.walk :refer [keywordize-keys]]
    [clojure.pprint :refer [pprint]]
+   [clojure.tools.logging :refer :all]
    [byte-streams :as bs]
    [cheshire.core :as json]
    [hiccup.core :refer [html]]
@@ -13,6 +14,7 @@
    [ring.util.codec :as codec]
    [ring.swagger.schema :as rs]
    [yada.charset :as charset]
+   [yada.journal :as journal]
    [yada.media-type :as mt])
   (:import
    [clojure.core.async.impl.channels ManyToManyChannel]
@@ -51,14 +53,17 @@
 (defmulti render-map (fn [resource representation] (-> representation :media-type mt/media-type)))
 (defmulti render-seq (fn [resource representation] (-> representation :media-type mt/media-type)))
 
+(defn encode-message [s representation]
+  (bs/convert s java.nio.ByteBuffer
+              {:encoding (or (some-> representation :charset charset/charset)
+                             charset/default-platform-charset)}))
+
 (extend-protocol MessageBody
 
   String
   ;; A String is already its own representation, all we must do now is encode it to a char buffer
   (to-body [s representation]
-    (bs/convert s java.nio.ByteBuffer
-                {:encoding (or (some-> representation :charset charset/charset)
-                               charset/default-platform-charset)}))
+    (encode-message s representation))
 
   ;; The content-length is NOT the length of the string, but the
   ;; "decimal number of octets, for a potential payload body".
@@ -68,7 +73,12 @@
 
   clojure.lang.APersistentMap
   (to-body [m representation]
-    (to-body (render-map m representation) representation))
+    ;; We always try to arrive at a string which is then converted
+    (encode-message (render-map m representation) representation))
+
+  clojure.lang.APersistentVector
+  (to-body [v representation]
+    (encode-message (render-seq v representation) representation))
 
   File
   (to-body [f _]
@@ -154,10 +164,75 @@
 
 (defmethod render-map :default
   [m representation]
-  (throw (ex-info "Attempt to call render-map without a media-type"
+  (throw (ex-info (format "Attempt to call render-map without a media-type: %s" (pr-str representation))
                   {:representation representation})))
 
 (defmethod render-seq :default
   [m representation]
-  (throw (ex-info "Attempt to call render-seq without a media-type"
+  (throw (ex-info (format "Attempt to call render-seq without a media-type: %s" (pr-str representation))
                   {:representation representation})))
+
+
+;; Errors
+
+(def ^{:dynamic true
+       :doc "When set to logical true, errors will be printed. Defaults to true."}
+  *output-errors* true)
+
+(def ^{:dynamic true
+       :doc "When set to logical true, errors will be output with their stack-traces. Defaults to true."}
+  *output-stack-traces* true)
+
+(defmulti render-error (fn [status error representation ctx] (-> representation :media-type mt/media-type)))
+
+(defn get-error-message [status]
+  (case status
+    404 "Not Found"
+    "Unknown"))
+
+(defmethod render-error "text/html"
+  [status error representation {:keys [id options]}]
+  (html
+   [:body
+    [:h1 (format "%d: %s" status (get-error-message status))]
+
+    ;; Only
+    (when *output-errors*
+      [:div
+       [:p (.getMessage error)]
+       (when *output-stack-traces*
+         [:pre
+          (with-out-str (pprint error))])])
+
+    (when-let [path (:journal-browser-path options)]
+      [:div
+       [:p "Details"]
+       [:a {:href (str path (journal/path-for :entry :id id))} id]])
+
+    [:hr]
+    [:div
+     [:p "yada"]]]))
+
+(defmethod render-error "application/edn"
+  [status error representation {:keys [id options]}]
+  {:status status
+   :message (get-error-message status)
+   :id id
+   :error error})
+
+(cheshire.generate/add-encoder clojure.lang.ExceptionInfo
+                               (fn [ei jg]
+                                 (cheshire.generate/encode-map
+                                  {:error (str ei)
+                                   :data (pr-str (ex-data ei))} jg)))
+
+(defmethod render-error "application/json"
+  [status error representation {:keys [id options]}]
+  {:status status
+   :message (get-error-message status)
+   :id id
+   :error error})
+
+(defmethod render-error :default
+  [status error representation {:keys [id options]}]
+  nil)
