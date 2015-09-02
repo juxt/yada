@@ -14,6 +14,7 @@
    (fn [ctx] (throw (ex-info "TODO: 123" {:foo :bar})))
    {:allowed-methods #{:get}
     :representations [{:media-type "text/html"}]
+    :error-handler identity
     :journal journal
     :journal-browser-path "/journal/"}))
 

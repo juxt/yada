@@ -7,13 +7,13 @@
    [bidi.bidi :refer [RouteProvider]]
    [yada.swagger :refer [swaggered]]
    yada.resources.sse
-   [yada.yada :as yada]))
+   [yada.yada :as yada :refer [yada]]))
 
 (defn hello []
-  (yada/resource "Hello World!\n"))
+  (yada "Hello World!\n" {:error-handler identity}))
 
 (defn hello-atom []
-  (yada/resource (atom "Hello World!\n")))
+  (yada (atom "Hello World!\n") {:error-handler identity}))
 
 (defn hello-api []
   (swaggered {:info {:title "Hello World!"

@@ -413,6 +413,11 @@
                                              :new (dissoc res :journal)
                                              :t0 t0 :t1 t1})
              res)))))))
+(defn default-error-handler [e]
+  (let [data (ex-data e)]
+    (when-not (and (:status data) (< (:status data) 500))
+      (errorf e "Internal Error %s" (or (:status data) ""))
+      (when data (errorf "ex-data: %s" data)))))
 
 (defn- handle-request
   "Handle Ring request"
@@ -443,9 +448,12 @@
      ;; Handle non-local exits
      (d/catch
          (fn [e]
+           (error-handler e)
            (let [data (when (instance? clojure.lang.ExceptionInfo e) (ex-data e))]
              (if (::http-response data)
                data
+        error-handler (or (:error-handler options)
+                          default-error-handler)
                (do
                  (when-let [journal (:journal handler)]
                    (swap! journal assoc id (swap! journal-entry assoc :error {:exception e :data data})))
@@ -469,6 +477,7 @@
      options
      allowed-methods
      known-methods
+           (error-handler e)
      parameters
      representations
      vary
