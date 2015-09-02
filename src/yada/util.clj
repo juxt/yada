@@ -2,6 +2,7 @@
 
 (ns yada.util
   (:require
+   [clojure.java.io :as io]
    [clojure.string :as str]
    [manifold.deferred :as d]
    clojure.core.async.impl.protocols)
@@ -105,3 +106,13 @@
                     -1 [y py]))))
             nil ;; seed
             coll))))
+
+
+;; URLs
+
+(defn as-file [resource]
+  (when resource
+    (case (.getProtocol resource)
+      "file" (io/file (.getFile resource))
+      "jar" (io/file (.getFile (java.net.URL. (first (str/split (.getFile resource) #"!")))))
+      nil)))
