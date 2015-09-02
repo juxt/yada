@@ -102,7 +102,7 @@
                            :attrs {:href (str "#" (chapter ch))}
                            :content [ch]}]}))})
 
-(defn post-process-doc [user-manual xml config]
+(defn post-process-doc [user-manual xml]
   (postwalk
    (fn [{:keys [tag attrs content] :as el}]
      (cond
@@ -164,7 +164,7 @@
         )
     :scripts []}))
 
-(defrecord UserManual [*router templater prefix ext-prefix]
+(defrecord UserManual [*router templater prefix]
   Lifecycle
   (start [component]
     (infof "Starting user-manual")
@@ -193,7 +193,7 @@
         ["user-manual"
          [[".html"
            (->
-            (let [config {:prefix prefix :ext-prefix ext-prefix}]
+            (let [replacements {:prefix prefix}]
 
               ;; The problem now is that yada knows neither this string's
               ;; content-type (nor its charset), so can't produce the
@@ -219,8 +219,8 @@
               ;; a better design.
               (yada/resource (fn [ctx]
                                (body component
-                                     (post-process-doc component xbody config)
-                                     config))
+                                     (post-process-doc component xbody)
+                                     replacements))
                              {:representations [{:media-type #{"text/html"} :charset #{"utf-8"}}]
                               ;; TODO: Should cope with a file - should interpret the result
                               :last-modified (java.util.Date. (.lastModified (io/file "dev/resources/user-manual.md")))

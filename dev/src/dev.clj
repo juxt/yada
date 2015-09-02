@@ -9,8 +9,8 @@
    [clojure.java.io :as io]
    [com.stuartsierra.component :as component]
    [modular.component.co-dependency :as co-dependency]
-   [yada.dev.system :refer (config new-system-map new-dependency-map new-co-dependency-map)]
-   [modular.maker :refer (make)]
+   [yada.dev.config :refer [config]]
+   [yada.dev.system :refer (new-system-map new-dependency-map new-co-dependency-map)]
    [bidi.bidi :as bidi]))
 
 (def system nil)

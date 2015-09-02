@@ -9,7 +9,6 @@
    [clojure.string :as str]
    [clojure.tools.reader.reader-types :refer (indexing-push-back-reader)]
    [com.stuartsierra.component :refer (system-map system-using using)]
-   [modular.maker :refer (make)]
    [modular.bidi :refer (new-router new-web-resources new-archived-web-resources new-redirect)]
    [modular.stencil :refer (new-stencil-templater)]
    [yada.dev.docsite :refer (new-docsite)]
@@ -21,111 +20,87 @@
    [modular.component.co-dependency :refer (co-using system-co-using)]
 
    [yada.dev.async :refer (new-handler)]
+   [yada.dev.config :as config]
    [yada.dev.hello :refer (new-hello-world-example)]
-   [yada.dev.error-example :refer (new-error-example)]
-   [aero.core :refer (read-config)]))
+   [yada.dev.error-example :refer (new-error-example)]))
 
-(defn config
-  "Return a map of the static configuration used in the component
-  constructors."
-  [profile]
-  (read-config "dev/config.edn" {:profile profile}))
+(defn database-components [system]
+  (assoc system :database (new-database)))
 
-(defn database-components [system config]
-  (assoc system
-    :database
-    (->
-      (make new-database config)
-      (using []))))
-
-(defn api-components [system config]
-  (assoc system
-    :user-api
-    (make new-verbose-user-api config)))
+(defn api-components [system]
+  (assoc system :user-api (new-verbose-user-api)))
 
 (defn docsite-components [system config]
   (assoc
    system
-   :stencil-templater (make new-stencil-templater config)
-   :user-manual (make new-user-manual config
-                      :prefix ""
-                      :ext-prefix "")
+   :stencil-templater (new-stencil-templater)
+   :user-manual (new-user-manual :prefix (config/prefix config))
 
-   :docsite (make new-docsite config)
-   :jquery (make new-web-resources config
-                 :key :jquery
-                 :uri-context "/jquery"
-                 :resource-prefix "META-INF/resources/webjars/jquery/2.1.3")
-   :bootstrap (make new-web-resources config
-                    :key :bootstrap
-                    :uri-context "/bootstrap"
-                    :resource-prefix "META-INF/resources/webjars/bootstrap/3.3.2")
-   :web-resources (make new-web-resources config
-                        :uri-context "/static"
-                        :resource-prefix "static")
+   :docsite (new-docsite)
+   :jquery (new-web-resources
+            :key :jquery
+            :uri-context "/jquery"
+            :resource-prefix "META-INF/resources/webjars/jquery/2.1.3")
+   :bootstrap (new-web-resources
+               :key :bootstrap
+               :uri-context "/bootstrap"
+               :resource-prefix "META-INF/resources/webjars/bootstrap/3.3.2")
+   :web-resources (new-web-resources
+                   :uri-context "/static"
+                   :resource-prefix "static")
    :highlight-js-resources
-   (make new-archived-web-resources config :archive (io/resource "highlight.zip") :uri-context "/hljs/")
+   (new-archived-web-resources :archive (io/resource "highlight.zip") :uri-context "/hljs/")
 
    ))
 
-(defn swagger-ui-components [system config]
+(defn swagger-ui-components [system]
   (assoc system
          :swagger-ui
-         (make new-web-resources config
-               :key :swagger-ui
-               :uri-context "/swagger-ui"
-               :resource-prefix "META-INF/resources/webjars/swagger-ui/2.1.1")))
+         (new-web-resources
+          :key :swagger-ui
+          :uri-context "/swagger-ui"
+          :resource-prefix "META-INF/resources/webjars/swagger-ui/2.1.1")))
 
-(defn http-server-components [system config]
+(defn http-server-components [system]
   (assoc system
          :docsite-server
-         (make new-webserver config
-               :port 8090
-               ;; raw-stream? = true gives us a manifold stream of io.netty.buffer.ByteBuf instances
-               ;; Use to convert to a stream bs/to-input-stream
-               :raw-stream? true)
+         (new-webserver
+          :port 8090
+          ;; raw-stream? = true gives us a manifold stream of io.netty.buffer.ByteBuf instances
+          ;; Use to convert to a stream bs/to-input-stream
+          :raw-stream? true)
 
-         :docsite-router
-         (make new-router config)
+         :docsite-router (new-router)
 
-         :cors-demo-server
-         (make new-webserver config :port 8092)
-         :cors-demo-router
-         (make new-router config)
+         :cors-demo-server (new-webserver :port 8092)
+         :cors-demo-router (new-router)
          ))
 
-(defn hello-world-components [system config]
-  (assoc
-   system
-   :hello-world (new-hello-world-example)))
+(defn hello-world-components [system]
+  (assoc system :hello-world (new-hello-world-example)))
 
-(defn error-components [system config]
-  (assoc
-   system
-   :error-example (new-error-example)))
+(defn error-components [system]
+  (assoc system :error-example (new-error-example)))
 
-(defn cors-demo-components [system config]
-  (assoc
-   system
-   :cors-demo (new-cors-demo)))
+(defn cors-demo-components [system]
+  (assoc system :cors-demo (new-cors-demo)))
 
 (defn new-system-map
   [config]
   (apply system-map
     (apply concat
       (-> {}
-        (database-components config)
-        (api-components config)
+        (database-components)
+        (api-components)
         (docsite-components config)
-        (swagger-ui-components config)
-        (http-server-components config)
-        (hello-world-components config)
-        (error-components config)
-        (cors-demo-components config)
+        (swagger-ui-components)
+        (http-server-components)
+        (hello-world-components)
+        (error-components)
+        (cors-demo-components)
 
         (assoc :docsite-redirect (new-redirect :from "/" :to :yada.dev.docsite/index))
-        (assoc :cors-demo-redirect (new-redirect :from "/" :to :yada.dev.cors-demo/index))
-        ))))
+        (assoc :cors-demo-redirect (new-redirect :from "/" :to :yada.dev.cors-demo/index))))))
 
 (defn new-dependency-map
   []
@@ -164,6 +139,6 @@
 (defn new-production-system
   "Create the production system"
   []
-  (-> (new-system-map (config :prod))
+  (-> (new-system-map (config/config :prod))
       (system-using (new-dependency-map))
       (system-co-using (new-co-dependency-map))))
