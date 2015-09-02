@@ -12,8 +12,8 @@
    [modular.maker :refer (make)]
    [modular.bidi :refer (new-router new-web-resources new-archived-web-resources new-redirect)]
    [modular.stencil :refer (new-stencil-templater)]
-   [yada.dev.website :refer (new-website)]
-   [yada.dev.external :refer (new-external-content)]
+   [yada.dev.docsite :refer (new-docsite)]
+   [yada.dev.cors-demo :refer (new-cors-demo)]
    [yada.dev.user-manual :refer (new-user-manual)]
    [yada.dev.database :refer (new-database)]
    [yada.dev.user-api :refer (new-verbose-user-api)]
@@ -43,7 +43,7 @@
     :user-api
     (make new-verbose-user-api config)))
 
-(defn website-components [system config]
+(defn docsite-components [system config]
   (assoc
    system
    :stencil-templater (make new-stencil-templater config)
@@ -51,7 +51,7 @@
                       :prefix ""
                       :ext-prefix "")
 
-   :website (make new-website config)
+   :docsite (make new-docsite config)
    :jquery (make new-web-resources config
                  :key :jquery
                  :uri-context "/jquery"
@@ -66,7 +66,6 @@
    :highlight-js-resources
    (make new-archived-web-resources config :archive (io/resource "highlight.zip") :uri-context "/hljs/")
 
-   :external-content (make new-external-content config)
    ))
 
 (defn swagger-ui-components [system config]
@@ -79,20 +78,21 @@
 
 (defn http-server-components [system config]
   (assoc system
-         :http-server
+         :docsite-server
          (make new-webserver config
                :port 8090
                ;; raw-stream? = true gives us a manifold stream of io.netty.buffer.ByteBuf instances
                ;; Use to convert to a stream bs/to-input-stream
                :raw-stream? true)
 
-         :router
+         :docsite-router
          (make new-router config)
 
-         :http-server-external
-         (make new-webserver config :port 8091)
-         :router-external
-         (make new-router config)))
+         :cors-demo-server
+         (make new-webserver config :port 8092)
+         :cors-demo-router
+         (make new-router config)
+         ))
 
 (defn hello-world-components [system config]
   (assoc
@@ -104,6 +104,11 @@
    system
    :error-example (new-error-example)))
 
+(defn cors-demo-components [system config]
+  (assoc
+   system
+   :cors-demo (new-cors-demo)))
+
 (defn new-system-map
   [config]
   (apply system-map
@@ -111,41 +116,50 @@
       (-> {}
         (database-components config)
         (api-components config)
-        (website-components config)
+        (docsite-components config)
         (swagger-ui-components config)
         (http-server-components config)
         (hello-world-components config)
         (error-components config)
-        (assoc :redirect (new-redirect :from "/" :to :yada.dev.website/index))
-        (assoc :redirect-external (new-redirect :from "/" :to :yada.dev.external/index))
+        (cors-demo-components config)
+
+        (assoc :docsite-redirect (new-redirect :from "/" :to :yada.dev.docsite/index))
+        (assoc :cors-demo-redirect (new-redirect :from "/" :to :yada.dev.cors-demo/index))
         ))))
 
 (defn new-dependency-map
   []
-  {:http-server {:request-handler :router}
-   :http-server-external {:request-handler :router-external}
+  {:docsite-server {:request-handler :docsite-router}
+   :cors-demo-server {:request-handler :cors-demo-router}
 
    :user-manual {:templater :stencil-templater}
 
-   :router [:swagger-ui
-            :hello-world
-            :error-example
-            :user-api
-            :user-manual
-            :website
-            :jquery :bootstrap
-            :web-resources
-            :highlight-js-resources
-            :redirect]
-   :router-external [:external-content :redirect-external]
+   :docsite-router [:swagger-ui
+                    :hello-world
+                    :error-example
+                    :user-api
+                    :user-manual
+                    :docsite
+                    :jquery :bootstrap
+                    :web-resources
+                    :highlight-js-resources
+                    :docsite-redirect]
 
-   :external-content {:templater :stencil-templater}
-   :website {:templater :stencil-templater}})
+   :cors-demo-router [:cors-demo
+                      :jquery :bootstrap
+                      :web-resources
+                      :highlight-js-resources
+                      :cors-demo-redirect]
+
+   :docsite {:templater :stencil-templater}
+   :cors-demo {:templater :stencil-templater}})
 
 (defn new-co-dependency-map
   []
-  {:website {:router :router}
-   :user-manual {:router :router}})
+  {:docsite {:router :docsite-router
+             :cors-demo-router :cors-demo-router}
+   :user-manual {:router :docsite-router}
+   :cors-demo {:router :cors-demo-router}})
 
 (defn new-production-system
   "Create the production system"

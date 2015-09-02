@@ -1,6 +1,6 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(ns yada.dev.website
+(ns yada.dev.docsite
   (:require
    [clojure.java.io :as io]
    [clojure.tools.logging :refer :all]
@@ -13,7 +13,7 @@
    [schema.core :as s]
    yada.bidi
    yada.resources.file-resource
-   [yada.yada :as yada]))
+   [yada.yada :as yada :refer [yada]]))
 
 (def titles
   {7230 "Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing"
@@ -32,10 +32,10 @@
   (fn [req]
     (let [source (io/resource (format "spec/rfc%s.html" (get-in req [:route-params :rfc])))]
       (infof "source is %s" source)
-      ((yada/resource source) req))))
+      ((yada source) req))))
 
-(defn index [{:keys [*router templater]}]
-  (yada/resource
+(defn index [{:keys [templater *router *cors-demo-router]}]
+  (yada
    (fn [ctx]
      ;; TODO: Replace with template resource
      (render-template
@@ -59,25 +59,30 @@
                             (path-for @*router :yada.dev.user-api/user-api)
                             )}
                 "Swagger UI"]
-           " - to demonstrate Swagger integration"]]])}))
+           " - to demonstrate Swagger integration"]
+          [:li [:a {:href (format "%s://%s:8092%s"
+                                  (name (-> ctx :request :scheme))
+                                  (-> ctx :request :server-name)
+                                  (path-for @*cors-demo-router :yada.dev.cors-demo/index))} "CORS demo"] " - to demonstrate CORS support"]]
+         ])}))
    {:id ::index
     :representations [{:media-type #{"text/html"}
                        :charset #{"utf-8"}
                        }]}))
 
-(defrecord Website [*router templater]
+(defrecord Docsite []
   RouteProvider
   (routes [component]
     ["/"
      [["index.html" (index component)]
       [["spec/rfc" :rfc] (rfc)]
-      ["dir/" (-> (yada.bidi/resource-branch (io/file "dev/resources"))
+      #_["dir/" (-> (yada.bidi/resource-branch (io/file "dev/resources"))
                   (tag ::dir))]]]))
 
-(defn new-website [& {:as opts}]
+(defn new-docsite [& {:as opts}]
   (-> (->> opts
            (merge {})
            (s/validate {})
-           map->Website)
+           map->Docsite)
       (using [:templater])
-      (co-using [:router])))
+      (co-using [:router :cors-demo-router])))

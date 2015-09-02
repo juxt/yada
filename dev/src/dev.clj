@@ -58,7 +58,7 @@
   (clojure.test/run-all-tests #"yada.*test$"))
 
 (defn routes []
-  (-> system :router :routes))
+  (-> system :docsite-router :routes))
 
 (defn match-route [path & args]
   (apply bidi/match-route (routes) path args))
