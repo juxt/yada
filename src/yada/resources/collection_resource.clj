@@ -14,8 +14,7 @@
   p/ResourceProperties
   (resource-properties [_]
     {:representations
-     [{:method #{:get :head}
-       :media-type
+     [{:media-type
        #{"application/edn" "application/json;q=0.9" "text/html;q=0.8"}
        :charset charset/platform-charsets}]})
   (resource-properties [_ ctx]
