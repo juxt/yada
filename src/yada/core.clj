@@ -8,7 +8,6 @@
    [clojure.walk :refer (keywordize-keys)]
    [byte-streams :as bs]
    [bidi.bidi :as bidi]
-   [hiccup.core :as h]
    [manifold.deferred :as d]
    ring.middleware.basic-authentication
    [ring.middleware.params :refer (assoc-query-params)]
