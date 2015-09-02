@@ -10,7 +10,9 @@
   (resource-properties [this]
     {:allowed-methods (keys this)
      :parameters (reduce-kv (fn [acc k v]
-                              (assoc acc k (:parameters v))) {} this)
+                              (cond-> acc (:parameters v)
+                                      (assoc k (:parameters v))))
+                            {} this)
      :representations [{:media-type #{"text/plain"}}]})
   (resource-properties [_ ctx]
     {:last-modified (to-date (now))})
