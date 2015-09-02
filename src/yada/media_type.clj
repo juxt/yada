@@ -10,7 +10,7 @@
 
 (defrecord MediaTypeMap [type subtype parameters quality])
 
-(defn media-type [mt] (when mt (str (:type mt) "/" (:subtype mt))))
+(defn media-type [mt] (when (:type mt) (str (:type mt) "/" (:subtype mt))))
 
 (def media-type-pattern
   (re-pattern (str "(" http-token ")"
