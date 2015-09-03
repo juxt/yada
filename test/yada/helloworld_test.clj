@@ -70,9 +70,6 @@
       (is last-modified)
       (is (instance? Date last-modified))
 
-      (println last-modified)
-      (println (-> last-modified .toInstant (.minusSeconds 1) Date/from))
-
       (let [response @(resource
                        (merge-with merge (request :get "/" )
                                    {:headers {"if-modified-since"
