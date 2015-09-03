@@ -2,7 +2,7 @@
 
 Welcome to the yada manual!
 
-This manual corresponds with version 1.0.0-20150828.203727-8
+This manual corresponds with version 1.0.0-20150903.093751-9
 
 ### Table of Contents
 
@@ -582,7 +582,7 @@ Clojure application with a Leiningen `project.clj` file, include the
 following in the file's __:dependencies__ section.
 
 ```clojure
-[yada "1.0.0-20150828.203727-8"]
+[yada "1.0.0-20150903.093751-9"]
 [aleph "0.4.0"]
 ```
 
