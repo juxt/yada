@@ -912,9 +912,7 @@ data-centric approach gives you. When both your routes and resources are
 data, they are amenable to programmatic transformation, making your
 future options virtually limitless.
 
-## Reference
-
-### Handler options
+## Options
 
 Options can be given in the option map given as the optional second
 argument to yada's `resource` function.
@@ -927,7 +925,7 @@ argument to yada's `resource` function.
 Some options are used to override values that would have otherwise come
 from the resource. In these cases, options always take precedence.
 
-#### :allowed-methods
+### :allowed-methods
 
 The set of methods that the handler should support.
 
@@ -939,7 +937,7 @@ The methods `:head` and `:options` are added implicitly, if yada is able
 to support them on the resource. If you don't want this, use
 `:all-allowed-methods`.
 
-#### :all-allowed-methods (advanced)
+### :all-allowed-methods (advanced)
 
 Use this is you want to specify exactly which methods are allowed on the resource. This should not be used in conjunction with the :allowed-methods id, but if both are specified, `:all-allowed-methods` will take precedence over `:allowed-methods`.
 
@@ -951,17 +949,17 @@ This option is for advanced users only. Usually you should use
 `:allowed-methods` and let yada add additional methods it is able to
 support.
 
-#### :authorization
-#### :charset
-#### :encoding
-#### :headers
-#### :id
-#### :language
-#### :last-modified
-#### :journal
-#### :journal-browser-path
-#### :media-type
-#### :parameters
+### :authorization
+### :charset
+### :encoding
+### :headers
+### :id
+### :language
+### :last-modified
+### :journal
+### :journal-browser-path
+### :media-type
+### :parameters
 
 Specify, or override, the parameters of a resource. Since parameters often apply to a method's implementation, these are given on a method by method basis. Each entry in the map must be keyed with the method. Each method parameters is itself a map, keyed by the parameter type.
 
@@ -974,79 +972,138 @@ The example above declares both a _query_ and _header_ parameter. The
 query parameter is called p and is a String. The header
 parameter is the value of the HTTP request's `X-Version` header and is coerced to an integer.
 
-#### :representation
-#### :representations
-#### :request-uri-too-long?
-#### :security
-#### :service-available?
-#### :status
-#### :trace
+### :representation
+### :representations
+### :request-uri-too-long?
+### :security
+### :service-available?
+### :status
+### :trace
 
-### Protocols
+## Protocols
 
 yada defines a number of protocols. Existing Clojure types and records
 can be extended with these protocols to adapt them to use with yada.
 
-Protocols are declared in `yada.protocols`.
+### yada.protocols.ResourceCoercion
 
-#### ResourceCoercion
+Deprecated - any _define-time_ logic should be removed to the
+single-arity form of `resource-properties` (see below).
 
-#### ResourceFetch
+### yada.protocols.ResourceProperties
 
-#### AllowedMethods
+Defines a `resource-properties` function of 2 arites.
 
-#### RepresentationExistence
+```clojure
+(resource-properties [resource])
+(resource-properties [resource ctx])
+```
 
-#### ResourceModification
+The first form takes only the resource itself as an argument and is
+called only once by the yada function when it is building the resource
+data.
 
-#### Representations
+The second form is called on every request. It takes a second argument, the request context, which contains the Ring request, and resource data, including the properties returned by the single arity call to `resource-properties`.
 
-#### ResourceParameters
+A resource should return a map from these `resource-properties`
+functions, containing the entries described later. Other entries can be
+returned, as long as the keys are namespaced keywords (non-namespaced
+keywords in this case are reserved by yada).
 
-#### ResourceVersion
+### yada.protocols.ETag
 
-#### ETag
+Extend this protocol to override yada's built-in entity-tag generation
+facility.
 
-### Handler data
+### yada.methods.Method
 
-Once a handler has been built, it can be treated as a map with the
+Every HTTP method is implemented as a type which extends the yada.methods.Method protocols. This way, new HTTP methods can be added to yada. Each type must implement the correct semantics for the method, although yada comes with a number of built-in methods for each of the most common HTTP methods.
+
+Many method types define their own protocols so that resources can also
+help determine the behaviour. For example, the built-in `GetMethod` type
+uses a `Get` protocol to communicate with resources. The exact semantics
+of this additional protocol depend on the HTTP method semantics being
+implemented. In the `Get` example, the resource type is asked to return
+its state, from which the representation for the response is produced.
+
+### yada.body.MessageBody
+
+Message bodies are formed from data provided by the resource, according
+to the representation being requested (or having been negotiated). This
+removes a lot of the formatting responsibility from the resources, and
+this facility can be extended via this protocol for new message body
+types.
+
+## Resource properties
+
+By satisfying the `ResourceProperties` protocol, each resource can
+provide data back to yada in the form of a map from
+`resource-properties`. Here is a list of entries the returned map may
+contain.
+
+### :allowed-methods
+
+A set of keywords indicating the methods allowed on the resource.
+
+### :parameters
+
+A map of parameters, keyed by method and then parameter type.
+
+### :representations
+
+A collection of representations. Usually returned from the single-arity
+form, without the context. This is so that the representation set forms
+part of the resources's data model, and can be exploited by
+introspection tools such as Swagger prior to handling requests.
+
+### :last-modified
+
+The last modified date of the resource.
+
+### :version
+
+The resource version. Used for entity-tag construction.
+
+## Resource model
+
+Once a resource has been built, it can be treated as a map with the
 following entries.
 
-#### :allowed-methods
+### :allowed-methods
 
-A set of keywords indicating the methods supported by the handler.
+A set of keywords indicating the methods supported by the resource.
 
-#### :authorization
+### :authorization
 
 [todo]
 
-#### :base
+### :base
 
 The original uncoerced first argument passed to yada's `resource`
 function (or it's `yada` alias).
 
-#### :existence? (performance)
+### :existence? (performance)
 
 Whether the resource satisfies the `RepresentationExistence` protocol.
 
 This is added to avoid expensive calls to `clojure.core/satisfies?`
 while handling requests.
 
-#### :id
+### :id
 
 A unique identifier for the individual resource. Defaults to a (random) type-4 UUID but may be overridden with the `:id` option.
 
-#### :interceptor-chain
+### :interceptor-chain
 
 The sequence of interceptors that will process the request. Mutate this
 if you need to weave in custom functionality.
 
-#### :journal
+### :journal
 
 The database that will store journal entries (one entry per
 request). Can be nil.
 
-#### :known-methods
+### :known-methods
 
 A set of keywords indicating all the methods that are known by
 yada. This includes custom methods that have been added via protocol
@@ -1054,37 +1111,35 @@ extension. This set is usually a superset of the methods that are
 allowed on the resource, see __:allowed-methods__. If a request
 containing a method that is not known results in a 501 status code.
 
-#### :options
+### :options
 
-The handler options, as given to yada's `resource` function (or it's `yada` alias).
+The resource options, as given to yada's `resource` function (or it's `yada` alias).
 
-#### :parameters
+### :parameters
 
 The resource parameters, as provided by, in order of precedence :-
 
 * the `:parameters` option
-* the `parameters` function of the `ResourceParameters`
-protocol, if the resource's type satisfies it.
+* the `:parameters` entry of the result of the call to the resource's `resource-properties` function.
 
-#### :representations
+### :representations
 
 The resource representations, as provided by, in order of precedence :-
 
 * the `:representations` option
 * the `:representation` option
 * the `:media-type`, `:charset`, `:encoding` and `:language` option
-* the `representations` function of the `ResourceRepresentations`
-protocol, if the resource's type satisfies it.
+* the `:representations` entry of the result of the call to the resource's `resource-properties` function.
 
-#### :resource
+### :resource
 
 The resource (possibly after coercion by the `as-resource` function of the `ResourceCoercion` protocol.
 
-#### :security
+### :security
 
 [todo]
 
-#### :vary
+### :vary
 
 The set of axes that can vary during proactive content negotiation
 
@@ -1092,42 +1147,42 @@ The set of axes that can vary during proactive content negotiation
 {:vary #{:media-type :language}}
 ```
 
-#### :version? (performance)
+### :version? (performance)
 
 Whether the resource satisfies the `ResourceVersion` protocol.
 
 This is added to avoid expensive calls to `clojure.core/satisfies?`
 while handling requests.
 
-### Default interceptor chain
+## The default interceptor chain
 
 The interceptor chain, established on the creation of a handler, is a vector.
 
-#### available?
+### available?
 
-#### known-method?
+### known-method?
 
-#### uri-too-long?
+### uri-too-long?
 
-#### TRACE
+### TRACE
 
-#### method-allowed?
+### method-allowed?
 
-#### malformed?
-#### authentication
-#### authorization
+### malformed?
+### authentication
+### authorization
 
-#### fetch
+### fetch
    ;; TODO: Unknown or unsupported Content-* header
    ;; TODO: Request entity too large - shouldn't we do this later,
    ;; when we determine we actually need to read the request body?
-#### exists?
-#### select-representation
-#### check-modification-time
-#### if-match
-#### invoke-method
-#### compute-etag
-#### create-response
+### exists?
+### select-representation
+### check-modification-time
+### if-match
+### invoke-method
+### compute-etag
+### create-response
 
 ## Comparison guide
 
