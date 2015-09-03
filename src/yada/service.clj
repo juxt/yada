@@ -72,6 +72,7 @@
 
   String
   #_(format-event [ev] [(format "data: %s\n" ev)])
+  (allow-origin [s _] s)
 
   Number
   (service-available? [n _] n)

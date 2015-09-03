@@ -2,11 +2,12 @@
 
 (ns yada.dev.hello
   (:require
+   [bidi.bidi :refer [RouteProvider]]
    [clojure.core.async :refer (chan go <! >! timeout go-loop)]
    [com.stuartsierra.component :refer [Lifecycle]]
-   [bidi.bidi :refer [RouteProvider]]
+   [schema.core :as s]
+   [yada.dev.config :as config]
    [yada.swagger :refer [swaggered]]
-   yada.resources.sse
    [yada.yada :as yada :refer [yada]]))
 
 (defn hello []
@@ -38,7 +39,14 @@
       (recur (inc t))))
   (yada/resource ch))
 
-(defrecord HelloWorldExample [channel]
+(defn hello-different-origin [config]
+  ;; TODO: Replace with {:error-handler nil} and have implementation
+  ;; check with contains? for key
+  (yada "Hello World!\n" {:error-handler identity
+                          :access-control {:allow-origin (config/cors-demo-origin config)}}))
+
+(s/defrecord HelloWorldExample [channel
+                                config :- config/ConfigSchema]
   Lifecycle
   (start [component]
     (assoc component :channel (chan 10)))
@@ -56,7 +64,11 @@
       ["/hello-atom-api" (hello-atom-api)]
 
       ;; Realtime
-      ["/hello-sse" (hello-sse channel)]]]))
+      ["/hello-sse" (hello-sse channel)]
 
-(defn new-hello-world-example [& {:as opts}]
-  (map->HelloWorldExample opts))
+      ;; Remote access
+      ["/hello-different-origin" (hello-different-origin config)]
+      ]]))
+
+(defn new-hello-world-example [config]
+  (map->HelloWorldExample {:config config}))

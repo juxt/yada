@@ -32,7 +32,7 @@
 (defn docsite-components [system config]
   (assoc
    system
-   :user-manual (new-user-manual :prefix (config/prefix config))
+   :user-manual (new-user-manual :prefix (config/docsite-origin config))
 
    :docsite (new-docsite :config config)
    :jquery (new-web-resources
@@ -74,14 +74,14 @@
          :cors-demo-router (new-router)
          ))
 
-(defn hello-world-components [system]
-  (assoc system :hello-world (new-hello-world-example)))
+(defn hello-world-components [system config]
+  (assoc system :hello-world (new-hello-world-example config)))
 
 (defn error-components [system]
   (assoc system :error-example (new-error-example)))
 
-(defn cors-demo-components [system]
-  (assoc system :cors-demo (new-cors-demo)))
+(defn cors-demo-components [system config]
+  (assoc system :cors-demo (new-cors-demo config)))
 
 (defn new-system-map
   [config]
@@ -93,9 +93,9 @@
         (docsite-components config)
         (swagger-ui-components)
         (http-server-components)
-        (hello-world-components)
+        (hello-world-components config)
         (error-components)
-        (cors-demo-components)
+        (cors-demo-components config)
 
         (assoc :docsite-redirect (new-redirect :from "/" :to :yada.dev.docsite/index))
         (assoc :cors-demo-redirect (new-redirect :from "/" :to :yada.dev.cors-demo/index))))))

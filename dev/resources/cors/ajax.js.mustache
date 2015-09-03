@@ -1,10 +1,12 @@
+// -*-javascript-*- (it's an EMACS thing)
+
 $.ajax({
     beforeSend: function(xhr) {
 //        xhr.setRequestHeader("Authorization", "token 123");
      },
     type: "GET",
 //    contentType: 'application/json',
-    url: "{{origin}}/hello1",
+    url: "{{origin}}/hello-different-origin",
 
     success: function(response) {
         console.log(response);

@@ -19,12 +19,12 @@
    {:profile profile
     :schema ConfigSchema}))
 
-(defn prefix [config]
+(defn docsite-origin [config]
   (str (:prefix config)
        (when-let [port (-> config :ports :docsite)]
          (str ":" port))))
 
-(defn cors-prefix [config]
+(defn cors-demo-origin [config]
   (str (:prefix config)
        (when-let [port (-> config :ports :cors-demo)]
          (str ":" port))))

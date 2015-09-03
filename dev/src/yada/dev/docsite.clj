@@ -63,7 +63,7 @@
                      "Swagger UI"]
                 " - to demonstrate Swagger integration"]
                [:li [:a {:href (format "%s%s"
-                                       (config/cors-prefix config)
+                                       (config/cors-demo-origin config)
                                        (path-for @*cors-demo-router :yada.dev.cors-demo/index))} "CORS demo"] " - to demonstrate CORS support"]]
               ])}))
 
