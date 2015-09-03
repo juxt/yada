@@ -13,7 +13,8 @@
    [yada.media-type :as mt]
    [yada.util :refer (parse-csv)]
    [yada.test.util :refer (etag? to-string)]
-   [yada.yada :as yada]))
+   [yada.yada :as yada])
+  (:import [java.util Date]))
 
 (defn validate-headers? [headers]
   (->>
@@ -21,7 +22,7 @@
      (case k
        "content-length" (when-not (and (number? v) (not (neg? v)) ) "content-length not a non-negative number")
        "content-type" (when-not (mt/string->media-type v) "mime-type not valid")
-       "last-modified" (when-not (instance? java.util.Date (parse-date v)) "last-modified not a date")
+       "last-modified" (when-not (instance? Date (parse-date v)) "last-modified not a date")
        "vary" (when-not (pos? (count (parse-csv v))) "vary empty")
        "allow" (when-not (pos? (count (parse-csv v))) "allow empty")
        "etag" (when-not (etag? v) "not a valid etag")
@@ -59,7 +60,38 @@
       ["paths" "/hello" "get" "produces"] := ["text/plain"]
       )))
 
-;; TODO: conditional request
+(deftest conditional-request
+  (testing "Dates"
+    (let [resource (hello/hello)
+          response @(resource (request :get "/"))
+          last-modified (some-> response (get-in [:headers "last-modified"]) parse-date)
+          etag (some-> response (get-in [:headers "etag"]))]
+
+      (is last-modified)
+      (is (instance? Date last-modified))
+
+      (println last-modified)
+      (println (-> last-modified .toInstant (.minusSeconds 1) Date/from))
+
+      (let [response @(resource
+                       (merge-with merge (request :get "/" )
+                                   {:headers {"if-modified-since"
+                                              (format-date last-modified)}}))]
+        (given response :status := 304))
+
+      (let [response @(resource
+                       (merge-with merge (request :get "/" )
+                                   {:headers {"if-modified-since"
+                                              (format-date (-> last-modified .toInstant (.minusSeconds 1) Date/from))}}))]
+        (given response :status := 200))
+
+      (is etag)
+
+      (let [response @(resource
+                       (merge-with merge (request :get "/" )
+                                   {:headers {"if-none-match" etag}}))]
+        (given response :status := 304)))))
+
 
 (deftest put-not-allowed-test
   (let [resource (hello/hello)]

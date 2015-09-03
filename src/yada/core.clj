@@ -305,6 +305,36 @@
                     (get etags (:representation ctx))))))
     ctx))
 
+;; If-None-Match check
+(defn if-none-match
+  [ctx]
+
+  (if-let [matches (some->> (get-in (:request ctx) [:headers "if-none-match"]) parse-csv set)]
+
+    ;; TODO: Weak comparison. Since we don't (yet) support the issuance
+    ;; of weak entity tags, weak and strong comparison are identical
+    ;; here.
+
+    (if
+        ;; Create a map of representation -> etag. This was done in
+        ;; if-match, but it is unlikely that we have if-match and
+        ;; if-none-match in the same request, so a performance
+        ;; optimization is unwarranted.
+        (-> ctx :resource-properties :version)
+      (let [version (-> ctx :resource-properties :version)
+            etags (into {}
+                        (for [rep (-> ctx :handler :representations)]
+                          [rep (p/to-etag version rep)]))]
+
+        (when (not-empty (set/intersection matches (set (vals etags))))
+          (d/error-deferred
+           (ex-info ""
+                    {:status 304
+                     ::http-response true}))
+
+          )))
+    ctx))
+
 (defn invoke-method
   "Methods"
   [ctx]
@@ -545,9 +575,10 @@
    check-modification-time
 
    select-representation
-   ;; if-match computes the etag of the selected representations, so
+   ;; if-match and if-none-match computes the etag of the selected representations, so
    ;; needs to be run after select-representation
    if-match
+   if-none-match
 
    invoke-method
    get-new-resource-properties
