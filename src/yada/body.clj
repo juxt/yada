@@ -12,6 +12,7 @@
    [json-html.core :as jh]
    [manifold.stream :refer [->source transform]]
    [ring.util.codec :as codec]
+   [ring.util.http-status :refer [status]]
    [ring.swagger.schema :as rs]
    [yada.charset :as charset]
    [yada.journal :as journal]
@@ -185,16 +186,19 @@
 
 (defmulti render-error (fn [status error representation ctx] (-> representation :media-type mt/media-type)))
 
-(defn get-error-message [status]
-  (case status
-    404 "Not Found"
-    "Unknown"))
+(defn get-error-message [code]
+  (or (some-> status (get code) :name) "Unknown"))
+
+(defn get-error-description [code]
+  (some-> status (get code) :description))
 
 (defmethod render-error "text/html"
   [status error representation {:keys [id options]}]
   (html
    [:body
     [:h1 (format "%d: %s" status (get-error-message status))]
+    (when-let [description (get-error-description status)]
+      [:p description])
 
     ;; Only
     (when *output-errors*

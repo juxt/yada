@@ -11,7 +11,7 @@
                org.clojure/clojure]
 
   :dependencies
-  [[bidi "1.21.0"]
+  [[bidi "1.21.0" :exclusions [ring/ring-core]]
    [byte-streams "0.2.0" :exclusions [clj-tuple]]
    [camel-snake-kebab "0.1.4"]
    [cheshire "5.4.0"]
@@ -20,6 +20,7 @@
    [json-html "0.3.1"]
    [juxt/iota "0.1.2"]
    [manifold "0.1.1-alpha4"]
+   [metosin/ring-http-response "0.6.5"]
    [metosin/ring-swagger "0.20.2" :exclusions [potemkin]]
    [prismatic/schema "0.4.3" :exclusions [potemkin]]
    [potemkin "0.4.1" :exclusions [riddley]]
