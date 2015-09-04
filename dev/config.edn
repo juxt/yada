@@ -2,4 +2,5 @@
                 :prod "http://yada.juxt.pro"}
 
  :ports {:docsite #cond {:dev 8090 :prod nil}
-         :cors-demo 8092}}
+         :cors-demo 8092
+         :talks 8093}}

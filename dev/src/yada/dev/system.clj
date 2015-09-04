@@ -12,6 +12,7 @@
    [modular.bidi :refer (new-router new-web-resources new-archived-web-resources new-redirect)]
    [yada.dev.docsite :refer (new-docsite)]
    [yada.dev.cors-demo :refer (new-cors-demo)]
+   [yada.dev.talks :refer (new-talks)]
    [yada.dev.user-manual :refer (new-user-manual)]
    [yada.dev.database :refer (new-database)]
    [yada.dev.user-api :refer (new-verbose-user-api)]
@@ -57,19 +58,22 @@
           :uri-context "/swagger-ui"
           :resource-prefix "META-INF/resources/webjars/swagger-ui/2.1.1")))
 
-(defn http-server-components [system]
+(defn http-server-components [system config]
   (assoc system
          :docsite-server
          (new-webserver
-          :port 8090
+          :port (config/docsite-port config)
           ;; raw-stream? = true gives us a manifold stream of io.netty.buffer.ByteBuf instances
           ;; Use to convert to a stream bs/to-input-stream
           :raw-stream? true)
 
          :docsite-router (new-router)
 
-         :cors-demo-server (new-webserver :port 8092)
+         :cors-demo-server (new-webserver :port (config/cors-demo-port config))
          :cors-demo-router (new-router)
+
+         :talks-server (new-webserver :port (config/talks-port config))
+         :talks-router (new-router)
          ))
 
 (defn hello-world-components [system config]
@@ -81,6 +85,9 @@
 (defn cors-demo-components [system config]
   (assoc system :cors-demo (new-cors-demo config)))
 
+(defn talks-components [system config]
+  (assoc system :talks (new-talks config)))
+
 (defn new-system-map
   [config]
   (apply system-map
@@ -90,18 +97,21 @@
         (api-components)
         (docsite-components config)
         (swagger-ui-components)
-        (http-server-components)
+        (http-server-components config)
         (hello-world-components config)
         (error-components)
         (cors-demo-components config)
+        (talks-components config)
 
         (assoc :docsite-redirect (new-redirect :from "/" :to :yada.dev.docsite/index))
-        (assoc :cors-demo-redirect (new-redirect :from "/" :to :yada.dev.cors-demo/index))))))
+        (assoc :cors-demo-redirect (new-redirect :from "/" :to :yada.dev.cors-demo/index))
+        (assoc :talks-redirect (new-redirect :from "/" :to :yada.dev.talks/index))))))
 
 (defn new-dependency-map
   []
   {:docsite-server {:request-handler :docsite-router}
    :cors-demo-server {:request-handler :cors-demo-router}
+   :talks-server {:request-handler :talks-router}
 
    :docsite-router [:swagger-ui
                     :hello-world
@@ -118,14 +128,18 @@
                       :jquery :bootstrap
                       :web-resources
                       :highlight-js-resources
-                      :cors-demo-redirect]})
+                      :cors-demo-redirect]
+
+   :talks-router [:talks
+                  :talks-redirect]})
 
 (defn new-co-dependency-map
   []
   {:docsite {:router :docsite-router
              :cors-demo-router :cors-demo-router}
    :user-manual {:router :docsite-router}
-   :cors-demo {:router :cors-demo-router}})
+   :cors-demo {:router :cors-demo-router}
+   :talks {:router :talks-router}})
 
 (defn new-production-system
   "Create the production system"

@@ -10,7 +10,8 @@
 (s/defschema ConfigSchema
   {:prefix s/Str
    :ports {:docsite UserPort
-           :cors-demo UserPort}})
+           :cors-demo UserPort
+           :talks UserPort}})
 
 (defn config
   "Return a map of the static configuration used in the component
@@ -21,12 +22,21 @@
    {:profile profile
     :schema ConfigSchema}))
 
+(defn docsite-port [config]
+  (-> config :ports :docsite))
+
+(defn cors-demo-port [config]
+  (-> config :ports :cors-demo))
+
+(defn talks-port [config]
+  (-> config :ports :talks))
+
 (defn docsite-origin [config]
   (str (:prefix config)
-       (when-let [port (-> config :ports :docsite)]
+       (when-let [port (docsite-port config)]
          (str ":" port))))
 
 (defn cors-demo-origin [config]
   (str (:prefix config)
-       (when-let [port (-> config :ports :cors-demo)]
+       (when-let [port (cors-demo-port config)]
          (str ":" port))))
