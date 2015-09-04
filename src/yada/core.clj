@@ -635,7 +635,7 @@
                               (when (not-empty m) [m]))
                             (:representations resource-properties)
                             ;; Default
-                            [{:media-type "application/octet-stream"}])))
+                            [{}])))
 
          vary (rep/vary representations)
 
