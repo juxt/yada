@@ -55,7 +55,7 @@
         [:head
          [:title (.getName dir)]]
         [:body
-         [:table
+         [:table {:style "font-family: monospace"}
           [:thead
            [:tr
             [:th "Name"]
@@ -65,7 +65,8 @@
            (for [child (sort (.listFiles dir))]
              [:tr
               [:td [:a {:href (if (.isDirectory child) (str (.getName child) "/") (.getName child))} (.getName child)]]
-              [:td (if (.isDirectory child) "" (.length child))]
+              [:td {:style "align: right"}
+               (if (.isDirectory child) "" (.length child))]
               [:td (.format
                     (doto (SimpleDateFormat. "yyyy-MM-dd HH:mm:ss zzz")
                       (.setTimeZone (TimeZone/getTimeZone "UTC")))
@@ -89,7 +90,8 @@
 
   (resource-properties [_ ctx]
     {:exists? (.exists f)
-     :last-modified (Date. (.lastModified f))})
+     :last-modified (Date. (.lastModified f))
+     })
 
   Get
   (GET [_ ctx]
@@ -118,6 +120,34 @@
   (DELETE [_ ctx] (.delete f))
 
   )
+
+(defrecord DirectoryResource [dir]
+  p/ResourceProperties
+  (resource-properties [_]
+    {:allowed-methods #{:get}
+     :collection? true})
+
+  (resource-properties [_ ctx]
+    (if-let [path-info (-> ctx :request :path-info)]
+      (let [f (io/file dir path-info)]
+        {:exists? (.exists f)
+         :representations (cond
+                            (.isFile f)
+                            [{:media-type (or (ext-mime-type (.getName f)) "application/octet-stream")}]
+                            (.isDirectory f)
+                            [{:media-type #{"text/html"}}]
+                            :otherwise [])
+         :last-modified (.lastModified f)
+         ::file f})
+      {:exists false}))
+
+  Get
+  (GET [this ctx]
+    (let [f (get-in ctx [:resource-properties ::file])]
+      (cond
+        (.isFile f) f
+        (.isDirectory f) (dir-index f (-> ctx :response :representation :media-type))
+        ))))
 
 #_(defrecord DirectoryResource [dir]
   AllowedMethods
@@ -178,14 +208,12 @@
       (throw (ex-info "" {:status 302 :headers {"location" (str (-> ctx :request :uri) "/")}
                           :yada.core/http-response true}))))
 
-
   Put
   (PUT [_ ctx]
     (if-let [path-info (-> ctx :request :path-info)]
       (let [f (child-file dir path-info)]
         (bs/transfer (-> ctx :request :body) f))
       (throw (ex-info "TODO: Directory creation from archive stream is not yet implemented" {}))))
-
 
   Delete
   (DELETE [_ ctx]
@@ -210,6 +238,5 @@
   File
   (as-resource [f]
     (if (.isDirectory f)
-      (throw (ex-info "TODO: No implementation yet for directories" {}))
-      #_(->DirectoryResource f)
+      (->DirectoryResource f)
       (->FileResource f))))

@@ -118,7 +118,11 @@
                    {:status 500
                     ::http-response true
                     :error props}))
-         (update-in ctx [:resource-properties] merge props))))))
+
+         (-> ctx
+             (assoc-in [:representations] (or (:representations props)
+                                              (-> ctx :handler :representations)))
+             (update-in [:resource-properties] merge props)))))))
 
 (defn method-allowed?
   "Is method allowed on this resource?"
@@ -221,8 +225,7 @@
 (defn select-representation
   [ctx]
   (let [representation
-        (rep/select-representation (:request ctx)
-                                   (-> ctx :handler :representations))]
+        (rep/select-representation (:request ctx) (:representations ctx))]
 
     (cond-> ctx
       representation
@@ -274,7 +277,7 @@
 
     ;; We have an If-Match to process
     (cond
-      (and (contains? matches "*") (-> ctx :handler :representations count pos?))
+      (and (contains? matches "*") (-> ctx :representations count pos?))
       ;; No need to compute etag, exit
       ctx
 
@@ -285,7 +288,7 @@
       (-> ctx :resource-properties :version)
       (let [version (-> ctx :resource-properties :version)
             etags (into {}
-                        (for [rep (-> ctx :handler :representations)]
+                        (for [rep (:representations ctx)]
                           [rep (p/to-etag version rep)]))]
 
         (if (empty? (set/intersection matches (set (vals etags))))
@@ -323,7 +326,7 @@
         (-> ctx :resource-properties :version)
       (let [version (-> ctx :resource-properties :version)
             etags (into {}
-                        (for [rep (-> ctx :handler :representations)]
+                        (for [rep (:representations ctx)]
                           [rep (p/to-etag version rep)]))]
 
         (when (not-empty (set/intersection matches (set (vals etags))))
@@ -609,6 +612,10 @@
          resource-properties (when (satisfies? p/ResourceProperties resource)
                                (resource/resource-properties resource))
 
+         ;; This handler services a collection of resources
+         collection? (or (:collection? options)
+                         (:collection? resource-properties))
+
          known-methods (methods/known-methods)
 
          allowed-methods (or
@@ -655,6 +662,8 @@
         :representations representations
         :resource resource
         :resource-properties resource-properties
+
+        :collection? collection?
 
 ;;        :security (as-sequential (:security options))
         :vary vary}

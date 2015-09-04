@@ -2,9 +2,11 @@
 
 (ns yada.resource
   (:require
+   [clojure.tools.logging :refer :all]
    [schema.core :as s]
    [schema.coerce :as sc]
    [schema.utils :as su]
+   [yada.representation :as rep]
    yada.charset
    yada.media-type
    [yada.protocols :as p])
@@ -30,6 +32,12 @@
 (s/defschema StringSet
   #{String})
 
+(s/defschema RepresentationSets
+  [{(s/optional-key :media-type) MediaTypeSchemaSet
+    (s/optional-key :charset) CharsetSchemaSet
+    (s/optional-key :encoding) StringSet
+    (s/optional-key :language) StringSet}])
+
 (s/defschema ResourceProperties
   {(s/optional-key :allowed-methods)
    (s/either [s/Keyword] #{s/Keyword})
@@ -43,10 +51,10 @@
      (s/optional-key :body) s/Any}}
 
    (s/optional-key :representations)
-   [{(s/optional-key :media-type) MediaTypeSchemaSet
-     (s/optional-key :charset) CharsetSchemaSet
-     (s/optional-key :encoding) StringSet
-     (s/optional-key :language) StringSet}]
+   RepresentationSets
+
+   (s/optional-key :collection?)
+   (s/maybe s/Bool)
 
    QualifiedKeyword s/Any})
 
@@ -62,8 +70,6 @@
 
 (def coerce-resource-properties
   (sc/coercer ResourceProperties +resource-properties-coercions+))
-
-(coerce-resource-properties {:representations [{:media-type "foo"}]})
 
 (s/defn resource-properties :- ResourceProperties
   [r]
@@ -83,6 +89,7 @@
   {:exists? s/Bool
    (s/optional-key :last-modified) Date
    (s/optional-key :version) s/Any
+   (s/optional-key :representations) RepresentationSets
    QualifiedKeyword s/Any})
 
 (def coerce-resource-properties-on-request
@@ -92,10 +99,14 @@
 ;; limitation that 'all arities must share the same output schema'.
 (s/defn resource-properties-on-request :- ResourcePropertiesOnRequest
   [r ctx]
-  (coerce-resource-properties-on-request
-   (merge
-    {:exists? true}
-    (try
-      (p/resource-properties r ctx)
-      (catch AbstractMethodError e
-        nil)))))
+  (let [props
+        (coerce-resource-properties-on-request
+         (merge
+          {:exists? true}
+          (try
+            (p/resource-properties r ctx)
+            (catch AbstractMethodError e
+              nil))))]
+    (cond-> props
+      (:representations props)
+      (update-in [:representations] (comp rep/representation-seq rep/coerce-representations)))))

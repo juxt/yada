@@ -22,17 +22,22 @@
 
 ;; Let Handler satisfy bidi's Ring protocol
 (extend-type Handler
-  Ring
-  (request [this req m]
-    (this req))
   Matched
   (resolve-handler [this m]
-    (succeed this m))
+    ;; If we represent a collection of resources, let's match and retain
+    ;; the remainder which we place into the request as :path-info (see
+    ;; below).
+    (if (:collection? this)
+      (assoc m :handler this)
+      (succeed this m)))
   (unresolve-handler [this m]
     (when
         (or (= this (:handler m))
             (when-let [id (:id this)] (= id (:handler m))))
-      "")))
+      ""))
+  Ring
+  (request [this req m]
+    (this (assoc req :path-info (:remainder m)))))
 
 ;; A bidi endpoint that captures a path remainder as path-info
 (defrecord ResourceBranchEndpoint [resource options]
