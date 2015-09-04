@@ -49,8 +49,14 @@
 
 (defn hello-different-origin-2 [config]
   (yada "Hello World!\n" {:error-handler identity
-                          :access-control {:allow-origin (config/cors-demo-origin config)
-                                           :allow-headers #{"authorization"}}
+                          :access-control {:allow-origin true ; only show incoming origin
+                                           :allow-credentials true}
+                          :representations [{:media-type "text/plain"}]}))
+
+(defn hello-different-origin-3 [config]
+  (yada "Hello World!\n" {:error-handler identity
+                          :access-control {:allow-origin "*"
+                                           :allow-credentials true}
                           :representations [{:media-type "text/plain"}]}))
 
 (s/defrecord HelloWorldExample [channel
@@ -77,6 +83,7 @@
       ;; Remote access
       ["/hello-different-origin/1" (hello-different-origin-1 config)]
       ["/hello-different-origin/2" (hello-different-origin-2 config)]
+      ["/hello-different-origin/3" (hello-different-origin-3 config)]
       ]]))
 
 (defn new-hello-world-example [config]
