@@ -5,10 +5,12 @@
    [schema.core :as s]
    [aero.core :refer (read-config)]))
 
+(s/defschema UserPort (s/both s/Int (s/pred #(<= 1024 % 65535))))
+
 (s/defschema ConfigSchema
   {:prefix s/Str
-   :ports {:docsite (s/maybe s/Int)
-           :cors-demo (s/maybe s/Int)}})
+   :ports {:docsite UserPort
+           :cors-demo UserPort}})
 
 (defn config
   "Return a map of the static configuration used in the component
