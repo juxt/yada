@@ -39,11 +39,19 @@
       (recur (inc t))))
   (yada/resource ch))
 
-(defn hello-different-origin [config]
+(defn hello-different-origin-1 [config]
   ;; TODO: Replace with {:error-handler nil} and have implementation
   ;; check with contains? for key
   (yada "Hello World!\n" {:error-handler identity
-                          :access-control {:allow-origin (config/cors-demo-origin config)}}))
+                          :access-control {:allow-origin (config/cors-demo-origin config)
+                                           :allow-headers #{"authorization"}}
+                          :representations [{:media-type "text/plain"}]}))
+
+(defn hello-different-origin-2 [config]
+  (yada "Hello World!\n" {:error-handler identity
+                          :access-control {:allow-origin (config/cors-demo-origin config)
+                                           :allow-headers #{"authorization"}}
+                          :representations [{:media-type "text/plain"}]}))
 
 (s/defrecord HelloWorldExample [channel
                                 config :- config/ConfigSchema]
@@ -67,7 +75,8 @@
       ["/hello-sse" (hello-sse channel)]
 
       ;; Remote access
-      ["/hello-different-origin" (hello-different-origin config)]
+      ["/hello-different-origin/1" (hello-different-origin-1 config)]
+      ["/hello-different-origin/2" (hello-different-origin-2 config)]
       ]]))
 
 (defn new-hello-world-example [config]

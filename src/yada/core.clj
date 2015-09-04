@@ -388,16 +388,23 @@
 
 (defn access-control-headers [ctx]
   (let [allow-origin (get-in ctx [:options :access-control :allow-origin])
+        interpreted-allow-origin (when allow-origin (service/allow-origin allow-origin ctx))
         expose-headers (get-in ctx [:options :access-control :expose-headers])
-        allow-origin-result (when allow-origin (service/allow-origin allow-origin ctx))]
+        allow-headers (get-in ctx [:options :access-control :allow-headers])]
+
     (cond-> ctx
-      allow-origin-result
-      (assoc-in [:response :headers "access-control-allow-origin"] allow-origin-result)
+      interpreted-allow-origin
+      (assoc-in [:response :headers "access-control-allow-origin"] interpreted-allow-origin)
 
       expose-headers
       (assoc-in [:response :headers "access-control-expose-headers"]
                 (apply str
-                       (interpose ", " expose-headers))))))
+                       (interpose ", " expose-headers)))
+
+      allow-headers
+      (assoc-in [:response :headers "access-control-allow-headers"]
+                (apply str
+                       (interpose ", " allow-headers))))))
 
 ;; Response
 (defn create-response

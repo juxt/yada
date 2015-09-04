@@ -1,15 +1,62 @@
 // -*-javascript-*- (it's an EMACS thing)
 
+console.log("Simple GET 1");
+
 $.ajax({
-    beforeSend: function(xhr) {
-//        xhr.setRequestHeader("Authorization", "token 123");
-     },
     type: "GET",
 //    contentType: 'application/json',
-    url: "{{origin}}/hello-different-origin",
+    url: "{{origin}}/hello-different-origin/1",
 
     success: function(response) {
+        console.log("Simple GET 1: " + response);
+    },
+    error: function(response) {
         console.log(response);
+    }
+});
+
+
+console.log("Non-simple GET 1");
+
+$.ajax({
+    beforeSend: function(xhr) {
+        xhr.setRequestHeader("Authorization", "token 123");
+     },
+    type: "GET",
+    url: "{{origin}}/hello-different-origin/1",
+
+    success: function(response) {
+        console.log("Non-simple GET: " + response);
+    },
+    error: function(response) {
+        console.log(response);
+    }
+});
+
+console.log("Simple GET 2");
+
+$.ajax({
+    type: "GET",
+//    contentType: 'application/json',
+    url: "{{origin}}/hello-different-origin/2",
+
+    success: function(response) {
+        console.log("Simple GET 2: " + response);
+    },
+    error: function(response) {
+        console.log(response);
+    }
+});
+
+console.log("Non-simple GET 2");
+
+$.ajax({
+    type: "GET",
+//    contentType: 'application/json',
+    url: "{{origin}}/hello-different-origin/2",
+
+    success: function(response) {
+        console.log("Non-simple GET 2: " + response);
     },
     error: function(response) {
         console.log(response);
