@@ -47,9 +47,7 @@
                    :uri-context "/static"
                    :resource-prefix "static")
    :highlight-js-resources
-   (new-archived-web-resources :archive (io/resource "highlight.zip") :uri-context "/hljs/")
-
-   ))
+   (new-archived-web-resources :archive (io/resource "highlight.zip") :uri-context "/hljs/")))
 
 (defn swagger-ui-components [system]
   (assoc system
