@@ -2,18 +2,19 @@
 
 (ns yada.body
   (:require
-   [clojure.walk :refer [keywordize-keys]]
+   [clojure.java.io :as io]
    [clojure.pprint :refer [pprint]]
    [clojure.tools.logging :refer :all]
+   [clojure.walk :refer [keywordize-keys]]
    [byte-streams :as bs]
    [cheshire.core :as json]
    [hiccup.core :refer [html]]
    [hiccup.page :refer [html5]]
    [json-html.core :as jh]
    [manifold.stream :refer [->source transform]]
+   [ring.swagger.schema :as rs]
    [ring.util.codec :as codec]
    [ring.util.http-status :refer [status]]
-   [ring.swagger.schema :as rs]
    [yada.charset :as charset]
    [yada.journal :as journal]
    [yada.media-type :as mt])
@@ -120,7 +121,16 @@
 (defmethod render-map "text/html"
   [m representation]
   (-> (html5
-         [:head [:style (-> "json.human.css" clojure.java.io/resource slurp)]]
+       [:head [:style (slurp (io/resource) "json.human.css")]]
+         (jh/edn->html m))
+      (str \newline) ; annoying on the command-line otherwise
+      (to-body representation) ; for string encoding
+      ))
+
+(defmethod render-seq "text/html"
+  [m representation]
+  (-> (html5
+         [:head [:style (slurp (io/resource "json.human.css"))]]
          (jh/edn->html m))
       (str \newline) ; annoying on the command-line otherwise
       (to-body representation) ; for string encoding

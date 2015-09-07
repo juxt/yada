@@ -27,3 +27,17 @@
   APersistentMap
   (as-resource [m]
     (->MapResource m (to-date (now)))))
+
+(extend-type clojure.lang.PersistentVector
+  p/ResourceProperties
+  (resource-properties
+    ([_]
+     {:representations
+      [{:media-type
+        #{"application/edn" "application/json;q=0.9" "text/html;q=0.8"}
+        :charset charset/platform-charsets}]})
+    ([_ ctx] {}))
+
+
+  Get
+  (GET [this ctx] this))
