@@ -165,12 +165,12 @@
 
 (defmethod render-map :default
   [m representation]
-  (throw (ex-info (format "Attempt to call render-map without a media-type: %s" (pr-str representation))
+  (throw (ex-info (format "No implementation for render-map for media-type: %s" (mt/media-type (:media-type representation)))
                   {:representation representation})))
 
 (defmethod render-seq :default
   [m representation]
-  (throw (ex-info (format "Attempt to call render-seq without a media-type: %s" (pr-str representation))
+  (throw (ex-info (format "No implementation for render-seq for media-type: %s" (mt/media-type (:media-type representation)))
                   {:representation representation})))
 
 
