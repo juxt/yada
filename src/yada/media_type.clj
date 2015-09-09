@@ -46,7 +46,8 @@
            (apply str (for [[k v] (:parameters mt)]
                         (str ";" k "=" v))))))))
 
-(defmethod clojure.core/print-method MediaTypeMap
+;; (Causes problems)
+#_(defmethod clojure.core/print-method MediaTypeMap
   [mt ^java.io.Writer writer]
   (.write writer (format "#yada.media-type[%s%s%s]"
                          (media-type mt)
