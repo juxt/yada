@@ -15,7 +15,7 @@
   quality value for the representation's content-type."
   [req rep]
   (let [k :media-type
-        qa (rep/make-content-type-quality-assessor req k)
+        qa (rep/make-media-type-quality-assessor req k)
         rep (qa rep)]
     (or (get-in rep [:qualities k])
         (when (:rejected rep) :rejected))))

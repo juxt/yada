@@ -37,7 +37,7 @@
 
 ;; Content type negotiation
 
-(defn content-type-acceptable?
+(defn media-type-acceptable?
   "Compare a single acceptable mime-type (extracted from an Accept
   header) and a candidate. If the candidate is acceptable, return a
   sortable vector [acceptable-quality specificity parameter-count
@@ -70,18 +70,18 @@
       (and (= (mt/media-type acceptable) "*/*"))
       [(:quality acceptable) 1 (count (:parameters rep)) (:quality rep)])))
 
-(defn highest-content-type-quality
+(defn highest-media-type-quality
   "Given a collection of acceptable mime-types, return a function that will return the quality."
   [accepts]
   (fn [rep]
-    (best (map (partial content-type-acceptable? (:media-type rep)) accepts))))
+    (best (map (partial media-type-acceptable? (:media-type rep)) accepts))))
 
-(defn make-content-type-quality-assessor
+(defn make-media-type-quality-assessor
   [req k]
   (let [acceptable-types (->> (or (get-in req [:headers "accept"]) "*/*")
                               parse-csv (map mt/string->media-type))]
     (-> acceptable-types
-        highest-content-type-quality
+        highest-media-type-quality
         (wrap-quality-assessor :media-type)
         skip-rejected)))
 
@@ -259,7 +259,7 @@
    (make-language-quality-assessor req :language)
    (make-encoding-quality-assessor req :encoding)
    (make-charset-quality-assessor req :charset)
-   (make-content-type-quality-assessor req :media-type)))
+   (make-media-type-quality-assessor req :media-type)))
 
 (def ^{:doc "A selection algorithm that compares each quality in turn,
   only moving to the next quality if the comparison is a draw."}
@@ -328,7 +328,7 @@
         #_(when-let [bad-charset
                      (some (fn [mt] (when-let [charset (some-> mt :parameters (get "charset"))]
                                      (when-not (charset/valid-charset? charset) charset)))
-                           available-content-types)]
+                           available-media-types)]
             (throw (ex-info (format "Resource or service declares it produces an unknown charset: %s" bad-charset) {:charset bad-charset})))
 
         (when-let [enc (:encoding rep)]
@@ -342,12 +342,12 @@
   result of coerce-representations."
   [reps]
   (for [rep reps
-        content-type (or (:media-type rep) [nil])
+        media-type (or (:media-type rep) [nil])
         charset (or (:charset rep) [nil])
         language (or (:language rep) [nil])
         encoding (or (:encoding rep) [nil])]
     (merge
-     (when content-type {:media-type content-type})
+     (when media-type {:media-type media-type})
      (when charset {:charset charset})
      (when language {:language language})
      (when encoding {:encoding encoding}))))
