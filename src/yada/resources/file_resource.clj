@@ -20,28 +20,13 @@
            [java.text SimpleDateFormat]
            [java.nio.charset Charset]))
 
-;; TODO: Fix this to ensure that ascending a directory is completely
-;; impossible, and test.
-(defn legal-name [s]
-  (and
-   (not= s "..")
-   (re-matches #"[^/]+(?:/[^/]+)*/?" s)))
-
-(defn- child-file [dir name]
-  (when-not (legal-name name)
-    (warn "Attempt to make a child file which ascends a directory")
-    (throw (ex-info "TODO"
-                    {:status 400
-                     :body (format "Attempt to make a child file which ascends a directory, name is '%s'" name)
-                     ;;:yada.core/http-response true
-                     })))
-  (io/file dir name))
-
 (defn with-newline [s]
   (str s \newline))
 
-(defn dir-index [dir content-type]
+(defn dir-index [dir indices content-type]
   (assert content-type)
+  (infof "Indices is %s" (pr-str indices))
+  (infof "content-type is %s" (pr-str content-type))
   (case (mt/media-type content-type)
     "text/plain"
     (apply str
@@ -71,16 +56,6 @@
                     (doto (SimpleDateFormat. "yyyy-MM-dd HH:mm:ss zzz")
                       (.setTimeZone (TimeZone/getTimeZone "UTC")))
                     (java.util.Date. (.lastModified child)))]])]]]]))))
-
-(defn negotiate-file-info [f ctx]
-  (let [representation
-        (rep/select-representation
-         (:request ctx)
-         (rep/coerce-representations
-          [{:media-type (set (remove nil? [(ext-mime-type (.getName f))]))}]))]
-    (when-not representation
-      (throw (ex-info "" {:status 406 :yada.core/http-response true})))
-    representation))
 
 (defrecord FileResource [f]
   p/ResourceProperties
@@ -148,91 +123,6 @@
         (.isFile f) f
         (.isDirectory f) (dir-index f (-> ctx :response :representation :media-type))
         ))))
-
-#_(defrecord DirectoryResource [dir]
-  AllowedMethods
-  (allowed-methods [_] #{:get :head :put :delete})
-
-  p/RepresentationExistence
-  (exists? [_ ctx] (.exists dir))
-
-  p/ResourceModification
-  (last-modified [_ ctx] (Date. (.lastModified dir)))
-
-  p/Representations
-  (representations [_]
-    ;; For when path-info is nil
-    [{:media-type #{"text/html" "text/plain"}
-      :charset charset/platform-charsets}])
-
-  Get
-  (GET [this ctx]
-    (if-let [path-info (-> ctx :request :path-info)]
-      (if (= path-info "")
-        (let [representation (rep/select-representation
-                              (:request ctx)
-                              (rep/coerce-representations (representations this)))
-              ct (:media-type representation)]
-
-          (cond-> (:response ctx)
-            true (assoc :body (rep/to-body (dir-index dir ct) representation))
-            representation (assoc :representation representation)))
-
-        (let [f (child-file dir path-info)]
-          (cond
-
-            (.isFile f)
-            ;; If it's a file, we must negotiate the content-type
-            (let [representation (negotiate-file-info f ctx)]
-              (cond-> (:response ctx)
-                f (assoc :body f)
-                (:media-type representation) (assoc :media-type (:media-type representation))))
-
-            (.isDirectory f)
-            ;; This is sub-directory, with path-info, so no
-            ;; negotiation has been done (see yada.core which explains
-            ;; why negotiation is not done when there's a path-info in
-            ;; the request)
-            (let [representation (rep/select-representation
-                                  (:request ctx)
-                                  (rep/coerce-representations (representations this)))
-                  ct (:media-type representation)]
-              (cond-> (:response ctx)
-                true (assoc :body (rep/to-body (dir-index f ct) representation))
-                representation (assoc :representation representation)))
-
-            :otherwise
-            (throw (ex-info "File not found" {:status 404 :yada.core/http-response true})))))
-
-      ;; Redirect so that path-info is not nil - there is a case for this being done in the bidi handler
-      (throw (ex-info "" {:status 302 :headers {"location" (str (-> ctx :request :uri) "/")}
-                          :yada.core/http-response true}))))
-
-  Put
-  (PUT [_ ctx]
-    (if-let [path-info (-> ctx :request :path-info)]
-      (let [f (child-file dir path-info)]
-        (bs/transfer (-> ctx :request :body) f))
-      (throw (ex-info "TODO: Directory creation from archive stream is not yet implemented" {}))))
-
-  Delete
-  (DELETE [_ ctx]
-    (do
-      (let [path-info (-> ctx :request :path-info)]
-        ;; TODO: We must be ensure that the path-info points to a file
-        ;; within the directory tree, otherwise this is an attack vector -
-        ;; we should return 403 in this case - same above with PUTs and POSTs
-
-        (if (= path-info "")
-          (if (seq (.listFiles dir))
-            (throw (ex-info "By default, the policy is not to delete a non-empty directory" {:files (.listFiles dir)}))
-            (io/delete-file dir))
-
-          (let [f (child-file dir path-info)]
-            ;; f is not certain to exist
-            (if (.exists f)
-              (.delete f)
-              (throw (ex-info {:status 404 :yada.core/http-response true})))))))))
 
 (extend-protocol p/ResourceCoercion
   File
