@@ -83,7 +83,7 @@
           [org.webjars/bootstrap "3.3.2"]
           [org.webjars.bower/material-design-lite "1.0.2" :scope "test"]
 
-          [cljsjs/react "0.13.3-0"]
+          [cljsjs/react "0.13.3-1"]
           [reagent "0.5.0"]
           [re-frame "0.4.1"]
           [kibu/pushy "0.3.2"]]
