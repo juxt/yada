@@ -38,7 +38,9 @@
   Charset
   (charset [_] alias)
   (canonical-name [_] (get alias->name (.toUpperCase alias)))
-  (preferred-alias [this] (name->alias (canonical-name this))))
+  (preferred-alias [this] (name->alias (canonical-name this)))
+  Comparable
+  (compareTo [this other] (. (java.text.Collator/getInstance) compare (:alias this) (:alias other))))
 
 (def charset-pattern
   (re-pattern (str "(" http-token ")"
