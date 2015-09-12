@@ -110,6 +110,12 @@
     (d/chain
      (resource/resource-properties-on-request resource ctx)
      (fn [props]
+       ;; Canonicalize possible representations if they are reasserted.
+       (cond-> props
+         (:representations props)
+         (update-in [:representations]
+                    (comp rep/representation-seq rep/coerce-representations))))
+     (fn [props]
        (if (schema.utils/error? props)
          (d/error-deferred
           ;; TODO: More thorough error handling

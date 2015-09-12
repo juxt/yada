@@ -99,14 +99,10 @@
 ;; limitation that 'all arities must share the same output schema'.
 (s/defn resource-properties-on-request :- ResourcePropertiesOnRequest
   [r ctx]
-  (let [props
-        (coerce-resource-properties-on-request
-         (merge
-          {:exists? true}
-          (try
-            (p/resource-properties r ctx)
-            (catch AbstractMethodError e
-              nil))))]
-    (cond-> props
-      (:representations props)
-      (update-in [:representations] (comp rep/representation-seq rep/coerce-representations)))))
+  (coerce-resource-properties-on-request
+   (merge
+    {:exists? true}
+    (try
+      (p/resource-properties r ctx)
+      (catch AbstractMethodError e
+        nil)))))
