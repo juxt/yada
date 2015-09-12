@@ -121,7 +121,7 @@
 (defmethod render-map "text/html"
   [m representation]
   (-> (html5
-       [:head [:style (slurp (io/resource) "json.human.css")]]
+       [:head [:style (slurp (io/resource "json.human.css"))]]
          (jh/edn->html m))
       (str \newline) ; annoying on the command-line otherwise
       (to-body representation) ; for string encoding
