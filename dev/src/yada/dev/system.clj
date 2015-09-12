@@ -147,10 +147,11 @@
 (defn new-co-dependency-map
   []
   {:docsite {:router :docsite-router
-             :cors-demo-router :cors-demo-router}
+             :cors-demo-router :cors-demo-router
+             :talks-router :talks-router}
    :user-manual {:router :docsite-router}
-   :cors-demo {:router :cors-demo-router}
    :console {:router :console-router}
+   :cors-demo {:router :cors-demo-router}
    :talks {:router :talks-router}})
 
 (defn new-production-system

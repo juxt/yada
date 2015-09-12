@@ -44,3 +44,8 @@
   (str (:prefix config)
        (when-let [port (cors-demo-port config)]
          (str ":" port))))
+
+(defn talks-origin [config]
+  (str (:prefix config)
+       (when-let [port (talks-port config)]
+         (str ":" port))))

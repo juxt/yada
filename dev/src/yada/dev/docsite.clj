@@ -37,7 +37,7 @@
       (infof "source is %s" source)
       ((yada source) req))))
 
-(defn index [{:keys [*router *cors-demo-router config]}]
+(defn index [{:keys [*router *cors-demo-router *talks-router config]}]
   (yada
    (new-template-resource
     "templates/page.html"
@@ -62,15 +62,19 @@
                                  )}
                      "Swagger UI"]
                 " - to demonstrate Swagger integration"]
-               [:li [:a {:href (format "%s%s"
-                                       (config/cors-demo-origin config)
-                                       (path-for @*cors-demo-router :yada.dev.cors-demo/index))} "CORS demo"] " - to demonstrate CORS support"]]
+               [:li [:a {:href (str
+                                (config/cors-demo-origin config)
+                                (path-for @*cors-demo-router :yada.dev.cors-demo/index))} "CORS demo"] " - to demonstrate CORS support"]
+               [:li [:a {:href (str
+                                (config/talks-origin config)
+                                (path-for @*talks-router :yada.dev.talks/index))} "Talks"]]]
               ])}))
 
    {:id ::index}))
 
 (s/defrecord Docsite [*router :- (co-dep Router)
                       *cors-demo-router :- (co-dep Router)
+                      *talks-router :- (co-dep Router)
                       config :- config/ConfigSchema]
   RouteProvider
   (routes [component]
@@ -82,4 +86,4 @@
 
 (defn new-docsite [& {:as opts}]
   (-> (map->Docsite opts)
-      (co-using [:router :cors-demo-router])))
+      (co-using [:router :cors-demo-router :talks-router])))
