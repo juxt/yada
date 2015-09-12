@@ -247,6 +247,10 @@
    :id id
    :error error})
 
+(defmethod render-error "text/plain"
+  [status error representation {:keys [id options]}]
+  (str error))
+
 (defmethod render-error :default
   [status error representation {:keys [id options]}]
   nil)

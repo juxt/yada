@@ -524,11 +524,12 @@
                             ;; to support more media-types to render
                             ;; errors, including image and video
                             ;; formats.
-                            [{:media-type #{"text/html"
-                                            "application/edn"
-                                            "application/edn;pretty=true"
-                                            "application/json"
-                                            "application/json;pretty=true"}
+                            [{:media-type #{"text/plain"
+                                            "text/html;q=0.8"
+                                            "application/json;q=0.75"
+                                            "application/json;pretty=true;q=0.7"
+                                            "application/edn;q=0.6"
+                                            "application/edn;pretty=true;q=0.5"}
                               :charset charset/platform-charsets}])))]
                  (d/chain
                   (cond-> (make-context {})
