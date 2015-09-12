@@ -71,12 +71,14 @@ $ lein test
 
 ## Acknowledgments
 
-Thanks to the following people for contributions, feedback and
+Thanks to the following people for inspiration, contributions, feedback and
 suggestions.
 
 * Malcolm Sparks
 * Martin Trojer
 * Philipp Meier
+* David Thomas Hume
+* Zach Tellman
 * Stijn Opheide
 * Frankie Sardo
 * Jon Pither
