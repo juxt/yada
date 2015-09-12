@@ -564,7 +564,25 @@
      journal]
   clojure.lang.IFn
   (invoke [this req]
-    (handle-request this req)))
+    (handle-request this req))
+  p/ResourceProperties
+  (resource-properties
+    [this]
+    {:allowed-methods #{:get}
+     :representations [{:media-type #{"text/html"
+                                      "application/edn"
+                                      "application/json"
+                                      "application/edn;pretty=true"
+                                      "application/json;pretty=true"}}]})
+
+  (resource-properties
+    [_ ctx]
+    {}
+    )
+  methods/Get
+  (GET [this ctx] (into {} this))
+
+  )
 
 (defrecord NoAuthorizationSpecified []
   service/Service
