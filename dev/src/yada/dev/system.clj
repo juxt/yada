@@ -11,6 +11,7 @@
    [com.stuartsierra.component :refer (system-map system-using using)]
    [modular.bidi :refer (new-router new-web-resources new-archived-web-resources new-redirect)]
    [yada.dev.docsite :refer (new-docsite)]
+   [yada.dev.console :refer (new-console)]
    [yada.dev.cors-demo :refer (new-cors-demo)]
    [yada.dev.talks :refer (new-talks)]
    [yada.dev.user-manual :refer (new-user-manual)]
@@ -48,7 +49,9 @@
                    :uri-context "/static"
                    :resource-prefix "static")
    :highlight-js-resources
-   (new-archived-web-resources :archive (io/resource "highlight.zip") :uri-context "/hljs/")))
+   (new-archived-web-resources :archive (io/resource "highlight.zip") :uri-context "/hljs/")
+   :console (new-console config)
+   ))
 
 (defn swagger-ui-components [system]
   (assoc system
@@ -68,6 +71,9 @@
           :raw-stream? true)
 
          :docsite-router (new-router)
+
+         :console-server (new-webserver :port (config/console-port config))
+         :console-router (new-router)
 
          :cors-demo-server (new-webserver :port (config/cors-demo-port config))
          :cors-demo-router (new-router)
@@ -104,12 +110,14 @@
         (talks-components config)
 
         (assoc :docsite-redirect (new-redirect :from "/" :to :yada.dev.docsite/index))
+        (assoc :console-redirect (new-redirect :from "/" :to :yada.dev.console/index))
         (assoc :cors-demo-redirect (new-redirect :from "/" :to :yada.dev.cors-demo/index))
         (assoc :talks-redirect (new-redirect :from "/" :to :yada.dev.talks/index))))))
 
 (defn new-dependency-map
   []
   {:docsite-server {:request-handler :docsite-router}
+   :console-server {:request-handler :console-router}
    :cors-demo-server {:request-handler :cors-demo-router}
    :talks-server {:request-handler :talks-router}
 
@@ -123,6 +131,9 @@
                     :web-resources
                     :highlight-js-resources
                     :docsite-redirect]
+
+   :console-router [:console
+                    :console-redirect]
 
    :cors-demo-router [:cors-demo
                       :jquery :bootstrap
@@ -139,6 +150,7 @@
              :cors-demo-router :cors-demo-router}
    :user-manual {:router :docsite-router}
    :cors-demo {:router :cors-demo-router}
+   :console {:router :console-router}
    :talks {:router :talks-router}})
 
 (defn new-production-system

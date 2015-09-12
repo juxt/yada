@@ -10,6 +10,7 @@
 (s/defschema ConfigSchema
   {:prefix s/Str
    :ports {:docsite UserPort
+           :console UserPort
            :cors-demo UserPort
            :talks UserPort}})
 
@@ -24,6 +25,9 @@
 
 (defn docsite-port [config]
   (-> config :ports :docsite))
+
+(defn console-port [config]
+  (-> config :ports :console))
 
 (defn cors-demo-port [config]
   (-> config :ports :cors-demo))
