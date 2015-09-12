@@ -35,6 +35,9 @@
                          ;; specify the encoding and yada's
                          ;; representation logic takes care of the
                          ;; encoding.
+
+                         ;; TODO: Is this necessary? Doesn't yada
+                         ;; default to this anyway?
                          :charset charset/default-platform-charset}]
 
       ;; We can work out last-modified, iff model is not a function
