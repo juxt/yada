@@ -51,7 +51,7 @@
                  swagger)]))
 
 (defrecord SwaggerSpec [spec created-at content-type]
-  p/ResourceProperties
+  p/Properties
   (properties
     [_]
     {:representations

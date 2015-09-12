@@ -23,7 +23,7 @@
   nil
   (as-resource [_] nil))
 
-(defprotocol ResourceProperties
+(defprotocol Properties
   (properties [_] [_ ctx] "If the semantics of the method are
   known to allow mutating the resource (i.e. the method is not 'safe'),
   the second form will be called twice, once at the start of the request
@@ -35,7 +35,7 @@
   an atom or (since methods can return the response) by assoc'ing new
   new value in a returned response."))
 
-(extend-protocol ResourceProperties
+(extend-protocol Properties
   clojure.lang.Fn
   (properties
     ([_] {:allowed-methods #{:get}})

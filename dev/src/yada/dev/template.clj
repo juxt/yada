@@ -23,7 +23,7 @@
                (s/pred delay?)
                (s/=> {s/Keyword s/Any} s/Any))
      *template]
-  p/ResourceProperties
+  p/Properties
   (properties
    [_]
    (let [resource (loader/find-file template-name)]

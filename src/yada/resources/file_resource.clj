@@ -22,7 +22,7 @@
            [java.nio.charset Charset]))
 
 (defrecord FileResource [f]
-  p/ResourceProperties
+  p/Properties
   (properties [_]
     {:allowed-methods #{:get :put :delete}
      ;; TODO: It may be desirable to 'coerce' files according to client
@@ -128,7 +128,7 @@
 (s/defrecord DirectoryResource
     [dir :- File
      index-files :- (s/maybe [java.util.regex.Pattern])]
-  p/ResourceProperties
+  p/Properties
   (properties [_]
     {:allowed-methods #{:get}
      :collection? true})

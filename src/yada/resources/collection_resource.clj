@@ -11,7 +11,7 @@
   (:import [clojure.lang APersistentMap]))
 
 (defrecord MapResource [m last-modified]
-  p/ResourceProperties
+  p/Properties
   (properties [_]
     {:representations
      [{:media-type
@@ -29,7 +29,7 @@
     (->MapResource m (to-date (now)))))
 
 (extend-type clojure.lang.PersistentVector
-  p/ResourceProperties
+  p/Properties
   (properties
     ([_]
      {:representations

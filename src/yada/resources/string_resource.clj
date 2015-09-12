@@ -11,7 +11,7 @@
 
 (defrecord StringResource [s last-modified]
 
-  p/ResourceProperties
+  p/Properties
   (properties [_]
     {:representations
      [{ ;; Without attempting to actually parse it (which isn't completely

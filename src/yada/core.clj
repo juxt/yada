@@ -565,7 +565,7 @@
   clojure.lang.IFn
   (invoke [this req]
     (handle-request this req))
-  p/ResourceProperties
+  p/Properties
   (properties
     [this]
     {:allowed-methods #{:get}
@@ -634,7 +634,7 @@
                     (p/as-resource resource)
                     resource)
 
-         properties (when (satisfies? p/ResourceProperties resource)
+         properties (when (satisfies? p/Properties resource)
                                (resource/properties resource))
 
          ;; This handler services a collection of resources

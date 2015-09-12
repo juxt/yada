@@ -15,7 +15,7 @@
 ;; TODO Extract out into dedicated ns.
 
 (defrecord ETagTestResource [v]
-  p/ResourceProperties
+  p/Properties
   (properties [_]
     {:representations [{:media-type "text/plain"}]})
   (properties [_ ctx]

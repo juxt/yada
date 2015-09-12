@@ -15,7 +15,7 @@
   (wrap-atom [init-state a] "Given the initial value on derefencing an atom, construct a record which will manage the reference."))
 
 (defrecord AtomResource [*a wrapper *last-mod]
-  p/ResourceProperties
+  p/Properties
   (properties [_]
     (let [props (p/properties wrapper)]
       (merge props

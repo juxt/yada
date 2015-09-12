@@ -9,7 +9,7 @@
    [yada.protocols :as p]))
 
 (s/defrecord MarkdownResource [content :- String]
-  p/ResourceProperties
+  p/Properties
   (properties
    [_]
    (let [html (md-to-html-string content)]

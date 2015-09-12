@@ -6,7 +6,7 @@
    [yada.methods :refer [Get Put Post Delete Options]]))
 
 (defrecord JustMethods []
-  p/ResourceProperties
+  p/Properties
   (properties [this]
     {:allowed-methods (keys this)
      :parameters (reduce-kv (fn [acc k v]

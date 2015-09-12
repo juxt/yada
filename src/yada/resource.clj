@@ -38,7 +38,7 @@
     (s/optional-key :encoding) StringSet
     (s/optional-key :language) StringSet}])
 
-(s/defschema ResourceProperties
+(s/defschema Properties
   {(s/optional-key :allowed-methods)
    (s/either [s/Keyword] #{s/Keyword})
 
@@ -74,9 +74,9 @@
    StringSet as-set})
 
 (def coerce-properties
-  (sc/coercer ResourceProperties +properties-coercions+))
+  (sc/coercer Properties +properties-coercions+))
 
-(s/defn properties :- ResourceProperties
+(s/defn properties :- Properties
   [r]
   (let [res
         (coerce-properties
@@ -92,7 +92,7 @@
 
 ;; The reason we can't have multiple arities is that s/defn has a
 ;; limitation that 'all arities must share the same output schema'.
-(s/defn properties-on-request :- ResourceProperties
+(s/defn properties-on-request :- Properties
   [r ctx]
   (coerce-properties
    (merge

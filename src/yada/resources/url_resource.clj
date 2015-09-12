@@ -17,7 +17,7 @@
   p/ResourceCoercion
   (as-resource [url] url)
 
-  p/ResourceProperties
+  p/Properties
   (properties
     ([u]
      {:representations
