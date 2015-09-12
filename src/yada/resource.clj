@@ -53,8 +53,13 @@
    (s/optional-key :representations)
    RepresentationSets
 
+   (s/optional-key :last-modified) Date
+   (s/optional-key :version) s/Any
+
    (s/optional-key :collection?)
-   (s/maybe s/Bool)
+   s/Bool
+
+   (s/optional-key :exists?) s/Bool
 
    QualifiedKeyword s/Any})
 
@@ -85,21 +90,11 @@
 
 ;; ---
 
-(s/defschema ResourcePropertiesOnRequest
-  {:exists? s/Bool
-   (s/optional-key :last-modified) Date
-   (s/optional-key :version) s/Any
-   (s/optional-key :representations) RepresentationSets
-   QualifiedKeyword s/Any})
-
-(def coerce-resource-properties-on-request
-  (sc/coercer ResourcePropertiesOnRequest +resource-properties-coercions+))
-
 ;; The reason we can't have multiple arities is that s/defn has a
 ;; limitation that 'all arities must share the same output schema'.
-(s/defn resource-properties-on-request :- ResourcePropertiesOnRequest
+(s/defn resource-properties-on-request :- ResourceProperties
   [r ctx]
-  (coerce-resource-properties-on-request
+  (coerce-resource-properties
    (merge
     {:exists? true}
     (try
