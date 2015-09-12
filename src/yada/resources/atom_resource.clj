@@ -16,18 +16,18 @@
 
 (defrecord AtomResource [*a wrapper *last-mod]
   p/ResourceProperties
-  (resource-properties [_]
-    (let [props (p/resource-properties wrapper)]
+  (properties [_]
+    (let [props (p/properties wrapper)]
       (merge props
              {:allowed-methods (conj (set (or
                                            (:allowed-methods props)
                                            (methods/infer-methods wrapper)))
                                      :put :post :delete)})))
-  (resource-properties [_ ctx]
+  (properties [_ ctx]
     (merge
      ;; TODO: Make sure that in the case of the string we are getting
      ;; the version from the current string, not the original string
-     (p/resource-properties wrapper ctx)
+     (p/properties wrapper ctx)
      (when-let [lm @*last-mod]
        {:last-modified lm})))
 

@@ -52,7 +52,7 @@
 
 (defrecord SwaggerSpec [spec created-at content-type]
   p/ResourceProperties
-  (resource-properties
+  (properties
     [_]
     {:representations
      (case content-type
@@ -64,7 +64,7 @@
        "application/edn" [{:media-type #{"application/edn"
                                          "application/edn;pretty=true"}
                            :charset #{"UTF-8"}}])})
-  (resource-properties [_ ctx]
+  (properties [_ ctx]
      {:last-modified created-at
       :version spec})
 

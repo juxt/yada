@@ -65,7 +65,7 @@
 
 (defn as-set [x] (if (coll? x) x (set [x])))
 
-(def +resource-properties-coercions+
+(def +properties-coercions+
   {Date #(condp instance? %
            java.lang.Long (Date. %)
            %)
@@ -73,15 +73,15 @@
    CharsetSchemaSet as-set
    StringSet as-set})
 
-(def coerce-resource-properties
-  (sc/coercer ResourceProperties +resource-properties-coercions+))
+(def coerce-properties
+  (sc/coercer ResourceProperties +properties-coercions+))
 
-(s/defn resource-properties :- ResourceProperties
+(s/defn properties :- ResourceProperties
   [r]
   (let [res
-        (coerce-resource-properties
+        (coerce-properties
          (try
-           (p/resource-properties r)
+           (p/properties r)
            (catch AbstractMethodError e
              {})))]
     (when (su/error? res)
@@ -92,12 +92,12 @@
 
 ;; The reason we can't have multiple arities is that s/defn has a
 ;; limitation that 'all arities must share the same output schema'.
-(s/defn resource-properties-on-request :- ResourceProperties
+(s/defn properties-on-request :- ResourceProperties
   [r ctx]
-  (coerce-resource-properties
+  (coerce-properties
    (merge
     {:exists? true}
     (try
-      (p/resource-properties r ctx)
+      (p/properties r ctx)
       (catch AbstractMethodError e
         nil)))))

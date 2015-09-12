@@ -18,7 +18,7 @@
   (as-resource [url] url)
 
   p/ResourceProperties
-  (resource-properties
+  (properties
     ([u]
      {:representations
       [{:media-type #{(ext-mime-type (.getPath u))}

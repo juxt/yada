@@ -12,14 +12,14 @@
 (defrecord StringResource [s last-modified]
 
   p/ResourceProperties
-  (resource-properties [_]
+  (properties [_]
     {:representations
      [{ ;; Without attempting to actually parse it (which isn't completely
        ;; impossible) we're not able to guess the media-type of this
        ;; string, so we return text/plain.
        :media-type "text/plain"
        :charset charset/platform-charsets}]})
-  (resource-properties [_ ctx]
+  (properties [_ ctx]
     {:last-modified last-modified
      :version s})
 

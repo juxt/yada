@@ -24,25 +24,25 @@
   (as-resource [_] nil))
 
 (defprotocol ResourceProperties
-  (resource-properties [_] [_ ctx] "If the semantics of the method are
+  (properties [_] [_ ctx] "If the semantics of the method are
   known to allow mutating the resource (i.e. the method is not 'safe'),
   the second form will be called twice, once at the start of the request
   and again after the method has been invoked to determine modified
   resource properties such as a new version (for determining the final
   ETag on the response. Any value in the map returned can be deferred,
   but if the implementation is I/O bound, implementors should attempt to
-  cache the new resource-properties during method invocation, either in
+  cache the new properties during method invocation, either in
   an atom or (since methods can return the response) by assoc'ing new
   new value in a returned response."))
 
 (extend-protocol ResourceProperties
   clojure.lang.Fn
-  (resource-properties
+  (properties
     ([_] {:allowed-methods #{:get}})
     ([_ ctx] {:exists? true}))
 
   nil
-  (resource-properties
+  (properties
 
     ([_] {:allowed-methods
           ;; We do allow :get on nil, but the response will be a 404

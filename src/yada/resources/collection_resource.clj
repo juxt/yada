@@ -12,12 +12,12 @@
 
 (defrecord MapResource [m last-modified]
   p/ResourceProperties
-  (resource-properties [_]
+  (properties [_]
     {:representations
      [{:media-type
        #{"application/edn" "application/json;q=0.9" "text/html;q=0.8"}
        :charset charset/platform-charsets}]})
-  (resource-properties [_ ctx]
+  (properties [_ ctx]
     {:last-modified last-modified})
 
   Get
@@ -30,7 +30,7 @@
 
 (extend-type clojure.lang.PersistentVector
   p/ResourceProperties
-  (resource-properties
+  (properties
     ([_]
      {:representations
       [{:media-type

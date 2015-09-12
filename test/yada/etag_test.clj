@@ -16,9 +16,9 @@
 
 (defrecord ETagTestResource [v]
   p/ResourceProperties
-  (resource-properties [_]
+  (properties [_]
     {:representations [{:media-type "text/plain"}]})
-  (resource-properties [_ ctx]
+  (properties [_ ctx]
     {:version @v})
   Get
   (GET [_ ctx] "foo")

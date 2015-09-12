@@ -24,7 +24,7 @@
                (s/=> {s/Keyword s/Any} s/Any))
      *template]
   p/ResourceProperties
-  (resource-properties
+  (properties
    [_]
    (let [resource (loader/find-file template-name)]
      {:allowed-methods #{:get}
@@ -46,16 +46,16 @@
       ::create-time (.getMillis (now))
       ::resource resource
       ::file (as-file resource)}))
-  (resource-properties
+  (properties
    [_ ctx]
    ;; TODO: What about a delay?
    (when-not (fn? model)
-     {:last-modified (max (-> ctx :resource-properties ::file .lastModified)
-                          (-> ctx :resource-properties ::create-time))}))
+     {:last-modified (max (-> ctx :properties ::file .lastModified)
+                          (-> ctx :properties ::create-time))}))
 
   m/Get
   (GET [_ ctx]
-       (let [props (:resource-properties ctx)
+       (let [props (:properties ctx)
              template @*template]
          (when (or (nil? template)
                    (when-let [f (::file props)]

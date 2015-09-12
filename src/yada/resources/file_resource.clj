@@ -23,14 +23,14 @@
 
 (defrecord FileResource [f]
   p/ResourceProperties
-  (resource-properties [_]
+  (properties [_]
     {:allowed-methods #{:get :put :delete}
      ;; TODO: It may be desirable to 'coerce' files according to client
      ;; needs. For example, a README.md can be provided as text/html and
      ;; converted by the server.
      :representations [{:media-type (or (ext-mime-type (.getName f)) "application/octet-stream")}]})
 
-  (resource-properties [_ ctx]
+  (properties [_ ctx]
     {:exists? (.exists f)
      :last-modified (Date. (.lastModified f))
      })
@@ -109,7 +109,7 @@
                       (.setTimeZone (TimeZone/getTimeZone "UTC")))
                     (java.util.Date. (.lastModified child)))]])]]]]))))
 
-(defn dir-resource-properties [dir index-files]
+(defn dir-properties [dir index-files]
 
   ;; Look for a possible index file, (. dir list)
 
@@ -129,11 +129,11 @@
     [dir :- File
      index-files :- (s/maybe [java.util.regex.Pattern])]
   p/ResourceProperties
-  (resource-properties [_]
+  (properties [_]
     {:allowed-methods #{:get}
      :collection? true})
 
-  (resource-properties [_ ctx]
+  (properties [_ ctx]
     (if-let [path-info (-> ctx :request :path-info)]
       (let [f (io/file dir path-info)]
         (cond
@@ -145,7 +145,7 @@
            ::file f}
 
           (.isDirectory f)
-          (dir-resource-properties f index-files)
+          (dir-properties f index-files)
 
           :otherwise
           {:exists? false}))
@@ -154,12 +154,12 @@
 
   Get
   (GET [this ctx]
-    (let [f (get-in ctx [:resource-properties ::file])]
+    (let [f (get-in ctx [:properties ::file])]
       (cond
         (.isFile f) f
         (.isDirectory f)
         (dir-index f
-                   (get-in ctx [:resource-properties ::indices])
+                   (get-in ctx [:properties ::indices])
                    (-> ctx :response :representation :media-type))))))
 
 (defn new-directory-resource [dir opts]

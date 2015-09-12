@@ -31,8 +31,8 @@
    )
   (:import (java.util Date)))
 
-(defn make-context [resource-properties]
-  {:resource-properties resource-properties
+(defn make-context [properties]
+  {:properties properties
    :response (->Response)
    })
 
@@ -104,11 +104,11 @@
       (methods/request (:method-instance ctx) ctx))
     ctx))
 
-(defn get-resource-properties
+(defn get-properties
   [ctx]
   (let [resource (:resource ctx)]
     (d/chain
-     (resource/resource-properties-on-request resource ctx)
+     (resource/properties-on-request resource ctx)
      (fn [props]
        ;; Canonicalize possible representations if they are reasserted.
        (cond-> props
@@ -128,7 +128,7 @@
          (-> ctx
              (assoc-in [:representations] (or (:representations props)
                                               (-> ctx :handler :representations)))
-             (update-in [:resource-properties] merge props)))))))
+             (update-in [:properties] merge props)))))))
 
 (defn method-allowed?
   "Is method allowed on this resource?"
@@ -245,7 +245,7 @@
   (d/chain
    (or
     (-> ctx :options :last-modified)
-    (-> ctx :resource-properties :last-modified))
+    (-> ctx :properties :last-modified))
 
    (fn [last-modified]
      (if-let [last-modified (round-seconds-up last-modified)]
@@ -291,8 +291,8 @@
       ;; representation of the resource
 
       ;; Create a map of representation -> etag
-      (-> ctx :resource-properties :version)
-      (let [version (-> ctx :resource-properties :version)
+      (-> ctx :properties :version)
+      (let [version (-> ctx :properties :version)
             etags (into {}
                         (for [rep (:representations ctx)]
                           [rep (p/to-etag version rep)]))]
@@ -329,8 +329,8 @@
         ;; if-match, but it is unlikely that we have if-match and
         ;; if-none-match in the same request, so a performance
         ;; optimization is unwarranted.
-        (-> ctx :resource-properties :version)
-      (let [version (-> ctx :resource-properties :version)
+        (-> ctx :properties :version)
+      (let [version (-> ctx :properties :version)
             etags (into {}
                         (for [rep (:representations ctx)]
                           [rep (p/to-etag version rep)]))]
@@ -349,8 +349,8 @@
   [ctx]
   (methods/request (:method-instance ctx) ctx))
 
-(defn get-new-resource-properties
-  "If the method is unsafe, call resource-properties again. This will
+(defn get-new-properties
+  "If the method is unsafe, call properties again. This will
   pick up any changes that are used in subsequent interceptors, such as
   the new version of the resource."
   [ctx]
@@ -358,7 +358,7 @@
     (if (not (methods/safe? (:method-instance ctx)))
       (d/chain
        (try
-         (resource/resource-properties-on-request resource ctx)
+         (resource/properties-on-request resource ctx)
          (catch AbstractMethodError e {}))
        (fn [props]
          (if (schema.utils/error? props)
@@ -366,7 +366,7 @@
             (ex-info "Internal Server Error"
                      {:status 500
                       ::http-response true}))
-           (assoc ctx :new-resource-properties props))))
+           (assoc ctx :new-properties props))))
       ctx)))
 
 ;; Compute ETag, if not already done so
@@ -389,8 +389,8 @@
   [ctx]
   ;; only if resource supports etags
   (if-let [version (or
-                    (-> ctx :new-resource-properties :version)
-                    (-> ctx :resource-properties :version))]
+                    (-> ctx :new-properties :version)
+                    (-> ctx :properties :version))]
     (let [etag (p/to-etag version (get-in ctx [:response :representation]))]
       (assoc-in ctx [:response :etag] etag))
     ctx))
@@ -495,7 +495,7 @@
         error-handler (or (:error-handler options)
                           default-error-handler)
         ctx (merge
-             (make-context (:resource-properties handler))
+             (make-context (:properties handler))
              {:id id
               :method method
               :method-instance (get (:known-methods handler) method)
@@ -566,7 +566,7 @@
   (invoke [this req]
     (handle-request this req))
   p/ResourceProperties
-  (resource-properties
+  (properties
     [this]
     {:allowed-methods #{:get}
      :representations [{:media-type #{"text/html"
@@ -575,7 +575,7 @@
                                       "application/edn;pretty=true"
                                       "application/json;pretty=true"}}]})
 
-  (resource-properties
+  (properties
     [_ ctx]
     {}
     )
@@ -595,7 +595,7 @@
    uri-too-long?
    TRACE
 
-   get-resource-properties
+   get-properties
 
    method-allowed?
    malformed?
@@ -616,7 +616,7 @@
    if-none-match
 
    invoke-method
-   get-new-resource-properties
+   get-new-properties
    compute-etag
    access-control-headers
    create-response
@@ -634,29 +634,29 @@
                     (p/as-resource resource)
                     resource)
 
-         resource-properties (when (satisfies? p/ResourceProperties resource)
-                               (resource/resource-properties resource))
+         properties (when (satisfies? p/ResourceProperties resource)
+                               (resource/properties resource))
 
          ;; This handler services a collection of resources
          collection? (or (:collection? options)
-                         (:collection? resource-properties))
+                         (:collection? properties))
 
          known-methods (methods/known-methods)
 
          allowed-methods (or
                           ;; TODO: Test for this
                           (when-let [methods (or (:all-allowed-methods options)
-                                                 (:all-allowed-methods resource-properties))]
+                                                 (:all-allowed-methods properties))]
                             (set methods))
                           (conj
                            (set
                             (or (:allowed-methods options)
-                                (:allowed-methods resource-properties)
+                                (:allowed-methods properties)
                                 (methods/infer-methods resource)))
                            :head :options))
 
          parameters (or (:parameters options)
-                        (:parameters resource-properties))
+                        (:parameters properties))
 
          representations (rep/representation-seq
                           (rep/coerce-representations
@@ -665,7 +665,7 @@
                             (when-let [rep (:representation options)] [rep])
                             (let [m (select-keys options [:media-type :charset :encoding :language])]
                               (when (not-empty m) [m]))
-                            (:representations resource-properties)
+                            (:representations properties)
                             ;; Default
                             [{}])))
 
@@ -686,7 +686,7 @@
         :parameters parameters
         :representations representations
         :resource resource
-        :resource-properties resource-properties
+        :properties properties
 
         :collection? collection?
 

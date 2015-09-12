@@ -3,4 +3,4 @@
 (ns yada.context)
 
 (defn exists? [ctx]
-  (-> ctx :resource-properties :exists?))
+  (-> ctx :properties :exists?))
