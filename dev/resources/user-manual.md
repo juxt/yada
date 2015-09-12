@@ -988,24 +988,24 @@ can be extended with these protocols to adapt them to use with yada.
 ### yada.protocols.ResourceCoercion
 
 Deprecated - any _define-time_ logic should be removed to the
-single-arity form of `resource-properties` (see below).
+single-arity form of `properties` (see below).
 
-### yada.protocols.ResourceProperties
+### yada.protocols.Properties
 
-Defines a `resource-properties` function of 2 arites.
+Defines a `properties` function of 2 arites.
 
 ```clojure
-(resource-properties [resource])
-(resource-properties [resource ctx])
+(properties [resource])
+(properties [resource ctx])
 ```
 
 The first form takes only the resource itself as an argument and is
 called only once by the yada function when it is building the resource
 data.
 
-The second form is called on every request. It takes a second argument, the request context, which contains the Ring request, and resource data, including the properties returned by the single arity call to `resource-properties`.
+The second form is called on every request. It takes a second argument, the request context, which contains the Ring request, and resource data, including the properties returned by the single arity call to `properties`.
 
-A resource should return a map from these `resource-properties`
+A resource should return a map from these `properties`
 functions, containing the entries described later. Other entries can be
 returned, as long as the keys are namespaced keywords (non-namespaced
 keywords in this case are reserved by yada).
@@ -1034,11 +1034,11 @@ removes a lot of the formatting responsibility from the resources, and
 this facility can be extended via this protocol for new message body
 types.
 
-## Resource properties
+## Properties
 
-By satisfying the `ResourceProperties` protocol, each resource can
+By satisfying the `Properties` protocol, each resource can
 provide data back to yada in the form of a map from
-`resource-properties`. Here is a list of entries the returned map may
+`properties`. Here is a list of entries the returned map may
 contain.
 
 ### :allowed-methods
@@ -1120,7 +1120,7 @@ The resource options, as given to yada's `resource` function (or it's `yada` ali
 The resource parameters, as provided by, in order of precedence :-
 
 * the `:parameters` option
-* the `:parameters` entry of the result of the call to the resource's `resource-properties` function.
+* the `:parameters` entry of the result of the call to the resource's `properties` function.
 
 ### :representations
 
@@ -1129,7 +1129,7 @@ The resource representations, as provided by, in order of precedence :-
 * the `:representations` option
 * the `:representation` option
 * the `:media-type`, `:charset`, `:encoding` and `:language` option
-* the `:representations` entry of the result of the call to the resource's `resource-properties` function.
+* the `:representations` entry of the result of the call to the resource's `properties` function.
 
 ### :resource
 

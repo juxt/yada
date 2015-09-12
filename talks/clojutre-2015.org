@@ -436,7 +436,7 @@ There are lots of features in yada, and I've still got a long list of things sti
 
 * Parameter coercions
 #+BEGIN_SRC clojure
-  (resource-properties [_]
+  (properties [_]
    {:parameters
     {:get {:path {"dept" String}
            :query {"order" #{:asc :desc}}}
@@ -468,7 +468,7 @@ yada has a comprehensive content negotiation facility built-in, which allows a w
 #+REVEAL: split
 
 #+BEGIN_SRC clojure
-  (resource-properties
+  (properties
    [_]
    {:representations
     [{:media-type #{"text/html" "text/plain"}
@@ -488,7 +488,7 @@ For example, it might be that you can serve English and Finnish text in UTF-8 bu
 #+REVEAL: split
 
 #+BEGIN_SRC clojure
-  (resource-properties
+  (properties
    [_]
    {:representations
     [{:media-type #{"application/json"
@@ -606,8 +606,8 @@ Here's the code for the bidi tree node. When matching a URI, it checks to see if
   (require '[ring.swagger.swagger2 :as rs])
 
   (defrecord SwaggerSpec [spec created-at]
-    p/ResourceProperties
-    (resource-properties [_]
+    p/Properties
+    (properties [_]
       {:representations
        [{:media-type #{"application/json"
                        "application/json;pretty=true"}
@@ -615,22 +615,22 @@ Here's the code for the bidi tree node. When matching a URI, it checks to see if
 
        ::swagger-json (rs/swagger-json spec)})
 
-    (resource-properties [_ ctx]
+    (properties [_ ctx]
       {:last-modified created-at :version spec})
     Get
-    (GET [_ ctx] (-> ctx :resource-properties ::swagger-json)))
+    (GET [_ ctx] (-> ctx :properties ::swagger-json)))
 #+END_SRC
 
 #+BEGIN_NOTES
 Finally, we mentioned the Swagger spec was wrapped as a yada resource. Here's the code.
 
-Notice how the resource makes some claims via the =resource-properties= function. It says that it renders JSON, preferrably in UTF-8 but will provide UTF-16 or UTF-32 if necessary.
+Notice how the resource makes some claims via the =properties= function. It says that it renders JSON, preferrably in UTF-8 but will provide UTF-16 or UTF-32 if necessary.
 
 We also generate the swagger JSON at this point, which is one line of code thanks to the ring-swagger library.
 
 Notice how we're returning data again, which is fed into the model.
 
-There's a second form of this resource-properties function that is called on every request. These help yada implement conditional requests. The ETag is derived from the hash of the Swagger spec. If the spec changes, so will the ETag.
+There's a second form of this properties function that is called on every request. These help yada implement conditional requests. The ETag is derived from the hash of the Swagger spec. If the spec changes, so will the ETag.
 
 For the actual GET method we pull out the swagger spec, it's still a Clojure map at this point, and return it. Yada's body coercion mechanics handles the conversion to json. I've stripped down the code for the slides, but the real code does HTML and EDN too.
 #+END_NOTES
@@ -726,8 +726,8 @@ Here's a full search engine implementation!
 
 #+BEGIN_SRC clojure
   (defrecord ClojureSearchEngine []
-    ResourceProperties
-    (resource-properties [_]
+    Properties
+    (properties [_]
       {:parameters {:get {:query {"q" String}}}})
     Get
     (GET [_ ctx]
