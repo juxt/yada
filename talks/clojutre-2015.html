@@ -39,8 +39,17 @@ Don't forget to add
 </aside>
 
 <section>
-<section id="slide-orgheadline1" data-background="./static/assets/words.svg" class="juxt_hide-heading">
-<h2 id="orgheadline1">Opening</h2>
+<section id="slide-orgheadline1">
+<h2 id="orgheadline1">Slides</h2>
+<p>
+<a href="https://juxt.pro/yada.pdf">https://juxt.pro/yada.pdf</a>
+</p>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline2" data-background="./static/assets/words.svg" class="juxt_hide-heading">
+<h2 id="orgheadline2">Opening</h2>
 <aside class="notes">
 <p>
 Hi! I'm Malcolm Sparks and I'm going to start by talking about HTTP.
@@ -64,13 +73,11 @@ But why is it so big and so complex?
 </section>
 </section>
 <section>
-<section id="slide-orgheadline2">
-<h2 id="orgheadline2">HTTP</h2>
+<section id="slide-orgheadline3">
+<h2 id="orgheadline3">HTTP</h2>
 <ul>
-<li>scaleability</li>
-<li>flexability</li>
+<li>scale</li>
 <li>longevity</li>
-<li>stability</li>
 
 </ul>
 
@@ -88,8 +95,8 @@ HTTP 1.1 has been stable for well over a decade, over that time we've seen it be
 </section>
 </section>
 <section>
-<section id="slide-orgheadline3">
-<h2 id="orgheadline3">HTTP services in Clojure: Ring</h2>
+<section id="slide-orgheadline4">
+<h2 id="orgheadline4">HTTP services in Clojure: Ring</h2>
 <aside class="notes">
 <p>
 To build HTTP services in Clojure, we use Ring.
@@ -100,8 +107,8 @@ To build HTTP services in Clojure, we use Ring.
 </section>
 </section>
 <section>
-<section id="slide-orgheadline4">
-<h2 id="orgheadline4">Ring loves Data!</h2>
+<section id="slide-orgheadline5">
+<h2 id="orgheadline5">Ring loves Data!</h2>
 <div class="org-src-container">
 
 <pre><code class="clojure">(def request
@@ -136,8 +143,8 @@ Compared to the old object-oriented interfaces of Java servlets and co., this is
 </section>
 </section>
 <section>
-<section id="slide-orgheadline5">
-<h2 id="orgheadline5">But&#x2026; Ring middleware?</h2>
+<section id="slide-orgheadline6">
+<h2 id="orgheadline6">But&#x2026; Ring middleware?</h2>
 <div class="org-src-container">
 
 <pre><code class="clojure">(def api
@@ -168,8 +175,8 @@ It's highly modular, because Ring wrappers are decoupled from each other. From t
 </section>
 </section>
 <section>
-<section id="slide-orgheadline6">
-<h2 id="orgheadline6">Is Ring middleware suitable for building HTTP services?</h2>
+<section id="slide-orgheadline7">
+<h2 id="orgheadline7">Is Ring middleware suitable for building HTTP services?</h2>
 <aside class="notes">
 <p>
 But the question I want to pose is this: Is Ring middleware the right tool for building HTTP services?
@@ -192,14 +199,14 @@ Here are some examples.
 </section>
 </section>
 <section>
-<section id="slide-orgheadline7">
-<h2 id="orgheadline7">You're all doing it wrong</h2>
+<section id="slide-orgheadline8" data-background="#c82828" class="juxt_dark-bg juxt_jumbo">
+<h2 id="orgheadline8">You're doing it wrong</h2>
 
 </section>
 </section>
 <section>
-<section id="slide-orgheadline8" class="juxt_spec">
-<h2 id="orgheadline8">Example A: wrap-head</h2>
+<section id="slide-orgheadline9" class="juxt_spec">
+<h2 id="orgheadline9">Example A: wrap-head</h2>
 <blockquote nil>
 <p>
 <b>4.3.2.  HEAD</b>
@@ -232,8 +239,8 @@ HEAD allows clients to see the headers they would get from a GET request without
 </section>
 </section>
 <section>
-<section id="slide-orgheadline9">
-<h2 id="orgheadline9">Example A: wrap-head</h2>
+<section id="slide-orgheadline10">
+<h2 id="orgheadline10">Example A: wrap-head</h2>
 <div class="org-src-container">
 
 <pre><code class="clojure">(defn head-request
@@ -280,8 +287,8 @@ Yes, it's compliant. But it's also inefficient and a waste of resources that cou
 </section>
 </section>
 <section>
-<section id="slide-orgheadline10">
-<h2 id="orgheadline10">Example B: Compojure routing</h2>
+<section id="slide-orgheadline11">
+<h2 id="orgheadline11">Example B: Compojure routing</h2>
 <div class="org-src-container">
 
 <pre><code class="clojure">(routes
@@ -314,8 +321,8 @@ In fact, the modularity of this design, causes us a problem. The fact that the G
 </section>
 </section>
 <section>
-<section id="slide-orgheadline11" class="juxt_spec">
-<h2 id="orgheadline11">Example C: wrap-modified</h2>
+<section id="slide-orgheadline12" class="juxt_spec">
+<h2 id="orgheadline12">Example C: wrap-modified</h2>
 <blockquote nil>
 <p>
 <b>5.2.  Conditionals</b>
@@ -347,8 +354,8 @@ But let's look at Ring's implementation:
 </section>
 </section>
 <section>
-<section id="slide-orgheadline12">
-<h2 id="orgheadline12">Example C: wrap-modified</h2>
+<section id="slide-orgheadline13">
+<h2 id="orgheadline13">Example C: wrap-modified</h2>
 <div class="org-src-container">
 
 <pre><code class="clojure">(defn wrap-not-modified
@@ -378,8 +385,8 @@ But is it a question of improving Ring middleware functions. I don't think so. B
 </section>
 </section>
 <section>
-<section id="slide-orgheadline13" data-background="./static/assets/hhg.png" class="juxt_quote juxt_dark-bg">
-<h2 id="orgheadline13">Functions vs. Data…</h2>
+<section id="slide-orgheadline14" data-background="./static/assets/hhg.png" class="juxt_quote juxt_dark-bg">
+<h2 id="orgheadline14">Functions vs. Data…</h2>
 <p>
 Arthur Dent: What happens if I press this button?
 </p>
@@ -430,8 +437,8 @@ This isn't a great way of building information systems.
 </section>
 </section>
 <section>
-<section id="slide-orgheadline14" data-background="./static/assets/pickmix.jpg" class="juxt_dark-bg juxt_quote-bg">
-<h2 id="orgheadline14">Pick &amp; Mix</h2>
+<section id="slide-orgheadline15" data-background="./static/assets/pickmix.jpg" class="juxt_dark-bg juxt_quote-bg">
+<h2 id="orgheadline15">Pick &amp; Mix</h2>
 <blockquote nil>
 <p>
 Knowing what middleware to add to a Ring application, and in what order, can be difficult and prone to error.
@@ -452,8 +459,8 @@ It's a 'pick-and-mix' approach- we pick the bits of HTTP we want to implement (o
 </section>
 </section>
 <section>
-<section id="slide-orgheadline15">
-<h2 id="orgheadline15">So is there an alternative?</h2>
+<section id="slide-orgheadline16">
+<h2 id="orgheadline16">So is there an alternative?</h2>
 <p class="fragment (appear)">
 (Hint: follow the data)
 </p>
@@ -472,8 +479,8 @@ So is there an alternative? I believe that to find the answer we have to go back
 </section>
 </section>
 <section>
-<section id="slide-orgheadline16" data-background="#f8f8f8" class="juxt_hide-heading">
-<h2 id="orgheadline16">yada</h2>
+<section id="slide-orgheadline17" data-background="#f8f8f8" class="juxt_hide-heading">
+<h2 id="orgheadline17">yada</h2>
 <span style="font-family: yada; font-size: 4em">yada</span>
 
 <aside class="notes">
@@ -490,8 +497,8 @@ It was also influenced by my experiences of building web services, often with Li
 </section>
 </section>
 <section>
-<section id="slide-orgheadline17">
-<h2 id="orgheadline17">All of HTTP (mostly)</h2>
+<section id="slide-orgheadline18">
+<h2 id="orgheadline18">All of HTTP (mostly)</h2>
 <ol>
 <li>correctness</li>
 <li>completeness</li>
@@ -509,8 +516,8 @@ yada is my ambitious attempt to implement all of HTTP in Clojure, well, at least
 </section>
 </section>
 <section>
-<section id="slide-orgheadline18" data-background="#c82828" class="juxt_dark-bg juxt_jumbo">
-<h2 id="orgheadline18">DON'T PANIC!</h2>
+<section id="slide-orgheadline19" data-background="#c82828" class="juxt_dark-bg juxt_jumbo">
+<h2 id="orgheadline19">DON'T PANIC!</h2>
 <aside class="notes">
 <p>
 This might sound a bit crazy, and I think it may have been, but anyway, it's too late: I've gone too far to turn back now. But don't panic, actually &#x2026;
@@ -521,8 +528,8 @@ This might sound a bit crazy, and I think it may have been, but anyway, it's too
 </section>
 </section>
 <section>
-<section id="slide-orgheadline19" data-background="#48e848" class="juxt_hide-heading">
-<h2 id="orgheadline19">yada is easy</h2>
+<section id="slide-orgheadline20" data-background="#48e848" class="juxt_hide-heading">
+<h2 id="orgheadline20">yada is easy</h2>
 <span style="font-size: 150%"><span style="font-family: yada; font-size: 1.5em">yada</span> is easy</span>
 
 <p class="fragment (appear)">
@@ -563,8 +570,8 @@ Let me explain with some examples.
 </section>
 </section>
 <section>
-<section id="slide-orgheadline20">
-<h2 id="orgheadline20"><code>(yada "Hello World!")</code></h2>
+<section id="slide-orgheadline21">
+<h2 id="orgheadline21"><code>(yada "Hello World!")</code></h2>
 <p>
 =&gt; <a href="http://localhost:8093/hello-meta">result</a>
 </p>
@@ -599,8 +606,8 @@ Look at these methods at the top. Because the string is immutable, we can rule o
 </section>
 </section>
 <section>
-<section id="slide-orgheadline21">
-<h2 id="orgheadline21"><code>(yada (atom "Hello World!"))</code></h2>
+<section id="slide-orgheadline22">
+<h2 id="orgheadline22"><code>(yada (atom "Hello World!"))</code></h2>
 <aside class="notes">
 <p>
 Unless of course the string <i>is</i> mutable, and then we can add in those other methods too. In this case we can add a watcher to the atom to know when updates are made, which will help us provide HTTP response headers to support conditional requests.
@@ -615,8 +622,8 @@ Unless of course the string <i>is</i> mutable, and then we can add in those othe
 </section>
 </section>
 <section>
-<section id="slide-orgheadline22">
-<h2 id="orgheadline22"><code>(yada (fn [ctx] "Hello World!") {:allowed-methods #{:get}})</code></h2>
+<section id="slide-orgheadline23">
+<h2 id="orgheadline23"><code>(yada (fn [ctx] "Hello World!") {:allowed-methods #{:get}})</code></h2>
 <aside class="notes">
 <p>
 We can even use functions too. But now, since the yada function can take an option map, we can now annotate them with data.
@@ -627,8 +634,8 @@ We can even use functions too. But now, since the yada function can take an opti
 </section>
 </section>
 <section>
-<section id="slide-orgheadline23" class="juxt_hide-heading">
-<h2 id="orgheadline23">and so on…</h2>
+<section id="slide-orgheadline24" class="juxt_hide-heading">
+<h2 id="orgheadline24">and so on…</h2>
 <div class="org-src-container">
 
 <pre><code class="clojure">["/talks/" (yada (clojure.java.io/file "talks"))]
@@ -668,8 +675,8 @@ And yada can make handlers out of almost anything, certainly things like Clojure
 </section>
 </section>
 <section>
-<section id="slide-orgheadline24">
-<h2 id="orgheadline24">Features</h2>
+<section id="slide-orgheadline25">
+<h2 id="orgheadline25">Features</h2>
 <aside class="notes">
 <p>
 There are lots of features in yada, and I've still got a long list of things still to implement. But here's what's working today.
@@ -681,8 +688,8 @@ There are lots of features in yada, and I've still got a long list of things sti
 </section>
 </section>
 <section>
-<section id="slide-orgheadline25">
-<h2 id="orgheadline25">Parameter coercions</h2>
+<section id="slide-orgheadline26">
+<h2 id="orgheadline26">Parameter coercions</h2>
 <div class="org-src-container">
 
 <pre><code class="clojure">(resource-properties [_]
@@ -711,8 +718,8 @@ The parameter declarations are just Prismatic Schema. Any invalid parameters cau
 </section>
 </section>
 <section>
-<section id="slide-orgheadline26">
-<h2 id="orgheadline26">Content Negotiation</h2>
+<section id="slide-orgheadline27">
+<h2 id="orgheadline27">Content Negotiation</h2>
 <ul>
 <li>media types</li>
 <li>charsets</li>
@@ -785,8 +792,8 @@ But what if you could just add one line to your service?  Then you can set the A
 </section>
 </section>
 <section>
-<section id="slide-orgheadline27">
-<h2 id="orgheadline27">Conditional Requests</h2>
+<section id="slide-orgheadline28">
+<h2 id="orgheadline28">Conditional Requests</h2>
 <ul>
 <li>If-Match</li>
 <li>If-None-Match</li>
@@ -805,8 +812,8 @@ yada fully supports conditional requests, with date checks and entity tags.
 </section>
 </section>
 <section>
-<section id="slide-orgheadline28">
-<h2 id="orgheadline28">Routing</h2>
+<section id="slide-orgheadline29">
+<h2 id="orgheadline29">Routing</h2>
 <p>
 Describe your whole API in data
 </p>
@@ -833,8 +840,8 @@ Last year, when I saw Tommi's talk in Poland about Swagger, he mentioned that yo
 </section>
 </section>
 <section>
-<section id="slide-orgheadline29">
-<h2 id="orgheadline29">Built-in Swagger!</h2>
+<section id="slide-orgheadline30">
+<h2 id="orgheadline30">Built-in Swagger!</h2>
 <div class="org-src-container">
 
 <pre><code class="clojure">(def api
@@ -863,8 +870,8 @@ So I wanted to ensure Swagger was built-in early on.
 </section>
 </section>
 <section>
-<section id="slide-orgheadline30">
-<h2 id="orgheadline30"><code>(yada (atom "Hello World!"))</code></h2>
+<section id="slide-orgheadline31">
+<h2 id="orgheadline31"><code>(yada (atom "Hello World!"))</code></h2>
 
 <div class="figure">
 <p><img src="http://localhost:8090/static/img/mutable-hello-swagger.png" alt="mutable-hello-swagger.png" />
@@ -881,8 +888,8 @@ Because everything we need is now in a data model, we can easily transform it to
 </section>
 </section>
 <section>
-<section id="slide-orgheadline31">
-<h2 id="orgheadline31">Swagger (behind the curtain)</h2>
+<section id="slide-orgheadline32">
+<h2 id="orgheadline32">Swagger (behind the curtain)</h2>
 <div class="org-src-container">
 
 <pre><code class="clojure">(defn swaggered [info route]
@@ -906,8 +913,8 @@ Then it builds a bidi tree node, giving it the Swagger specification wrapped as 
 </section>
 </section>
 <section>
-<section id="slide-orgheadline32">
-<h2 id="orgheadline32">Swaggered record</h2>
+<section id="slide-orgheadline33">
+<h2 id="orgheadline33">Swaggered record</h2>
 <div class="org-src-container">
 
 <pre><code class="clojure">(defrecord Swaggered [spec route]
@@ -933,8 +940,8 @@ Here's the code for the bidi tree node. When matching a URI, it checks to see if
 </section>
 </section>
 <section>
-<section id="slide-orgheadline33" class="juxt_hide-heading">
-<h2 id="orgheadline33">SwaggerSpec record</h2>
+<section id="slide-orgheadline34" class="juxt_hide-heading">
+<h2 id="orgheadline34">SwaggerSpec record</h2>
 <div class="org-src-container">
 
 <pre><code class="clojure">(require '[ring.swagger.swagger2 :as rs])
@@ -986,8 +993,8 @@ For the actual GET method we pull out the swagger spec, it's still a Clojure map
 </section>
 </section>
 <section>
-<section id="slide-orgheadline34">
-<h2 id="orgheadline34">Data transformation</h2>
+<section id="slide-orgheadline35">
+<h2 id="orgheadline35">Data transformation</h2>
 <div class="org-src-container">
 
 <pre><code class="clojure">(def api
@@ -1023,8 +1030,8 @@ Add yada resources can be given identifiers too. See I've given the first "Hello
 </section>
 </section>
 <section>
-<section id="slide-orgheadline35">
-<h2 id="orgheadline35">And much more…</h2>
+<section id="slide-orgheadline36">
+<h2 id="orgheadline36">And much more…</h2>
 <ul>
 <li>Basic/custom authentication</li>
 <li>OPTIONS, HEAD, TRACE</li>
@@ -1049,8 +1056,8 @@ And there's much more that I don't have time to cover. But I do want to mention 
 </section>
 </section>
 <section>
-<section id="slide-orgheadline36">
-<h2 id="orgheadline36">Async</h2>
+<section id="slide-orgheadline37">
+<h2 id="orgheadline37">Async</h2>
 <ul>
 <li>Built on <a href="https://github.com/ztellman/manifold">https://github.com/ztellman/manifold</a></li>
 
@@ -1070,8 +1077,8 @@ And so yada completely supports async, it's built on Zach Tellman's manifold, wh
 </section>
 </section>
 <section>
-<section id="slide-orgheadline37">
-<h2 id="orgheadline37">Return a future</h2>
+<section id="slide-orgheadline38">
+<h2 id="orgheadline38">Return a future</h2>
 <div class="org-src-container">
 
 <pre><code class="clojure">;; 'Hello World!' is now stored in a file
@@ -1096,8 +1103,8 @@ It's hard to express how awesome manifold is. Whenever you need to do some I/O i
 </section>
 </section>
 <section>
-<section id="slide-orgheadline38">
-<h2 id="orgheadline38">Or a promise</h2>
+<section id="slide-orgheadline39">
+<h2 id="orgheadline39">Or a promise</h2>
 <div class="org-src-container">
 
 <pre><code class="clojure">;; Asynchronous GET request with callback
@@ -1120,8 +1127,8 @@ Or maybe you're calling an API which has an async callback function, like http-k
 </section>
 </section>
 <section>
-<section id="slide-orgheadline39">
-<h2 id="orgheadline39">Or any other deferred value</h2>
+<section id="slide-orgheadline40">
+<h2 id="orgheadline40">Or any other deferred value</h2>
 <p>
 Here's a full search engine implementation!
 </p>
@@ -1169,8 +1176,8 @@ This is all done without core.async channels, go blocks or callbacks.
 </section>
 </section>
 <section>
-<section id="slide-orgheadline40">
-<h2 id="orgheadline40">Async everywhere!</h2>
+<section id="slide-orgheadline41">
+<h2 id="orgheadline41">Async everywhere!</h2>
 <aside class="notes">
 <p>
 yada allows you to return deferred values anytime it makes sense to do so, and even in some places where it doesn't. For the vast majority of options, properties and methods, you can choose to return deferred values like futures, promises, core.async channels and more. yada, or rather manifold, takes care of everything.
@@ -1181,8 +1188,8 @@ yada allows you to return deferred values anytime it makes sense to do so, and e
 </section>
 </section>
 <section>
-<section id="slide-orgheadline41">
-<h2 id="orgheadline41">Server Sent Events</h2>
+<section id="slide-orgheadline42">
+<h2 id="orgheadline42">Server Sent Events</h2>
 <div class="org-src-container">
 
 <pre><code class="clojure">(defn hello-sse [ch]
@@ -1214,8 +1221,8 @@ Well I really must be out of time now, so let's wrap up.
 </section>
 </section>
 <section>
-<section id="slide-orgheadline42">
-<h2 id="orgheadline42">Full documentation</h2>
+<section id="slide-orgheadline43">
+<h2 id="orgheadline43">Full documentation</h2>
 <p>
 yada.juxt.pro
 </p>
@@ -1233,8 +1240,8 @@ nil
 </section>
 </section>
 <section>
-<section id="slide-orgheadline43">
-<h2 id="orgheadline43">History &amp; Roadmap</h2>
+<section id="slide-orgheadline44">
+<h2 id="orgheadline44">History &amp; Roadmap</h2>
 <ul>
 <li>Started 2014-12-22</li>
 <li>0.1.0 Release 2015-03-01</li>
@@ -1256,8 +1263,8 @@ As you can see, yada's taking me a long time to develop and 1.0 won't be the end
 </section>
 </section>
 <section>
-<section id="slide-orgheadline44" data-background="#f8f8f8" class="juxt_hide-heading">
-<h2 id="orgheadline44">yada</h2>
+<section id="slide-orgheadline45" data-background="#f8f8f8" class="juxt_hide-heading">
+<h2 id="orgheadline45">yada</h2>
 <span style="font-family: yada; font-size: 4em">yada</span>
 
 <p>

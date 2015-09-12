@@ -24,6 +24,10 @@ Don't forget to add
 - Interceptor chain munging
 #+END_NOTES
 
+* Slides
+
+https://juxt.pro/yada.pdf
+
 * Opening
   :PROPERTIES:
   :reveal_extra_attr: class="juxt_hide-heading"
@@ -43,10 +47,8 @@ But why is it so big and so complex?
 
 * HTTP
 
-- scaleability
-- flexability
+- scale
 - longevity
-- stability
 
 #+BEGIN_NOTES
 It's because HTTP is for services that are designed not to break. It's for services that must adapt and survive, maybe for decades, in an environment that is constantly evolving, not just the application, but the world around it too.
@@ -118,7 +120,11 @@ Composing functions is cool. But we don't often hear the case against, so let me
 Here are some examples.
 #+END_NOTES
 
-* You're all doing it wrong
+* You're doing it wrong
+  :PROPERTIES:
+  :reveal_background: #c82828
+  :reveal_extra_attr: class="juxt_dark-bg juxt_jumbo"
+  :END:
 
 * Example A: wrap-head
   :PROPERTIES:
