@@ -1,0 +1,57 @@
+@import "../template/mixins";
+@import "../template/settings";
+
+@import url(https://fonts.googleapis.com/css?family=Abel);
+@import url(https://fonts.googleapis.com/css?family=Inconsolata);
+
+// Override theme settings (see ../template/settings.scss)
+$mainFont: 'Abel', sans-serif;
+$mainColor: #333;
+$headingFont: 'Abel', Impact, sans-serif;
+$headingColor: #000;
+$headingTextShadow: none;
+$headingTextTransform: uppercase;
+$backgroundColor: #fff;
+$linkColor: #00caff;
+$linkColorHover: lighten( $linkColor, 20% );
+$selectionBackgroundColor: rgba(0, 0, 0, 0.99);
+
+@import "../template/theme";
+
+.reveal {
+    section.quote {
+        color: #000;
+        h2 { color: #000; }
+    }
+
+    section.white-text {
+        color: #fff;
+        h2, h3 { color: #fff; }
+
+        a:link, a:visited { color: #fff !important; }
+    }
+
+    section img {
+        border: 0 !important;
+        box-shadow: none !important;
+        max-width: 33%;
+        max-height: 75%;
+    }
+
+    section.full-size img {
+        max-width: 100% !important;
+    }
+
+    section pre {
+        font-size: 50%;
+        font-family: "Inconsolata",monospace;
+        background: #fff;
+        box-shadow: none !important;
+        padding: 1em;
+        width: 75%;
+    }
+
+    ul {
+        list-style-type: none;
+    }
+}

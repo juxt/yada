@@ -7,6 +7,7 @@
    [clojure.java.io :as io]
    [com.stuartsierra.component :refer [using]]
    [hiccup.core :refer (html)]
+   [modular.bidi :refer [path-for]]
    [modular.component.co-dependency :refer (co-using)]
    [modular.component.co-dependency.schema :refer [co-dep]]
    [schema.core :as s]
@@ -19,8 +20,13 @@
                     config :- config/ConfigSchema]
   RouteProvider
   (routes [component]
-    ["/"
-     []]))
+          ["" [["/talks/" (yada (io/file "talks") {:id ::index})]
+               ["/hello" (-> "Hello World!" yada)]
+               ["/hello-meta" (-> "Hello World!" yada yada)]
+               ["/hello-atom-meta" (-> "Hello World!" atom yada yada)]
+               ;; just a joke...
+               ["/hello-meta-meta" (-> "Hello World!" yada yada yada)]
+               ]]))
 
 (defn new-talks [config]
   (-> (map->Talks {:config config})

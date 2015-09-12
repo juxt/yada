@@ -1,0 +1,18 @@
+title re-frame, derived data flowing
+
+participant Server as server
+participant Database as db
+participant Subscriber as sub
+participant Component as c
+participant Handler as h
+participant Router as r
+
+db->sub: reaction
+sub->c: r/atom
+c->h: re-frame/dispatch-sync
+h->db: assoc,dissoc
+
+c->r: re-frame/dispatch-sync
+r->h: re-frame/dispatch
+h->db: assoc,dissoc
+server->h: server-sent event

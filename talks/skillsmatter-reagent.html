@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Introduction to ClojureScript: Reagent and Re-frame</title>
+<meta name="author" content="(Malcolm Sparks)"/>
+<link rel="stylesheet" href="static/css/reveal.css"/>
+<link rel="stylesheet" href="static/css/theme/juxt.css" id="theme"/>
+<link rel="stylesheet" href="static/css/hljs/zenburn.css"/>
+<!-- If the query includes 'print-pdf', include the PDF print sheet -->
+<script>
+    if( window.location.search.match( /print-pdf/gi ) ) {
+        var link = document.createElement( 'link' );
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = 'static/css/print/pdf.css';
+        document.getElementsByTagName( 'head' )[0].appendChild( link );
+    }
+</script>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+<section id="sec-title-slide">
+<h1>Introduction to ClojureScript: Reagent and Re-frame</h1>
+<h2>Malcolm Sparks</h2>
+<h2><a href="mailto:@malcolmsparks">@malcolmsparks</a></h2>
+<h2></h2>
+</section>
+
+<section>
+<section id="slide-orgheadline1">
+<h2 id="orgheadline1">Reagent</h2>
+<ul>
+<li>Hiccup rendering by default</li>
+<li>Enhanced atom: 'r/atom'</li>
+<li>More 'kit-like' than Om</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline2">
+<h2 id="orgheadline2">Rendering with reagent</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure">(def click-count (r/atom 0))
+
+(defn state-ful-with-atom []
+  [:div {:on-click #(swap! click-count inc)}
+   "I have been clicked " @click-count " times."])
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline3">
+<h2 id="orgheadline3">re-frame</h2>
+<ul>
+<li>A set of idioms (pattern)</li>
+<li>Single app-state</li>
+<li>Registration of reactions on tree (and sub-tree) changes</li>
+<li>Event dispatch facility</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline4">
+<h2 id="orgheadline4">Modularity</h2>
+<ul>
+<li>Om: cursors</li>
+<li>Re-frame: code organisation
+<ul>
+<li>components don't know about db structure,</li>
+<li>but subscribers and handlers do</li>
+
+</ul></li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline5">
+<h2 id="orgheadline5">Component logic considered harmful</h2>
+<ul>
+<li>In re-frame components only
+<ul>
+<li>get state (deref atoms)</li>
+<li>render hiccup</li>
+<li>raise events</li>
+
+</ul></li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline6">
+<h2 id="orgheadline6">Re-frame</h2>
+
+<div class="figure">
+<p><img src="./static/assets/reframe.png" alt="reframe.png" />
+</p>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline19">
+<h2 id="orgheadline19">Let's hack!</h2>
+<div class="outline-text-2" id="text-orgheadline19">
+</div></section>
+<section id="slide-orgheadline7">
+<h3 id="orgheadline7">But what to hack on?</h3>
+
+</section>
+<section id="slide-orgheadline8" data-background="#f8f8f8" class="juxt_hide-heading">
+<h3 id="orgheadline8">yada</h3>
+<span style="font-family: yada; font-size: 4em">yada</span>
+
+</section>
+<section id="slide-orgheadline9">
+<h3 id="orgheadline9">API gateway</h3>
+
+<div class="figure">
+<p><img src="./static/assets/dash.png" alt="dash.png" />
+</p>
+</div>
+
+
+</section>
+<section id="slide-orgheadline10">
+<h3 id="orgheadline10">Start with an initial database</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">(def default-db
+  {:cards
+   {:resources
+    {:title "Resources"
+     :supporting-text "Resources that have been accessed,
+                showing recent requests, state changes."
+     :background :#455A64
+     :actions ["Show"]}
+
+   :active-card {:id nil}})
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline11">
+<h3 id="orgheadline11">Create subscriptions</h3>
+<p>
+(to respond to changes in the database)
+</p>
+
+<div class="org-src-container">
+
+<pre><code class="clojure">(re-frame/register-sub
+  :active-card
+  (fn [db _]
+    (reaction (:active-card @db))))
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline12">
+<h3 id="orgheadline12">Create routes</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">(ns yada.console.routes
+  (:require [bidi.bidi :as bidi]
+            [pushy.core :as pushy]
+            [re-frame.core :as re-frame]))
+
+(def routes
+  ["/console/" {"" :cards
+                ["card/" [keyword :card-id]] :card}])
+
+(defn- dispatch-route [match]
+  (case (:handler match)
+    :cards (re-frame/dispatch [:show-all-cards])
+    :card (re-frame/dispatch [:card-click (-&gt; match :route-params :card-id)])))
+
+(def history (pushy/pushy dispatch-route (partial bidi/match-route routes)))
+
+(defn init []
+  (pushy/start! history))
+
+(defn set-token! [token]
+  (pushy/set-token! history token))
+
+(defn path-for [tag &amp; args]
+  (apply bidi/path-for routes tag args))
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline13">
+<h3 id="orgheadline13">Re-frame</h3>
+
+<div class="figure">
+<p><img src="./static/assets/reframe.png" alt="reframe.png" />
+</p>
+</div>
+
+</section>
+<section id="slide-orgheadline14">
+<h3 id="orgheadline14">Create handlers</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">(re-frame/register-handler
+ :initialize-db
+ (fn  [_ _] db/default-db))
+
+(re-frame/register-handler
+ :card-click
+ (fn [db [_ card-id]]
+   (assoc db :active-card {:id card-id})))
+
+(re-frame/register-handler
+ :show-all-cards
+ (fn [db _]
+   (dissoc db :active-card)))
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline15">
+<h3 id="orgheadline15">Render the state</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">(require
+ '[juxt.mdl.layout :as lo])
+
+(defn cards [cards]
+  [grid
+   (for [card-id (keys cards)]
+     [cell 4 [card card-id]])])
+
+(defn main-panel []
+  (let [db (re-frame/subscribe [:db])]
+    (fn []
+      [lo/layout [header]
+       [lo/content
+        [:div.page-content
+         [cards (:cards @db)]]]])))
+
+(defn ^:export init []
+  (reagent/render [main-panel] (.getElementById js/document "app")))
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline16">
+<h3 id="orgheadline16">Render each card</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">(defn card [id]
+  (let [card (re-frame/subscribe [:cards id])
+        active-card (re-frame/subscribe [:active-card])]
+    (fn []
+      (let [active (= id (:id @active-card))]
+        [:div.demo-card-wide.mdl-card.mdl-shadow--2dp
+         (when active {:class "active-card"})
+         [:div.mdl-card__title
+          {:on-click (fn [ev] (set-token! (path-for :card :card-id id)))
+           :style
+           (let [background (:background @card)]
+             (if background
+               {:background (cond (string? background) (str "url('" background "') center / cover;")
+                                  (keyword? background) (-name background))}
+               {:background "#002"}))}
+
+          [:h2.mdl-card__title-text (:title @card)]]
+         [:div.mdl-card__supporting-text (:supporting-text @card)]
+
+         [:div.mdl-card__actions.mdl-card--border
+          (if (not active)
+            [:a.mdl-button.mdl-button--colored.mdl-js-button.mdl-js-ripple-effect
+             {:href (path-for :card :card-id id)}
+             "Show"])]
+
+         [:div.mdl-card__menu
+          (if active
+            [:button.mdl-button.mdl-button--icon.mdl-js-button.mdl-js-ripple-effect
+             {:on-click (fn [ev] (set-token! (path-for :cards)))}
+             [:i.material-icons "close"]])]]))))
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline17">
+<h3 id="orgheadline17">Serve it up with HTML</h3>
+<div class="org-src-container">
+
+<pre><code class="html">&lt;!doctype html&gt;
+&lt;html lang="en"&gt;
+  &lt;head&gt;
+    &lt;meta charset="utf-8"&gt;
+    &lt;meta http-equiv="X-UA-Compatible" content="IE=edge"&gt;
+    &lt;meta name="description" content="A console for visualising what happens when yada receives and processes HTTP requests."&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+    &lt;title&gt;yada console&lt;/title&gt;
+
+    &lt;link rel="stylesheet" href="/material.min.css"&gt;
+    &lt;script src="/mdl/material.min.js"&gt;&lt;/script&gt;
+    &lt;link rel="stylesheet" href="/fonts.css"&gt;
+    &lt;link rel="stylesheet" href="/console.css"&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;div id="app"/&gt;
+    &lt;script src="/react/react.min.js"&gt;&lt;/script&gt;
+    &lt;script src="/cljs/out/goog/base.js"&gt;&lt;/script&gt;
+    &lt;script src="/cljs/console.js"&gt;&lt;/script&gt;
+    &lt;script type="text/javascript"&gt;goog.require("yada.console.core");&lt;/script&gt;
+    &lt;script&gt;yada.console.core.init()&lt;/script&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline18">
+<h3 id="orgheadline18">Let's take a look!</h3>
+<p>
+<a href="http://localhost:8091/console/">http://localhost:8091/console/</a>
+</p>
+</section>
+</section>
+</div>
+</div>
+<script src="static/lib/js/head.min.js"></script>
+<script src="static/js/reveal.js"></script>
+
+<script>
+// Full list of configuration options available here:
+// https://github.com/hakimel/reveal.js#configuration
+Reveal.initialize({
+
+controls: true,
+progress: true,
+history: true,
+center: true,
+slideNumber: true,
+rollingLinks: false,
+keyboard: true,
+overview: true,
+margin: 0.00,
+minScale: 1.00,
+maxScale: 1.40,
+
+theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+transition: Reveal.getQueryHash().transition || 'fade', // default/cube/page/concave/zoom/linear/fade/none
+transitionSpeed: 'fast',
+multiplex: {
+    secret: '', // null if client
+    id: '', // id, obtained from socket.io server
+    url: '' // Location of socket.io server
+},
+
+// Optional libraries used to extend on reveal.js
+dependencies: [
+ { src: 'static/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+ { src: 'static/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+ { src: 'static/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+ { src: 'static/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }]
+});
+</script>
+</body>
+</html>

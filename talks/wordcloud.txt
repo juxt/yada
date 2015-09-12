@@ -1,0 +1,63 @@
+HTTP
+GET
+PUT
+POST
+DELETE
+CONNECT
+OPTIONS
+TRACE
+Methods
+Representation Metadata
+Content Negotiation
+Proactive Negotiation
+Reactive Negotiation
+Safe Methods
+Idempotent Methods
+Accept
+Accept-Charset
+Accept-Encoding
+Accept-Language
+Quality Values
+300 Multiple Choices
+201 Created
+From
+Referrer
+User-Agent
+Continue
+404 Not Found
+405 Method Not Allowed
+406 Not Acceptable
+Timeouts
+415 Unsupported Media Type
+Conditional Requests
+Expectation Failed
+If-None-Match
+Weak vs. Strong
+Last-Modified
+ETag
+If-Match
+If-Modified-Since
+If-Unmodified-Since
+If-Range
+Range-Requests
+304 Not Modified
+Retry-After
+Content-Location
+Content-Length
+Content-Type
+Content-Language
+Content-Encoding
+Allow
+Error reponses
+503 Service Unavailable
+Authentication
+Authorization
+Prefer
+Expect
+Media Types
+CORS
+Conflicts
+Age
+Expires
+Cache-Control
+Server Sent Events
