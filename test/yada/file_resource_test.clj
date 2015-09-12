@@ -11,10 +11,13 @@
    [ring.mock.request :refer [request]]
    [ring.util.time :refer [parse-date format-date]]
    [schema.test :as st]
-   ;;[yada.bidi :as yb]
+   [bidi.bidi :as bidi]
+   [bidi.ring :as br]
+   yada.bidi
    [yada.yada :as yada :refer [yada]]
    [yada.protocols :as p]
    [yada.resources.file-resource :refer :all]
+   [yada.test.util :refer [to-string]]
    [juxt.iota :refer [given]])
   (:import [java.io File ByteArrayInputStream]
            [java.util Date]))
@@ -114,3 +117,12 @@
               :status := 404))
 
           (is (not (.exists f)) "File should have been deleted by the DELETE"))))))
+
+#_(st/deftest dir-index-test
+  (let [resource (yada (io/file "talks"))
+        h (br/make-handler ["/" resource])
+        req (request :get "/")
+        resp @(h req)]
+    (is (nil? resp))
+    (clojure.pprint/pprint (to-string (:body resp)))
+    (is (nil? (to-string (:body resp))))))
