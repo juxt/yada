@@ -268,7 +268,7 @@ First, let's require the support we need in the `ns` declaration.
 
 ```clojure
 (require '[aleph.http :refer [start-server]]
-         '[bidi.ring :refer [make-handler]]
+         '[bidi.ring :refer [make-handler] :as bidi]
          '[yada.yada :refer [yada] :as yada])
 ```
 
@@ -289,7 +289,7 @@ Now let's create a route structure housing this resource. This is our API.
                 :version "1.0"
                 :description "Demonstrating yada + swagger"}
                 :basePath "/hello-api"}
-        ["/hello" hello])]
+        ["/hello" hello])])
 ```
 
 This is an API we can serialize into a data structure, store to disk,
