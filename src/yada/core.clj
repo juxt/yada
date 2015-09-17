@@ -77,21 +77,20 @@
   (let [res (service/service-available? (-> ctx :handler :options :service-available?) ctx)]
     (if-not (service/interpret-service-available res)
       (d/error-deferred
-       (ex-info "" (merge {:status 503
-                           ::http-response true}
+       (ex-info "" (merge {:status 503}
                           (when-let [retry-after (service/retry-after res)] {:headers {"retry-after" retry-after}}))))
       ctx)))
 
 (defn known-method?
   [ctx]
   (if-not (:method-instance ctx)
-    (d/error-deferred (ex-info "" {:status 501 ::method (:method ctx) ::http-response true}))
+    (d/error-deferred (ex-info "" {:status 501 ::method (:method ctx)}))
     ctx))
 
 (defn uri-too-long?
   [ctx]
   (if (service/request-uri-too-long? (-> ctx :options :request-uri-too-long?) (-> ctx :request :uri))
-    (d/error-deferred (ex-info "" {:status 414 ::http-response true}))
+    (d/error-deferred (ex-info "" {:status 414}))
     ctx))
 
 (defn TRACE
@@ -100,7 +99,7 @@
     (if (false? (-> ctx :options :trace))
       (d/error-deferred
        (ex-info "Method Not Allowed"
-                {:status 405 ::http-response true}))
+                {:status 405}))
       (methods/request (:method-instance ctx) ctx))
     ctx))
 
@@ -122,7 +121,6 @@
           ;; TODO: Test me!
           (ex-info "Internal Server Error"
                    {:status 500
-                    ::http-response true
                     :error props}))
 
          (-> ctx
@@ -137,8 +135,8 @@
     (d/error-deferred
      (ex-info "Method Not Allowed"
               {:status 405
-               :headers {"allow" (str/join ", " (map (comp (memfn toUpperCase) name) (-> ctx :handler :allowed-methods)))}
-               ::http-response true}))
+               :headers {"allow" (str/join ", " (map (comp (memfn toUpperCase) name) (-> ctx :handler :allowed-methods)))}}))
+
     ctx))
 
 (defn malformed?
@@ -187,8 +185,7 @@
     (let [errors (filter (comp schema.utils/error? second) parameters)]
       (if (not-empty errors)
         (d/error-deferred (ex-info "" {:status 400
-                                       :body errors
-                                       ::http-response true}))
+                                       :body errors}))
 
         (if parameters
           (let [body (:body parameters)
@@ -216,7 +213,7 @@
       (d/error-deferred
        (ex-info ""
                 (merge
-                 {:status 401 ::http-response true}
+                 {:status 401}
                  (when-let [basic-realm (first (sequence realms-xf (-> ctx :handler :security)))]
                    {:headers {"www-authenticate" (format "Basic realm=\"%s\"" basic-realm)}}))))
 
@@ -224,7 +221,7 @@
         (assoc ctx :authorization auth)
         ctx))
 
-    (d/error-deferred (ex-info "" {:status 403 ::http-response true}))))
+    (d/error-deferred (ex-info "" {:status 403}))))
 
 ;; Content negotiation
 ;; TODO: Unknown Content-Type? (incorporate this into conneg)
@@ -260,7 +257,7 @@
 
            ;; exit with 304
            (d/error-deferred
-            (ex-info "" (merge {:status 304 ::http-response true} ctx)))
+            (ex-info "" (merge {:status 304} ctx)))
 
            (assoc-in ctx [:response :last-modified] (ring.util.time/format-date last-modified)))
 
@@ -300,8 +297,7 @@
         (if (empty? (set/intersection matches (set (vals etags))))
           (d/error-deferred
            (ex-info "Precondition failed"
-                    {:status 412
-                     ::http-response true}))
+                    {:status 412}))
 
           ;; Otherwise, let's use the etag we've just
           ;; computed. Note, this might yet be
@@ -338,8 +334,7 @@
         (when (not-empty (set/intersection matches (set (vals etags))))
           (d/error-deferred
            (ex-info ""
-                    {:status 304
-                     ::http-response true}))
+                    {:status 304}))
 
           )))
     ctx))
@@ -364,8 +359,7 @@
          (if (schema.utils/error? props)
            (d/error-deferred
             (ex-info "Internal Server Error"
-                     {:status 500
-                      ::http-response true}))
+                     {:status 500}))
            (assoc ctx :new-properties props))))
       ctx)))
 

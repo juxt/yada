@@ -58,13 +58,11 @@
   (request [this ctx]
 
     (when-not (ctx/exists? ctx)
-      (d/error-deferred (ex-info "" {:status 404
-                                     :yada.core/http-response true})))
+      (d/error-deferred (ex-info "" {:status 404})))
 
     (when-not (:representation ctx)
       (d/error-deferred
-       (ex-info "" {:status 406
-                    :yada.core/http-response true})))
+       (ex-info "" {:status 406})))
 
     ;; HEAD is implemented without delegating to the resource.
 
@@ -106,10 +104,9 @@
     (assoc-in ctx [:response :body] o))
   nil
   (interpret-get-result [_ ctx]
-    (d/error-deferred (ex-info "" {:status 404
-                                   :yada.core/http-response true}))
-    #_(throw (ex-info "" {:status 404
-                          :yada.core/http-response true}))))
+    (d/error-deferred (ex-info "" {:status 404}))
+
+    #_(throw (ex-info "" {:status 404}))))
 
 (deftype GetMethod [])
 
@@ -122,13 +119,11 @@
 
     ;; TODO: exists? could be still deferred
     (when-not (ctx/exists? ctx)
-      (throw (ex-info "" {:status 404
-                          :yada.core/http-response true})))
+      (throw (ex-info "" {:status 404})))
 
     (when-not (-> ctx :response :representation)
       (throw
-       (ex-info "" {:status 406
-                    :yada.core/http-response true})))
+       (ex-info "" {:status 406})))
 
     (->
      (d/chain
@@ -144,8 +139,7 @@
         ;; No GET
         (d/error-deferred
          (ex-info (format "Resource %s does not implement GET" (type (:resource ctx)))
-                  {:status 500
-                   ::http-response true})))
+                  {:status 500})))
 
       (fn [res]
         (interpret-get-result res ctx))
@@ -162,7 +156,7 @@
      (d/catch
          (fn [e]
            ;;(infof e "Error on GET")
-           (if (:yada.core/http-response (ex-data e))
+           (if (:status (ex-data e))
              (throw e)
              (throw (ex-info "Error on GET" (select-keys ctx [:response :resource]) e))))))))
 
