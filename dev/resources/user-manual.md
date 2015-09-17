@@ -1286,6 +1286,30 @@ real-world production systems we build at JUXT.
 There are, however, numerous stylistic difference between the two
 libraries which come down to personal choice.
 
+### Liberator
+
+yada and Liberator are both designed to confer proper HTTP semantics on
+their services, offering sensible defaults in the absence of developer
+intervention.
+
+Liberator is inspired by the Erlang library, WebMachine, which
+introduced the concept of using a flow-chart to drive the HTTP request
+processing. One disadvantage of Liberator stems from the fact that this
+flow-chart is wired into the code, in such a way as to make it difficult
+to change or support new features in HTTP. This also means that request
+processing is tied to the thread of execution, forcing the process to be
+synchronous. Any I/O bound activity in the processing of the request
+necessitates blocking of the request thread, leading to resource
+starvation when the service is under heavy load.
+
+Another problem is that the data model is shaped around the needs of the
+decision-based steps in the flow-chart, rather than providing an
+agnostic _canonical_ description of the service.
+
+That said, Liberator is a mature and capable library that is well suited
+to building HTTP services. Many of the differences between Liberator and
+yada are stylistic and therefore subject to personal bias.
+
 ## Concluding remarks
 
 In this user-manual we have seen how yada can help create flexible HTTP
