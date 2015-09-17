@@ -512,7 +512,6 @@
           (mapv (wrap-journaling journal-entry))
           (apply d/chain ctx))
 
-     ;; Handle non-local exits
      (d/catch
          (fn [e]
            (error-handler e)

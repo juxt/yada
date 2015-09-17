@@ -13,6 +13,7 @@
    [schema.core :as s]
    [yada.charset :as charset]
    [yada.representation :as rep]
+   [yada.resource :refer [Representation RepresentationSets]]
    [yada.protocols :as p]
    [yada.methods :refer (Get GET Put PUT Post POST Delete DELETE)]
    [yada.media-type :as mt])
@@ -21,18 +22,23 @@
            [java.text SimpleDateFormat]
            [java.nio.charset Charset]))
 
-(defrecord FileResource [f]
+(s/defrecord FileResource [file :- File
+                           reader :- (s/=> s/Any File Representation)
+                           representations :- RepresentationSets]
   p/Properties
   (properties [_]
-    {:allowed-methods #{:get :put :delete}
-     ;; TODO: It may be desirable to 'coerce' files according to client
-     ;; needs. For example, a README.md can be provided as text/html and
-     ;; converted by the server.
-     :representations [{:media-type (or (ext-mime-type (.getName f)) "application/octet-stream")}]})
+    {:allowed-methods #{:get}
+
+     ;; A representation can be given as a parameter, or deduced from
+     ;; the filename. The latter is unreliable, as it depends on file
+     ;; suffixes.
+     :representations (or representations
+                          [{:media-type (or (ext-mime-type (.getName file))
+                                            "application/octet-stream")}])})
 
   (properties [_ ctx]
-    {:exists? (.exists f)
-     :last-modified (Date. (.lastModified f))
+    {:exists? (.exists file)
+     :last-modified (Date. (.lastModified file))
      })
 
   Get
@@ -53,13 +59,20 @@
     ;; response body and have aleph efficiently stream it via NIO. This
     ;; code allows the same efficiency for file uploads.
 
-    (assoc (:response ctx) :body f))
+    ;; A non-nil reader can be applied to the file, to produce
+    ;; another file, string or other body content.
+
+    (assoc (:response ctx)
+           :body (if reader
+                   (reader file (-> ctx :response :representation))
+                   file)))
+
 
   Put
-  (PUT [_ ctx] (bs/transfer (-> ctx :request :body) f))
+  (PUT [_ ctx] (bs/transfer (-> ctx :request :body) file))
 
   Delete
-  (DELETE [_ ctx] (.delete f)))
+  (DELETE [_ ctx] (.delete file)))
 
 (defn filename-ext
   "Returns the file extension of a filename or filepath."
@@ -74,10 +87,8 @@
 (defn with-newline [s]
   (str s \newline))
 
-(defn dir-index [dir indices content-type]
+(defn dir-index [dir content-type]
   (assert content-type)
-  (infof "Indices is %s" (pr-str indices))
-  (infof "content-type is %s" (pr-str content-type))
 
   (case (mt/media-type content-type)
     "text/plain"
@@ -109,58 +120,78 @@
                       (.setTimeZone (TimeZone/getTimeZone "UTC")))
                     (java.util.Date. (.lastModified child)))]])]]]]))))
 
-(defn dir-properties [dir index-files]
 
-  ;; Look for a possible index file, (. dir list)
 
-  ;; If one matches, use it to construct a resource
+(defn dir-properties
+  "Return properties of directory"
+  [dir ctx]
+  {::file dir})
 
-  (let [indices (filter #{"README.md"} (seq (. dir list)))]
-    {:exists? true
-     :representations [{:media-type
-                        (set (sequence (comp (map filename-ext)
-                                             (mapcat available-media-types))
-                                       indices))}]
-     :last-modified (.lastModified dir)
-     ::file dir
-     ::indices indices}))
+(first (filter #{"README.md" "README.org" "index.html"} ["f" "index.html" "README.org"]))
 
 (s/defrecord DirectoryResource
     [dir :- File
-     index-files :- (s/maybe [java.util.regex.Pattern])]
+     ;; A map between file suffices and extra args that will be used
+     ;; when constructing the FileResource. This enables certain files
+     ;; (e.g. markdown, org-mode) to be handled. The reader entry calls
+     ;; a function to return the body (arguments are the file and the
+     ;; negotiated representation)
+     custom-suffices :- (s/maybe {String ; suffix
+                                  {:reader (s/=> s/Any File Representation)
+                                   :representations RepresentationSets}})
+     index-files :- [String]]
+
   p/Properties
-  (properties [_]
-    {:allowed-methods #{:get}
-     :collection? true})
+  (properties
+   [_]
+   {:allowed-methods #{:get}
+    :collection? true})
 
-  (properties [_ ctx]
-    (if-let [path-info (-> ctx :request :path-info)]
-      (let [f (io/file dir path-info)]
-        (cond
-          (.isFile f)
-          {:exists? (.exists f)
-           :representations [{:media-type (or (ext-mime-type (.getName f))
-                                              "application/octet-stream")}]
-           :last-modified (.lastModified f)
-           ::file f}
+  (properties
+   [_ ctx]
+   (if-let [path-info (-> ctx :request :path-info)]
+     (let [f (io/file dir path-info)
+           suffix (filename-ext (.getName f))
+           custom-suffix-args (get custom-suffices suffix)]
+       (cond
+         (and (.isFile f) custom-suffix-args)
+         (let [f (map->FileResource (merge custom-suffix-args {:file f}))]
+           (merge (p/properties f) {::file f}))
 
-          (.isDirectory f)
-          (dir-properties f index-files)
+         (.isFile f)
+         {:exists? (.exists f)
+          :representations [{:media-type (or (ext-mime-type (.getName f))
+                                             "application/octet-stream")}]
+          :last-modified (.lastModified f)
+          ::file f}
 
-          :otherwise
-          {:exists? false}))
+         (and (.isDirectory f) (.exists f))
+         (if-let [index-file (first (filter (set (seq (.list f))) index-files))]
+           (throw
+            (ex-info "Redirect"
+                     {:status 302
+                      :headers {"Location" (str (get-in ctx [:request :uri] ) index-file)}})
+            )
+           {:exists? true
+            :representations [{:media-type #{"text/html" "text/plain;q=0.9"}}]
+            :last-modified (.lastModified f)
+            ::file f})
 
-      {:exists? false}))
+         :otherwise
+         {:exists? false}))
+
+     {:exists? false}))
 
   Get
   (GET [this ctx]
-    (let [f (get-in ctx [:properties ::file])]
-      (cond
-        (.isFile f) f
-        (.isDirectory f)
-        (dir-index f
-                   (get-in ctx [:properties ::indices])
-                   (-> ctx :response :representation :media-type))))))
+       (let [f (get-in ctx [:properties ::file])]
+         (assert f)
+         (cond
+           (instance? FileResource f) (GET f ctx)
+           (.isFile f) f
+           (.isDirectory f)
+           (dir-index f
+                      (-> ctx :response :representation :media-type))))))
 
 (defn new-directory-resource [dir opts]
   (map->DirectoryResource (merge opts {:dir dir})))
@@ -170,4 +201,4 @@
   (as-resource [f]
     (if (.isDirectory f)
       (map->DirectoryResource {:dir f})
-      (->FileResource f))))
+      (map->FileResource {:file f}))))

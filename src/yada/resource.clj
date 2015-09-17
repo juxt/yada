@@ -32,11 +32,21 @@
 (s/defschema StringSet
   #{String})
 
+(s/defschema RepresentationSet
+  {(s/optional-key :media-type) MediaTypeSchemaSet
+   (s/optional-key :charset) CharsetSchemaSet
+   (s/optional-key :encoding) StringSet
+   (s/optional-key :language) StringSet})
+
 (s/defschema RepresentationSets
-  [{(s/optional-key :media-type) MediaTypeSchemaSet
-    (s/optional-key :charset) CharsetSchemaSet
-    (s/optional-key :encoding) StringSet
-    (s/optional-key :language) StringSet}])
+  [RepresentationSet])
+
+;; Final representation
+(s/defschema Representation
+  {(s/optional-key :media-type) MediaTypeMap
+   (s/optional-key :charset) CharsetMap
+   (s/optional-key :encoding) String
+   (s/optional-key :language) String})
 
 (s/defschema Properties
   {(s/optional-key :allowed-methods)
