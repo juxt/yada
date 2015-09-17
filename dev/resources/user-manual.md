@@ -985,12 +985,12 @@ parameter is the value of the HTTP request's `X-Version` header and is coerced t
 yada defines a number of protocols. Existing Clojure types and records
 can be extended with these protocols to adapt them to use with yada.
 
-### yada.protocols.ResourceCoercion
+### `yada.protocols.ResourceCoercion`
 
 Deprecated - any _define-time_ logic should be removed to the
 single-arity form of `properties` (see below).
 
-### yada.protocols.Properties
+### `yada.protocols.Properties`
 
 Defines a `properties` function of 2 arites.
 
@@ -1010,12 +1010,12 @@ functions, containing the entries described later. Other entries can be
 returned, as long as the keys are namespaced keywords (non-namespaced
 keywords in this case are reserved by yada).
 
-### yada.protocols.ETag
+### `yada.protocols.ETag`
 
 Extend this protocol to override yada's built-in entity-tag generation
 facility.
 
-### yada.methods.Method
+### `yada.methods.Method`
 
 Every HTTP method is implemented as a type which extends the yada.methods.Method protocols. This way, new HTTP methods can be added to yada. Each type must implement the correct semantics for the method, although yada comes with a number of built-in methods for each of the most common HTTP methods.
 
@@ -1026,7 +1026,7 @@ of this additional protocol depend on the HTTP method semantics being
 implemented. In the `Get` example, the resource type is asked to return
 its state, from which the representation for the response is produced.
 
-### yada.body.MessageBody
+### `yada.body.MessageBody`
 
 Message bodies are formed from data provided by the resource, according
 to the representation being requested (or having been negotiated). This
@@ -1041,26 +1041,26 @@ provide data back to yada in the form of a map from
 `properties`. Here is a list of entries the returned map may
 contain.
 
-### :allowed-methods
+### `:allowed-methods`
 
 A set of keywords indicating the methods allowed on the resource.
 
-### :parameters
+### `:parameters`
 
 A map of parameters, keyed by method and then parameter type.
 
-### :representations
+### `:representations`
 
 A collection of representations. Usually returned from the single-arity
 form, without the context. This is so that the representation set forms
 part of the resources's data model, and can be exploited by
 introspection tools such as Swagger prior to handling requests.
 
-### :last-modified
+### `:last-modified`
 
 The last modified date of the resource.
 
-### :version
+### `:version`
 
 The resource version. Used for entity-tag construction.
 
@@ -1069,41 +1069,34 @@ The resource version. Used for entity-tag construction.
 Once a resource has been built, it can be treated as a map with the
 following entries.
 
-### :allowed-methods
+### `:allowed-methods`
 
 A set of keywords indicating the methods supported by the resource.
 
-### :authorization
+### `:authorization`
 
 [todo]
 
-### :base
+### `:base`
 
 The original uncoerced first argument passed to yada's `resource`
 function (or it's `yada` alias).
 
-### :existence? (performance)
-
-Whether the resource satisfies the `RepresentationExistence` protocol.
-
-This is added to avoid expensive calls to `clojure.core/satisfies?`
-while handling requests.
-
-### :id
+### `:id`
 
 A unique identifier for the individual resource. Defaults to a (random) type-4 UUID but may be overridden with the `:id` option.
 
-### :interceptor-chain
+### `:interceptor-chain`
 
 The sequence of interceptors that will process the request. Mutate this
 if you need to weave in custom functionality.
 
-### :journal
+### `:journal`
 
 The database that will store journal entries (one entry per
 request). Can be nil.
 
-### :known-methods
+### `:known-methods`
 
 A set of keywords indicating all the methods that are known by
 yada. This includes custom methods that have been added via protocol
@@ -1111,18 +1104,18 @@ extension. This set is usually a superset of the methods that are
 allowed on the resource, see __:allowed-methods__. If a request
 containing a method that is not known results in a 501 status code.
 
-### :options
+### `:options`
 
 The resource options, as given to yada's `resource` function (or it's `yada` alias).
 
-### :parameters
+### `:parameters`
 
 The resource parameters, as provided by, in order of precedence :-
 
 * the `:parameters` option
 * the `:parameters` entry of the result of the call to the resource's `properties` function.
 
-### :representations
+### `:representations`
 
 The resource representations, as provided by, in order of precedence :-
 
@@ -1131,15 +1124,15 @@ The resource representations, as provided by, in order of precedence :-
 * the `:media-type`, `:charset`, `:encoding` and `:language` option
 * the `:representations` entry of the result of the call to the resource's `properties` function.
 
-### :resource
+### `:resource`
 
 The resource (possibly after coercion by the `as-resource` function of the `ResourceCoercion` protocol.
 
-### :security
+### `:security`
 
 [todo]
 
-### :vary
+### `:vary`
 
 The set of axes that can vary during proactive content negotiation
 
@@ -1147,41 +1140,24 @@ The set of axes that can vary during proactive content negotiation
 {:vary #{:media-type :language}}
 ```
 
-### :version? (performance)
-
-Whether the resource satisfies the `ResourceVersion` protocol.
-
-This is added to avoid expensive calls to `clojure.core/satisfies?`
-while handling requests.
-
 ## The default interceptor chain
 
 The interceptor chain, established on the creation of a handler, is a vector.
 
-### available?
-
-### known-method?
-
-### uri-too-long?
-
-### TRACE
-
-### method-allowed?
-
-### malformed?
-### authentication
-### authorization
-
-### fetch
-   ;; TODO: Unknown or unsupported Content-* header
-   ;; TODO: Request entity too large - shouldn't we do this later,
-   ;; when we determine we actually need to read the request body?
-### exists?
+### `available?`
+### `known-method?`
+### `uri-too-long?`
+### `TRACE`
+### `method-allowed?`
+### `malformed?`
+### `check-modification-time`
 ### select-representation
-### check-modification-time
 ### if-match
+### if-none-match
 ### invoke-method
+### get-new-properties
 ### compute-etag
+### access-control-headers
 ### create-response
 
 ## Comparison guide
@@ -1282,15 +1258,33 @@ is a more complete and accurate implementation of HTTP.
 
 ### Pedestal
 
-yada, like pedestal, is built on an interceptor chain, but this is an
-implementation detail, not considered important for exposing to
-manipulation by users. This may indeed change in future versions of
-yada, should people want it.
+Cognitect's Pedestal was an early attempt to establish a complete
+front-to-back stack for development of rich applications calling
+APIs. Over time, Pedestal's front-end piece has been replaced by popular
+ClojureScript frameworks, many derived from Facebook's React library.
 
-Pedestal offers async only in inceptors, rather than in the target
-handlers. Pedestal pre-dates core.async and manifold. It does not offer
-a manifold chain, so exploiting async in Pedestal arguably requires more
-up-front work.
+However, Pedestal's service-based back-end has undergone continual
+improvement for a long time and currently represents a more mature stack
+than yada's.
+
+There are some significant architectural differences. In keeping with
+Ring's middleware approach, Pedestal strives to be modular and asks the
+user to compose interceptor chains to add functionality. In comparison,
+yada attempts to do more 'out of the box', with features such as Swagger
+and content-negotiation built-in rather than implemented as
+extensions. Arguably this make things easier for the developer.
+
+yada is based on Zach Tellman's Aleph, which is ultimately based on
+Netty. It also uses manifold chains for async. In comparison, Pedestal
+is focussed more towards J2EE servlet containers and uses core.async directly.
+
+It could be argued that Pedestal is tuned more towards pragmatic
+development of useable APIs, rather than yada's prioritisation on HTTP
+compliance. Both are very much targetted for use in the kinds of
+real-world production systems we build at JUXT.
+
+There are, however, numerous stylistic difference between the two
+libraries which come down to personal choice.
 
 ## Concluding remarks
 
