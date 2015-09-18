@@ -801,6 +801,122 @@ platform we are on).
 There are numerous types already built into yada, but you can also add
 your own. You can also add your own custom methods.
 
+#### Files
+
+The `yada.resources.file-resource.FileResource` exposes a single file in the file-system.
+
+The record has a number of fields.
+
+<table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Required?</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>`file`</td>
+<td>`java.io.File`</td>
+<td>yes</td>
+<td>The file in the file-system</td>
+</tr>
+<tr>
+<td>`reader`</td>
+<td>Map</td>
+<td>no</td>
+<td>A file reader function that takes the file and selected representation, returning the body</td>
+</tr>
+<tr>
+<td>`representations`</td>
+<td>A collection of maps</td>
+<td>no</td>
+<td>The available representation combinations</td>
+</tr>
+</tbody>
+</table>
+
+The purpose of specifying the `reader` field is to apply a
+transformation to a file's content prior to forming the message
+payload.
+
+For instance, you might decide to transform a file of markdown text
+content into HTML. The reader function takes two arguments: the file and
+the selected representation containing the media-type.
+
+```clojure
+(fn [file rep]
+  (if (= (-> rep :media-type :name) "text/html")
+    (-> file slurp markdown->html)
+    ;; Return unprocessed
+    file))
+```
+
+The reader function can return anything that can be normally returned in
+the body payload, including strings, files, maps and sequences.
+
+The `representation` field indicates the types of representation the
+file can support. Unless you are specifying a custom `reader` function,
+there will usually only be one such representation. If this field isn't
+specified, the file suffix is used to guess the available representation
+metadata. For example, a file with a `.png` suffix will be assumed to
+have a media-type of `image/png`.
+
+#### Directories
+
+The `yada.resources.file-resource.DirectoryResource` record exposes a directory in a filesystem as a collection of read-only web resources.
+
+The record has a number of fields.
+
+<table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Required?</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>`dir`</td>
+<td>`java.io.File`</td>
+<td>yes</td>
+<td>The directory to serve</td>
+</tr>
+<tr>
+<td>`custom-suffices`</td>
+<td>Map</td>
+<td>no</td>
+<td>A map relating file suffices to field values of the corresponding FileResource </td>
+</tr>
+<tr>
+<td>`index-files`</td>
+<td>Vector of Strings</td>
+<td>no</td>
+<td>A vector of strings considered to be suitable to represent the index</td>
+</tr>
+</tbody>
+</table>
+
+A directory resource not only represents the directory on the
+file-system, but each file resource underneath it.
+
+The `custom-suffices` field allows you to specify fields for the
+FileResource records serving files in the directory, on the basis of the
+file suffix.
+
+For example, files ending in `.md` may be served with a FileResource with a reader that can convert the file content to another format, such as `text/html`.
+
+```clojure
+(yada.resources.file-resource/map->DirectoryResource
+  {:dir (clojure.java.io "talks")
+   :custom-suffices {"md" {:representations [{:media-type "text/html"}]
+                           :reader markdown-reader}}})
+```
+
 ## Async
 
 Under normal circumstances, with Clojure running on a JVM, each request can be processed by a separate thread.
@@ -1063,6 +1179,10 @@ The last modified date of the resource.
 ### `:version`
 
 The resource version. Used for entity-tag construction.
+
+### `:collection?`
+
+Whether the resource is actually serving a collection of sub-resources.
 
 ## Resource model
 
