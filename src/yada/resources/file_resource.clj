@@ -23,8 +23,8 @@
            [java.nio.charset Charset]))
 
 (s/defrecord FileResource [file :- File
-                           reader :- (s/=> s/Any File Representation)
-                           representations :- RepresentationSets]
+                           reader :- (s/maybe (s/=> s/Any File Representation))
+                           representations :- (s/maybe RepresentationSets)]
   p/Properties
   (properties [_]
     {:allowed-methods #{:get}
@@ -90,7 +90,7 @@
 (defn dir-index [dir content-type]
   (assert content-type)
 
-  (case (mt/media-type content-type)
+  (case (:name content-type)
     "text/plain"
     (apply str
            (for [child (sort (.listFiles dir))]
@@ -139,7 +139,7 @@
      custom-suffices :- (s/maybe {String ; suffix
                                   {:reader (s/=> s/Any File Representation)
                                    :representations RepresentationSets}})
-     index-files :- [String]]
+     index-files :- (s/maybe [String])]
 
   p/Properties
   (properties

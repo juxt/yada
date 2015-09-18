@@ -52,8 +52,8 @@
   (to-body [resource representation] "Construct the reponse body for the given resource, given the negotiated representation (metadata)")
   (content-length [_] "Return the size of the resource's representation, if this can possibly be known up-front (return nil if this is unknown)"))
 
-(defmulti render-map (fn [resource representation] (-> representation :media-type mt/media-type)))
-(defmulti render-seq (fn [resource representation] (-> representation :media-type mt/media-type)))
+(defmulti render-map (fn [resource representation] (-> representation :media-type :name)))
+(defmulti render-seq (fn [resource representation] (-> representation :media-type :name)))
 
 (defn encode-message [s representation]
   (bs/convert s java.nio.ByteBuffer
@@ -175,12 +175,12 @@
 
 (defmethod render-map :default
   [m representation]
-  (throw (ex-info (format "No implementation for render-map for media-type: %s" (mt/media-type (:media-type representation)))
+  (throw (ex-info (format "No implementation for render-map for media-type: %s" (:name (:media-type representation)))
                   {:representation representation})))
 
 (defmethod render-seq :default
   [m representation]
-  (throw (ex-info (format "No implementation for render-seq for media-type: %s" (mt/media-type (:media-type representation)))
+  (throw (ex-info (format "No implementation for render-seq for media-type: %s" (:name (:media-type representation)))
                   {:representation representation})))
 
 
@@ -194,7 +194,7 @@
        :doc "When set to logical true, errors will be output with their stack-traces. Defaults to true."}
   *output-stack-traces* true)
 
-(defmulti render-error (fn [status error representation ctx] (-> representation :media-type mt/media-type)))
+(defmulti render-error (fn [status error representation ctx] (-> representation :media-type :name)))
 
 (defn get-error-message [code]
   (or (some-> status (get code) :name) "Unknown"))

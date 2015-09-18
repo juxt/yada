@@ -44,7 +44,7 @@
                                    representations (filter (fn [rep] (or (nil? (:method rep))
                                                                         (contains? (:method rep) method))) representations)
                                    produces (when (#{:get} method)
-                                              (distinct (map mt/media-type (map :media-type representations))))]]
+                                              (distinct (map :name (map :media-type representations))))]]
                          ;; Responses must be added in the static swagger section
                          {method (merge (when produces {:produces produces})
                                         {:parameters parameters})}))

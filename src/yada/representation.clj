@@ -67,7 +67,7 @@
            (= (:subtype acceptable) "*"))
       [(:quality acceptable) 2 (count (:parameters rep)) (:quality rep)]
 
-      (and (= (mt/media-type acceptable) "*/*"))
+      (and (= (:name acceptable) "*/*"))
       [(:quality acceptable) 1 (count (:parameters rep)) (:quality rep)])))
 
 (defn highest-media-type-quality
@@ -356,7 +356,7 @@
   "From a representation-seq, find the variable dimensions"
   [reps]
   (cond-> #{}
-    (< 1 (count (distinct (keep (comp #(when % (mt/media-type %)) :media-type) reps))))
+    (< 1 (count (distinct (keep (comp #(when % (:name %)) :media-type) reps))))
     (conj :media-type)
 
     (< 1 (count (distinct (keep (comp #(when % (charset/charset %)) :charset) reps))))

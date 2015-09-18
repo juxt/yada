@@ -7,7 +7,6 @@
    [yada.charset :as charset]
    [yada.journal :as journal]
    [yada.methods :refer [Get]]
-   [yada.media-type :refer [media-type]]
    [yada.protocols :as p]
    [yada.yada :as yada]))
 
@@ -18,7 +17,7 @@
 (defn index [idx]
   (yada/resource
    (fn [ctx]
-     (case (-> ctx :response :representation :media-type media-type)
+     (case (-> ctx :response :representation :media-type :name)
        "text/html"
        (html
         [:body

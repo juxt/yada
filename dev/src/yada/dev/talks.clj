@@ -35,7 +35,7 @@
                                  {"md" {:representations [{:media-type #{"text/html" "text/plain;q=0.9"}}]
                                         :reader (fn [f rep]
                                                   (cond
-                                                    (= (mt/media-type (:media-type rep)) "text/html")
+                                                    (= (:name (:media-type rep)) "text/html")
                                                     (str (md-to-html-string (slurp f)) \newline)
                                                     :otherwise f)
                                                   )}
