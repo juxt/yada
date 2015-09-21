@@ -1,2 +1,2 @@
-resources/public/img/hello-async.png: resources/hello-async.svg
+resources/static/img/hello-async.png: resources/hello-async.svg
 	convert $< $@
