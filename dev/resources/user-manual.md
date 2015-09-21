@@ -917,6 +917,8 @@ For example, files ending in `.md` may be served with a FileResource with a read
                            :reader markdown-reader}}})
 ```
 
+The `yada.resources.file-resourceDirectoryResource
+
 ## Async
 
 Under normal circumstances, with Clojure running on a JVM, each request can be processed by a separate thread.
@@ -925,15 +927,15 @@ However, sometimes the production of the response body involves making requests
 to data-sources and other activities which may be _I/O-bound_. This means the thread handling the request has to block, waiting on the data to arrive from the IO system.
 
 For heavily loaded or high-throughput web APIs, this is an inefficient
-use of precious resources. In recent years, this problem has been
-addressed by using a asynchronous I/O. The request thread
-is able to make a request for data via I/O, and then is free to carry out
-further work (such as processing another web request). When the data
-requested arrives on the I/O channel, another thread carries on when the
-original thread left off.
+use of resources. Today, this problem is addressed by asynchronous I/O
+programming modesl. The request thread is able to make a request for
+data via I/O, and then is free to carry out further work (such as
+processing another web request). When the data requested arrives on the
+I/O channel, a potentially different thread carries on processing the
+original request.
 
-As a developer, yada gives you fine-grained control over when to use a synchronous
-programming model and when to use an asynchronous one.
+As a developer, yada gives you fine-grained control over when to use a
+synchronous programming model and when to use an asynchronous one.
 
 #### Deferred values
 
