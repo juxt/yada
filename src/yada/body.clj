@@ -15,6 +15,7 @@
    [ring.swagger.schema :as rs]
    [ring.util.codec :as codec]
    [ring.util.http-status :refer [status]]
+   [schema.core :as s]
    [yada.charset :as charset]
    [yada.journal :as journal]
    [yada.media-type :as mt])
@@ -27,26 +28,32 @@
 
 ;; Coerce request body  ------------------------------
 
-(defmulti coerce-request-body (fn [representation media-type & args] media-type))
+;; The reason we use 2 forms for coerce-request-body is so that
+;; schema-using forms can call into non-schema-using forms to
+;; pre-process the body.
+
+(defmulti coerce-request-body (fn [body media-type & args] media-type))
 
 (defmethod coerce-request-body "application/json"
-  ([representation media-type schema]
-   (rs/coerce schema (coerce-request-body representation media-type) :json))
-  ([representation media-type]
-   (json/decode representation keyword)))
+  ([body media-type schema]
+   (rs/coerce schema (coerce-request-body body media-type) :json))
+  ([body media-type]
+   (json/decode body keyword)))
+
+(defmethod coerce-request-body "application/octet-stream"
+  [body media-type schema]
+  (cond
+    (instance? String schema) (bs/to-string body)
+    :otherwise (bs/to-string body)))
 
 (defmethod coerce-request-body nil
-  ([representation media-type schema]
-   nil)
-  ([representation media-type]
-   nil))
+  [body media-type schema] nil)
 
 (defmethod coerce-request-body "application/x-www-form-urlencoded"
-  ([representation media-type schema]
-   (rs/coerce schema (coerce-request-body representation media-type) :query))
-  ([representation media-type]
-   (keywordize-keys (codec/form-decode representation))
-   ))
+  ([body media-type schema]
+   (rs/coerce schema (coerce-request-body body media-type) :query))
+  ([body media-type]
+   (keywordize-keys (codec/form-decode body))))
 
 (defprotocol MessageBody
   (to-body [resource representation] "Construct the reponse body for the given resource, given the negotiated representation (metadata)")

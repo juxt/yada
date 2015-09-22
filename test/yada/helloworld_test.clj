@@ -113,7 +113,7 @@
       :status := 200
       [:headers keys set] := #{"allow"}
       [:headers validate-headers?] := []
-      [:headers "allow" parse-csv set] := #{"OPTIONS" "GET" "HEAD" "PUT" "POST" "DELETE"}
+      [:headers "allow" parse-csv set] := #{"OPTIONS" "GET" "HEAD" "PUT" "DELETE"}
       :body := nil)))
 
 #_(deftest put-test

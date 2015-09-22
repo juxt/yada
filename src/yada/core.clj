@@ -164,7 +164,11 @@
            :body
            (when-let [schema (get-in parameters [method :body])]
              (let [body (read-body (-> ctx :request))]
-               (body/coerce-request-body body (req/content-type request) schema)))
+               (body/coerce-request-body
+                body
+                ;; See rfc7231#section-3.1.1.5 - we should assume application/octet-stream
+                (or (req/content-type request) "application/octet-stream")
+                schema)))
 
            :form
            ;; TODO: Can we use rep:from-representation
@@ -183,6 +187,7 @@
                (rs/coerce schema params :query)))})]
 
     (let [errors (filter (comp schema.utils/error? second) parameters)]
+      (infof "errors is %s" (pr-str errors))
       (if (not-empty errors)
         (d/error-deferred (ex-info "" {:status 400
                                        :body errors}))
@@ -191,6 +196,8 @@
           (let [body (:body parameters)
                 merged-params (merge (apply merge (vals (dissoc parameters :body)))
                                      (when body {:body body}))]
+            (infof "core: body is %s" body)
+            (infof "merged-params is %s" merged-params)
             (cond-> ctx
               (not-empty merged-params) (assoc :parameters merged-params)))
           ctx)))))
