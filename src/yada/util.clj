@@ -116,3 +116,9 @@
       "file" (io/file (.getFile resource))
       "jar" (io/file (.getFile (java.net.URL. (first (str/split (.getFile resource) #"!")))))
       nil)))
+
+
+;; Useful functions
+
+(defn remove-nil-vals [m]
+  (reduce-kv (fn [acc k v] (if v (assoc acc k v) acc)) {} m))

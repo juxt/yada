@@ -54,10 +54,10 @@
 
    (s/optional-key :parameters)
    {s/Keyword ;; method
-    {(s/optional-key :query) {s/Keyword s/Any}
-     (s/optional-key :path) {s/Keyword s/Any}
-     (s/optional-key :header) {s/Keyword s/Any}
-     (s/optional-key :form) {s/Keyword s/Any}
+    {(s/optional-key :query) {s/Any s/Any}
+     (s/optional-key :path) {s/Any s/Any}
+     (s/optional-key :header) {s/Any s/Any}
+     (s/optional-key :form) {s/Any s/Any}
      (s/optional-key :body) s/Any}}
 
    (s/optional-key :representations)

@@ -5,7 +5,6 @@
    [clojure.set :as set]
    [clojure.string :as str]
    [clojure.tools.logging :refer :all :exclude [trace]]
-   [clojure.walk :refer (keywordize-keys)]
    [byte-streams :as bs]
    [bidi.bidi :as bidi]
    [manifold.deferred :as d]
@@ -27,7 +26,7 @@
    [yada.resource :as resource]
    [yada.service :as service]
    [yada.media-type :as mt]
-   [yada.util :refer (parse-csv)]
+   [yada.util :refer (parse-csv remove-nil-vals)]
    )
   (:import (java.util Date)))
 
@@ -144,7 +143,6 @@
   [ctx]
   (let [method (:method ctx)
         request (:request ctx)
-        keywordize (fn [m] (into {} (for [[k v] m] [(keyword k) v])))
 
         parameters (-> ctx :handler :parameters)
 
@@ -159,7 +157,7 @@
              ;; We'll call assoc-query-params with the negotiated charset, falling back to UTF-8.
              ;; Also, read this:
              ;; http://www.w3.org/TR/html5/forms.html#application/x-www-form-urlencoded-encoding-algorithm
-             (rs/coerce schema (-> request (assoc-query-params (or (:charset ctx) "UTF-8")) :query-params keywordize) :query))
+             (rs/coerce schema (-> request (assoc-query-params (or (:charset ctx) "UTF-8")) :query-params) :query))
 
            :body
            (when-let [schema (get-in parameters [method :body])]
@@ -171,19 +169,15 @@
                 schema)))
 
            :form
-           ;; TODO: Can we use rep:from-representation
-           ;; instead? It's virtually the same logic for
-           ;; url encoded forms
            (when-let [schema (get-in parameters [method :form])]
              (when (req/urlencoded-form? request)
-               (let [fp (keywordize-keys
-                         (ring.util.codec/form-decode (read-body (-> ctx :request))
-                                                      (req/character-encoding request)))]
+               (let [fp (ring.util.codec/form-decode (read-body (-> ctx :request))
+                                                     (req/character-encoding request))]
                  (rs/coerce schema fp :json))))
 
            :header
            (when-let [schema (get-in parameters [method :header])]
-             (let [params (select-keys (-> request :headers keywordize-keys) (keys schema))]
+             (let [params (select-keys (-> request :headers) (keys schema))]
                (rs/coerce schema params :query)))})]
 
     (let [errors (filter (comp schema.utils/error? second) parameters)]
@@ -193,11 +187,9 @@
                                        :body errors}))
 
         (if parameters
-          (let [body (:body parameters)
-                merged-params (merge (apply merge (vals (dissoc parameters :body)))
-                                     (when body {:body body}))]
-            (infof "core: body is %s" body)
-            (infof "merged-params is %s" merged-params)
+          (let [merged-params (merge
+                               (remove-nil-vals parameters)
+                               (apply merge (vals (dissoc parameters :body))))]
             (cond-> ctx
               (not-empty merged-params) (assoc :parameters merged-params)))
           ctx)))))
