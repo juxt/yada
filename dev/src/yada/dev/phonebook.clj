@@ -113,8 +113,14 @@
   m/Get
   (GET [_ ctx]
     (let [id (get-in ctx [:parameters :path :entry])
-          entry (get @(:phonebook db) id)]
-      entry)))
+          {:keys [firstname surname phone] :as entry} (get @(:phonebook db) id)]
+      (case (yada/content-type ctx)
+        "text/html"
+        (html [:body
+               [:h2 (format "%s %s" firstname surname)]
+               [:p "Phone: " phone]
+               [:p [:a {:href (path-for (:routes @*router) ::phonebook)} "Index"]]])
+        entry))))
 
 (defn phonebook-api [db *router]
   ["/phonebook" {"" (yada (->Phonebook db *router) {:id ::phonebook})
