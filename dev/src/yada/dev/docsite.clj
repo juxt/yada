@@ -81,8 +81,7 @@
     ["/"
      [["index.html" (index component)]
       [["spec/rfc" :rfc] (rfc)]
-      #_["dir/" (-> (yada.bidi/resource-branch (io/file "dev/resources"))
-                  (tag ::dir))]]]))
+      ]]))
 
 (defn new-docsite [& {:as opts}]
   (-> (map->Docsite opts)
