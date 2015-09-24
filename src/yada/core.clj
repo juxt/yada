@@ -508,7 +508,6 @@
 
      (d/catch
          (fn [e]
-           (infof "error: %s" e)
            (error-handler e)
            (let [data (when (instance? clojure.lang.ExceptionInfo e) (ex-data e))]
              (do
