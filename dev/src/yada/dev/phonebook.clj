@@ -107,7 +107,9 @@
 
 (defrecord PhonebookEntry [db *router]
   p/Properties
-  (properties [_] {:parameters {:get {:path {:entry Long}}}
+  (properties [_] {:parameters {:get {:path {:entry Long}}
+                                :post {:path {:entry Long}
+                                       :form {(s/required-key "method") String}}}
                    :representations phonebook-representations})
 
   m/Get
@@ -119,8 +121,26 @@
         (html [:body
                [:h2 (format "%s %s" firstname surname)]
                [:p "Phone: " phone]
+               [:form {:method :post} [:input {:type :submit :name "method" :value "Delete"}]]
                [:p [:a {:href (path-for (:routes @*router) ::phonebook)} "Index"]]])
-        entry))))
+        entry)))
+
+  m/Post
+  (POST [this ctx]
+    ;; For supporting HTML browsers that can't do other methods
+    (when (= (get-in ctx [:parameters :form "method"]) "Delete")
+      (m/DELETE this ctx)
+      (-> (:response ctx)
+           (assoc :status 303)
+           (update-in [:headers] merge {"location" (path-for (:routes @*router) ::phonebook)}))))
+
+  m/Delete
+  (DELETE [_ ctx]
+    (let [id (get-in ctx [:parameters :path :entry])]
+      (dosync
+       (alter (:phonebook db) dissoc id)
+       ;; Body
+       nil))))
 
 (defn phonebook-api [db *router]
   ["/phonebook" {"" (yada (->Phonebook db *router) {:id ::phonebook})
