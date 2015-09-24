@@ -52,5 +52,6 @@
 
     (given response
       :status := 303
-      :headers :⊃ {"location" "/phonebook/1"}
+      :headers :⊃ {"location" "/phonebook/1" "content-length" 0}
+      :body := nil
       )))

@@ -35,10 +35,11 @@
       [:body bs/to-string] := "foo")))
 
 (deftest multiple-headers-test
-  (let [handler (yada
-                 (just-methods
-                  :post {:response (fn [ctx] (assoc (:response ctx)
-                                                   :status 201 :headers {"set-cookie" ["a" "b"]}))}))]
+  (let [handler
+        (yada
+         (just-methods
+          :post {:response (fn [ctx] (assoc (:response ctx)
+                                           :status 201 :headers {"set-cookie" ["a" "b"]}))}))]
     (given @(handler (mock/request :post "/"))
       :status := 201
       [:headers "set-cookie"] := ["a" "b"])))

@@ -15,6 +15,25 @@
    [yada.response Response]
    [java.io File]))
 
+
+(defn- zero-content-length
+  "Unless status code is 1xx or 204, or method is CONNECT. We don't set
+  the content-length in the case of a 304. Ensure status is set
+  in [:response :status] prior to call this, and only call if
+  response :body is nil. See rfc7230#section-3.3.2 for specification
+  details."
+  [ctx]
+  (let [status (-> ctx :response :status)]
+    (assert status)
+    (or
+     (when (and
+            (nil? (get-in ctx [:response :headers "content-length"]))
+            (not= status 304)
+            (>= status 200)
+            (not= (:method ctx) :connect))
+       (assoc-in ctx [:response :headers "content-length"] 0))
+     ctx)))
+
 ;; Allowed methods
 
 ;; RFC 7231 - 8.1.3.  Registrations
@@ -244,8 +263,10 @@
      (fn [res]
        (interpret-post-result res ctx))
      (fn [ctx]
-       (-> ctx
-           (update-in [:response] (partial merge {:status 200})))))))
+       (let [status (get-in ctx [:response :status])]
+         (cond-> ctx
+           (not status) (assoc-in [:response :status] 200)
+           (not (-> ctx :response :body)) zero-content-length))))))
 
 ;; --------------------------------------------------------------------------------
 
