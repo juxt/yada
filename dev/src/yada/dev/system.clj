@@ -23,6 +23,7 @@
    [yada.dev.async :refer (new-handler)]
    [yada.dev.config :as config]
    [yada.dev.hello :refer (new-hello-world-example)]
+   [yada.dev.phonebook :refer (new-phonebook-example)]
    [yada.dev.error-example :refer (new-error-example)]))
 
 (defn database-components [system]
@@ -85,6 +86,9 @@
 (defn hello-world-components [system config]
   (assoc system :hello-world (new-hello-world-example config)))
 
+(defn phonebook-example-components [system config]
+  (assoc system :phonebook-example (new-phonebook-example config)))
+
 (defn error-components [system]
   (assoc system :error-example (new-error-example)))
 
@@ -105,6 +109,7 @@
         (swagger-ui-components)
         (http-server-components config)
         (hello-world-components config)
+        (phonebook-example-components config)
         (error-components)
         (cors-demo-components config)
         (talks-components config)
@@ -127,6 +132,7 @@
                     :user-api
                     :user-manual
                     :docsite
+                    :phonebook-example
                     :jquery :bootstrap
                     :web-resources
                     :highlight-js-resources
@@ -152,6 +158,7 @@
    :user-manual {:router :docsite-router}
    :console {:router :console-router}
    :cors-demo {:router :cors-demo-router}
+   :phonebook-example {:router :docsite-router}
    :talks {:router :talks-router}})
 
 (defn new-production-system

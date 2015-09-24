@@ -21,5 +21,11 @@
 
 ;; Convenience functions, allowing us to encapsulate the context
 ;; structure.
+(defn content-type [ctx]
+  (get-in ctx [:response :representation :media-type :name]))
+
+(defn charset [ctx]
+  (get-in ctx [:response :representation :charset :alias]))
+
 (defn language [ctx]
   (get-in ctx [:response :representation :language]))

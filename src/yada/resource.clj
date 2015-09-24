@@ -86,14 +86,19 @@
 (def coerce-properties
   (sc/coercer Properties +properties-coercions+))
 
+(def default-properties
+  {:representations
+   [{:media-type #{"text/plain" "application/octet-stream;q=0.1"}
+     :charset yada.charset/default-platform-charset}]})
+
 (s/defn properties :- Properties
   [r]
   (let [res
         (coerce-properties
          (try
-           (p/properties r)
-           (catch AbstractMethodError e
-             {})))]
+           (merge default-properties (p/properties r))
+           (catch IllegalArgumentException e default-properties)
+           (catch AbstractMethodError e default-properties)))]
     (when (su/error? res)
       (throw (ex-info "Resource properties are not valid" {:error res})))
     res))
@@ -109,5 +114,5 @@
     {:exists? true}
     (try
       (p/properties r ctx)
-      (catch AbstractMethodError e
-        nil)))))
+      (catch IllegalArgumentException e {})
+      (catch AbstractMethodError e {})))))

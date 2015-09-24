@@ -15,6 +15,8 @@
    [ring.util.request :as req]
    ring.util.time
    schema.utils
+   [schema.core :as s]
+   [schema.coerce :as sc]
    [yada.body :as body]
    [yada.charset :as charset]
    [yada.coerce :as coerce]
@@ -181,10 +183,9 @@
                (rs/coerce schema params :query)))})]
 
     (let [errors (filter (comp schema.utils/error? second) parameters)]
-      (infof "errors is %s" (pr-str errors))
       (if (not-empty errors)
         (d/error-deferred (ex-info "" {:status 400
-                                       :body errors}))
+                                       :errors errors}))
 
         (if parameters
           (let [merged-params (merge
@@ -507,6 +508,7 @@
 
      (d/catch
          (fn [e]
+           (infof "error: %s" e)
            (error-handler e)
            (let [data (when (instance? clojure.lang.ExceptionInfo e) (ex-data e))]
              (do
@@ -529,6 +531,9 @@
                                             "application/edn;q=0.6"
                                             "application/edn;pretty=true;q=0.5"}
                               :charset charset/platform-charsets}])))]
+
+                 ;; TODO: Custom error handlers
+
                  (d/chain
                   (cond-> (make-context {})
                     status (assoc-in [:response :status] status)
@@ -626,8 +631,9 @@
                     (p/as-resource resource)
                     resource)
 
-         properties (when (satisfies? p/Properties resource)
-                               (resource/properties resource))
+         properties (if (satisfies? p/Properties resource)
+                      (resource/properties resource)
+                      resource/default-properties)
 
          ;; This handler services a collection of resources
          collection? (or (:collection? options)

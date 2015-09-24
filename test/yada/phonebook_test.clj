@@ -11,25 +11,23 @@
    [yada.test.util :refer (to-string)]
    [yada.dev.phonebook :as phonebook]))
 
-(defn create-db [entries]
-  {:phonebook (ref entries) :next-entry (ref (inc (count entries)))})
-
-(defn create-phonebook-routes [db]
-  (let [*routes (promise)
-        routes (phonebook/phonebook db *routes)]
-    (deliver *routes routes)
+(defn create-phonebook-router [db]
+  (let [*router (promise)
+        routes (phonebook/phonebook-api db *router)]
+    (deliver *router {:routes routes})
     routes))
 
 (deftest list-all-entries
-  (let [db (create-db {1 {:surname "Sparks"
-                          :firstname "Malcolm"
-                          :phone "1234"}
+  (let [db (phonebook/create-db
+            {1 {:surname "Sparks"
+                :firstname "Malcolm"
+                :phone "1234"}
 
-                       2 {:surname "Pither"
-                          :firstname "Jon"
-                          :phone "1235"}})
+             2 {:surname "Pither"
+                :firstname "Jon"
+                :phone "1235"}})
 
-        h (make-handler (create-phonebook-routes db))
+        h (make-handler (create-phonebook-router db))
         req (merge-with merge
                         (request :get "/phonebook")
                         {:headers {"accept" "application/edn"}})
@@ -44,9 +42,9 @@
       [first second :firstname] := "Malcolm")))
 
 (deftest create-entry
-  (let [db (create-db {})
+  (let [db (phonebook/create-db {})
 
-        h (make-handler (create-phonebook-routes db))
+        h (make-handler (create-phonebook-router db))
         req (request :post "/phonebook" {"surname" "Pither" "firstname" "Jon" "phone" "1235"})
         response @(h req)]
 

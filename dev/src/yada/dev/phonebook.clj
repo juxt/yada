@@ -2,12 +2,16 @@
 
 (ns yada.dev.phonebook
   (:require
-   [bidi.bidi :refer [path-for]]
+   [bidi.bidi :refer [path-for RouteProvider]]
    [clojure.tools.logging :refer :all]
+   [hiccup.core :refer [html]]
+   [modular.component.co-dependency :refer (co-using)]
    [schema.core :as s]
-   [yada.protocols :as p]
+   yada.charset
    [yada.methods :as m]
-   [yada.yada :refer [yada]]))
+   [yada.protocols :as p]
+   [yada.representation :as rep] ; remove
+   [yada.yada :refer [yada] :as yada]))
 
 ;; Create a simple HTTP service to represent a phone book.
 
@@ -27,36 +31,112 @@
 ;; The solution can be in any language. Please upload your project to github and provide us with the URL.
 ;; We are not looking for a client or UI for this solution, a simple HTTP based service will suffice.
 
-(defrecord Phonebook [db *routes]
+(def phonebook-representations
+  [{:media-type #{"text/html"
+                  "application/edn;q=0.9"
+                  "application/json;q=0.8"}
+    ;; TODO: When we remove this, we get non UTF-8 encoding, find out why
+    :charset "UTF-8"
+    }])
+
+(defrecord Phonebook [db *router]
   p/Properties
-  (properties [_] {:parameters {:post {:form {(s/required-key "surname") String
-                                              (s/required-key "firstname") String
-                                              (s/required-key "phone") String}}}
-                   :representations
-                   [{:media-type #{"application/json" "application/edn"}}]})
-  (properties [_ ctx] {})
-  m/Get (GET [_ ctx] @(:phonebook db))
-  m/Post (POST [_ ctx]
-           (if-let [rec (get-in ctx [:parameters :form])]
-             (dosync
-              (ensure (:next-entry db))
-              (let [nextval @(:next-entry db)]
-                (alter (:phonebook db) conj [nextval rec])
-                (alter (:next-entry db) inc)
-                (-> (:response ctx)
-                    (assoc :status 303)
-                    (update-in [:headers] merge {"location" (path-for @*routes ::phonebook-entry :entry nextval)}))))
+  (properties [_]
+    {:parameters {:post {:form {(s/required-key "surname") String
+                                (s/required-key "firstname") String
+                                (s/required-key "phone") String}}}
+     :representations phonebook-representations})
 
-             (do
-               (infof "parameters is %s" (:parameters ctx))
-               (throw (ex-info "No record found (delete me)" {})))
-             )))
+  m/Get
+  (GET [_ ctx]
+    (let [entries @(:phonebook db)]
+      (case (yada/content-type ctx)
+        "text/html"
+        (html
+         [:body
+          [:table
+           [:thead
+            [:tr
+             [:th "Entry"]
+             [:th "Surname"]
+             [:th "Firstname"]
+             [:th "Phone"]]]
 
+           [:tbody
+            (for [[id {:keys [surname firstname phone]}] entries
+                  :let [href (path-for (:routes @*router) ::phonebook-entry :entry id)]]
+              [:tr
+               [:td [:a {:href href} href]]
+               [:td surname]
+               [:td firstname]
+               [:td phone]])]]
 
-(defrecord PhonebookEntry [db *routes]
-  p/Properties)
+          [:h4 "Add entry"]
 
-(defn phonebook [db *routes]
-  ["/phonebook" {"" (yada (->Phonebook db *routes) {:id ::phonebook})
-                 ["/" :entry] (yada (->PhonebookEntry db *routes)
+          [:form {:method :post}
+           [:style "label { margin: 6pt }"]
+           [:p
+            [:label "Surname"]
+            [:input {:name "surname" :type :text}]]
+           [:p
+            [:label "Firstname"]
+            [:input {:name "firstname" :type :text}]]
+           [:p
+            [:label "Phone"]
+            [:input {:name "phone" :type :text}]]
+           [:p
+            [:input {:type :submit}]]]])
+
+        ;; Default content-type if not text/html
+        entries)))
+
+  m/Post
+  (POST [_ ctx]
+    (dosync
+     (let [nextval @(:next-entry db)
+           {:strs [surname firstname phone]} (get-in ctx [:parameters :form])
+           entry {:surname surname
+                  :firstname firstname
+                  :phone phone}]
+       (alter (:phonebook db) conj [nextval entry])
+       (alter (:next-entry db) inc)
+       ;; Return a 303 response with a Location header
+       (-> (:response ctx)
+           (assoc :status 303)
+           (update-in [:headers] merge {"location" (path-for (:routes @*router) ::phonebook-entry :entry nextval)}))))))
+
+(defrecord PhonebookEntry [db *router]
+  p/Properties
+  (properties [_] {:parameters {:get {:path {:entry Long}}}
+                   :representations phonebook-representations})
+
+  m/Get
+  (GET [_ ctx]
+    (let [id (get-in ctx [:parameters :path :entry])
+          entry (get @(:phonebook db) id)]
+      entry)))
+
+(defn phonebook-api [db *router]
+  ["/phonebook" {"" (yada (->Phonebook db *router) {:id ::phonebook})
+                 ["/" :entry] (yada (->PhonebookEntry db *router)
                                     {:id ::phonebook-entry})}])
+
+(defn create-db [entries]
+  {:phonebook (ref entries) :next-entry (ref (inc (count entries)))})
+
+(defrecord PhonebookExample [*router]
+  RouteProvider
+  (routes [_]
+    (phonebook-api
+     (create-db {1 {:surname "Sparks"
+                    :firstname "Malcolm"
+                    :phone "1234"}
+
+                 2 {:surname "Pither"
+                    :firstname "Jon"
+                    :phone "1235"}}) *router)))
+
+(defn new-phonebook-example [config]
+  (co-using
+   (map->PhonebookExample {})
+   [:router]))
