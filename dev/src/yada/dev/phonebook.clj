@@ -4,6 +4,7 @@
   (:require
    [bidi.bidi :refer [path-for RouteProvider]]
    [clojure.tools.logging :refer :all]
+   [clojure.java.io :as io]
    [hiccup.core :refer [html]]
    [modular.component.co-dependency :refer (co-using)]
    [schema.core :as s]
@@ -31,6 +32,83 @@
 ;; The solution can be in any language. Please upload your project to github and provide us with the URL.
 ;; We are not looking for a client or UI for this solution, a simple HTTP based service will suffice.
 
+(defn index-html [entries routes]
+  (html
+   [:body
+    (if (not-empty entries)
+      [:table
+       [:thead
+        [:tr
+         [:th "Entry"]
+         [:th "Surname"]
+         [:th "Firstname"]
+         [:th "Phone"]]]
+
+       [:tbody
+        (for [[id {:keys [surname firstname phone]}] entries
+              :let [href (path-for routes ::phonebook-entry :entry id)]]
+          [:tr
+           [:td [:a {:href href} href]]
+           [:td surname]
+           [:td firstname]
+           [:td phone]])]]
+      [:h2 "No entries"])
+
+    [:h4 "Add entry"]
+
+    [:form {:method :post}
+     [:style "label { margin: 6pt }"]
+     [:p
+      [:label "Surname"]
+      [:input {:name "surname" :type :text}]]
+     [:p
+      [:label "Firstname"]
+      [:input {:name "firstname" :type :text}]]
+     [:p
+      [:label "Phone"]
+      [:input {:name "phone" :type :text}]]
+     [:p
+      [:input {:type :submit :value "Add entry"}]]]]))
+
+(defn entry-html [{:keys [firstname surname phone]}
+                  {:keys [entry index]}
+                  ]
+  (html
+   [:body
+    [:script (format "index=\"%s\";" index)]
+    [:script (format "entry=\"%s\";" entry)]
+    [:h2 (format "%s %s" firstname surname)]
+    [:p "Phone: " phone]
+
+    [:h4 "Update entry"]
+    [:form#entry
+     [:style "label { margin: 6pt }"]
+     [:p
+      [:label "Firstname"]
+      [:input {:type :text :value firstname}]
+      ]
+     [:p
+      [:label "Surname"]
+      [:input {:type :text :value surname}]]
+     [:p
+      [:label "Phone"]
+      [:input {:type :text :value phone}]]
+     ]
+
+    [:button {:onclick (format "phonebook.update('%s')" entry)} "Update"]
+    [:button {:onclick (format "phonebook.delete('%s')" entry)} "Delete"]
+    [:p [:a {:href index} "Index"]]
+    [:script (slurp (io/resource "js/phonebook.js"))]]))
+
+(defn add-entry
+  "Add a new entry to the database"
+  [db entry]
+  (dosync
+   (let [nextval @(:next-entry db)]
+     (alter (:phonebook db) conj [nextval entry])
+     (alter (:next-entry db) inc)
+     nextval)))
+
 (def phonebook-representations
   [{:media-type #{"text/html"
                   "application/edn;q=0.9"
@@ -51,88 +129,47 @@
   (GET [_ ctx]
     (let [entries @(:phonebook db)]
       (case (yada/content-type ctx)
-        "text/html"
-        (html
-         [:body
-          [:table
-           [:thead
-            [:tr
-             [:th "Entry"]
-             [:th "Surname"]
-             [:th "Firstname"]
-             [:th "Phone"]]]
-
-           [:tbody
-            (for [[id {:keys [surname firstname phone]}] entries
-                  :let [href (path-for (:routes @*router) ::phonebook-entry :entry id)]]
-              [:tr
-               [:td [:a {:href href} href]]
-               [:td surname]
-               [:td firstname]
-               [:td phone]])]]
-
-          [:h4 "Add entry"]
-
-          [:form {:method :post}
-           [:style "label { margin: 6pt }"]
-           [:p
-            [:label "Surname"]
-            [:input {:name "surname" :type :text}]]
-           [:p
-            [:label "Firstname"]
-            [:input {:name "firstname" :type :text}]]
-           [:p
-            [:label "Phone"]
-            [:input {:name "phone" :type :text}]]
-           [:p
-            [:input {:type :submit}]]]])
-
-        ;; Default content-type if not text/html
+        "text/html" (index-html entries (:routes @*router))
         entries)))
 
   m/Post
   (POST [_ ctx]
     (dosync
-     (let [nextval @(:next-entry db)
-           {:strs [surname firstname phone]} (get-in ctx [:parameters :form])
-           entry {:surname surname
-                  :firstname firstname
-                  :phone phone}]
-       (alter (:phonebook db) conj [nextval entry])
-       (alter (:next-entry db) inc)
-       ;; Return a 303 response with a Location header
-       (-> (:response ctx)
-           (assoc :status 303)
-           (update-in [:headers] merge {"location" (path-for (:routes @*router) ::phonebook-entry :entry nextval)}))))))
+     (let [{:strs [surname firstname phone]} (get-in ctx [:parameters :form])
+           nextval (add-entry db {:surname surname
+                                  :firstname firstname
+                                  :phone phone})]
+
+       (yada/redirect-after-post
+        ctx (path-for (:routes @*router) ::phonebook-entry :entry nextval))))))
 
 (defrecord PhonebookEntry [db *router]
   p/Properties
-  (properties [_] {:parameters {:get {:path {:entry Long}}
-                                :post {:path {:entry Long}
-                                       :form {(s/required-key "method") String}}}
-                   :representations phonebook-representations})
+  (properties [_]
+    {:parameters
+     {:get {:path {:entry Long}}
+      :post {:path {:entry Long}
+             :form {(s/required-key "method") String}}
+      :delete {:path {:entry Long}}}
+     :representations phonebook-representations})
 
   m/Get
   (GET [_ ctx]
     (let [id (get-in ctx [:parameters :path :entry])
           {:keys [firstname surname phone] :as entry} (get @(:phonebook db) id)]
-      (case (yada/content-type ctx)
-        "text/html"
-        (html [:body
-               [:h2 (format "%s %s" firstname surname)]
-               [:p "Phone: " phone]
-               [:form {:method :post} [:input {:type :submit :name "method" :value "Delete"}]]
-               [:p [:a {:href (path-for (:routes @*router) ::phonebook)} "Index"]]])
-        entry)))
+      (when entry
+        (case (yada/content-type ctx)
+          "text/html"
+          (entry-html
+           entry
+           {:entry (path-for (:routes @*router) ::phonebook-entry :entry id)
+            :index (path-for (:routes @*router) ::phonebook)})
+          entry))))
 
-  m/Post
-  (POST [this ctx]
-    ;; For supporting HTML browsers that can't do other methods
-    (when (= (get-in ctx [:parameters :form "method"]) "Delete")
-      (m/DELETE this ctx)
-      (-> (:response ctx)
-           (assoc :status 303)
-           (update-in [:headers] merge {"location" (path-for (:routes @*router) ::phonebook)}))))
+  m/Put
+  (PUT [_ ctx]
+    (infof "Put!")
+    )
 
   m/Delete
   (DELETE [_ ctx]
