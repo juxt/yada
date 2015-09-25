@@ -98,6 +98,7 @@
     [:button {:onclick (format "phonebook.update('%s')" entry)} "Update"]
     [:button {:onclick (format "phonebook.delete('%s')" entry)} "Delete"]
     [:p [:a {:href index} "Index"]]
+    [:p "Warning, the Update button has not yet been fully implemented!"]
     [:script (slurp (io/resource "js/phonebook.js"))]]))
 
 (defn add-entry

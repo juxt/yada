@@ -67,7 +67,9 @@
                                 (path-for @*cors-demo-router :yada.dev.cors-demo/index))} "CORS demo"] " - to demonstrate CORS support"]
                [:li [:a {:href (str
                                 (config/talks-origin config)
-                                (path-for @*talks-router :yada.dev.talks/index))} "Talks"]]]
+                                (path-for @*talks-router :yada.dev.talks/index))} "Talks"]]
+               [:li [:a {:href (str
+                                (path-for @*router :yada.dev.phonebook/phonebook))} "Phonebook demo"]]]
               ])}))
 
    {:id ::index}))
