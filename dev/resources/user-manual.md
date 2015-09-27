@@ -919,6 +919,109 @@ For example, files ending in `.md` may be served with a FileResource with a read
 
 The `yada.resources.file-resourceDirectoryResource
 
+## Methods
+
+[coming soon]
+
+## Routing
+
+Since the `yada` function returns a Ring-compatible handler, it is compatible with any Clojure URI router.
+
+However, yada is designed to work seamlessly with its sister library
+[bidi](https://github.com/juxt/bidi), and unless you have a preference
+otherwise, bidi is recommended.
+
+While yada is concerned with semantics of how a resource responds to
+requests, bidi is concerned with the identification of these
+resources. In the web, identification of resources is a first-class
+concept. Each resource on the web is uniquely identified with a Uniform
+Resource Identifier (URI).
+
+No resource is an island, and it is common that resource representations
+need to embed references to other resources. This is true both for
+ad-hoc web applications and 'hypermedia APIs', where the client
+traverses the application via a series of hyperlinks.
+
+These days, hyperlinks are so critical to the reliable operation of
+systems that it is no longer satisfactory to rely on ad-hoc means of
+constructing these URIs, they must be generated from the same tree of
+data that defines the API route structure.
+
+### A quick introduction to bidi
+
+[coming soon]
+
+### Adding policies
+
+Since we are using a data-structure for your routes, we can walk the tree to
+find yada resources which, as data, can be augmented according to any
+policies we may have for a particular sub-tree of routes.
+
+Let's demonstrate this with an example. Here is a data structure
+compatible with the bidi routing library.
+
+```clojure
+(require '[yada.walk :refer [basic-auth]])
+
+["/api"
+   {"/status" (yada "API working!")
+    "/hello" (fn [req] {:body "hello"})
+    "/protected" (basic-auth
+                  "Protected" (fn [ctx]
+                                (or
+                                 (when-let [auth (:authentication ctx)]
+                                   (= ((juxt :user :password) auth)
+                                      ["alice" "password"]))
+                                 :not-authorized))
+                  {"/a" (yada "Secret area A")
+                   "/b" (yada "Secret area B")})}]
+```
+
+The 2 routes, `/api/protected/a` and `/api/protected/b` are wrapped with
+`basic-auth`. This function simply walks the tree and augments each yada
+resource it finds with some additional handler options, effectively
+securing both with HTTP Basic Authentication.
+
+If we examine the source code in the `yada.walk` namespace we see that
+there is no clever trickery involved, merely a `clojure.walk/postwalk`
+of the data structure below it to update the resource leaves with the
+given security policy.
+
+It is easy to envisage a number of useful functions that could be
+written to transform a sub-tree of routes in this way to provide many
+kinds of additional functionality. This is the advantage that choosing a
+data-centric approach gives you. When both your routes and resources are
+data, they are amenable to programmatic transformation, making our
+future options virtually limitless.
+
+## Swagger
+
+[coming soon]
+
+## Example 1: Phonebook
+
+We have covered a lot of ground so far. Let's consolidate our knowledge by building a simple application, using all the concepts we've learned so far.
+
+We'll build a simple phonebook application. Here is a the brief :-
+
+> Create a simple HTTP service to represent a phone book.
+
+> Acceptance criteria.
+> - List all entries in the phone book.
+> - Create a new entry to the phone book.
+> - Remove an existing entry in the phone book.
+> - Update an existing entry in the phone book.
+> - Search for entries in the phone book by surname.
+
+> A phone book entry must contain the following details:
+> - Surname
+> - Firstname
+> - Phone number
+> - Address (optional)
+
+### The index
+
+
 ## Async
 
 Under normal circumstances, with Clojure running on a JVM, each request can be processed by a separate thread.
@@ -983,52 +1086,6 @@ that yada provides all the features of Ratpack, and more, but native to
 Clojure. The combination of Clojure and yada significantly reduces the
 amount of code you have to write to create scalable web APIs for your
 applications.
-
-## Routing
-
-Since the `yada` function returns a Ring-compatible
-handler, it is compatible with any Clojure URI router.
-
-If you use a data-structure for your routes, you can walk the tree to
-find yada resources which, as data, can be augmented according to any
-policies you may have for a particular sub-tree of routes.
-
-Let's demonstrate this with an example. Here is a data structure
-compatible with the bidi routing library.
-
-```clojure
-(require '[yada.walk :refer [basic-auth]])
-
-["/api"
-   {"/status" (yada "API working!")
-    "/hello" (fn [req] {:body "hello"})
-    "/protected" (basic-auth
-                  "Protected" (fn [ctx]
-                                (or
-                                 (when-let [auth (:authentication ctx)]
-                                   (= ((juxt :user :password) auth)
-                                      ["alice" "password"]))
-                                 :not-authorized))
-                  {"/a" (yada "Secret area A")
-                   "/b" (yada "Secret area B")})}]
-```
-
-The 2 routes, `/api/protected/a` and `/api/protected/b` are wrapped with
-`basic-auth`. This function simply walks the tree and augments each yada
-resource it finds with some additional handler options, effectively
-securing both with HTTP Basic Authentication.
-
-If we examine the source code in the `yada.walk` namespace we see that
-there is no clever trickery involved, merely a `clojure.walk/postwalk`
-of the data structure below it to update the resource leaves with the
-given security policy.
-
-It is easy to envisage a number of useful functions that could be
-written to transform a sub-tree of routes in this way to provide many
-kinds of additional functionality. This is the advantage that choosing a
-data-centric approach gives you. When both your routes and resources are
-data, they are amenable to programmatic transformation, making your
-future options virtually limitless.
 
 ## Options
 
