@@ -84,6 +84,7 @@ suggestions.
 * Jon Pither
 * Håkan Råberg
 * Ernestas Lisauskas
+* Thomas van der Veen
 
 ## Copyright & License
 
