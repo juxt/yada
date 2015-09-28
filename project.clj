@@ -8,7 +8,8 @@
 
   :exclusions [com.stuartsierra/component
                prismatic/schema
-               org.clojure/clojure]
+               org.clojure/clojure
+               org.clojure/tools-reader]
 
   :dependencies
   [[bidi "1.21.0" :exclusions [ring/ring-core]]
@@ -25,7 +26,8 @@
    [prismatic/schema "0.4.3" :exclusions [potemkin]]
    [potemkin "0.4.1" :exclusions [riddley]]
    [ring-basic-authentication "1.0.5"]
-   [org.clojure/core.async "0.1.346.0-17112a-alpha"]]
+   [org.clojure/core.async "0.1.346.0-17112a-alpha"]
+   [org.clojure/tools.reader "0.9.1"]]
 
   :pedantic? :abort
 
@@ -62,7 +64,7 @@
           [org.slf4j/jcl-over-slf4j "1.7.2"]
           [org.slf4j/log4j-over-slf4j "1.7.2"]
 
-          [com.stuartsierra/component "0.2.2"]
+          [com.stuartsierra/component "0.2.3"]
           [org.clojure/tools.namespace "0.2.5"]
           [org.clojure/data.zip "0.1.1"]
 
@@ -88,9 +90,9 @@
           [re-frame "0.4.1"]
           [kibu/pushy "0.3.2"]]
 
-         :source-paths ["dev/src"]
-         :resource-paths ["dev/resources"]}
+         :source-paths ["dev/src" "examples/phonebook/src"]
+         :resource-paths ["dev/resources" "examples/phonebook/resources"]}
    :test
-   {:source-paths ["yada.test/src"]}
+   {:source-paths ["yada.test/src" "examples/phonebook/test"]}
 
    })

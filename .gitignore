@@ -9,3 +9,6 @@
 /dev/resources/hello-async.png
 /todo.org_archive
 /figwheel_server.log
+/examples/phonebook/.nrepl-port
+/examples/phonebook/target/classes/META-INF/maven/yada/phonebook/pom.properties
+/examples/phonebook/target/repl-port
