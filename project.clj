@@ -91,8 +91,9 @@
           [kibu/pushy "0.3.2"]]
 
          :source-paths ["dev/src" "examples/phonebook/src"]
+         :test-paths ["test" "examples/phonebook/test"]
          :resource-paths ["dev/resources" "examples/phonebook/resources"]}
    :test
-   {:source-paths ["yada.test/src" "examples/phonebook/test"]}
+   {:source-paths ["yada.test/src"]}
 
    })
