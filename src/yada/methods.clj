@@ -174,10 +174,11 @@
 
      (d/catch
          (fn [e]
-           ;;(infof e "Error on GET")
            (if (:status (ex-data e))
              (throw e)
-             (throw (ex-info "Error on GET" (select-keys ctx [:response :resource]) e))))))))
+             (throw (ex-info "Error on GET" {:response (:response ctx)
+                                             :resource (type (:resource ctx))
+                                             :error e}))))))))
 
 ;; --------------------------------------------------------------------------------
 
