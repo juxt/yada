@@ -38,14 +38,13 @@
 
   m/Post
   (POST [_ ctx]
-    (dosync
-     (let [{:strs [surname firstname phone]} (get-in ctx [:parameters :form])
-           nextval (db/add-entry db {:surname surname
-                                     :firstname firstname
-                                     :phone phone})]
+    (let [{:strs [surname firstname phone]} (get-in ctx [:parameters :form])
+          id (db/add-entry db {:surname surname
+                               :firstname firstname
+                               :phone phone})]
 
-       (yada/redirect-after-post
-        ctx (path-for @*routes :phonebook.api/entry :entry nextval))))))
+      (yada/redirect-after-post
+       ctx (path-for @*routes :phonebook.api/entry :entry id)))))
 
 (defn new-index-resource [db *routes]
   (->IndexResource db *routes))
