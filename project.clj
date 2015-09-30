@@ -9,7 +9,7 @@
   :exclusions [com.stuartsierra/component
                prismatic/schema
                org.clojure/clojure
-               org.clojure/tools-reader]
+               org.clojure/tools.reader]
 
   :dependencies
   [[bidi "1.21.0" :exclusions [ring/ring-core]]
