@@ -539,6 +539,7 @@
                     (:headers data) (assoc-in [:response :headers] (:headers data))
                     (not (:body data)) (assoc-in [:response :body]
                                                  (body/to-body (body/render-error status e rep ctx) rep))
+
                     rep (assoc-in [:response :representation] rep))
                   create-response))
                )))))))
@@ -571,14 +572,9 @@
                                       "application/edn;pretty=true"
                                       "application/json;pretty=true"}}]})
 
-  (properties
-    [_ ctx]
-    {}
-    )
+  (properties [_ ctx] {})
   methods/Get
-  (GET [this ctx] (into {} this))
-
-  )
+  (GET [this ctx] (into {} this)))
 
 (defrecord NoAuthorizationSpecified []
   service/Service
@@ -690,7 +686,6 @@
 ;;        :security (as-sequential (:security options))
         :vary vary}
        (when journal {:journal journal}))))))
-
 
 (def yada handler)
 

@@ -201,7 +201,8 @@
        :doc "When set to logical true, errors will be output with their stack-traces. Defaults to true."}
   *output-stack-traces* true)
 
-(defmulti render-error (fn [status error representation ctx] (-> representation :media-type :name)))
+(defmulti render-error (fn [status error representation ctx]
+                         (-> representation :media-type :name)))
 
 (defn get-error-message [code]
   (or (some-> status (get code) :name) "Unknown"))
