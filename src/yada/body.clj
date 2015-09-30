@@ -8,7 +8,7 @@
    [clojure.walk :refer [keywordize-keys]]
    [byte-streams :as bs]
    [cheshire.core :as json]
-   [hiccup.core :refer [html]]
+   [hiccup.core :refer [html h]]
    [hiccup.page :refer [html5]]
    [json-html.core :as jh]
    [manifold.stream :refer [->source transform]]
@@ -224,7 +224,7 @@
        [:p (.getMessage error)]
        (when *output-stack-traces*
          [:pre
-          (with-out-str (pprint error))])])
+          (h (with-out-str (pprint error)))])])
 
     (when-let [path (:journal-browser-path options)]
       [:div
