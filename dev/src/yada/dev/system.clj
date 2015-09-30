@@ -9,6 +9,8 @@
    [clojure.string :as str]
    [clojure.tools.reader.reader-types :refer (indexing-push-back-reader)]
    [com.stuartsierra.component :refer (system-map system-using using)]
+   [modular.component.co-dependency :as co-dependency]
+
    [modular.bidi :refer (new-router new-web-resources new-archived-web-resources new-redirect)]
    [yada.dev.docsite :refer (new-docsite)]
    [yada.dev.console :refer (new-console)]
@@ -23,8 +25,9 @@
    [yada.dev.async :refer (new-handler)]
    [yada.dev.config :as config]
    [yada.dev.hello :refer (new-hello-world-example)]
-   [yada.dev.phonebook :refer (new-phonebook-example)]
-   [yada.dev.error-example :refer (new-error-example)]))
+   [yada.dev.error-example :refer (new-error-example)]
+
+   [phonebook.system :as phonebook]))
 
 (defn database-components [system]
   (assoc system :database (new-database)))
@@ -86,9 +89,6 @@
 (defn hello-world-components [system config]
   (assoc system :hello-world (new-hello-world-example config)))
 
-(defn phonebook-example-components [system config]
-  (assoc system :phonebook-example (new-phonebook-example config)))
-
 (defn error-components [system]
   (assoc system :error-example (new-error-example)))
 
@@ -97,6 +97,12 @@
 
 (defn talks-components [system config]
   (assoc system :talks (new-talks config)))
+
+(defn phonebook-system [system]
+  (assoc system :phonebook
+         (-> (phonebook/new-system-map)
+             (system-using (phonebook/new-dependency-map))
+             (co-dependency/system-co-using (phonebook/new-co-dependency-map)))))
 
 (defn new-system-map
   [config]
@@ -109,10 +115,10 @@
         (swagger-ui-components)
         (http-server-components config)
         (hello-world-components config)
-        (phonebook-example-components config)
         (error-components)
         (cors-demo-components config)
         (talks-components config)
+        (phonebook-system)
 
         (assoc :docsite-redirect (new-redirect :from "/" :to :yada.dev.docsite/index))
         (assoc :console-redirect (new-redirect :from "/" :to :yada.dev.console/index))
@@ -132,7 +138,6 @@
                     :user-api
                     :user-manual
                     :docsite
-                    :phonebook-example
                     :jquery :bootstrap
                     :web-resources
                     :highlight-js-resources
@@ -158,7 +163,6 @@
    :user-manual {:router :docsite-router}
    :console {:router :console-router}
    :cors-demo {:router :cors-demo-router}
-   :phonebook-example {:router :docsite-router}
    :talks {:router :talks-router}})
 
 (defn new-production-system
