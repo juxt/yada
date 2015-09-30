@@ -42,6 +42,9 @@
       [:label "Phone"]
       [:input {:name "phone" :type :text}]]
      [:p
+      [:label "Phone2"]
+      [:input {:name "phone" :type :text}]]
+     [:p
       [:input {:type :submit :value "Add entry"}]]]]))
 
 (defn entry-html [{:keys [firstname surname phone]}
