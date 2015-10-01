@@ -8,6 +8,7 @@
                           string->keyword
                           keyword-enum-matcher
                           set-matcher]]
+   [ring.swagger.coerce :as rsc]
    [clj-time.coerce :as time])
   (:import [schema.core RequiredKey OptionalKey]
            [clojure.lang Keyword]))
@@ -88,12 +89,9 @@
   "A matcher that coerces keywords and keyword enums from strings, and longs and doubles
      from numbers on the JVM (without losing precision)"
   [schema]
-  (or (string-coercion-matcher schema)
-      (+date-coercions+ schema)
-      (keyword-enum-matcher schema)
-      (set-matcher schema)
-      (kw-map-matcher schema)
-      (multiple-args-matcher schema)))
+  (or
+   (kw-map-matcher schema)
+   (multiple-args-matcher schema)))
 
 ;; TODO: Add tests
 
@@ -103,3 +101,14 @@
            } +parameter-key-coercions+)
  {"phone" ["789"] "first.name" "Frank" "surname" "Briggs"}
  )
+
+
+(let [c (coercer {(s/optional-key "first.name") s/Str
+                     :surname s/Str
+                     :phone [s/Str]
+                     }
+                    (or
+                     +parameter-key-coercions+
+                     (rsc/coercer :json)))]
+  (c {"phone" ["789"] "first.name" "Frank" "surname" "Briggs"})
+  )

@@ -10,7 +10,7 @@
    [modular.component.co-dependency :refer [co-using]]
    [modular.component.co-dependency.schema :refer [co-dep]]
    [schema.core :as s]
-   [phonebook.resource-types :refer [new-index-resource new-entry-resource]]
+   [phonebook.resources :refer [new-index-resource new-entry-resource]]
    [yada.yada :refer [yada]]))
 
 (defn api [db *routes]

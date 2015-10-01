@@ -1,6 +1,6 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(ns phonebook.resource-types
+(ns phonebook.resources
   (:require
    [bidi.bidi :refer [path-for]]
    [clojure.tools.logging :refer :all]
@@ -24,9 +24,9 @@
 (defrecord IndexResource [db *routes]
   p/Properties
   (properties [_]
-    {:parameters {:post {:form {(s/required-key "surname") String
-                                (s/required-key "firstname") String
-                                (s/required-key "phone") String}}}
+    {:parameters {:post {:form {:surname String
+                                :firstname String
+                                :phone [String]}}}
      :representations phonebook-representations})
 
   m/Get
@@ -38,11 +38,7 @@
 
   m/Post
   (POST [_ ctx]
-    (let [{:strs [surname firstname phone]} (get-in ctx [:parameters :form])
-          id (db/add-entry db {:surname surname
-                               :firstname firstname
-                               :phone phone})]
-
+    (let [id (db/add-entry db (get-in ctx [:parameters :form]))]
       (yada/redirect-after-post
        ctx (path-for @*routes :phonebook.api/entry :entry id)))))
 

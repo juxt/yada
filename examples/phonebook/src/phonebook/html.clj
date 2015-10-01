@@ -39,10 +39,13 @@
       [:label "Firstname"]
       [:input {:name "firstname" :type :text}]]
      [:p
+      [:label "XXX"]
+      [:input {:name "xxx" :type :text}]]
+     [:p
       [:label "Phone"]
       [:input {:name "phone" :type :text}]]
      [:p
-      [:label "Phone2"]
+      [:label "Alternative phone"]
       [:input {:name "phone" :type :text}]]
      [:p
       [:input {:type :submit :value "Add entry"}]]]]))

@@ -148,6 +148,9 @@
         request (:request ctx)
 
         parameters (-> ctx :handler :parameters)
+        coercers (-> ctx :handler :parameter-coercers)
+
+        _ (infof "coercers is %s" coercers)
 
         parameters
         (when parameters
@@ -163,11 +166,14 @@
              (rs/coerce schema (-> request (assoc-query-params (or (:charset ctx) "UTF-8")) :query-params) :query))
 
            :form
-           (when-let [schema (get-in parameters [method :form])]
-             (when (req/urlencoded-form? request)
-               (let [fp (ring.util.codec/form-decode (read-body (-> ctx :request))
-                                                     (req/character-encoding request))]
-                 (rs/coerce schema fp :json))))
+           (when (req/urlencoded-form? request)
+             (if-let [coercer (get-in coercers [method :form])]
+               (do
+                 (infof "FORM COERCER")
+                 #_(rs/coerce schema fp :json)
+                 (coercer (ring.util.codec/form-decode (read-body (-> ctx :request))
+                                                       (req/character-encoding request))))
+               (throw (ex-info "TODO: Add form coercer" {}))))
 
            :body
            (when-let [schema (get-in parameters [method :body])]
@@ -652,6 +658,22 @@
          parameters (or (:parameters options)
                         (:parameters properties))
 
+         parameter-coercers
+         (->> (for [[method schemas] parameters]
+                [method
+                 (merge
+                  (when-let [schema (:form schemas)]
+                    {:form (when-let [schema (:form schemas)]
+                             (sc/coercer schema
+                                         (or
+                                          coerce/+parameter-key-coercions+
+                                          (rsc/coercer :json)
+                                          )))}))])
+              (filter (comp not nil? second))
+              (into {}))
+
+         _ (infof "on-build parameter coercers is %s" parameter-coercers)
+
          representations (rep/representation-seq
                           (rep/coerce-representations
                            (or
@@ -671,20 +693,21 @@
      (map->Handler
       (merge
        {:allowed-methods allowed-methods
-;;        :authorization (or (:authorization options) (NoAuthorizationSpecified.))
+        ;;        :authorization (or (:authorization options) (NoAuthorizationSpecified.))
         :base base
         :id (or (:id options) (java.util.UUID/randomUUID))
         :interceptor-chain default-interceptor-chain
         :known-methods known-methods
         :options options
         :parameters parameters
+        :parameter-coercers parameter-coercers
         :representations representations
         :resource resource
         :properties properties
 
         :collection? collection?
 
-;;        :security (as-sequential (:security options))
+        ;;        :security (as-sequential (:security options))
         :vary vary}
        (when journal {:journal journal}))))))
 
