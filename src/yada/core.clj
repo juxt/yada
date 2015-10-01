@@ -11,6 +11,7 @@
    ring.middleware.basic-authentication
    [ring.middleware.params :refer (assoc-query-params)]
    [ring.swagger.schema :as rs]
+   [ring.swagger.coerce :as rsc]
    ring.util.codec
    [ring.util.request :as req]
    ring.util.time
@@ -161,6 +162,13 @@
              ;; http://www.w3.org/TR/html5/forms.html#application/x-www-form-urlencoded-encoding-algorithm
              (rs/coerce schema (-> request (assoc-query-params (or (:charset ctx) "UTF-8")) :query-params) :query))
 
+           :form
+           (when-let [schema (get-in parameters [method :form])]
+             (when (req/urlencoded-form? request)
+               (let [fp (ring.util.codec/form-decode (read-body (-> ctx :request))
+                                                     (req/character-encoding request))]
+                 (rs/coerce schema fp :json))))
+
            :body
            (when-let [schema (get-in parameters [method :body])]
              (let [body (read-body (-> ctx :request))]
@@ -169,13 +177,6 @@
                 ;; See rfc7231#section-3.1.1.5 - we should assume application/octet-stream
                 (or (req/content-type request) "application/octet-stream")
                 schema)))
-
-           :form
-           (when-let [schema (get-in parameters [method :form])]
-             (when (req/urlencoded-form? request)
-               (let [fp (ring.util.codec/form-decode (read-body (-> ctx :request))
-                                                     (req/character-encoding request))]
-                 (rs/coerce schema fp :json))))
 
            :header
            (when-let [schema (get-in parameters [method :header])]

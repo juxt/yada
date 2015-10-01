@@ -65,10 +65,7 @@
 
    (s/optional-key :last-modified) Date
    (s/optional-key :version) s/Any
-
-   (s/optional-key :collection?)
-   s/Bool
-
+   (s/optional-key :collection?) s/Bool
    (s/optional-key :exists?) s/Bool
 
    QualifiedKeyword s/Any})
