@@ -13,7 +13,7 @@
    [yada.protocols :as p]
    [yada.yada :as yada]))
 
-(def phonebook-representations
+(def representations
   [{:media-type #{"text/html"
                   "application/edn;q=0.9"
                   "application/json;q=0.8"}
@@ -27,7 +27,7 @@
     {:parameters {:post {:form {:surname String
                                 :firstname String
                                 :phone [String]}}}
-     :representations phonebook-representations})
+     :representations representations})
 
   m/Get
   (GET [_ ctx]
@@ -53,7 +53,7 @@
       :post {:path {:entry Long}
              :form {(s/required-key "method") String}}
       :delete {:path {:entry Long}}}
-     :representations phonebook-representations})
+     :representations representations})
 
   m/Get
   (GET [_ ctx]
