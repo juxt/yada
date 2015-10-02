@@ -9,6 +9,10 @@
 (defn index-html [entries routes]
   (html
    [:body
+    [:form#search {:method :get}
+     [:input {:type :text :name :q}]
+     [:input {:type :submit :value "Search"}]]
+
     (if (not-empty entries)
       [:table
        [:thead

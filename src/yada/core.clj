@@ -157,11 +157,13 @@
              (rs/coerce schema (:route-params request) :query))
 
            :query
-           (when-let [schema (get-in parameters [method :query])]
+           (when-let [coercer (get-in coercers [method :query])]
              ;; We'll call assoc-query-params with the negotiated charset, falling back to UTF-8.
              ;; Also, read this:
              ;; http://www.w3.org/TR/html5/forms.html#application/x-www-form-urlencoded-encoding-algorithm
-             (rs/coerce schema (-> request (assoc-query-params (or (:charset ctx) "UTF-8")) :query-params) :query))
+
+             (coercer
+              (-> request (assoc-query-params (or (:charset ctx) "UTF-8")) :query-params)))
 
            :form
            (when (req/urlencoded-form? request)
@@ -656,6 +658,13 @@
          (->> (for [[method schemas] parameters]
                 [method
                  (merge
+                  (when-let [schema (:query schemas)]
+                    {:query (when-let [schema (:query schemas)]
+                              (sc/coercer schema
+                                          (or
+                                           coerce/+parameter-key-coercions+
+                                           (rsc/coercer :query)
+                                           )))})
                   (when-let [schema (:form schemas)]
                     {:form (when-let [schema (:form schemas)]
                              (sc/coercer schema

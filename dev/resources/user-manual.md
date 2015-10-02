@@ -647,6 +647,21 @@ But for `POST` requests, there is a body parameter, which defines the entity bod
 
 We can declare the parameter in the resource description's __:parameters__ entry. At runtime, these parameters are extracted from a request and  added as the __:parameters__ entry of the _request context_.
 
+### Capturing multi-value parameters
+
+Occasionally, you may have multiple values associated with a given parameter. Query strings and HTML forms both allow for the same parameter to be specified multiple times.
+
+```
+/search?accno=1234&accno=1235
+```
+
+To capture all values in a vector, simply declare your parameter type in a vector,
+
+```clojure
+{:parameters
+  {:get {:query {:accno [Long]}}}}
+```
+
 ### Benefits to declarative parameter declaration
 
 Declaring your parameters in resource descriptions comes with numerous advantages.

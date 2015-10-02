@@ -25,7 +25,8 @@
   p/Properties
   (properties [_]
     ;; :form should be :body
-    {:parameters {:post {:form {:surname String
+    {:parameters {:get {:query {(s/optional-key :q) String}}
+                  :post {:form {:surname String
                                 :firstname String
                                 :phone String}}}
      :representations representations})
