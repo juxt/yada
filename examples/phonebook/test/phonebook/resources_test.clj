@@ -1,6 +1,6 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(ns phonebook.resource-types-test
+(ns phonebook.resources-test
   (:require
    [bidi.bidi :as bidi]
    [bidi.ring :refer [make-handler]]

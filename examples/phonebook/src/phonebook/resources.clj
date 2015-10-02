@@ -24,23 +24,24 @@
 (defrecord IndexResource [db *routes]
   p/Properties
   (properties [_]
+    ;; :form should be :body
     {:parameters {:post {:form {:surname String
                                 :firstname String
-                                :phone [String]}}}
+                                :phone String}}}
      :representations representations})
+
+  m/Post
+  (POST [_ ctx]
+    (let [id (db/add-entry db (get-in ctx [:parameters :form]))]
+      (yada/redirect-after-post
+       ctx (path-for @*routes :phonebook.api/entry :entry id))))
 
   m/Get
   (GET [_ ctx]
     (let [entries (db/get-entries db)]
       (case (yada/content-type ctx)
         "text/html" (html/index-html entries @*routes)
-        entries)))
-
-  m/Post
-  (POST [_ ctx]
-    (let [id (db/add-entry db (get-in ctx [:parameters :form]))]
-      (yada/redirect-after-post
-       ctx (path-for @*routes :phonebook.api/entry :entry id)))))
+        entries))))
 
 (defn new-index-resource [db *routes]
   (->IndexResource db *routes))

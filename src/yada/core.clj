@@ -150,8 +150,6 @@
         parameters (-> ctx :handler :parameters)
         coercers (-> ctx :handler :parameter-coercers)
 
-        _ (infof "coercers is %s" coercers)
-
         parameters
         (when parameters
           {:path
@@ -167,13 +165,9 @@
 
            :form
            (when (req/urlencoded-form? request)
-             (if-let [coercer (get-in coercers [method :form])]
-               (do
-                 (infof "FORM COERCER")
-                 #_(rs/coerce schema fp :json)
-                 (coercer (ring.util.codec/form-decode (read-body (-> ctx :request))
-                                                       (req/character-encoding request))))
-               (throw (ex-info "TODO: Add form coercer" {}))))
+             (when-let [coercer (get-in coercers [method :form])]
+               (coercer (ring.util.codec/form-decode (read-body (-> ctx :request))
+                                                     (req/character-encoding request)))))
 
            :body
            (when-let [schema (get-in parameters [method :body])]
@@ -671,8 +665,6 @@
                                           )))}))])
               (filter (comp not nil? second))
               (into {}))
-
-         _ (infof "on-build parameter coercers is %s" parameter-coercers)
 
          representations (rep/representation-seq
                           (rep/coerce-representations
