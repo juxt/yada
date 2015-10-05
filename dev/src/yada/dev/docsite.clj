@@ -19,7 +19,9 @@
   (:import [modular.bidi Router]))
 
 (def titles
-  {7230 "Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing"
+  {2046 "Multipurpose Internet Mail Extensions (MIME) Part Two: Media Types"
+   2616 "Hypertext Transfer Protocol -- HTTP/1.1"
+   7230 "Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing"
    7231 "Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content"
    7232 "Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests"
    7233 "Hypertext Transfer Protocol (HTTP/1.1): Range Requests"
@@ -29,7 +31,9 @@
    7237 "Initial Hypertext Transfer Protocol (HTTP) Method Registrations"
    7238 "The Hypertext Transfer Protocol Status Code 308 (Permanent Redirect)"
    7239 "Forwarded HTTP Extension"
-   7240 "Prefer Header for HTTP"})
+   7240 "Prefer Header for HTTP"
+   7578 "Returning Values from Forms: multipart/form-data"
+   })
 
 (defn rfc []
   (fn [req]
@@ -48,13 +52,9 @@
              [:div.container
               [:h2 "Welcome to " [:span.yada "yada"] "!"]
               [:ol
-               [:li [:a {:href (path-for @*router :yada.dev.user-manual/user-manual)} "User manual"]]
-               [:li "HTTP and related specifications"
-                [:ul
-                 [:li [:a {:href "/spec/rfc2616"} "RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1"]]
-                 (for [i (range 7230 (inc 7240))]
-                   [:li [:a {:href (format "/spec/rfc%d" i)}
-                         (format "RFC %d: %s" i (or (get titles i) ""))]])]]
+               [:li [:a {:href (path-for @*router :yada.dev.user-manual/user-manual)} "The " [:span.yada "yada"] " manual"]
+                " - the single authority on all things " [:span.yada "yada"]]
+
                [:li [:a {:href
                          (format "%s/index.html?url=%s/swagger.json"
                                  (path-for @*router :swagger-ui)
@@ -69,7 +69,13 @@
                                 (config/talks-origin config)
                                 (path-for @*talks-router :yada.dev.talks/index))} "Talks"]]
                [:li [:a {:href (str
-                                (path-for @*router :yada.dev.phonebook/phonebook))} "Phonebook demo"]]]
+                                (path-for @*router :yada.dev.phonebook/phonebook))} "Phonebook demo"]]
+
+               [:li "Relevant RFCs"
+                [:ul
+                 (for [i (sort (keys titles))]
+                   [:li [:a {:href (format "/spec/rfc%d" i)}
+                         (format "RFC %d: %s" i (or (get titles i) ""))]])]]]
               ])}))
 
    {:id ::index}))
