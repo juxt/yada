@@ -62,14 +62,13 @@
      [:style "label { margin: 6pt }"]
      [:p
       [:label "Firstname"]
-      [:input {:type :text :value firstname}]
-      ]
+      [:input {:type :text :name "firstname" :value firstname}]]
      [:p
       [:label "Surname"]
-      [:input {:type :text :value surname}]]
+      [:input {:type :text :name "surname" :value surname}]]
      [:p
       [:label "Phone"]
-      [:input {:type :text :value phone}]]]
+      [:input {:type :text :name "phone" :value phone}]]]
 
     [:button {:onclick (format "phonebook.update('%s')" entry)} "Update"]
     [:button {:onclick (format "phonebook.delete('%s')" entry)} "Delete"]
