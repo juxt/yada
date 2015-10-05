@@ -2,20 +2,20 @@
 
 (ns yada.api-test
   (:require
-   [byte-streams :as bs]
-   [clojure.edn :as edn]
-   [com.stuartsierra.component :refer (system-using system-map)]
    [bidi.bidi :refer (match-route routes)]
    [bidi.ring :refer (make-handler)]
+   [byte-streams :as bs]
+   [cheshire.core :as json]
+   [clojure.edn :as edn]
    [clojure.test :refer :all]
-   [yada.yada :as yada]
+   [com.stuartsierra.component :refer (system-using system-map)]
    [juxt.iota :refer (given)]
    [manifold.deferred :as d]
    [modular.test :refer (with-system-fixture *system*)]
-   [cheshire.core :as json]
    [ring.mock.request :as mock]
    [yada.dev.user-api :refer (new-verbose-user-api)]
-   [yada.dev.database :refer (new-database)]))
+   [yada.dev.database :refer (new-database)]
+   [yada.yada :as yada]))
 
 (defn new-system
   "Define a minimal system which is just enough for the tests in this
