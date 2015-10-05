@@ -20,10 +20,11 @@
 (defn new-dev-system
   "Create a development system"
   []
-  (-> (config :dev)
-      (new-system-map)
-      (component/system-using (new-dependency-map))
-      (co-dependency/system-co-using (new-co-dependency-map))))
+  (s/with-fn-validation
+    (-> (config :dev)
+        (new-system-map)
+        (component/system-using (new-dependency-map))
+        (co-dependency/system-co-using (new-co-dependency-map)))))
 
 (defn init
   "Constructs the current development system."

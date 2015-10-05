@@ -3,7 +3,8 @@
 (ns yada.dev.config
   (:require
    [schema.core :as s]
-   [aero.core :refer (read-config)]))
+   [aero.core :refer (read-config)]
+   [phonebook.db :refer [Phonebook]]))
 
 (s/defschema UserPort (s/both s/Int (s/pred #(<= 1024 % 65535))))
 
@@ -12,7 +13,10 @@
    :ports {:docsite UserPort
            :console UserPort
            :cors-demo UserPort
-           :talks UserPort}})
+           :talks UserPort
+           }
+   :phonebook {:port UserPort
+               :entries Phonebook}})
 
 (defn config
   "Return a map of the static configuration used in the component

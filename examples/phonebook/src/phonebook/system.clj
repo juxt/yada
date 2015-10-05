@@ -2,12 +2,14 @@
 
 (ns phonebook.system
   (:require
+   [aleph.http :as http]
    [bidi.bidi :as bidi]
    [bidi.ring :refer [make-handler]]
-   [com.stuartsierra.component :refer [system-map Lifecycle]]
-   [aleph.http :as http]
-   [phonebook.db :refer [create-db]]
+   [com.stuartsierra.component :refer [system-map Lifecycle system-using using]]
+   [modular.component.co-dependency :as co-dependency]
+   [phonebook.db :as db]
    [phonebook.api :refer [new-api-component]]
+   [schema.core :as s]
    [yada.yada :refer [yada]]))
 
 (defn create-routes [api]
@@ -15,32 +17,26 @@
        (bidi/routes api)
        [true (yada nil)]]])
 
-(defrecord ServerComponent [api]
+(defrecord ServerComponent [api port]
   Lifecycle
   (start [component]
     (let [routes (create-routes api)]
       (assoc component
              :routes routes
-             :server (http/start-server (make-handler routes) {:port 8099}))))
+             :server (http/start-server (make-handler routes) {:port port}))))
   (stop [component]
     (when-let [server (:server component)]
       (.close server))
     (dissoc component :server)))
 
-(defn new-server-component []
-  (map->ServerComponent {}))
+(defn new-server-component [config]
+  (map->ServerComponent config))
 
-(defn new-system-map []
+(defn new-system-map [config]
   (system-map
-   :atom-db (create-db
-             {1 {:surname "Sparks"
-                 :firstname "Malcolm"
-                 :phone "1234"}
-              2 {:surname "Pither"
-                 :firstname "Jon"
-                 :phone "1235"}})
+   :atom-db (db/create-db (:entries config))
    :api (new-api-component)
-   :server (new-server-component)))
+   :server (new-server-component config)))
 
 (defn new-dependency-map []
   {:api {:db :atom-db}
@@ -48,3 +44,11 @@
 
 (defn new-co-dependency-map []
   {:api {:server :server}})
+
+(s/defschema UserPort (s/both s/Int (s/pred #(<= 1024 % 65535))))
+
+(s/defn new-phonebook [config :- {:port UserPort
+                                  :entries db/Phonebook}]
+  (-> (new-system-map config)
+      (system-using (new-dependency-map))
+      (co-dependency/system-co-using (new-co-dependency-map))))

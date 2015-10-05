@@ -1,8 +1,15 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(ns phonebook.db)
+(ns phonebook.db
+  (:require
+   [schema.core :as s]))
 
-(defn create-db [entries]
+(s/defschema PhonebookEntry {:surname String :firstname String :phone String})
+
+(s/defschema Phonebook {s/Int PhonebookEntry})
+
+(s/defn create-db [entries :- Phonebook]
+  (assert entries)
   {:phonebook (ref entries)
    :next-entry (ref (inc (apply max (keys entries))))})
 
@@ -19,12 +26,14 @@
      (alter (:next-entry db) inc)
      nextval)))
 
-(defn get-entries [db]
+(s/defn get-entries :- Phonebook
+  [db]
   @(:phonebook db))
 
-(defn get-entry
+(s/defn get-entry :- PhonebookEntry
   [db id]
   (get @(:phonebook db) id))
 
-(defn count-entries [db]
+(s/defn count-entries :- s/Int
+  [db]
   (count @(:phonebook db)))

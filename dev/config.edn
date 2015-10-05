@@ -4,4 +4,12 @@
  :ports {:docsite #cond {:dev 8090 :prod nil}
          :console 8091
          :cors-demo 8092
-         :talks 8093}}
+         :talks 8093}
+
+ :phonebook {:port 8099
+             :entries {1 {:surname "Sparks"
+                          :firstname "Malcolm"
+                          :phone "1234"}
+                       2 {:surname "Pither"
+                          :firstname "Jon"
+                          :phone "1235"}}}}

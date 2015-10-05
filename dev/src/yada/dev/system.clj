@@ -27,7 +27,7 @@
    [yada.dev.hello :refer (new-hello-world-example)]
    [yada.dev.error-example :refer (new-error-example)]
 
-   [phonebook.system :as phonebook]))
+   [phonebook.system :refer (new-phonebook)]))
 
 (defn database-components [system]
   (assoc system :database (new-database)))
@@ -71,7 +71,6 @@
          (new-webserver
           :port (config/docsite-port config)
           ;; raw-stream? = true gives us a manifold stream of io.netty.buffer.ByteBuf instances
-          ;; Use to convert to a stream bs/to-input-stream
           :raw-stream? true)
 
          :docsite-router (new-router)
@@ -98,11 +97,8 @@
 (defn talks-components [system config]
   (assoc system :talks (new-talks config)))
 
-(defn phonebook-system [system]
-  (assoc system :phonebook
-         (-> (phonebook/new-system-map)
-             (system-using (phonebook/new-dependency-map))
-             (co-dependency/system-co-using (phonebook/new-co-dependency-map)))))
+(defn phonebook-components [system config]
+  (assoc system :phonebook (new-phonebook (:phonebook config))))
 
 (defn new-system-map
   [config]
@@ -118,7 +114,7 @@
         (error-components)
         (cors-demo-components config)
         (talks-components config)
-        (phonebook-system)
+        (phonebook-components config)
 
         (assoc :docsite-redirect (new-redirect :from "/" :to :yada.dev.docsite/index))
         (assoc :console-redirect (new-redirect :from "/" :to :yada.dev.console/index))
