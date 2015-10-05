@@ -462,10 +462,18 @@
                                              :duration (- t1 t0)})
              output)))))))
 
+(defn error-data
+  [e]
+  (cond
+    (instance? clojure.lang.ExceptionInfo e) (ex-data e)
+    (instance? java.lang.Throwable e) nil
+    :else e))
+
 (defn default-error-handler [e]
-  (let [data (ex-data e)]
+  (let [data (error-data e)]
     (when-not (and (:status data) (< (:status data) 500))
-      (errorf e "Internal Error %s" (or (:status data) ""))
+      (when (instance? java.lang.Throwable e)
+        (errorf e "Internal Error %" (or (some-> data :status str) "")))
       (when data (errorf "ex-data: %s" data)))))
 
 (defn- handle-request
@@ -498,9 +506,10 @@
 
      ;; Handle non-local exits
      (d/catch
+         java.lang.Object
          (fn [e]
            (error-handler e)
-           (let [data (when (instance? clojure.lang.ExceptionInfo e) (ex-data e))]
+           (let [data (error-data e)]
              (do
                (when-let [journal (:journal handler)]
                  (swap! journal assoc id (swap! journal-entry assoc :error {:exception e :data data})))
