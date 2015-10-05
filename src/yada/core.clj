@@ -166,10 +166,20 @@
               (-> request (assoc-query-params (or (:charset ctx) "UTF-8")) :query-params)))
 
            :form
-           (when (req/urlencoded-form? request)
+           (cond
+             (and (req/urlencoded-form? request) (get-in coercers [method :form]))
              (when-let [coercer (get-in coercers [method :form])]
                (coercer (ring.util.codec/form-decode (read-body (-> ctx :request))
-                                                     (req/character-encoding request)))))
+                                                     (req/character-encoding request))))
+             #_(get-in coercers [method :form])
+             #_(throw (ex-info "TODO" {:method method
+                                     :coercers coercers
+                                     :content-type (get-in request [:headers "content-type"])
+                                     :body (-> request :body)}))
+
+             ;; TODO: Need RFC 2046
+
+             )
 
            :body
            (when-let [schema (get-in parameters [method :body])]

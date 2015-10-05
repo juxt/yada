@@ -3,7 +3,7 @@
 (ns yada.media-type
   (:refer-clojure :exclude [type])
   (:require
-   [yada.util :refer (http-token)]
+   [yada.util :refer (http-token OWS)]
    [clojure.tools.logging :refer :all]))
 
 ;; For implementation efficiency, we keep the parsed versions of media
@@ -23,7 +23,7 @@
   (re-pattern (str "(" http-token ")"
                    "/"
                    "(" http-token ")"
-                   "((?:" ";" http-token "=" http-token ")*)")))
+                   "((?:" OWS ";" OWS http-token "=" http-token ")*)")))
 
 ;; TODO: Replace memoize with cache to avoid memory exhaustion attacks
 (memoize
