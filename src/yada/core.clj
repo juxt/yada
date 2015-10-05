@@ -473,7 +473,7 @@
   (let [data (error-data e)]
     (when-not (and (:status data) (< (:status data) 500))
       (when (instance? java.lang.Throwable e)
-        (errorf e "Internal Error %" (or (some-> data :status str) "")))
+        (errorf e "Internal Error %s" (or (some-> data :status str) "")))
       (when data (errorf "ex-data: %s" data)))))
 
 (defn- handle-request
