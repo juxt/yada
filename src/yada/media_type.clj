@@ -30,7 +30,7 @@
  (defn string->media-type [s]
    (assert s)
    (let [g (rest (re-matches media-type-pattern s))
-         params (into {} (map vec (map rest (re-seq (re-pattern (str ";(" http-token ")=(" http-token ")"))
+         params (into {} (map vec (map rest (re-seq (re-pattern (str ";" OWS "(" http-token ")=(" http-token ")"))
                                                     (last g)))))]
      (->MediaTypeMap
       (str (first g) "/" (second g))
