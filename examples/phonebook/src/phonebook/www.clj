@@ -1,6 +1,6 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(ns phonebook.resources
+(ns phonebook.www
   (:require
    [bidi.bidi :refer [path-for]]
    [clojure.tools.logging :refer :all]
@@ -28,7 +28,8 @@
     {:parameters {:get {:query {(s/optional-key :q) String}}
                   :post {:form {:surname String
                                 :firstname String
-                                :phone String}}}
+                                :phone String
+}}}
      :representations representations})
 
   m/Post
@@ -52,8 +53,10 @@
   (properties [_]
     {:parameters
      {:get {:path {:entry Long}}
-      :post {:path {:entry Long}
-             :form {(s/required-key "method") String}}
+      :put {:path {:entry Long}
+            :form {:surname String
+                   :firstname String
+                   :phone String}}
       :delete {:path {:entry Long}}}
      :representations representations})
 
@@ -72,7 +75,7 @@
 
   m/Put
   (PUT [_ ctx]
-    (infof "Put!"))
+    (infof "Put! %s" (-> ctx :parameters)))
 
   m/Delete
   (DELETE [_ ctx]
