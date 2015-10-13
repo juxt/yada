@@ -23,7 +23,7 @@
     (let [routes (create-routes api)]
       (assoc component
              :routes routes
-             :server (http/start-server (make-handler routes) {:port port}))))
+             :server (http/start-server (make-handler routes) {:port port :raw-stream? true}))))
   (stop [component]
     (when-let [server (:server component)]
       (.close server))

@@ -81,6 +81,7 @@
           x)))))
 
 (defn- multiple-args-matcher [schema]
+  ;; TODO: Need to be a bit careful here, it could be a byte-array [byte].
   (when (instance? clojure.lang.APersistentVector schema)
     (fn [x]
       (if (not (sequential? x)) [x] x))))

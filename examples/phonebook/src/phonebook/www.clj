@@ -11,7 +11,8 @@
    [phonebook.html :as html]
    [yada.methods :as m]
    [yada.protocols :as p]
-   [yada.yada :as yada]))
+   [yada.yada :as yada])
+  (:import [manifold.stream.core IEventSource]))
 
 (def representations
   [{:media-type #{"text/html"
@@ -56,7 +57,8 @@
       :put {:path {:entry Long}
             :form {:surname String
                    :firstname String
-                   :phone String}}
+                   :phone String
+                   :image IEventSource}}
       :delete {:path {:entry Long}}}
      :representations representations})
 
@@ -75,7 +77,11 @@
 
   m/Put
   (PUT [_ ctx]
-    (infof "Put! %s" (-> ctx :parameters)))
+    ;; Form and body parameters are deferreds (manifold promises). A
+    ;; deref will block until the form value has been
+    ;; delivered. Alternatively, they can be used as-is in chains, or
+    ;; transfered to files, databases, etc.
+    #_(infof "Put! %s" (-> ctx :parameters)))
 
   m/Delete
   (DELETE [_ ctx]

@@ -11,7 +11,9 @@
 (s/defn create-db [entries :- Phonebook]
   (assert entries)
   {:phonebook (ref entries)
-   :next-entry (ref (inc (apply max (keys entries))))})
+   :next-entry (ref (if (not-empty entries)
+                      (inc (apply max (keys entries)))
+                      1))})
 
 (defn add-entry
   "Add a new entry to the database. Returns the id of the newly added

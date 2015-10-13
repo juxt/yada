@@ -141,6 +141,9 @@
 
     ctx))
 
+(defn process-request-body [ctx]
+  ctx)
+
 (defn malformed?
   "Malformed? (parameters)"
   [ctx]
@@ -172,10 +175,12 @@
                (coercer (ring.util.codec/form-decode (read-body (-> ctx :request))
                                                      (req/character-encoding request))))
              #_(get-in coercers [method :form])
-             #_(throw (ex-info "TODO" {:method method
+             #_(do (errorf "TODO: %s" {:method method
                                      :coercers coercers
                                      :content-type (get-in request [:headers "content-type"])
-                                     :body (-> request :body)}))
+                                     :body (-> request :body)})
+                 nil)
+
 
              ;; TODO: Need RFC 2046
 
@@ -612,6 +617,8 @@
    get-properties
 
    method-allowed?
+
+   process-request-body
    malformed?
 
 ;;   authentication

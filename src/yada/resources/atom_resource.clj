@@ -36,7 +36,6 @@
 
   m/Put
   (PUT [_ ctx]
-    (infof "Put parameters of %s" (get-in ctx [:parameters]))
     (reset! *a (get-in ctx [:parameters :body])))
 
   m/Delete
