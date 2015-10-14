@@ -7,10 +7,13 @@
    [clojure.string :as str]
    [clojure.test :refer :all]
    [clojure.java.io :as io]
+   [clojure.pprint :refer [pprint]]
+   [manifold.deferred :as d]
    [manifold.stream :as s]
    [juxt.iota :refer [given]]
    [yada.media-type :as mt]
-   [yada.multipart :refer [->splitter ->multipart-events]]))
+   [yada.multipart :refer [->splitter ->multipart-events split-multipart-at-boundaries
+                           split-buf]]))
 
 (defn generate-boundary []
   (str
@@ -39,29 +42,130 @@
                    (line (format "Content-Disposition: form-data; name=\"%s\"" nm))
                    (line)
                    (line (generate-body (case n 4 130 16))))))
-         (str boundary "--")
-         ))
+         (str boundary "--")))
 
-(defn to-chunks [s]
-  (b/to-byte-buffers s {:chunk-size 1000}))
+(defn to-chunks [s size]
+  (b/to-byte-buffers s {:chunk-size size}))
 
 (defn filter-by-type [t]
   (partial sequence (filter #(= (:type %) t))))
 
-(deftest multipart-events-test
+#_(deftest multipart-events-test
   (let [boundary (generate-boundary)]
     (let [index (bm-index (b/to-byte-array boundary))
           source (-> (generate-multipart boundary 10)
-                     to-chunks
+                     (to-chunks 1000)
                      s/->source)]
       (let [s (->> source
                    (s/transform (->splitter (count boundary) index))
                    (s/mapcat identity)
+                   (s/filter :type)
                    (s/transform (->multipart-events (count boundary) index))
                    (s/mapcat identity))]
         (given (s/stream->seq s 100)
           [(filter-by-type :part) count] := 9
           [(filter-by-type :partial) count] := 1)))))
+
+;; boundary is ABC
+;; fill with 0
+;; make the test data very small
+
+;; 8 chars wide
+;; --ABCD
+;; 000000
+;; 000000
+;; --ABCD
+;; 000000
+;; 000000
+
+;; buffer size = 24
+
+(defn line-terminate [line]
+  (str line "\r\n"))
+
+(defn content [lines width pad]
+  (apply str
+         (repeat lines
+                 (line-terminate (apply str (repeat (- width 2) (str pad)))))))
+
+(defn part [boundary content]
+  (str (line-terminate boundary) content))
+
+(defn parts [n boundary content]
+  (apply str (repeat n (part boundary content))))
+
+(deftest split-multipart-at-boundaries-test []
+  (let [boundary "--ABCD"
+        source (-> (parts 2 boundary (content 3 8 "0"))
+                   (to-chunks 32)
+                   s/->source)]
+    (given (s/stream->seq (split-multipart-at-boundaries source boundary))
+      count := 7
+      [last :type] := :end!
+      [(partial map :type) (partial filter #{:head :end!})] := [:head :head :end!])))
+
+#_(deftest chunk-64-into-32-test
+  (let [boundary "--ABCD"]
+    (let [index (bm-index (b/to-byte-array boundary))
+          source (-> (parts 2 "--ABCD" (content 3 8 "0"))
+                     (to-chunks 32)
+                     s/->source)]
+      (let [s (->> source
+                   (s/transform (->splitter (count boundary) index))
+                   (s/mapcat identity)
+                   (s/filter :type)
+                   (s/transform (->multipart-events (count boundary) index))
+                   (s/mapcat identity))]
+        (is (some? (s/stream->seq s 100)))))))
+
+
+
+#_(deftest chunk-64-into-20-test
+  (let [boundary "--ABCD"]
+    (let [index (bm-index (b/to-byte-array boundary))
+          source (-> (parts 2 "--ABCD" (content 3 8 "0"))
+                     (to-chunks 20)
+                     s/->source)]
+      (let [s (->> source
+                   (s/transform (->splitter (count boundary) index))
+                   (s/mapcat identity)
+                   (s/filter :type)
+                   (s/transform (->multipart-events (count boundary) index))
+                   (s/mapcat identity))]
+        (is (= (map :type (s/stream->seq s 100)) [:part :partial]))))))
+
+;; What about a stream that may be drained?
+
+#_(deftest drained-test
+  (let [boundary "--ABCD"]
+    (let [index (bm-index (b/to-byte-array boundary))
+          source (-> (parts 2 "--ABCD" (content 3 8 "0"))
+                     (to-chunks 20)
+                     s/->source)
+          stream (s/stream 10)]
+      (d/loop [n 1]
+        (d/chain (s/take! source ::drained)
+                 (fn [buf]
+                   (if (identical? buf ::drained)
+                     (s/put! stream [::drained!])
+                     (s/put! stream (split-buf n index (count boundary) buf)))
+                   (when-not (identical? buf ::drained)
+                     (d/recur (inc n))))))
+      (is (= (last (s/stream->seq (s/mapcat identity stream) 100))
+             ::drained!)))))
+
+
+;; [X] Put algorithm below into a function.
+;; [X] Make it easier to define size of parts and boundaries
+;; [ ] Fix leader->leader case
+;; [ ] Write tests that cause seams between continuations, testing all cases (without the need for fuzz testing) - smoke out the TODOs
+;; [ ] Compile byte arrays for events (not just metadata)
+;; [ ] Storing already served bytes in :block mem is wasteful, avoid this
+;; [ ] Don't use drop to get first two bytes, use get (is there a quick indexed byte-array get operation?)
+;; [ ] Parse to CRLFCRLF and strip out 7-bit headers (Content-Disposition)
+;; [ ] Integrate with form handler, where each field can be given a particular handler (String capture, etc.)
+
+;; --------------------------------------------------------------------------------
 
 (deftest parse-content-type-header
   (let [content-type "multipart/form-data; boundary=----WebKitFormBoundaryZ3oJB7WHOBmOjrEi"]
