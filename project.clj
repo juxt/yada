@@ -19,7 +19,6 @@
    [clj-time "0.9.0"]
    [hiccup "1.0.5"]
    [json-html "0.3.1"]
-   [juxt/iota "0.1.2"]
    [manifold "0.1.1-alpha4"]
    [metosin/ring-http-response "0.6.5"]
    [metosin/ring-swagger "0.20.2" :exclusions [potemkin]]
@@ -73,6 +72,7 @@
           [ring-mock "0.1.5"]
 
           [aero "0.1.2"]
+          [juxt/iota "0.2.1"]
 
           [juxt.modular/aleph "0.1.3" :exclusions [manifold]]
           [juxt.modular/bidi "0.9.2" :exclusions [bidi]]
