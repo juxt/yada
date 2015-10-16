@@ -12,10 +12,9 @@
    [manifold.stream :as s]
    [juxt.iota :refer [given]]
    [yada.media-type :as mt]
-   [yada.multipart :refer [->splitter ->multipart-events split-multipart-at-boundaries
-                           split-buf]]))
+   [yada.multipart :refer [split-multipart-at-boundaries assemble-multipart-pieces]]))
 
-(defn generate-boundary []
+#_(defn generate-boundary []
   (str
    "--"
    (apply str (map char (take 30
@@ -25,14 +24,14 @@
                                 (range (int \a) (inc (int \z)))
                                 (range (int \0) (inc (int \9))))))))))
 
-(defn generate-body [n]
+#_(defn generate-body [n]
   ;; We want to generate an odd number of characters (23), so we don't use Z.
   (apply str (repeat n (apply str (map char (shuffle (range (int \A) (int \Z))))))))
 
-(defn line [& args]
+#_(defn line [& args]
   (str (apply str args) "\r\n"))
 
-(defn generate-multipart [boundary parts#]
+#_(defn generate-multipart [boundary parts#]
   (apply str
          (apply str
                 (for [n (range parts#)
@@ -47,8 +46,113 @@
 (defn to-chunks [s size]
   (b/to-byte-buffers s {:chunk-size size}))
 
-(defn filter-by-type [t]
+#_(defn filter-by-type [t]
   (partial sequence (filter #(= (:type %) t))))
+
+(defn line-terminate [line]
+  (str line "\r\n"))
+
+(defn content [lines width pad]
+  (apply str
+         (repeat lines
+                 (line-terminate (apply str (repeat (- width 2) (str pad)))))))
+
+(defn part [boundary content]
+  (str (line-terminate boundary) content))
+
+(defn parts [n boundary content]
+  (str
+   (apply str (repeat n (part boundary content)))
+   boundary "--"))
+
+(deftest split-multipart-at-boundaries-test []
+  (let [boundary "--ABCD"
+        source (-> (parts 2 boundary (content 3 8 "0"))
+                   (to-chunks 32)
+                   s/->source)]
+    (given (s/stream->seq (split-multipart-at-boundaries (bm-index (b/to-byte-array boundary)) source))
+      count := 10
+      [last :type] := :end!
+      [(partial map :type) (partial filter #{:head :end!})] := [:head :head :head :end!])))
+
+(defn get-chunks [{:keys [boundary parts# lines# width# chunk-size]}]
+  (-> (parts parts# boundary (content lines# width# "0"))
+      (to-chunks chunk-size)))
+
+(defn get-pieces [{:keys [boundary parts# lines# width# chunk-size] :as spec}]
+  (let [index (bm-index (b/to-byte-array boundary))
+        source (-> spec get-chunks s/->source)]
+    (->> source
+         (split-multipart-at-boundaries index)
+         s/stream->seq)))
+
+(defn get-parts [{:keys [boundary parts# lines# width# chunk-size] :as spec}]
+  (let [index (bm-index (b/to-byte-array boundary))
+        source (-> spec get-chunks s/->source)]
+    (->> source
+         (split-multipart-at-boundaries index)
+         (s/transform (assemble-multipart-pieces index))
+         (s/mapcat identity)
+         s/stream->seq)))
+
+(defn get-part-size [{:keys [boundary lines# width#]}]
+  (+ (count boundary) 2 (* lines# width#)))
+
+(defn get-metrics [spec]
+  (let [part-size (get-part-size spec)
+        data-size (+ (* (:parts# spec) (get-part-size spec))
+                     (count (str (:boundary spec) "--")))]
+    {:part-size part-size
+     :div (int (/ data-size (:chunk-size spec)))
+     :mod (mod data-size (:chunk-size spec))}))
+
+(defn filter-relevant [pieces]
+  (map #(select-keys % [:type :from :to :chunk])
+       (filter #(#{:head :tail :part :data} (:type %))
+               pieces)))
+
+(deftest pieces-test
+  (testing "Parts map onto chunks"
+    (let [spec {:boundary "--ABCD" :parts# 2 :lines# 3 :width# 8 :chunk-size 32}]
+      ;; --ABCD.. 000000.. 000000.. 000000..
+      ;; --ABCD.. 000000.. 000000.. 000000..
+      ;; --ABCD--
+      (is (= (get-metrics spec) {:part-size 32 :div 2 :mod 8}))
+      (is (= (filter-relevant (get-pieces spec))
+             [{:type :head :from  0 :to 32 :chunk 1}
+              {:type :head :from  0 :to 32 :chunk 2}
+              {:type :head :from  0 :to  8 :chunk 3}]))
+      (given (get-parts spec)
+        count := (:parts# spec)
+        (partial map :type) :∀ (partial = :part))))
+
+  (testing "Parts span chunks"
+    ;; --ABCD..00 0000..0000
+    ;; ^h
+    ;; 00..000000 ..--ABCD..
+    ;; ^t           ^h
+    ;; 000000..00 0000..0000
+    ;; ^d
+    ;; 00..--ABCD --
+    ;; ^t  ^h
+    (let [spec {:boundary "--ABCD" :parts# 2 :lines# 3 :width# 8 :chunk-size 20}]
+      (is (get-metrics spec) {:part-size 32 :mod 4})
+      (is (= (filter-relevant (get-pieces spec))
+             [{:type :head :from  0 :to 20 :chunk 1}
+              {:type :tail :from  0 :to 12 :chunk 2}
+              {:type :head :from 12 :to 20 :chunk 2}
+              {:type :data :from  0 :to 20 :chunk 3}
+              {:type :tail :from  0 :to  4 :chunk 4}
+              {:type :head :from  4 :to 12 :chunk 4}])))))
+
+(deftest parts-test
+
+  #_(let [parts 2]
+      ;; part is 32 bytes. 2 parts is 64 parts, or 3 chunks rem 4.
+      (given (get-parts "--ABCD" {:parts# parts :lines# 3
+                                  :width# 8 :chunk-size 20})
+        count := 2
+        (partial map :type) :∀ (partial = :part))))
 
 #_(deftest multipart-events-test
   (let [boundary (generate-boundary)]
@@ -79,30 +183,6 @@
 ;; 000000
 
 ;; buffer size = 24
-
-(defn line-terminate [line]
-  (str line "\r\n"))
-
-(defn content [lines width pad]
-  (apply str
-         (repeat lines
-                 (line-terminate (apply str (repeat (- width 2) (str pad)))))))
-
-(defn part [boundary content]
-  (str (line-terminate boundary) content))
-
-(defn parts [n boundary content]
-  (apply str (repeat n (part boundary content))))
-
-(deftest split-multipart-at-boundaries-test []
-  (let [boundary "--ABCD"
-        source (-> (parts 2 boundary (content 3 8 "0"))
-                   (to-chunks 32)
-                   s/->source)]
-    (given (s/stream->seq (split-multipart-at-boundaries source boundary))
-      count := 7
-      [last :type] := :end!
-      [(partial map :type) (partial filter #{:head :end!})] := [:head :head :end!])))
 
 #_(deftest chunk-64-into-32-test
   (let [boundary "--ABCD"]

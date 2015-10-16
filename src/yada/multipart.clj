@@ -27,45 +27,31 @@
 ;; partial data until a boundary is found in a subsequent buffer.
 
 (defn split-chunk-by-boundary
-  [n index boundary-size bytes]
+  [n index bytes]
   (let [offsets (match index bytes)]
     (concat
-     [{:chunk :start
-       :chunk-index n
-       :chunk-size (count bytes)
-       :type :info}]
+     [{:type :info :chunk :start :chunk-index n :chunk-size (count bytes)
+       :offsets offsets}]
      (when (pos? (or (first offsets) 0))
-       [{:type :tail
-         :to (first offsets)
-         :bytes bytes
-         :chunk n}])
-     (for [[from to] (partition 2 1 offsets)
-           :let [pos (+ from boundary-size)]]
-       {:type :part
-        :from from :to to :pos pos
-        :first-bytes (take 2 (drop pos bytes))
-        :bytes bytes
-        :chunk n})
+       [{:type :tail :from 0 :to (first offsets) :bytes bytes :chunk n}])
+     (for [[from to] (partition 2 1 offsets) :let [pos (+ from (:length index))]]
+       {:type :part :from from :to to :pos pos :first-bytes (take 2 (drop pos bytes)) :bytes bytes :chunk n})
      (if (last offsets)
-       [{:type :head
-         :from (last offsets)
-         :bytes bytes
-         :chunk n}]
-       [{:type :data
-         :bytes bytes
-         :chunk n}])
-     [{:chunk :end
-       :type :info}])))
+       [{:type :head :from (last offsets) :to (count bytes) :bytes bytes :chunk n}]
+       [{:type :data :from 0 :to (count bytes) :bytes bytes :chunk n}])
+     [{:type :info :chunk :end}])))
 
 (def ^:deprecated split-buf split-chunk-by-boundary)
 
-(defn split-multipart-at-boundaries [source boundary]
+(defn split-multipart-at-boundaries [index source]
   "Given a source is a (possibly) lazy sequence/stream of chunks (byte-arrays, byte-buffers),
   returns a new source of parts (and pieces of parts where
   necessary). Each vector contains one or more maps containing the
   byte-array data and boundary details. Coercion is via byte-streams.
 
-  Parts of a multipart stream may span buffers. So can boundary markers. Therefore the returned stream cannot always return whole parts, but may have to return pieces whic rec
+  The index parameter is the Boyer-Moore index, created by bm-index on a boundary.
+
+  Parts of a multipart stream may span buffers. So can boundary markers. Therefore the returned stream cannot always return whole parts, but may have to return pieces which must be reassembled.
 
   All entries have a :type entry of the following :-
 
@@ -77,8 +63,7 @@
   :end! - no more chunks marker. This is the last piece in the stream
           before it is closed. This indicator is used to flush any state and
           assemble the final part."
-  (let [stream (s/stream)
-        index (bm-index (b/to-byte-array boundary))]
+  (let [stream (s/stream)]
     (d/loop [n 1]
       (d/chain
        (s/take! source ::drained)
@@ -87,138 +72,150 @@
            (do (s/put! stream [{:type :end!}]) ; the 'no-more-chunks' marker
                (s/close! stream))
            (do
-             (s/put! stream (split-buf n index (count boundary) (b/to-byte-array buf)))
+             (s/put! stream (split-chunk-by-boundary n index (b/to-byte-array buf)))
              (d/recur (inc n)))))))
     (s/mapcat identity (s/source-only stream))))
 
-(defn ^:deprecated ->splitter
-  "Returns a stateful transducer that parses a stream of buffers,
-  splitting each element in the stream into parts separated by a
-  boundary. The resulting stream of byte arrays can be fed into
-  ->multipart-events."
-  [boundary-size index]
-  (fn [rf]
-    (let [seqn (volatile! 0)]
-      (fn
-        ([] (rf))
-        ([result] (rf result))
-        ([result buf]
-         (do
-           (let [n (vswap! seqn inc)]
-             (rf result (split-buf n index boundary-size buf)))))))))
-
 (defn- seam
   "Find the position of a potential boundary straddling across a pair of byte-arrays."
-  [buf-a buf-b boundary-size index]
-  (assert buf-b)
-  (assert (:bytes buf-b) (str "types: " (:type buf-a) "->" (:type buf-b)))
-  (when buf-a
-    (assert (:bytes buf-a) (str "types: " (:type buf-a) "->" (:type buf-b)))
-    (let [b (byte-array (* 2 boundary-size))]
-      (System/arraycopy (:bytes buf-a) (- (count (:bytes buf-a)) boundary-size) b 0 boundary-size)
-      (System/arraycopy (:bytes buf-b) 0 b boundary-size boundary-size)
-      (first (match index b)))))
+  [buf-a buf-b index]
+  (let [boundary-size (:length index)]
+    (when (and (:bytes buf-a) (:bytes buf-b))
+      (let [b (byte-array (* 2 boundary-size))]
+        (System/arraycopy (:bytes buf-a) (- (count (:bytes buf-a)) boundary-size) b 0 boundary-size)
+        (System/arraycopy (:bytes buf-b) 0 b boundary-size boundary-size)
+        (let [pos (first (match index b))]
+          ;; Return the result only if the boundary starts in
+          ;; buf-a. Otherwise, the boundary starts in buf-b and will be
+          ;; known to buf-b and dealt with accordingly.
+          (when (< pos boundary-size) pos))))))
 
-(defn ->multipart-events
+(defn match?
+  "Is needle in bytes at offset pos?"
+  [bytes needle pos]
+  (every? true? (map-indexed #(= (get bytes (+ pos %1)) %2) (map byte needle))))
+
+(defn assemble-multipart-pieces
   "Returns a stateful transducer that processes a series of buffer
   events and combines them into a stream of multipart events. Parts will
   be delivered either in entirety, or as a series of
   {partial,continuation*,completion} events. The first part of a partial
   will be at least one buffer size large, so any text headers can be
   processed. Boundaries that straddle buffers are detected and handled."
-  [boundary-size index]
-  (fn [rf]
-    (let [mem (volatile! nil)]
-      (fn
-        ([] (rf))
-        ([result] (rf result))
-        ([result input]
-         (infof "input: %s" (dissoc input :bytes))
-         (let [previous @mem
-               seam (seam previous input boundary-size index)]
-           (case (:type input)
-             :part (do
-                     (vreset! mem nil)
-                     (rf result [input]))
+  [index]
+  (let [boundary-size (:length index)]
+    (fn [rf]
+      (let [mem (volatile! nil)]
+        (fn
+          ([] (rf))
+          ([result] (rf result))
+          ([result input]
+           (infof "input: %s" (dissoc input :bytes))
+           (let [previous @mem
+                 seam (seam previous input index)]
+             (case (:type input)
+               :info (rf result [])
+               :part (do
+                       (vreset! mem nil)
+                       (rf result [input]))
 
-             ;; :remainder terminates a part, the question is whether
-             ;; there's a boundary straddling the previous input and this
-             ;; one
-             :remainder
-             (do
-               (vreset! mem nil)
-               (rf result
-                   (if seam
-                     (case (:type previous)
-                       :leader
-                       [{:type :part
-                         :from (:from previous)
-                         :to (+ (count (:bytes previous)) (- boundary-size) seam)
-                         :pos (+ (:from previous) boundary-size)
-                         :first-bytes (take 2 (drop (+ (:from previous) boundary-size) (:bytes previous)))
-                         :chunk (:chunk previous)}
-                        {:type :part
-                         :from (+ (count (:bytes previous)) (- boundary-size) seam)
-                         :to (:to input)
-                         :pos seam
-                         :first-bytes (take 2 (drop seam (:bytes input)))
-                         :chunks [(:chunk previous) (:chunk input)]}]
+               ;; :tail terminates a part, the question is whether
+               ;; there's a boundary straddling the previous input and this
+               ;; one
+               :tail
+               (do
+                 (vreset! mem nil)
+                 (rf result
+                     (if seam
+                       (case (:type previous)
+                         :head
+                         [{:type :part
+                           :from (:from previous)
+                           :to (+ (count (:bytes previous)) (- boundary-size) seam)
+                           :pos (+ (:from previous) boundary-size)
+                           :first-bytes (take 2 (drop (+ (:from previous) boundary-size) (:bytes previous)))
+                           :chunk (:chunk previous)}
+                          {:type :part
+                           :from (+ (count (:bytes previous)) (- boundary-size) seam)
+                           :to (:to input)
+                           :pos seam
+                           :first-bytes (take 2 (drop seam (:bytes input)))
+                           :chunks [(:chunk previous) (:chunk input)]}]
 
-                       :block
-                       (throw (ex-info "TODO: remainder->block" {})))
+                         :data
+                         (throw (ex-info "TODO: head->data" {})))
 
-                     ;; No seam
-                     (case (:type previous)
-                       ;; leader->remainder (no seam)
-                       :leader [{:type :part
+                       ;; No seam
+                       (case (:type previous)
+                         ;; leader->remainder (no seam)
+                         :head [{:type :part
                                  :from (:from previous)
                                  :to (:to input)
                                  :chunks [(:chunk previous) (:chunk input)]}]
-                       ;; block->remainder (no seam)
-                       :block [{:type :completion
-                                ;; Whenever block is in mem, only the last boundary size bytes are unserved
-                                :from (- (count (:bytes previous)) boundary-size)
-                                :to (:to input)
-                                :chunks [(:chunk previous) (:chunk input)]}]))))
+                         ;; block->remainder (no seam)
+                         :data [{:type :completion
+                                 ;; Whenever block is in mem, only the last boundary size bytes are unserved
+                                 :from (- (count (:bytes previous)) boundary-size)
+                                 :to (:to input)
+                                 :chunks [(:chunk previous) (:chunk input)]}]))))
 
-             :leader (do
+               :head (do
                        (vreset! mem input)
                        (rf result
                            (if seam
                              (if (:type previous)
                                ;; default
-                               [{:type :unknown :arc [:leader (:type previous)] :seam seam}]
+                               [{:type :unknown1 :span [(:type previous) :head] :seam seam}]
                                ;;
-                               [{:type :unknown :arc [:leader (:type previous)] :seam seam}])
+                               [{:type :unknown2 :span [(:type previous) :head] :seam seam}])
                              ;; no seam
-                             (if (:type previous)
-                               [{:type :unknown :arc [:leader (:type previous)]}]
-                               ;; that's ok, no seam, no previous, we've got the input in mem now
+                             (case (:type previous)
+                               ;; TODO: This is only a part if there's a CRLF after the boundary.
+                               ;; There's a boundary starting at 0
+                               :head [{:type :part
+                                       :from 0
+                                       :to (count (:bytes previous))
+                                       :chunk (:chunk previous)}]
+                               nil [] ;; nil is ok, no seam, no previous, we've got the input in mem now
                                []))))
 
-             :block
-             (do
-               (vreset! mem input)
-               (rf result
-                   (if seam
-                     (case (:type previous)
-                       :leader (throw (ex-info "TODO: leader->block (with seam)" {}))
-                       :block (throw (ex-info "TODO: block->block (with seam)" {}))
-                       )
-                     (case (:type previous)
-                       ;; leader->block (without seam)
-                       :leader [{:type :partial
+               :data
+               (do
+                 (vreset! mem input)
+                 (rf result
+                     (if seam
+                       (case (:type previous)
+                         :head (throw (ex-info "TODO: head->data (with seam)" {}))
+                         :data (throw (ex-info "TODO: data->data (with seam)" {})))
+                       (case (:type previous)
+                         ;; head->data (without seam)
+                         :head [{:type :partial
                                  :from (:from previous)
                                  :pos (+ (:from previous) boundary-size)
                                  :to (- (count (:bytes input)) boundary-size)
                                  :first-bytes (take 2 (drop  (+ (:from previous) boundary-size) (:bytes previous)))
                                  :chunks [(:chunk previous) (:chunk input)]
                                  }]
-                       ;; block->block (without seam)
-                       :block [{:type :continuation
-                                :from (- (count (:bytes previous)) boundary-size)
-                                :to (- (count (:bytes input)) boundary-size)
-                                :chunks [(:chunk previous) (:chunk input)]}]))))
+                         ;; data->data (without seam)
+                         :data [{:type :continuation
+                                 :from (- (count (:bytes previous)) boundary-size)
+                                 :to (- (count (:bytes input)) boundary-size)
+                                 :chunks [(:chunk previous) (:chunk input)]}]
+                         (throw (ex-info "TODO: possible if malformed body payload (e.g. no initial boundary)" {:type (:type previous)}))))))
 
-             ;; otherwise
-             (rf result []))))))))
+               :end!
+               (do
+                 (rf result
+                     (case (:type previous)
+                       :head
+                       (if (match? (:bytes previous) "--" boundary-size)
+                         []
+                         [{:type :malformed-multipart
+                           :from boundary-size
+                           :to (count (:bytes input))
+                           :chunk (:chunk input)}])
+                       ;; default
+                       [{:type :unknown-end!}])))
+
+               ;; otherwise
+               (rf result [{:type :otherwise}])))))))))
