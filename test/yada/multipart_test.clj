@@ -49,23 +49,26 @@
 #_(defn filter-by-type [t]
   (partial sequence (filter #(= (:type %) t))))
 
-(defn line-terminate [line]
-  (str line "\r\n"))
+(def CRLF "\r\n")
 
-(defn content [lines width pad]
+(defn line-terminate [line]
+  (str line CRLF))
+
+(defn make-content [lines width pad]
   (apply str
          (repeat lines
-                 (line-terminate (apply str (repeat (- width 2) (str pad)))))))
+                 (line-terminate (apply str (repeat width (str pad)))))))
 
 (defn part [boundary content]
-  (str (line-terminate boundary) content))
+  (str CRLF "--" boundary "   " CRLF content))
 
-(defn parts [n boundary content]
+(defn parts [n preamble boundary content]
   (str
+   preamble
    (apply str (repeat n (part boundary content)))
-   boundary "--"))
+   CRLF "--" boundary "--"))
 
-(deftest split-multipart-at-boundaries-test []
+#_(deftest split-multipart-at-boundaries-test []
   (let [boundary "--ABCD"
         source (-> (parts 2 boundary (content 3 8 "0"))
                    (to-chunks 32)
@@ -75,75 +78,129 @@
       [last :type] := :end!
       [(partial map :type) (partial filter #{:head :end!})] := [:head :head :head :end!])))
 
-(defn get-chunks [{:keys [boundary parts# lines# width# chunk-size]}]
-  (-> (parts parts# boundary (content lines# width# "0"))
+(defn get-chunks [{:keys [boundary preamble parts# lines# width# chunk-size]}]
+  (-> (parts parts# preamble boundary (make-content lines# width# "0"))
       (to-chunks chunk-size)))
 
+(defn get-index [boundary]
+  (bm-index (b/to-byte-array (str CRLF "--" boundary))))
+
 (defn get-pieces [{:keys [boundary parts# lines# width# chunk-size] :as spec}]
-  (let [index (bm-index (b/to-byte-array boundary))
+  (let [index (get-index boundary)
         source (-> spec get-chunks s/->source)]
     (->> source
          (split-multipart-at-boundaries index)
          s/stream->seq)))
 
 (defn get-parts [{:keys [boundary parts# lines# width# chunk-size] :as spec}]
-  (let [index (bm-index (b/to-byte-array boundary))
+  (let [index (get-index boundary)
         source (-> spec get-chunks s/->source)]
     (->> source
          (split-multipart-at-boundaries index)
          (s/transform (assemble-multipart-pieces index))
-         (s/mapcat identity)
+         (s/mapcat #(map (fn [x] (-> x
+                                    (dissoc :bytes))) %))
          s/stream->seq)))
 
 (defn get-part-size [{:keys [boundary lines# width#]}]
   (+ (count boundary) 2 (* lines# width#)))
 
-(defn get-metrics [spec]
-  (let [part-size (get-part-size spec)
-        data-size (+ (* (:parts# spec) (get-part-size spec))
-                     (count (str (:boundary spec) "--")))]
-    {:part-size part-size
-     :div (int (/ data-size (:chunk-size spec)))
-     :mod (mod data-size (:chunk-size spec))}))
+;; TODO: Why aren't we seeing {:end? true} in the splits?
 
 (defn filter-relevant [pieces]
-  (map #(select-keys % [:type :from :to :chunk])
+  (map #(select-keys % [:type :from :to :chunk :end?])
        (filter #(#{:head :tail :part :data} (:type %))
                pieces)))
 
-(deftest pieces-test
-  (testing "Parts map onto chunks"
-    (let [spec {:boundary "--ABCD" :parts# 2 :lines# 3 :width# 8 :chunk-size 32}]
-      ;; --ABCD.. 000000.. 000000.. 000000..
-      ;; --ABCD.. 000000.. 000000.. 000000..
-      ;; --ABCD--
-      (is (= (get-metrics spec) {:part-size 32 :div 2 :mod 8}))
-      (is (= (filter-relevant (get-pieces spec))
-             [{:type :head :from  0 :to 32 :chunk 1}
-              {:type :head :from  0 :to 32 :chunk 2}
-              {:type :head :from  0 :to  8 :chunk 3}]))
-      (given (get-parts spec)
-        count := (:parts# spec)
-        (partial map :type) :∀ (partial = :part))))
+;; (b/print-bytes (get-chunks {:boundary "ABCD" :parts# 2 :lines# 3 :width# 10 :chunk-size 16}))
+;; (b/print-bytes (get-chunks {:boundary "ABCD" :parts# 2 :lines# 2 :width# 7 :chunk-size 16}))
 
-  (testing "Parts span chunks"
-    ;; --ABCD..00 0000..0000
-    ;; ^h
-    ;; 00..000000 ..--ABCD..
-    ;; ^t           ^h
-    ;; 000000..00 0000..0000
-    ;; ^d
-    ;; 00..--ABCD --
-    ;; ^t  ^h
-    (let [spec {:boundary "--ABCD" :parts# 2 :lines# 3 :width# 8 :chunk-size 20}]
-      (is (get-metrics spec) {:part-size 32 :mod 4})
+
+;; Pieces include the preamble. The last piece is (usually) the
+;; multipart termination, and may include a postamble. Pieces include
+;; the boundary, including the leading CRLF.
+
+;; Boundary detection includes both the CRLF and '--' before the 'ABCD'
+;; boundary.
+
+(get-pieces {:boundary "ABCD" :preamble "preamble" :parts# 2 :lines# 1 :width# 5 :chunk-size 16})
+
+(deftest pieces-test
+  (testing "test-1"
+    (let [spec {:boundary "ABCD" :preamble "preamble" :parts# 2 :lines# 1 :width# 5 :chunk-size 16}]
+
+      ;; 0: 70 72 65 61 6D 62 6C 65  0D 0A 2D 2D 41 42 43 44      preamble..--ABCD
+      ;;    ^t                       ^h
+      ;; 1: 20 20 20 0D 0A 30 30 30  30 30 0D 0A 0D 0A 2D 2D         ..00000....--
+      ;;    ^d
+      ;; 2: 41 42 43 44 20 20 20 0D  0A 30 30 30 30 30 0D 0A      ABCD   ..00000..
+      ;;    ^d
+      ;; 3: 0D 0A 2D 2D 41 42 43 44  2D 2D                        ..--ABCD--
+      ;;    ^h
+
       (is (= (filter-relevant (get-pieces spec))
-             [{:type :head :from  0 :to 20 :chunk 1}
-              {:type :tail :from  0 :to 12 :chunk 2}
-              {:type :head :from 12 :to 20 :chunk 2}
-              {:type :data :from  0 :to 20 :chunk 3}
-              {:type :tail :from  0 :to  4 :chunk 4}
-              {:type :head :from  4 :to 12 :chunk 4}])))))
+             [{:type :tail :from  0 :to  8 :chunk 0}
+              {:type :head :from  8 :to 16 :chunk 0}
+              {:type :data :from  0 :to 16 :chunk 1}
+              {:type :data :from  0 :to 16 :chunk 2}
+              {:type :head :from  0 :to 10 :chunk 3}]))
+
+      ;; 0: 70 72 65 61 6D 62 6C 65  0D 0A 2D 2D 41 42 43 44      preamble..--ABCD
+      ;;    ^pre                     ^part
+      ;; 1: 20 20 20 0D 0A 30 30 30  30 30 0D 0A 0D 0A 2D 2D         ..00000....--
+      ;;                                         ^part
+      ;; 2: 41 42 43 44 20 20 20 0D  0A 30 30 30 30 30 0D 0A      ABCD   ..00000..
+      ;;
+      ;; 3: 0D 0A 2D 2D 41 42 43 44  2D 2D                        ..--ABCD--
+      ;;    ^part
+
+      (is (= (get-parts spec)
+             [{:type :preamble :from [0 0] :to [0 8] :size 8}
+              {:type :partial :from [0 8] :to [1 8] :size 16}
+              {:type :completion :from [1 8] :to [1 12] :size 4}
+              {:type :partial :from [1 12] :to [2 8] :size 12}
+              {:type :completion :from [2 8] :to [2 16] :size 8}
+              {:type :part :from [3 0] :to [3 10] :size 10}]))))
+
+  (testing "test-2"
+    (let [spec {:boundary "ABCD" :parts# 2 :lines# 2 :width# 7 :chunk-size 16}]
+
+      ;; 0: 0D 0A 2D 2D 41 42 43 44  20 20 20 0D 0A 30 30 30      ..--ABCD   ..000
+      ;;    ^h
+      ;; 1: 30 30 30 30 0D 0A 30 30  30 30 30 30 30 0D 0A 0D      0000..0000000...
+      ;;    ^d
+      ;; 2: 0A 2D 2D 41 42 43 44 20  20 20 0D 0A 30 30 30 30      .--ABCD   ..0000
+      ;;    ^d
+      ;; 3: 30 30 30 0D 0A 30 30 30  30 30 30 30 0D 0A 0D 0A      000..0000000....
+      ;;    ^d
+      ;; 4: 2D 2D 41 42 43 44 2D 2D                                --ABCD--
+      ;;    ^d
+
+      (is (= (filter-relevant (get-pieces spec))
+             [{:type :head :from 0 :to 16 :chunk 0}
+              {:type :data :from 0 :to 16 :chunk 1}
+              {:type :data :from 0 :to 16 :chunk 2}
+              {:type :data :from 0 :to 16 :chunk 3}
+              {:type :data :from 0 :to  8 :chunk 4}]))
+
+      ;; 0: 0D 0A 2D 2D 41 42 43 44  20 20 20 0D 0A 30 30 30      ..--ABCD   ..000
+      ;;    ^part
+      ;; 1: 30 30 30 30 0D 0A 30 30  30 30 30 30 30 0D 0A 0D      0000..0000000...
+      ;;                                                  ^part
+      ;; 2: 0A 2D 2D 41 42 43 44 20  20 20 0D 0A 30 30 30 30      .--ABCD   ..0000
+      ;;
+      ;; 3: 30 30 30 0D 0A 30 30 30  30 30 30 30 0D 0A 0D 0A      000..0000000....
+      ;;                                               ^part
+      ;; 4: 2D 2D 41 42 43 44 2D 2D                               --ABCD--
+
+      (is (= (get-parts spec)
+             [{:type :partial :from [0  0] :to [1 8] :size 24}
+              {:type :completion :from [1 8] :to [1 15] :size 7}
+              {:type :partial :from [1 15] :to [2 8] :size 9}
+              {:type :continuation :from [2 8] :to [3 8] :size 16}
+              {:type :completion :from [3 8] :to [3 14] :size 6}
+              {:type :epilogue :from [3 14] :to [4 8] :size 10}
+              ])))))
 
 (deftest parts-test
 
