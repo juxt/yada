@@ -26,274 +26,323 @@
 ;; turn. If a given buffer does not end in a boundary, we store the
 ;; partial data until a boundary is found in a subsequent buffer.
 
-(defn split-chunk-by-boundary
-  [n index bytes]
-  (let [offsets (match index bytes)]
-    (concat
-     [{:type :info :chunk :start :chunk-index n :chunk-size (count bytes)
-       :offsets offsets}]
-     (when (pos? (or (first offsets) 0))
-       [{:type :tail :from 0 :to (first offsets) :bytes bytes :chunk n}])
-     (for [[from to] (partition 2 1 offsets) :let [pos (+ from (:length index))]]
-       {:type :part :from from :to to :pos pos :first-bytes (take 2 (drop pos bytes)) :bytes bytes :chunk n})
-     (if (last offsets)
-       [{:type :head :from (last offsets) :to (count bytes) :bytes bytes :chunk n}]
-       [{:type :data :from 0 :to (count bytes) :bytes bytes :chunk n}])
-     [{:type :info :chunk :end}])))
+(defn copy-bytes [source from to]
+  (let [len (- to from)
+        b (byte-array len)]
+    (System/arraycopy source from b 0 len)
+    b))
 
-(def ^:deprecated split-buf split-chunk-by-boundary)
+(defn count-transport-padding [from b]
+  (let [to (count b)]
+    (loop [n from]
+      (when (< n to)
+        (let [x (get b n)]
+          (if-not (#{(byte \tab) (byte \space)} x) ; TODO: This is LWSP-char - find out what the definition of that is
+            (if (and (= (get b n) (byte \return))
+                     (= (get b (inc n)) (byte \newline)))
+              (+ 2 n)
+              (throw (ex-info "Malformed boundary" {})) ; try to trigger this via a test
+              )
+            (recur (inc n))))))))
 
-(defn split-multipart-at-boundaries [index source]
-  "Given a source is a (possibly) lazy sequence/stream of chunks (byte-arrays, byte-buffers),
-  returns a new source of parts (and pieces of parts where
-  necessary). Each vector contains one or more maps containing the
-  byte-array data and boundary details. Coercion is via byte-streams.
+(defn copy-bytes-after-boundary [boundary-size source from to]
+  (copy-bytes source (count-transport-padding (+ from boundary-size) source) to))
 
-  The index parameter is the Boyer-Moore index, created by bm-index on a boundary.
+;; TODO: Fix match so that it can stop at a limit, rather than having to
+;; copy a buffer like this
+(defn copy-and-match [{:keys [index window pos]}]
+  (let [b (byte-array pos)]
+    (System/arraycopy window 0 b 0 pos)
+    (match index b)))
 
-  Parts of a multipart stream may span buffers. So can boundary markers. Therefore the returned stream cannot always return whole parts, but may have to return pieces which must be reassembled.
+(defn advance-window [m amount]
+  (assert (pos? amount) "amount must be positive")
+  (System/arraycopy (:window m) amount (:window m) 0 (- (:pos m) amount))
+  (update-in m [:pos] - amount))
 
-  All entries have a :type entry of the following :-
+(defmulti process-boundaries (fn [m] (:state m)))
 
-  :info - start/end chunk markers
-  :part - a whole part of a multipart
-  :head - the head peice of a part, started with a detected boundary but with no end
-  :tail - the tail piece of a part, ended at a detected boundary but with no start
-  :data - an inner piece of a part, with no detected start or end boundary
-  :end! - no more chunks marker. This is the last piece in the stream
-          before it is closed. This indicator is used to flush any state and
-          assemble the final part."
-  (let [stream (s/stream)]
-    (d/loop [n 0]
-      (d/chain
-       (s/take! source ::drained)
-       (fn [buf]
-         (if (identical? buf ::drained)
-           (do (s/put! stream [{:type :end!}]) ; the 'no-more-chunks' marker
-               (s/close! stream))
-           (do
-             (s/put! stream (split-chunk-by-boundary n index (b/to-byte-array buf)))
-             (d/recur (inc n)))))))
-    (s/mapcat identity (s/source-only stream))))
+(defmethod process-boundaries :default [m]
+  (throw (ex-info "Calling process-boundaries default state" {})))
 
-(defn- seam
-  "Find the position of a potential boundary straddling across a pair of byte-arrays."
-  [buf-a buf-b index]
-  (let [boundary-size (:length index)]
-    (when (and (:bytes buf-a) (:bytes buf-b))
-      (let [b (byte-array (* 2 boundary-size))]
-        (System/arraycopy (:bytes buf-a) (- (count (:bytes buf-a)) boundary-size) b 0 boundary-size)
-        (System/arraycopy (:bytes buf-b) 0 b boundary-size boundary-size)
-        (let [pos (first (match index b))]
-          ;; Return the result only if the boundary starts in buf-a and
-          ;; is positive. Otherwise, the boundary starts in buf-b and
-          ;; will be known to buf-b and dealt with accordingly. If zero,
-          ;; the boundary will be fully contained in buf-a
-          (when (and pos (< 0 pos boundary-size)) pos))))))
+;; Surely there's a clojure core library fn for this‽ (TODO: check when online)
+(defn array-equal? [& args]
+  (every? identity (apply map = args)))
 
-(defn match?
-  "Is needle in bytes at offset pos?"
-  [bytes needle pos]
-  (every? true? (map-indexed #(= (get bytes (+ pos %1)) %2) (map byte needle))))
+(defmethod process-boundaries :start [m]
+  (let [preamble-size (first (:positions m))]
+    (infof "preamble-size: %s" preamble-size)
+    (cond
+      (nil? preamble-size)
+      (let [starts-with-boundary? (array-equal? (:dash-boundary m) (copy-bytes (:window m) 0 (count (:dash-boundary m))))
+            amt (- (:pos m) (:boundary-size m))]
+        (s/put! (:stream m) [{:info (if starts-with-boundary? :partial :partial-preamble)
+                              :bytes (copy-bytes (:window m) 0 amt)
+                              :label 1}])
+        (-> m
+            (advance-window amt)
+            (assoc :state (if starts-with-boundary? :in-partial :in-preamble))))
 
-(defn copy-bytes-one-piece [typ piece from to]
-  (let [ba (byte-array (- to from))]
-    (System/arraycopy (:bytes piece) from ba 0 (- to from))
-    {:type typ
-     :bytes ba
-     :from [(:chunk piece) from]
-     :to [(:chunk piece) to]
-     :size (count ba)}))
+      (zero? preamble-size) (-> m (assoc :state :part))
 
-(defn copy-bytes-two-pieces [typ piece1 from piece2 to]
-  (let [ba (byte-array (+ (- (count (:bytes piece1)) from) to))]
-    (System/arraycopy (:bytes piece1) from ba 0 (- (count (:bytes piece1)) from))
-    (System/arraycopy (:bytes piece2) 0 ba (- (count (:bytes piece1)) from) to)
-    {:type typ
-     :bytes ba
-     :from [(:chunk piece1) from]
-     :to [(:chunk piece2) to]
-     :size (count ba)}))
+      (pos? preamble-size)
+      (let [starts-with-boundary? (array-equal? (:dash-boundary m) (copy-bytes (:window m) 0 (count (:dash-boundary m))))]
+        (s/put! (:stream m)
+                (if starts-with-boundary?
+                  (do
+                    (infof "preamble-size: %s" preamble-size)
+                    [{:type :part
+                      :bytes (copy-bytes-after-boundary (count (:dash-boundary m)) (:window m) 0 preamble-size)
+                      :label 2}])
+                  [{:type :preamble
+                    :bytes (copy-bytes (:window m) 0 preamble-size)
+                    :label 3}]))
+        (-> m
+            (advance-window preamble-size)
+            (assoc :state :part)
+            )))))
 
-(defn partials-total [l m]
-  (reduce + (map :size (conj l m))))
+;; TODO: Change process-boundaries so that positions is NOT part of m,
+;; because it's then returned inside m (and this is a kind of unwanted
+;; 'side-effect' - the positions data is stale when m is returned. So
+;; use an extra parameter, rather than m itself.).
 
-(defn partials-reduce [b l]
-  (reduce (fn [pos {:keys [bytes]}]
-            (System/arraycopy bytes 0 b pos (count bytes))
-            (+ pos (count bytes)))
-          0 l)
-  b)
+(defmethod process-boundaries :in-preamble [m]
+  (case (count (:positions m))
+    0 (let [amt (- (:pos m) (:boundary-size m))]
+        (s/put! (:stream m) [{:type :preamble-continuation
+                              :bytes (copy-bytes (:window m) 0 amt)
+                              :label 4}])
+        (advance-window m amt))
 
-(defn partials-assemble [l m bytes]
-  (let [b (partials-reduce bytes (conj l m))]
-    {:from (or (:from (first l)) (:from m))
-     :to (:to m)
-     :bytes b
-     :size (count b)}))
+    1 (let [e (first (:positions m))]
+        (s/put! (:stream m) [{:type :preamble-completion
+                              :bytes (copy-bytes (:window m) 0 e)
+                              :label 5}])
+        (-> m
+            (assoc :state :part)
+            (advance-window e)))
 
-(defn when-sufficient! [limit !partials m]
-  (let [p @!partials
-        n (partials-total p m)]
-    (if (< n limit)
+    (throw (ex-info "TODO: 2+ positions" {:positions# 2}))))
+
+(defmethod process-boundaries :part [m]
+  ;; Since the state is :part, we know we at least one position (at 0)
+  (let [partitions (partition 2 1 (:positions m))]
+    ;; We must have at least 2 positions, which means at least one partition
+    (if (not-empty partitions)
       (do
-        (vswap! !partials conj m)
-        nil)
-      (do
-        (vreset! !partials [])
-        [(merge {:type :partial} (partials-assemble p m (byte-array n)))]))))
+        ;; Ship parts
+        (doseq [[s e] partitions]
+          (s/put! (:stream m) [{:type :part
+                                :bytes (copy-bytes-after-boundary (:boundary-size m) (:window m) s e)
+                                :label 6}]))
+        ;; Advance
+        (advance-window m (last (:positions m))))
 
-(defn sufficient!
-  [!partials m]
-  (let [p @!partials
-        n (partials-total p m)]
-    (vreset! !partials [])
-    [(merge {:type :part} (partials-assemble p m (byte-array n)))]))
+      ;; We don't have any partitions, but since the boundary is at 0,
+      ;; it's a partial.
+      (let [amt (- (:pos m) (:boundary-size m))]
+        (s/put! (:stream m) [{:type :partial :bytes (copy-bytes-after-boundary (:boundary-size m) (:window m) 0 amt) :label 7}])
+        (-> m
+            (advance-window amt)
+            (assoc :state :in-partial))))))
 
-(defn assemble-multipart-pieces
-  "Returns a stateful transducer that processes a series of buffer
-  events and combines them into a stream of multipart events. Parts will
-  be delivered either in entirety, or as a series of
-  {partial,continuation*,completion} events. The first part of a partial
-  will be at least one buffer size large, so any text headers can be
-  processed. Boundaries that straddle buffers are detected and handled."
-  [index]
-  (let [boundary-size (:length index)]
-    (fn [rf]
-      (let [mem (volatile! nil)
-            !partials (volatile! [])]
-        (fn
-          ([] (rf))
-          ([result] (rf result))
-          ([result input]
-           (if (= (:type input) :info)
-             (rf result [])
-             (let [previous @mem
-                   seam (seam previous input index)]
-               (case (:type input)
-                 :part (do
-                         (vreset! mem nil)
-                         (rf result [{:type :part
-                                      :from (+ (:from input) boundary-size)
-                                      :to (:to input)}]))
+(defmethod process-boundaries :in-partial [m]
+  (if-let [e (first (:positions m))]
+    (do
+      ;; Any position found here will be complete the partial and take us back to normal processing.
+      (s/put! (:stream m) [{:type :partial-completion :bytes (copy-bytes (:window m) 0 e) :label 8}])
 
-                 ;; :tail terminates a part, the question is whether
-                 ;; there's a boundary straddling the previous input and this
-                 ;; one
-                 :tail
-                 (do
-                   (vreset! mem nil)
-                   (rf result
-                       (if seam
-                         (case (:type previous)
-                           :head
-                           [{:type :part
-                             :from [(:chunk previous) (+ (:from previous) boundary-size)]
-                             :to [(:chunk previous) (+ (count (:bytes previous)) (- boundary-size) seam)]
-                             :chunk (:chunk previous)}
-                            {:type :part
-                             :from [(:chunk input) seam]
-                             :to [(:chunk input) (:to input)]}]
+      ;; Ship any other parts we know about
+      (doseq [[s e] (partition 2 1 (:positions m))]
+        (infof "s and e are %s and %s" s e)
+        (s/put! (:stream m) [{:type :part
+                              :bytes (copy-bytes (:window m) s e)
+                              :label 9}]))
 
-                           :data
-                           (throw (ex-info "TODO: head->data" {})))
+      ;; Advance to last position
+      (let [amt (last (:positions m))]
+        (cond-> m
+          (pos? amt) (advance-window amt)
+          true (assoc :state :part))))
 
-                         ;; No seam
-                         (case (:type previous)
-                           ;; Nothing previous
-                           nil [(copy-bytes-one-piece :preamble input (:from input) (:to input))]
-                           ;; head->tail (no seam)
-                           :head [{:type :part
-                                   :from [(:chunk previous) (+ (:from previous) boundary-size)]
-                                   :to [(:chunk input) (:to input)]
-                                   :bytes nil}]
-                           ;; data->tail (no seam)
-                           :data [{:type :completion
-                                   ;; Whenever block is in mem, only the last boundary size bytes are unserved
-                                   :from :?
-                                   :to :?}]))))
+    ;; Otherwise there is just a continuation, ship everything but keep some back for the possible boundary
+    (let [amt (- (:pos m) (:boundary-size m))]
+      (s/put! (:stream m) [{:type :partial-continuation :bytes (copy-bytes (:window m) 0 amt)
+                            :label 10}])
+      (advance-window m amt))))
 
-                 :head (do
-                         (vreset! mem input)
-                         (rf result
-                             (if seam
-                               (if (:type previous)
-                                 ;; default
-                                 [{:type :unknown1 :span [(:type previous) :head] :seam seam}]
-                                 ;;
-                                 [{:type :unknown2 :span [(:type previous) :head] :seam seam}])
-                               ;; no seam
-                               (case (:type previous)
-                                 ;; TODO: check CRLF at end of boundary
-                                 :head [(copy-bytes-one-piece :part
-                                                              previous
-                                                              (+ boundary-size (count [\r \n]))
-                                                              (count (:bytes previous)))]
-                                 nil [] ;; nil is ok, no seam, no previous, we've got the input in mem now
-                                 [(copy-bytes-one-piece
-                                   :completion previous
-                                   (- (count (:bytes previous)) boundary-size)
-                                   (count (:bytes previous))
-                                   )]))))
+(defn make-space [m]
+  (try
+    (process-boundaries (assoc m :positions (copy-and-match m)))
+    (catch Exception e
+      (errorf e "Error making space")
+      )))
 
-                 :data
-                 (do
-                   (vreset! mem input)
-                   (rf result
-                       (if seam
-                         (case (:type previous)
-                           :head [{:type :todo
-                                   :desc "TODO: head->data (with seam)"
-                                   :seam seam}]
-                           :data (concat [(copy-bytes-one-piece
-                                           :completion
-                                           previous
-                                           (- (count (:bytes previous)) boundary-size)
-                                           (+ (- (count (:bytes previous)) boundary-size) seam))]
-                                         (when-sufficient!
-                                          (- (count (:bytes previous)) boundary-size)
-                                          !partials
-                                          (copy-bytes-two-pieces
-                                           :partial
-                                           previous (+ (- (count (:bytes previous)) boundary-size) seam)
-                                           input (- (count (:bytes input)) boundary-size)))))
+(defn make-space-until-sufficient [m]
+  (let [{:keys [pos window chunk] :as m} m]
+    (if (> pos (- (count window) (count chunk)))
+      ;; This is the continuation function we return to the trampoline
+      #(-> m make-space make-space-until-sufficient)
+      m)))
 
-                         (case (:type previous)
-                           ;; head->data (without seam)
-                           :head [(copy-bytes-two-pieces :partial previous (:from previous)
-                                                         ;; We deliver as much as we can in the initial partial.
-                                                         input (- (count (:bytes input)) boundary-size))]
-                           ;; data->data (without seam)
-                           :data [(copy-bytes-two-pieces
-                                   :continuation
-                                   previous (- (count (:bytes previous)) boundary-size)
-                                   input (- (count (:bytes input)) boundary-size))]
+(defn trampoline-make-space [m]
+  (trampoline make-space-until-sufficient m))
 
-                           (throw (ex-info "TODO: possible if malformed body payload (e.g. no initial boundary)" {:type (:type previous)}))))))
+(defn append-chunk
+  "Copy over the chunk's bytes into the window"
+  [{:keys [window pos] :as m} chunk]
+  (System/arraycopy chunk 0 window pos (count chunk))
+  (update-in m [:pos] + (count chunk)))
 
-                 :end!
+(defn finish-up [m]
+  (case (:state m)
+    :start
+    (let [positions (copy-and-match m)]
+      ;; Ship parts
+      (doseq [[s e] (partition 2 1 positions)]
+        (s/put! (:stream m) [{:type :part
+                              :bytes (copy-bytes (:window m) s e)
+                              :label 11}]))
+
+      (if-let [e (+ (last positions) (:boundary-size m))]
+        (if (and (>= (:pos m) (+ 2 e))
+                 (= (get (:window m) e) (byte \-))
+                 (= (get (:window m) (inc e)) (byte \-)))
+          (s/put! (:stream m) [{:type :end
+                                :epilogue (String. (copy-bytes (:window m) (+ 2 e) (:pos m)))
+                                :label 123}])
+          (throw (ex-info "No end delimiter" {})) ; try to trigger this via a test
+          )
+        (throw (ex-info "No end delimiter" {}))))
+
+    :in-preamble
+    (let [positions (copy-and-match m)]
+      (let [s (first positions)]
+        (s/put! (:stream m) [{:type :preamble-completion
+                              :bytes (copy-bytes (:window m) 0 s)
+                              :label 12}])
+        (doseq [[s e] (partition 2 1 positions)]
+          (s/put! (:stream m) [{:type :part
+                                :bytes (copy-bytes-after-boundary (:boundary-size m) (:window m) s e)
+                                :label 12}]))))
+
+    :part
+    (let [positions (copy-and-match m)]
+      ;; Ship parts
+      (doseq [[s e] (partition 2 1 positions)]
+        (s/put! (:stream m) [{:type :part
+                              :bytes (copy-bytes-after-boundary (:boundary-size m) (:window m) s e)
+                              :label 13}]))
+
+      (if-let [e (+ (last positions) (:boundary-size m))]
+        (if (and (>= (:pos m) (+ 2 e))
+                 (= (get (:window m) e) (byte \-))
+                 (= (get (:window m) (inc e)) (byte \-)))
+          (s/put! (:stream m) [{:type :end
+                                :epilogue (String. (copy-bytes (:window m) (+ 2 e) (:pos m)))
+                                :label 123}])
+          (throw (ex-info "No end delimiter" {})) ; try to trigger this via a test
+          )
+        (throw (ex-info "No end delimiter" {})))
+
+      )
+
+    :in-partial
+    (let [positions (copy-and-match m)]
+      (when-let [e (first positions)]
+        (s/put! (:stream m) [{:type :partial-completion
+                              :bytes (copy-bytes (:window m) 0 e)
+                              :label 14}]))
+      (doseq [[s e] (partition 2 1 positions)]
+        (s/put! (:stream m) [{:type :part
+                              :bytes (copy-bytes-after-boundary (:boundary-size m) (:window m) s e)
+                              :label 15
+                              }]))
+      (if-let [e (+ (last positions) (:boundary-size m))]
+        (if (and (>= (:pos m) (+ 2 e))
+                 (= (get (:window m) e) (byte \-))
+                 (= (get (:window m) (inc e)) (byte \-)))
+          (s/put! (:stream m) [{:type :end
+                                :epilogue (String. (copy-bytes (:window m) (+ 2 e) (:pos m)))
+                                :label 16}])
+          (throw (ex-info "No end delimiter" {})) ; try to trigger this via a test
+          )
+        (throw (ex-info "No end delimiter" {}))))
+
+    (s/put! (:stream m) [{:info "finish up unhandled state" :state m}]))
+
+  (s/close! (:stream m))
+  (assoc m :state-done))
+
+;; TODO: I think there's a bug with manifold catching of Throwables (or at least arity errors). Try to cause this again.
+
+(defn process-chunk [{:keys [pos window] :as m} chunk]
+  (if (identical? ::drained chunk)
+    (finish-up m)
+
+    (let [chunk (b/to-byte-array chunk)]
+      (-> m
+          (assoc :chunk chunk)
+          trampoline-make-space
+          (append-chunk chunk)))))
+
+(def CRLF "\r\n")
+
+(defn compute-index [delim]
+  (bm-index delim))
+
+(defn parse-multipart [boundary window-size buffer-size source]
+  (let [stream (s/stream 32)
+        delimiter (b/to-byte-array (str CRLF "--" boundary) {:encoding "US-ASCII"})
+        index (compute-index delimiter)
+        boundary-size (:length index)]
+
+    ;; With great thanks to Zach's manifold docs, forgive this blatant code theft!
+    (d/loop [m {:state :start
+                :chunk# 0
+                :stream stream
+                :window (byte-array window-size)
+                :pos 0
+                :dash-boundary (b/to-byte-array (str "--" boundary) {:encoding "US-ASCII"})
+                :index index
+                :boundary-size boundary-size}]
+      (->
+       (d/chain
+        (s/take! source ::drained)
+
+        ;; If we got a chunk, run it through `process-chunk`
+        (fn [chunk]
+          (process-chunk m chunk))
+
+        ;; Wait for the result from `process-chunk` to be realized
+        (fn [m]
+          (when-not (= (:state m) :done)
+            (d/recur (update-in m [:chunk#] inc)))))
+
+       (d/catch clojure.lang.ExceptionInfo
+           (fn [e]
+             (errorf e "Failed: %s" (ex-data e))
+             (d/chain
+              (s/put! stream [{:error :error :message (.getMessage e) :data (ex-data e)}])
+              (fn [b]
+                (s/close! stream)))))
 
 
-                 (rf result
-                     ;; Now we know what we have to process.
-                     ;; Assemble any partials with the previous bytes.
+       (d/catch Throwable
+           (fn [e]
+             (errorf e "Failed: %s" (ex-data e))
+             (d/chain
+              (s/put! stream [{:error :error :message (.getMessage e)}])
+              (fn [b]
+                (s/close! stream)))))
 
-                     ;; Scan for any remaining seams and return the parts
+       (d/catch Object
+           (fn [o]
+             (errorf "Failed")
+             (d/chain
+              (s/put! stream [{:error :error :object o}])
+              (fn [b]
+                (s/close! stream)))))))
 
-                     (case (:type previous)
-                       :head
-                       [(copy-bytes-one-piece :part previous (:from previous) (:to previous))]
-
-                       :data
-                       ;; Possible completion.
-                       ;; Any partials + last boundary worth
-                       (let [m (copy-bytes-one-piece :ending previous (:from previous) (:to previous))
-                             p @!partials]
-                         [(merge {:type :epilogue}
-                                 (partials-assemble p m (byte-array (partials-total p m))))])
-
-                       ;; default
-                       [{:type :unknown-end! :span [:end! (:type previous)] :seam seam}]))
-
-                 ;; otherwise
-                 (rf result [{:type :otherwise}]))))))))))
+    (->> stream s/source-only (s/mapcat identity))))

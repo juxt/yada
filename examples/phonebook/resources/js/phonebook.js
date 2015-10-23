@@ -13,7 +13,7 @@ phonebook = {
             }
         }
         x.onerror = function(e) { log("onerror is ", e)}
-        x.open("DELETE", url, true)
+        x.open("DELETE", url)
         x.send("")
     },
     update: function(url) {
@@ -25,7 +25,7 @@ phonebook = {
             }
         }
         x.onerror = function(e) { log("onerror is ", e)}
-        x.open("PUT", url, true)
-        x.send("")
+        x.open("PUT", url)
+        x.send(new FormData(document.getElementById("entry")))
     }
 }
