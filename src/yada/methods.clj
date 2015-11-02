@@ -125,7 +125,12 @@
   (interpret-get-result [_ ctx]
     (d/error-deferred (ex-info "" {:status 404}))
 
-    #_(throw (ex-info "" {:status 404}))))
+    #_(throw (ex-info "" {:status 404})))
+  clojure.lang.Fn
+  (interpret-get-result [f ctx]
+    (interpret-get-result (f ctx) ctx))
+
+  )
 
 (deftype GetMethod [])
 
