@@ -11,8 +11,12 @@
    [manifold.deferred :as d]
    [manifold.stream :as s]
    [juxt.iota :refer [given]]
+   [yada.util :refer [OWS CRLF]]
    [yada.media-type :as mt]
-   [yada.multipart :refer [parse-multipart CRLF dash-boundary]]))
+   [yada.multipart :refer :all])
+  (:import
+   [java.io ByteArrayInputStream BufferedReader InputStreamReader]
+   [java.nio.charset Charset]))
 
 (deftest parse-content-type-header
   (let [content-type "multipart/form-data; boundary=----WebKitFormBoundaryZ3oJB7WHOBmOjrEi"]
@@ -83,9 +87,6 @@
          s/stream->seq
          (map b/print-bytes))))
 
-;; online:
-;; TODO: Fix multipart TODO in multipart.clj about LWSP :online:
-
 ;; DONE: Test against multipart-1
 ;; TODO: Perhaps examples such as multipart-1 that test different invarients
 ;; TODO: Create test suite so that TODOs can be tested
@@ -118,6 +119,16 @@
       :partial-completion (update-in acc [(dec (count acc))] join item)
       :end (conj acc item))))
 
+(defn slurp-byte-array [res]
+  (let [baos (java.io.ByteArrayOutputStream.)]
+    (io/copy (io/input-stream res) baos)
+    (.toByteArray baos)))
+
+;;(io/resource "yada/multipart-3")
+
+;;(count (slurp (io/resource "yada/multipart-3")))
+;;(count (io/input-stream (io/resource "yada/multipart-3")))
+
 (deftest multipart-1-test
   (doseq [{:keys [chunk-size window-size]}
           [{:chunk-size 64 :window-size 160}
@@ -125,9 +136,11 @@
 
     (let [{:keys [boundary window-size chunk-size] :as spec}
           {:boundary "----WebKitFormBoundaryZ3oJB7WHOBmOjrEi"
-           :chunk-size chunk-size :window-size window-size}]
+           :chunk-size chunk-size :window-size window-size}
+          chunks (to-chunks (slurp-byte-array (io/resource "yada/multipart-1")) chunk-size)]
       (given
-        (->> (s/->source (to-chunks (slurp (io/resource "yada/multipart-1")) chunk-size))
+        (->> chunks
+             s/->source
              (parse-multipart boundary window-size chunk-size)
              (s/map (fn [m] (-> m
                                (assoc :content (if-let [b (:bytes m)] (String. b) "[no bytes]"))
@@ -142,13 +155,14 @@
 (deftest multipart-2-test
   (doseq [{:keys [chunk-size window-size]}
           [{:chunk-size 64 :window-size 160}
+           {:chunk-size 120 :window-size 360}
            {:chunk-size 640 :window-size 1600}]]
 
     (let [{:keys [boundary window-size chunk-size] :as spec}
           {:boundary "----WebKitFormBoundaryZ3oJB7WHOBmOjrEi"
            :chunk-size chunk-size :window-size window-size}]
       (given
-        (->> (s/->source (to-chunks (slurp (io/resource "yada/multipart-2")) chunk-size))
+        (->> (s/->source (to-chunks (slurp-byte-array (io/resource "yada/multipart-2")) chunk-size))
              (parse-multipart boundary window-size chunk-size)
              (s/map (fn [m] (-> m
                                (assoc :content (if-let [b (:bytes m)] (String. b) "[no bytes]"))
@@ -162,22 +176,51 @@
         [3 :content] := "Content-Disposition: form-data; name=\"phone\"\r\n\r\n1234"
         [4 :epilogue] := "\r\nHere is some epilogue"))))
 
+;; Parsing of Content-Disposition.
+;; Headers need to be parsed as per RFC 5322. These are not your normal HTTP headers, necessarily, so RFC 7230 does not apply.
 
-(defn get-parts [{:keys [boundary window-size chunk-size] :as spec}]
-  (let [source (-> spec get-chunks s/->source)]
-    (->> source
-         (parse-multipart boundary window-size chunk-size)
-         (s/transform (xf-bytes->content))
-         s/stream->seq)))
+;; Note header field names must be US-ASCII chars in the range 33 to 126, except colon
+;; inclusive (https://tools.ietf.org/html/rfc5322#section-2.2)
 
+;; 2.5 secs, where's the time being taken up??
+;; With reduced buffer copies (see boyer moore implementation), we get ~450 ms - still far too large for a 339773 byte photo
 
+(deftest parse-content-disposition-header-test
+  (given (parse-content-disposition-header "type;  foo=bar;  a=\"b\";\t  c=abc")
+    :type := "type"
+    [:params "foo"] := "bar"
+    [:params "a"] := "b"
+    [:params "c"] := "abc"))
 
-(let [[chunk-size window-size] [320 640]
-      spec (merge {:boundary "ABCD" :preamble "preamble" :epilogue "fin" :parts# 2 :lines# 1 :width# 5}
-                  {:chunk-size chunk-size :window-size window-size})]
-  (let [source (-> spec get-chunks s/->source)]
-    (->> source
-         (parse-multipart (:boundary spec) (:window-size spec) (:chunk-size spec))
-         ;; Let's reduce!
-         (s/reduce (fn [state piece]))
-         )))
+(def image-size 339773)
+
+(def header-size (count (str "Content-Disposition: form-data; name=\"image\"" CRLF CRLF)))
+
+(deftest reduce-multipart-partial-pieces-test
+  (let [[chunk-size window-size] [16384 (* 4 16384)]
+        spec {:chunk-size chunk-size :window-size window-size}]
+    (given
+      (->> (s/->source (to-chunks (slurp-byte-array (io/resource "yada/multipart-3")) chunk-size))
+           (parse-multipart "----WebKitFormBoundaryZ3oJB7WHOBmOjrEi" (:window-size spec) (:chunk-size spec))
+           (s/reduce reduce-piece {:receiver (->DefaultPartReceiver) :state {:parts []}})
+           deref)
+      [:parts (partial map :type)] := [:part :part :part :part]
+      [:parts last :pieces count] := 7
+      [:parts last :pieces (partial map :bytes)] := [65130 49154 49152 49152 49152 49152 28929]
+      [:parts last :pieces (partial map :bytes) (partial apply +)] := (+ header-size image-size)
+      [:parts last :bytes count] := (+ header-size image-size))))
+
+(deftest reduce-multipart-formdata-test
+  (let [[chunk-size window-size] [16384 (* 4 16384)]
+        spec {:chunk-size chunk-size :window-size window-size}]
+    (given
+      (->> (s/->source (to-chunks (slurp-byte-array (io/resource "yada/multipart-3")) chunk-size))
+           (parse-multipart "----WebKitFormBoundaryZ3oJB7WHOBmOjrEi" (:window-size spec) (:chunk-size spec))
+           (s/transform (comp (xf-add-header-info) (xf-parse-content-disposition)))
+           (s/reduce reduce-piece {:receiver (->DefaultPartReceiver) :state {:parts []}})
+           deref)
+      [:parts (partial map :type)] := [:part :part :part :part]
+      [:parts first (juxt (comp count :bytes) :body-offset) (partial apply -)] := (count "Malcolm")
+      [:parts last :pieces (partial map :bytes)] := [65130 49154 49152 49152 49152 49152 28929]
+      [:parts last :bytes count] := (+ header-size image-size)
+      [:parts last :body-offset] := 48)))

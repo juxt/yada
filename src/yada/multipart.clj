@@ -2,11 +2,16 @@
 
 (ns yada.multipart
   (:require
-   [clojure.tools.logging :refer :all]
+   [byte-streams :as b]
+   [clojure.string :as str]
    [clj-index.core :refer [bm-index match]]
    [manifold.deferred :as d]
    [manifold.stream :as s]
-   [byte-streams :as b]))
+   [clojure.tools.logging :refer :all]
+   [yada.util :refer [OWS CRLF]])
+  (:import
+   [java.io ByteArrayInputStream BufferedReader InputStreamReader]
+   [java.nio.charset Charset]))
 
 ;; Ring's multipart-params middleware wraps Apache's commons file-upload
 ;; library which expects a single input-stream for multipart/* content.
@@ -36,12 +41,14 @@
         (System/arraycopy source from b 0 len)
         b))))
 
+
 (defn- count-transport-padding [from b]
   (let [to (count b)]
     (loop [n from]
       (when (< n to)
         (let [x (get b n)]
-          (if-not (#{(byte \tab) (byte \space)} x) ; TODO: This is LWSP-char - find out what the definition of that is
+          ;; RFC 822 Section 3.3: LWSP-char = SPACE (32) / HTAB (9)
+          (if-not (#{(byte \tab) (byte \space)} x)
             (if (and (= (get b n) (byte \return))
                      (= (get b (inc n)) (byte \newline)))
               (+ (count [\return \newline]) n)
@@ -181,8 +188,9 @@
           true (assoc :state :part))))
 
     ;; Otherwise there is just a continuation, ship everything but keep some back for the possible boundary
-    (let [amt (- (:pos m) (:boundary-size m))]
-      (s/put! (:stream m) [{:type :partial-continuation :bytes (copy-bytes (:window m) 0 amt)
+    (let [amt (- (:pos m) (:dash-boundary-size m))]
+      (s/put! (:stream m) [{:type :partial-continuation
+                            :bytes (copy-bytes (:window m) 0 amt)
                             :debug [:process-boundaries :in-partial :continuation]}])
       (advance-window m amt))))
 
@@ -197,6 +205,7 @@
 
 (defn- make-space-until-sufficient [m]
   (let [{:keys [pos window chunk] :as m} m]
+    ;;(assert (number? (:pos m)) "in make-space-until-sufficient")
     (if (> pos (- (count window) (count chunk)))
       ;; This is the continuation function we return to the trampoline
       #(-> m make-space make-space-until-sufficient)
@@ -208,6 +217,7 @@
 (defn- append-chunk
   "Copy over the chunk's bytes into the window"
   [{:keys [window pos] :as m} chunk]
+  (infof "appending chunk, size %s" (count chunk))
   (System/arraycopy chunk 0 window pos (count chunk))
   (update-in m [:pos] + (count chunk)))
 
@@ -243,8 +253,16 @@
                                   :epilogue (String. (copy-bytes (:window m) (+ (count "--") e) (:pos m)))
                                   :debug [:finish-up :start :epilogue]}])
             ;; try to trigger this via a test
-            (throw (ex-info "No end delimiter" {}))))
-        (throw (ex-info "No end delimiter" {}))))
+            (throw (ex-info "No end delimiter (1)" {}))))
+
+        ;; No boundary found at all. This can be treated as all preamble and no parts
+        (do
+          (s/put! (:stream m) [{:type :preamble
+                                :bytes (copy-bytes (:window m) 0 (:pos m))
+                                :debug [:finish-up :start :all-preamble]}
+                               {:type :end
+                                :epilogue nil
+                                :debug [:finish-up :start :all-preamble :end]}]))))
 
     :in-preamble
     (let [positions (copy-and-match m)]
@@ -314,8 +332,6 @@
           (assoc :chunk chunk)
           trampoline-make-space
           (append-chunk chunk)))))
-
-(def CRLF "\r\n")
 
 (defn dash-boundary [boundary]
   (str "--" boundary))
@@ -426,3 +442,123 @@
                 (s/close! stream)))))))
 
     (->> stream s/source-only (s/mapcat identity))))
+
+
+;; Assembly of multipart/form-data
+
+(defn xf-add-header-info []
+  (map
+   (fn [piece]
+     (or
+      (when (#{:part :partial} (:type piece))
+        (let [bytes (:bytes piece)]
+          (if-let [n (let [limit (- (count bytes) 4)]
+                       (loop [n 0]
+                         (when (<= n limit)
+                           (if (and (= (get bytes n) (byte \return))
+                                    (= (get bytes (+ n 1)) (byte \newline))
+                                    (= (get bytes (+ n 2)) (byte \return))
+                                    (= (get bytes (+ n 3)) (byte \newline)))
+                             n
+                             (recur (inc n))))))]
+            (let [hin (as-> (ByteArrayInputStream. bytes 0 n) %
+                        (InputStreamReader. % (Charset/forName "US-ASCII"))
+                        (BufferedReader. %)
+                        (line-seq %)
+                        (map #(str/split % #":") %)
+                        (map (juxt (comp str/lower-case first)
+                                   (comp str/trim second)) %)
+                        (into {} %))]
+
+              (merge piece
+                     {:headers hin
+                      :body-offset (+ 4 n)}))
+
+            ;; No offset? then the whole part
+            (merge piece
+                   {:headers nil
+                    :body-offset 0}))))
+      ;; When not :part nor :partial, pass through
+      piece))))
+
+(defn parse-content-disposition-header [s]
+  (let [[disposition-type params] (rest (re-matches (re-pattern (str "([\\w-]+)(.*)")) s))]
+    {:type disposition-type
+     :params
+     (into {}
+           (for [[_ nm v1 v2]
+                 (re-seq (re-pattern (str OWS ";" OWS "([\\w-]+)" OWS "=" OWS "(?:([\\w-]+)|\"([\\w-]+)\")")) params)]
+             [nm (or v1 v2)]))}))
+
+(defn xf-parse-content-disposition []
+  (map
+   (fn [piece]
+     (if-let [cd (get-in piece [:headers "content-disposition"])]
+       (assoc piece :content-disposition (parse-content-disposition-header cd))
+       piece))))
+
+;; The point of these protocols is to facilitate advanced users who need
+;; to plug-in their own support for large http payloads.
+
+(defprotocol PartReceiver
+  (receive-part [_ state part] "Return state with part attached")
+  (start-partial [_ piece] "Return a partial"))
+
+(defprotocol Partial
+  (continue [_ piece] "Return thyself")
+  (complete [_ state piece] "Return state, with completed partial"))
+
+(defn assemble-into-one-byte-array [coll]
+  ;; This should work, but it occasionally loses the last byte-array. Weird.
+  #_(b/convert coll (class (byte-array 0)))
+  ;; See https://github.com/ztellman/byte-streams/issues/20
+
+  (let [rs (reductions + (map count coll))
+        b (byte-array (last rs))]
+
+    (reduce (fn [_ [source offset]]
+              (System/arraycopy source 0 b offset (count source)))
+            nil
+            (map vector coll (cons 0 rs)))
+    b))
+
+;; These default implementations are in-memory. Other implementations
+;; could stream to storage.
+
+(defrecord DefaultPartial [initial]
+  Partial
+  (continue [this piece] (update this :pieces (fnil conj []) piece))
+  (complete [this state piece]
+    (let [part
+          (-> initial
+              (assoc :type :part)
+              (assoc :bytes (assemble-into-one-byte-array
+                             (concat [(:bytes initial)]
+                                     (map :bytes (:pieces this))
+                                     [(:bytes piece)])))
+              (assoc :pieces (map (fn [x] (update x :bytes count)) (concat [initial] (:pieces this) [piece]))))]
+      (update state :parts conj part))))
+
+(defrecord DefaultPartReceiver []
+  PartReceiver
+  (receive-part [_ state part] (update state :parts conj part))
+  (start-partial [_ piece] (->DefaultPartial piece)))
+
+;; Reduce pieces into parts
+
+(defn reduce-piece
+  [{:keys [state receiver partial] :as acc} piece]
+  (case (:type piece)
+    :preamble acc
+    :preamble-continuation acc
+    :preamble-completion acc
+    :part (update acc :state (fn [state] (receive-part receiver state piece)))
+    :partial (assoc acc :partial (start-partial receiver piece))
+    :partial-continuation (update acc :partial (fn [p] (continue p piece)))
+    :partial-completion (-> acc
+                            (update :state (fn [s] (if-let [p partial]
+                                                    (complete p s piece)
+                                                    ;; Ignore
+                                                    s)))
+                            (dissoc :partial))
+    :end (:state acc)))

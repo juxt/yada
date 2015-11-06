@@ -16,11 +16,14 @@
    [yada.dev.template :refer [new-template-resource]]
    yada.resources.file-resource
    [yada.yada :as yada :refer [yada]])
-  (:import [modular.bidi Router]))
+  (:import [modular.bidi Router]
+           [modular.component.co_dependency CoDependencySystemMap]))
 
 (def titles
   {2046 "Multipurpose Internet Mail Extensions (MIME) Part Two: Media Types"
+   2183 "Communicating Presentation Information in Internet Messages: The Content-Disposition Header Field"
    2616 "Hypertext Transfer Protocol -- HTTP/1.1"
+   5322 "Internet Message Format"
    7230 "Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing"
    7231 "Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content"
    7232 "Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests"
@@ -41,7 +44,7 @@
       (infof "source is %s" source)
       ((yada source) req))))
 
-(defn index [{:keys [*router *cors-demo-router *talks-router config]}]
+(defn index [{:keys [*router *cors-demo-router *talks-router *phonebook config]}]
   (yada
    (new-template-resource
     "templates/page.html"
@@ -69,7 +72,8 @@
                                 (config/talks-origin config)
                                 (path-for @*talks-router :yada.dev.talks/index))} "Talks"]]
                [:li [:a {:href (str
-                                (path-for @*router :yada.dev.phonebook/phonebook))} "Phonebook demo"]]
+                                (config/phonebook-origin config)
+                                (path-for (:server @*phonebook) :phonebook.api/index))} "Phonebook"]]
 
                [:li "Relevant RFCs"
                 [:ul
@@ -83,6 +87,7 @@
 (s/defrecord Docsite [*router :- (co-dep Router)
                       *cors-demo-router :- (co-dep Router)
                       *talks-router :- (co-dep Router)
+                      *phonebook :- (co-dep CoDependencySystemMap)
                       config :- config/ConfigSchema]
   RouteProvider
   (routes [component]
@@ -93,4 +98,4 @@
 
 (defn new-docsite [& {:as opts}]
   (-> (map->Docsite opts)
-      (co-using [:router :cors-demo-router :talks-router])))
+      (co-using [:router :cors-demo-router :talks-router :phonebook])))

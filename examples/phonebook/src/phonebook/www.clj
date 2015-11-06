@@ -81,7 +81,7 @@
     ;; deref will block until the form value has been
     ;; delivered. Alternatively, they can be used as-is in chains, or
     ;; transfered to files, databases, etc.
-    #_(infof "Put! %s" (-> ctx :parameters)))
+    (infof "Put! %s" (-> ctx :parameters)))
 
   m/Delete
   (DELETE [_ ctx]

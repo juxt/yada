@@ -8,8 +8,9 @@
    [byte-streams :as bs]
    [bidi.bidi :as bidi]
    [manifold.deferred :as d]
+   [manifold.stream :as stream]
    ring.middleware.basic-authentication
-   [ring.middleware.params :refer (assoc-query-params)]
+   [ring.middleware.params :refer [assoc-query-params]]
    [ring.swagger.schema :as rs]
    [ring.swagger.coerce :as rsc]
    ring.util.codec
@@ -23,20 +24,19 @@
    [yada.coerce :as coerce]
    [yada.journal :as journal]
    [yada.methods :as methods]
+   [yada.multipart :refer [parse-multipart reduce-piece ->DefaultPartReceiver xf-add-header-info xf-parse-content-disposition]]
    [yada.representation :as rep]
    [yada.protocols :as p]
-   [yada.response :refer (->Response)]
+   [yada.response :refer [->Response]]
    [yada.resource :as resource]
    [yada.service :as service]
    [yada.media-type :as mt]
-   [yada.util :refer (parse-csv remove-nil-vals)]
-   )
-  (:import (java.util Date)))
+   [yada.util :refer [parse-csv remove-nil-vals]])
+  (:import [java.util Date]))
 
 (defn make-context [properties]
   {:properties properties
-   :response (->Response)
-   })
+   :response (->Response)})
 
 ;; TODO: Read and understand the date algo presented in RFC7232 2.2.1
 
@@ -110,6 +110,12 @@
   (let [resource (:resource ctx)]
     (d/chain
      (resource/properties-on-request resource ctx)
+
+     ;; TODO: It is now illegal to return :parameters from
+     ;; properties-on-request because it's TOO LATE. parse-parameters
+     ;; has already been called. Ensure that the resource's
+     ;; properties-on-request is not attempting to return :parameters
+
      (fn [props]
        ;; Canonicalize possible representations if they are reasserted.
        (cond-> props
@@ -142,10 +148,31 @@
     ctx))
 
 (defn process-request-body [ctx]
-  ctx)
+  ;; Let's try to read the request body
+  (let [mt (mt/string->media-type (get-in (:request ctx) [:headers "content-type"]))]
+    (case (:name mt)
+      "multipart/form-data"
+      (let [boundary (get-in mt [:parameters "boundary"])
+            request-buffer-size 16384   ; as Aleph default
+            window-size (* 4 request-buffer-size)]
+        ;; TODO: If boundary is malformed, throw a 400
 
-(defn malformed?
-  "Malformed? (parameters)"
+        (infof "Got a multipart/form-data!, boundary is %s" boundary)
+
+        (d/chain
+         (->> (parse-multipart boundary window-size request-buffer-size (:body (:request ctx)))
+              (stream/transform (comp (xf-add-header-info) (xf-parse-content-disposition)))
+              (stream/reduce reduce-piece {:receiver (->DefaultPartReceiver) :state {:parts []}}))
+
+         (fn [parts]
+           (infof "Putting in parts: %s" parts)
+           (assoc ctx :parts parts))))
+
+      ;; Otherwise
+      ctx)))
+
+(defn parse-parameters
+  "Parse request and coerce parameters."
   [ctx]
   (let [method (:method ctx)
         request (:request ctx)
@@ -174,6 +201,10 @@
              (when-let [coercer (get-in coercers [method :form])]
                (coercer (ring.util.codec/form-decode (read-body (-> ctx :request))
                                                      (req/character-encoding request))))
+
+             ;; TODO: Incoming content-type needs to be evaluated
+             ;; If it's multipart/form-data, grab the boundary and asynchronously acquire the body
+             #_(and (= (get-in request [:headers "content-type"])))
              #_(get-in coercers [method :form])
              #_(do (errorf "TODO: %s" {:method method
                                      :coercers coercers
@@ -181,9 +212,7 @@
                                      :body (-> request :body)})
                  nil)
 
-
              ;; TODO: Need RFC 2046
-
              )
 
            :body
@@ -614,19 +643,25 @@
    uri-too-long?
    TRACE
 
+   parse-parameters
+
    get-properties
 
    method-allowed?
+   parse-parameters
+   ;; TODO: Unknown or unsupported Content-* header
+   ;; TODO: Request entity too large - shouldn't we do this later,
+   ;; when we determine we actually need to read the request body?
 
+   ;; Only read the body if the parameters include :form or :body,
+   ;; otherwise leave it available for method implementations.
    process-request-body
-   malformed?
+
+   get-properties
 
 ;;   authentication
 ;;   authorization
 
-   ;; TODO: Unknown or unsupported Content-* header
-   ;; TODO: Request entity too large - shouldn't we do this later,
-   ;; when we determine we actually need to read the request body?
 
    check-modification-time
 

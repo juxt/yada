@@ -39,6 +39,9 @@
 (defn talks-port [config]
   (-> config :ports :talks))
 
+(defn phonebook-port [config]
+  (-> config :phonebook :port))
+
 (defn docsite-origin [config]
   (str (:prefix config)
        (when-let [port (docsite-port config)]
@@ -52,4 +55,9 @@
 (defn talks-origin [config]
   (str (:prefix config)
        (when-let [port (talks-port config)]
+         (str ":" port))))
+
+(defn phonebook-origin [config]
+  (str (:prefix config)
+       (when-let [port (phonebook-port config)]
          (str ":" port))))

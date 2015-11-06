@@ -155,7 +155,8 @@
   []
   {:docsite {:router :docsite-router
              :cors-demo-router :cors-demo-router
-             :talks-router :talks-router}
+             :talks-router :talks-router
+             :phonebook :phonebook}
    :user-manual {:router :docsite-router}
    :console {:router :console-router}
    :cors-demo {:router :cors-demo-router}
