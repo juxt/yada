@@ -197,8 +197,8 @@
 
            :header
            (when-let [schema (get-in parameters [method :header])]
-             (let [params (select-keys (-> request :headers) (keys schema))]
-               (rs/coerce schema params :query)))})]
+             (let [params (-> request :headers)]
+               (rs/coerce (assoc schema String String) params :query)))})]
 
     (let [errors (filter (comp schema.utils/error? second) parameters)]
       (if (not-empty errors)
