@@ -32,28 +32,28 @@
 ;; schema-using forms can call into non-schema-using forms to
 ;; pre-process the body.
 
-(defmulti coerce-request-body (fn [body media-type & args] media-type))
+(defmulti coerce-request-body (fn [body media-type encoding & args] media-type))
 
 (defmethod coerce-request-body "application/json"
-  ([body media-type schema]
-   (rs/coerce schema (coerce-request-body body media-type) :json))
-  ([body media-type]
-   (json/decode body keyword)))
+  ([body media-type encoding schema]
+   (rs/coerce schema (coerce-request-body body media-type encoding) :json))
+  ([body media-type encoding]
+   (json/decode (bs/convert body String {:encoding encoding}) keyword)))
 
 (defmethod coerce-request-body "application/octet-stream"
-  [body media-type schema]
+  [body media-type encoding schema]
   (cond
-    (instance? String schema) (bs/to-string body)
-    :otherwise (bs/to-string body)))
+    (instance? String schema) (bs/convert body String {:encoding encoding})
+    :otherwise (bs/convert body String {:encoding encoding})))
 
 (defmethod coerce-request-body nil
   [body media-type schema] nil)
 
 (defmethod coerce-request-body "application/x-www-form-urlencoded"
-  ([body media-type schema]
-   (rs/coerce schema (coerce-request-body body media-type) :query))
-  ([body media-type]
-   (keywordize-keys (codec/form-decode body))))
+  ([body media-type encoding schema]
+   (rs/coerce schema (coerce-request-body body media-type encoding) :query))
+  ([body media-type encoding]
+   (keywordize-keys (codec/form-decode (bs/convert body String {:encoding encoding})))))
 
 (defprotocol MessageBody
   (to-body [resource representation] "Construct the reponse body for the given resource, given the negotiated representation (metadata)")
