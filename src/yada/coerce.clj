@@ -91,6 +91,7 @@
      from numbers on the JVM (without losing precision)"
   [schema]
   (or
+   (coercion-matcher schema)
    (kw-map-matcher schema)
    (multiple-args-matcher schema)))
 
