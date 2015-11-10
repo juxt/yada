@@ -85,6 +85,7 @@ suggestions.
 * Håkan Råberg
 * Ernestas Lisauskas
 * Thomas van der Veen
+* Leandro Demartini
 
 ## Copyright & License
 
