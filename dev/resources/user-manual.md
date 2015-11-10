@@ -492,7 +492,7 @@ by the symbol `ctx`.
 ```clojure
 (yada
   (fn [ctx] (format "Hello %s!\n" (get-in ctx [:parameters :p])))
-  :parameters {:get {:query {:p String}}})
+  {:parameters {:get {:query {:p String}}}})
 ```
 
 Parameters are declared using additional key-value arguments after the first argument. They are declared on a per-method, per-type basis.
