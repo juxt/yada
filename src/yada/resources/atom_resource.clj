@@ -8,7 +8,6 @@
    [yada.charset :as charset]
    [yada.protocols :as p]
    [yada.methods :as m]
-   [schema.core :as s]
    yada.resources.string-resource)
   (:import [yada.resources.string_resource StringResource]))
 
@@ -23,9 +22,7 @@
                    (reset! *last-modified (to-date (now)))))
       {:representations (:representations valprops)
        :parameters {:put {:body String}}
-       ::last-modified *last-modified
-
-       }))
+       ::last-modified *last-modified}))
 
   (properties [_ ctx]
     (let [*last-modified (-> ctx :properties ::last-modified)]
@@ -36,7 +33,10 @@
 
   m/Put
   (PUT [_ ctx]
-    (reset! *a (get-in ctx [:parameters :body])))
+    ;; We can't PUT a nil, because nils mean no representation and yield
+    ;; 404s on GET, hence this when guard
+    (when-let [body (get-in ctx [:parameters :body])]
+      (reset! *a body)))
 
   m/Delete
   (DELETE [_ ctx] (reset! *a nil))

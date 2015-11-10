@@ -29,6 +29,7 @@
    [yada.protocols :as p]
    [yada.response :refer [->Response]]
    [yada.resource :as resource]
+   [yada.request-body :as request-body]
    [yada.service :as service]
    [yada.media-type :as mt]
    [yada.util :refer [parse-csv remove-nil-vals]])
@@ -63,10 +64,6 @@
       (if (pos? m)
         (Date. (+ (- n m) 1000))
         d))))
-
-(defn read-body [req]
-  (when-let [body (:body req)]
-    (bs/convert body String {:encoding (or (req/character-encoding req) "UTF-8")})))
 
 (def realms-xf
   (comp
@@ -147,30 +144,6 @@
 
     ctx))
 
-(defn process-request-body [ctx]
-  ;; Let's try to read the request body
-  (let [mt (mt/string->media-type (get-in (:request ctx) [:headers "content-type"]))]
-    (case (:name mt)
-      "multipart/form-data"
-      (let [boundary (get-in mt [:parameters "boundary"])
-            request-buffer-size 16384   ; as Aleph default
-            window-size (* 4 request-buffer-size)]
-        ;; TODO: If boundary is malformed, throw a 400
-
-        (infof "Got a multipart/form-data!, boundary is %s" boundary)
-
-        (d/chain
-         (->> (parse-multipart boundary window-size request-buffer-size (:body (:request ctx)))
-              (stream/transform (comp (xf-add-header-info) (xf-parse-content-disposition)))
-              (stream/reduce reduce-piece {:receiver (->DefaultPartReceiver) :state {:parts []}}))
-
-         (fn [parts]
-           (infof "Putting in parts: %s" parts)
-           (assoc ctx :parts parts))))
-
-      ;; Otherwise
-      ctx)))
-
 (defn parse-parameters
   "Parse request and coerce parameters."
   [ctx]
@@ -195,28 +168,15 @@
              (coercer
               (-> request (assoc-query-params (or (:charset ctx) "UTF-8")) :query-params)))
 
-           :form
-           (cond
+           #_:form
+           #_(cond
              (and (req/urlencoded-form? request) (get-in coercers [method :form]))
              (when-let [coercer (get-in coercers [method :form])]
                (coercer (ring.util.codec/form-decode (read-body (-> ctx :request))
-                                                     (req/character-encoding request))))
+                                                     (req/character-encoding request)))))
 
-             ;; TODO: Incoming content-type needs to be evaluated
-             ;; If it's multipart/form-data, grab the boundary and asynchronously acquire the body
-             #_(and (= (get-in request [:headers "content-type"])))
-             #_(get-in coercers [method :form])
-             #_(do (errorf "TODO: %s" {:method method
-                                     :coercers coercers
-                                     :content-type (get-in request [:headers "content-type"])
-                                     :body (-> request :body)})
-                 nil)
-
-             ;; TODO: Need RFC 2046
-             )
-
-           :body
-           (when-let [schema (get-in parameters [method :body])]
+           #_:body
+           #_(when-let [schema (get-in parameters [method :body])]
              (let [body (read-body (-> ctx :request))]
                (body/coerce-request-body
                 body
@@ -233,14 +193,179 @@
       (if (not-empty errors)
         (d/error-deferred (ex-info "" {:status 400
                                        :errors errors}))
+        (assoc ctx :parameters (remove-nil-vals parameters))))))
 
-        (if parameters
-          (let [merged-params (merge
-                               (remove-nil-vals parameters)
-                               (apply merge (vals (dissoc parameters :body))))]
-            (cond-> ctx
-              (not-empty merged-params) (assoc :parameters merged-params)))
-          ctx)))))
+(defn process-request-body [ctx]
+  ;; Only read the body if the parameters include :form or :body,
+  ;; otherwise leave it available for method implementations. No! Can't
+  ;; do this, because a method implementation cannot be asynchronous. It
+  ;; must indicate its body processing expectation via the :parameters
+  ;; declaration. Yes! can do this because a method implementation /can/
+  ;; be asynchronous, it can return a d/chain which contains a d/loop
+
+  ;; TODO: Unknown or unsupported Content-* header
+  ;; TODO: Request entity too large - need to indicate this in parameters
+
+  ;; Let's try to read the request body
+  (let [method (:method ctx)
+        request (:request ctx)
+        parameters (-> ctx :handler :parameters)
+        coercers (-> ctx :handler :parameter-coercers)
+
+        ;; TODO: What if content-type is malformed?
+        content-type (mt/string->media-type (get-in request [:headers "content-type"]))
+        parameter-key (cond (some? (get-in parameters [method :body])) :body
+                            (some? (get-in parameters [method :form])) :form)]
+
+    (if-not parameter-key
+      ctx       ; defer body processing to method implementation, unless
+                                        ; there's a parameter declaration.
+      (let [required-type (get-in parameters [method parameter-key])]
+        (cond
+          ;; multipart/form-data
+          (and (= (:name content-type) "multipart/form-data")
+               (map? required-type))
+          (let [boundary (get-in content-type [:parameters "boundary"])
+                request-buffer-size 16384 ; as Aleph default, TODO: derive this
+                window-size (* 4 request-buffer-size)]
+            (d/chain
+             (->> (parse-multipart boundary window-size request-buffer-size (:body request))
+                  (stream/transform (comp (xf-add-header-info) (xf-parse-content-disposition)))
+                  (stream/reduce
+                   reduce-piece
+                   { ;; We could support other ways of assembling 'large'
+                    ;; parts. This default implementation uses memory but
+                    ;; other strategies could be brought in.
+                    :receiver (->DefaultPartReceiver)
+                    ;; TODO: Would be nice not to have to specify the
+                    ;; empty vector here
+                    :state {:parts []}}))
+             (fn [body]
+               (if body
+                 (-> ctx
+                     (assoc :body :processed)
+                     (assoc-in [:parameters parameter-key]
+                               (let [params (into {}
+                                                  (map
+                                                   (juxt #(get-in % [:content-disposition :params "name"])
+                                                         (fn [part]
+                                                           (let [offset (get part :body-offset 0)]
+                                                             (String. (:bytes part) offset (- (count (:bytes part)) offset)))))
+                                                   (filter #(= (:type %) :part) (:parts body))))]
+                                 (if-let [schema (get-in parameters [method parameter-key])]
+                                   ;; ?? Don't we have coercers already in place?
+                                   (let [params ((sc/coercer schema
+                                                             (or
+                                                              coerce/+parameter-key-coercions+
+                                                              (rsc/coercer :json))) params)]
+
+                                     (if (schema.utils/error? params)
+                                       (throw (ex-info "Unexpected body" {:status 400}))
+                                       params))
+                                   params))))))))
+
+          (and (= (:name content-type) "application/x-www-form-urlencoded")
+               (get-in coercers [method parameter-key]))
+          (let [coercer (get-in coercers [method parameter-key])]
+            (d/chain
+             (stream/reduce (fn [acc buf] (conj acc buf)) [] (:body request))
+             (fn [bufs]
+               (let [cs (req/character-encoding request)]
+                 (-> ctx
+                     (assoc :body :processed)
+                     (assoc-in [:parameters parameter-key]
+                               (coercer (ring.util.codec/form-decode
+                                         (apply bs/to-string bufs
+                                                (if cs [{:encoding cs}] []))
+                                         cs))))))))
+
+          (= required-type String)
+          ;; Return a deferred which will consume the request body,
+          ;; finally turning the contents into a String
+          (d/chain
+           (stream/reduce (fn [acc buf] (conj acc buf)) [] (:body request))
+           (fn [bufs]
+             (-> ctx
+                 (assoc :body :processed)
+                 (assoc-in [:parameters parameter-key]
+                           (apply bs/to-string bufs
+                                  (if-let [cs (req/character-encoding request)]
+                                    [{:encoding cs}]
+                                    []))))))
+
+          :otherwise ctx
+          )))
+
+
+    ;; However, (:body ctx) is going to be the request body
+
+    ;; First process the body. Under certain circumstances, (content
+    ;; type is application/json or application/edn), we can coerce, and
+    ;; the result can be merged into (:parameters ctx)
+
+    ;; Going into request body processing logic we have
+    ;; a) the request's declared content-type
+    ;; b) the server's expectation, declared in schema
+
+    ;; For now, we'll simply process the body as per the declared Content-Type.
+    ;; We assume the body will be chunked.
+
+    #_(if-let [schema (get-in parameters [method :body])]
+        (rs/coerce schema (:route-params request) :query))
+
+    #_(when-let [schema (get-in parameters [method :body])]
+        (let [body (read-body (-> ctx :request))]
+          (body/coerce-request-body
+           body
+           ;; See rfc7231#section-3.1.1.5 - we should assume application/octet-stream
+           (or (req/content-type request) "application/octet-stream")
+           schema)))
+
+    #_(when parameters
+        {
+         #_:form
+         #_(cond
+             (and (req/urlencoded-form? request) (get-in coercers [method :form]))
+             (when-let [coercer (get-in coercers [method :form])]
+               (coercer (ring.util.codec/form-decode (read-body (-> ctx :request))
+                                                     (req/character-encoding request)))))
+
+         #_:body
+         #_(when-let [schema (get-in parameters [method :body])]
+             (let [body (read-body (-> ctx :request))]
+               (body/coerce-request-body
+                body
+                ;; See rfc7231#section-3.1.1.5 - we should assume application/octet-stream
+                (or (req/content-type request) "application/octet-stream")
+                schema)))
+         }))
+
+  #_(let [mt (mt/string->media-type (get-in (:request ctx) [:headers "content-type"]))]
+
+      (case (:name mt)
+        "multipart/form-data"           ; special processing required
+        (let [boundary (get-in mt [:parameters "boundary"])
+              request-buffer-size 16384 ; as Aleph default
+              window-size (* 4 request-buffer-size)]
+
+          ;; TODO: If boundary is malformed, throw a 400
+          (d/chain
+           (->> (parse-multipart boundary window-size request-buffer-size (:body (:request ctx)))
+                (stream/transform (comp (xf-add-header-info) (xf-parse-content-disposition)))
+
+                (stream/reduce reduce-piece {:receiver (->DefaultPartReceiver)
+                                             ;; TODO: Would be nice not to
+                                             ;; have to specify the empty
+                                             ;; vector here
+                                             :state {:parts []}}))
+
+           (fn [parts]
+             (assoc ctx :body parts))))
+
+
+
+        ;; Otherwise
+        ctx)))
 
 #_(defn authentication
   "Authentication"
@@ -643,25 +768,15 @@
    uri-too-long?
    TRACE
 
-   parse-parameters
-
-   get-properties
-
    method-allowed?
    parse-parameters
-   ;; TODO: Unknown or unsupported Content-* header
-   ;; TODO: Request entity too large - shouldn't we do this later,
-   ;; when we determine we actually need to read the request body?
 
-   ;; Only read the body if the parameters include :form or :body,
-   ;; otherwise leave it available for method implementations.
    process-request-body
 
    get-properties
 
 ;;   authentication
 ;;   authorization
-
 
    check-modification-time
 

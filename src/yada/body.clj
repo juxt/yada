@@ -12,7 +12,6 @@
    [hiccup.page :refer [html5]]
    [json-html.core :as jh]
    [manifold.stream :refer [->source transform]]
-   [ring.swagger.schema :as rs]
    [ring.util.codec :as codec]
    [ring.util.http-status :refer [status]]
    [schema.core :as s]
@@ -25,35 +24,6 @@
    [java.net URL]
    [manifold.stream.async CoreAsyncSource]
    [manifold.stream SourceProxy]))
-
-;; Coerce request body  ------------------------------
-
-;; The reason we use 2 forms for coerce-request-body is so that
-;; schema-using forms can call into non-schema-using forms to
-;; pre-process the body.
-
-(defmulti coerce-request-body (fn [body media-type & args] media-type))
-
-(defmethod coerce-request-body "application/json"
-  ([body media-type schema]
-   (rs/coerce schema (coerce-request-body body media-type) :json))
-  ([body media-type]
-   (json/decode body keyword)))
-
-(defmethod coerce-request-body "application/octet-stream"
-  [body media-type schema]
-  (cond
-    (instance? String schema) (bs/to-string body)
-    :otherwise (bs/to-string body)))
-
-(defmethod coerce-request-body nil
-  [body media-type schema] nil)
-
-(defmethod coerce-request-body "application/x-www-form-urlencoded"
-  ([body media-type schema]
-   (rs/coerce schema (coerce-request-body body media-type) :query))
-  ([body media-type]
-   (keywordize-keys (codec/form-decode body))))
 
 (defprotocol MessageBody
   (to-body [resource representation] "Construct the reponse body for the given resource, given the negotiated representation (metadata)")

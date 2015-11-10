@@ -4,10 +4,12 @@
   (:require
    [bidi.bidi :as bidi]
    [bidi.ring :refer [make-handler]]
+   [clojure.java.io :as io]
    [clojure.test :refer :all]
    [juxt.iota :refer (given)]
    [clojure.edn :as edn]
    [ring.mock.request :refer [request]]
+   [yada.test.util :refer (to-manifold-stream)]
    [phonebook.util :refer (to-string)]
    [phonebook.db :as db]
    [phonebook.api :refer [api]]))
@@ -51,8 +53,26 @@
     (given response
       :status := 303
       :headers :⊃ {"location" "/phonebook/1" "content-length" 0}
-      :body := nil
-      )))
+      :body := nil)))
+
+(deftest update-entry
+  (let [db (db/create-db full-seed)
+        h (make-handler (create-api db))]
+    (is (= (db/count-entries db) 2))
+    (let [req (->
+               (request :put "/phonebook/2" (slurp (io/resource "phonebook/update-data")))
+               (assoc-in [:headers "content-type"] "multipart/form-data; boundary=ABCD")
+               (update :body to-manifold-stream))
+          response @(h req)]
+
+      (given response
+        :status := 204
+        :body := nil)
+
+      (is (= (db/count-entries db) 2))
+      (given (db/get-entry db 2)
+        [:phone] := "8888"
+        ))))
 
 (deftest delete-entry
   (let [db (db/create-db full-seed)

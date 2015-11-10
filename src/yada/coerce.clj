@@ -87,8 +87,8 @@
       (if (not (sequential? x)) [x] x))))
 
 (defn +parameter-key-coercions+
-  "A matcher that coerces keywords and keyword enums from strings, and longs and doubles
-     from numbers on the JVM (without losing precision)"
+  "A matcher that coerces keywords and keyword enums from strings, and
+  longs and doubles from numbers on the JVM (without losing precision)"
   [schema]
   (or
    (coercion-matcher schema)

@@ -33,7 +33,7 @@
 
 (defn- copy-bytes [source from to]
   (let [len (- to from)]
-    (if-not (pos? len)
+    (if (neg? len)
       (throw (ex-info (format
                        "Invalid window region (from %s to %s)" from to)
                       {:from from :to to}))
@@ -41,28 +41,28 @@
         (System/arraycopy source from b 0 len)
         b))))
 
-
-(defn- count-transport-padding [from b]
-  (let [to (count b)]
-    (loop [n from]
-      (when (< n to)
-        (let [x (get b n)]
-          ;; RFC 822 Section 3.3: LWSP-char = SPACE (32) / HTAB (9)
-          (if-not (#{(byte \tab) (byte \space)} x)
-            (if (and (= (get b n) (byte \return))
-                     (= (get b (inc n)) (byte \newline)))
-              (+ (count [\return \newline]) n)
-              ;; try to trigger this via a test
-              (throw (ex-info "Malformed boundary" {:n n
-                                                    :c1 (char (get b n))
-                                                    :c2 (char (get b (inc n)))})))
-            (recur (inc n))))))))
+(defn- count-transport-padding [from to b]
+  (loop [n from]
+    (when (< n to)
+      (let [x (get b n)]
+        ;; RFC 822 Section 3.3: LWSP-char = SPACE (32) / HTAB (9)
+        (if-not (#{(byte \tab) (byte \space)} x)
+          (if (and (= (get b n) (byte \return))
+                   (= (get b (inc n)) (byte \newline)))
+            (+ (count [\return \newline]) n)
+            ;; try to trigger this via a test
+            (throw (ex-info "Malformed boundary" {:from from
+                                                  :to to
+                                                  :n n
+                                                  :c1 (char (get b n))
+                                                  :c2 (char (get b (inc n)))})))
+          (recur (inc n)))))))
 
 (defn- copy-bytes-after-dash-boundary [{:keys [window dash-boundary-size]} from to]
-  (copy-bytes window (count-transport-padding (+ from dash-boundary-size) window) to))
+  (copy-bytes window (count-transport-padding (+ from dash-boundary-size) to window) to))
 
 (defn- copy-bytes-after-delimiter [{:keys [window delimiter-size]} from to]
-  (copy-bytes window (count-transport-padding (+ from delimiter-size) window) to))
+  (copy-bytes window (count-transport-padding (+ from delimiter-size) to window) to))
 
 ;; TODO: Fix match so that it can stop at a limit, rather than having to
 ;; copy a buffer like this
@@ -217,7 +217,6 @@
 (defn- append-chunk
   "Copy over the chunk's bytes into the window"
   [{:keys [window pos] :as m} chunk]
-  (infof "appending chunk, size %s" (count chunk))
   (System/arraycopy chunk 0 window pos (count chunk))
   (update-in m [:pos] + (count chunk)))
 
@@ -375,6 +374,8 @@
   boundary argument).
   "
   [boundary window-size max-chunk-size source]
+  (assert boundary)
+
   (let [stream (s/stream 32)
         dash-boundary (dash-boundary boundary)
         delimiter (b/to-byte-array (str CRLF dash-boundary) {:encoding "US-ASCII"})
@@ -388,7 +389,6 @@
                        :max-chunk-size max-chunk-size
                        :minimum-window-size minimum-window-size})))
 
-    ;; With great thanks to Zach's manifold docs, forgive this blatant code theft!
     (d/loop [m {:state :start
                 :chunk# 0
                 :stream stream
@@ -509,18 +509,7 @@
   (complete [_ state piece] "Return state, with completed partial"))
 
 (defn assemble-into-one-byte-array [coll]
-  ;; This should work, but it occasionally loses the last byte-array. Weird.
-  #_(b/convert coll (class (byte-array 0)))
-  ;; See https://github.com/ztellman/byte-streams/issues/20
-
-  (let [rs (reductions + (map count coll))
-        b (byte-array (last rs))]
-
-    (reduce (fn [_ [source offset]]
-              (System/arraycopy source 0 b offset (count source)))
-            nil
-            (map vector coll (cons 0 rs)))
-    b))
+  (b/convert coll (class (byte-array 0))))
 
 ;; These default implementations are in-memory. Other implementations
 ;; could stream to storage.
@@ -533,9 +522,10 @@
           (-> initial
               (assoc :type :part)
               (assoc :bytes (assemble-into-one-byte-array
-                             (concat [(:bytes initial)]
-                                     (map :bytes (:pieces this))
-                                     [(:bytes piece)])))
+                             (vec
+                              (concat [(:bytes initial)]
+                                      (map :bytes (:pieces this))
+                                      [(:bytes piece)]))))
               (assoc :pieces (map (fn [x] (update x :bytes count)) (concat [initial] (:pieces this) [piece]))))]
       (update state :parts conj part))))
 

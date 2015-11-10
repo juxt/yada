@@ -6,8 +6,14 @@
    [ring.mock.request :refer [request]]
    [clojure.java.io :as io]
    [juxt.iota :refer (given)]
-   [yada.test.util :refer [to-string]]
+   [manifold.stream :as s]
+   [yada.test.util :refer [to-string to-manifold-stream]]
    [yada.yada :refer [yada]]))
+
+(defn add-headers [request m]
+  (merge-with merge
+              request
+              {:headers m}))
 
 (deftest put-test
   (testing "string"
@@ -20,12 +26,19 @@
                      "content-type" "text/plain;charset=utf-8"}
         [:body to-string] := "Bradley")
 
-      (given @(handler (request :put "/" "Chelsea"))
+      (given @(handler (-> (request :put "/" "Chelsea")
+                           (update :body to-manifold-stream)
+                           (add-headers {"content-type" "text/plain"})))
         :status := 204
         [:headers keys set] :⊃ #{"content-type"}
         [:headers keys set] :⊅ #{"content-length"}
+        ;; TODO: Hang on, why does this have a content-type and no body?
+        ;; Or rather, why does it have a content-type at all, given
+        ;; there is no body?
         :headers :⊃ {"content-type" "text/plain;charset=utf-8"}
         :body := nil)
+
+      (is (= @resource "Chelsea"))
 
       (given @(handler (request :get "/"))
         :status := 200

@@ -25,12 +25,8 @@
 (defrecord IndexResource [db *routes]
   p/Properties
   (properties [_]
-    ;; :form should be :body
     {:parameters {:get {:query {(s/optional-key :q) String}}
-                  :post {:form {:surname String
-                                :firstname String
-                                :phone String
-}}}
+                  :post {:form {:surname String :firstname String :phone String}}}
      :representations representations})
 
   m/Post
@@ -55,10 +51,11 @@
     {:parameters
      {:get {:path {:entry Long}}
       :put {:path {:entry Long}
-            :form {:surname String
+            ;; Should like to make this a form again
+            :body {:surname String
                    :firstname String
-                   :phone String
-                   :image IEventSource}}
+                   :phone String}}
+
       :delete {:path {:entry Long}}}
      :representations representations})
 
@@ -77,19 +74,16 @@
 
   m/Put
   (PUT [_ ctx]
-    ;; Form and body parameters are deferreds (manifold promises). A
-    ;; deref will block until the form value has been
-    ;; delivered. Alternatively, they can be used as-is in chains, or
-    ;; transfered to files, databases, etc.
-    (infof "Put! %s" (-> ctx :parameters)))
+    (let [entry (get-in ctx [:parameters :path :entry])
+          body (get-in ctx [:parameters :body])]
+      (db/update-entry db entry body)))
 
   m/Delete
   (DELETE [_ ctx]
     (let [id (get-in ctx [:parameters :path :entry])]
-      (dosync
-       (alter (:phonebook db) dissoc id)
-       ;; Body
-       nil))))
+      (db/delete-entry db id)
+      nil ; body
+      )))
 
 (defn new-entry-resource [db *routes]
   (->EntryResource db *routes))

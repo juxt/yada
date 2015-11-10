@@ -28,6 +28,19 @@
      (alter (:next-entry db) inc)
      nextval)))
 
+(defn update-entry
+  "Update a new entry to the database. Returns the id of the newly added
+  entry."
+  [db id entry]
+  (dosync
+   (alter (:phonebook db) assoc id entry)))
+
+(defn delete-entry
+  "Delete a entry from the database."
+  [db id]
+  (dosync
+   (alter (:phonebook db) dissoc id)))
+
 (s/defn get-entries :- Phonebook
   [db]
   @(:phonebook db))
