@@ -188,12 +188,13 @@
 
            :body
            (when-let [schema (get-in parameters [method :body])]
-             (let [body (read-body (-> ctx :request))]
+             (let [body (-> ctx :request :body)]
                (body/coerce-request-body
-                body
-                ;; See rfc7231#section-3.1.1.5 - we should assume application/octet-stream
-                (or (req/content-type request) "application/octet-stream")
-                schema)))
+                 body
+                 ;; See rfc7231#section-3.1.1.5 - we should assume application/octet-stream
+                 (or (req/content-type request) "application/octet-stream")
+                 (or (req/character-encoding request) "UTF-8")
+                 schema)))
 
            :header
            (when-let [schema (get-in parameters [method :header])]
