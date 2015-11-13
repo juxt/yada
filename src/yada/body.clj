@@ -18,7 +18,8 @@
    [schema.core :as s]
    [yada.charset :as charset]
    [yada.journal :as journal]
-   [yada.media-type :as mt])
+   [yada.media-type :as mt]
+   [clojure.edn :as edn])
   (:import
    [clojure.core.async.impl.channels ManyToManyChannel]
    [java.io File]
@@ -54,6 +55,12 @@
    (rs/coerce schema (coerce-request-body body media-type) :query))
   ([body media-type]
    (keywordize-keys (codec/form-decode body))))
+
+(defmethod coerce-request-body "application/edn"
+  ([representation media-type schema]
+    (rs/coerce schema (coerce-request-body representation media-type) :edn))
+  ([representation _]
+    (edn/read-string representation)))
 
 (defprotocol MessageBody
   (to-body [resource representation] "Construct the reponse body for the given resource, given the negotiated representation (metadata)")
