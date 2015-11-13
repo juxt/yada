@@ -8,6 +8,7 @@
    [clojure.walk :refer [keywordize-keys]]
    [byte-streams :as bs]
    [cheshire.core :as json]
+   [cognitect.transit :as transit]
    [hiccup.core :refer [html h]]
    [hiccup.page :refer [html5]]
    [json-html.core :as jh]
@@ -21,10 +22,11 @@
    [yada.media-type :as mt])
   (:import
    [clojure.core.async.impl.channels ManyToManyChannel]
-   [java.io File]
+   [java.io File ByteArrayInputStream ByteArrayOutputStream]
    [java.net URL]
    [manifold.stream.async CoreAsyncSource]
-   [manifold.stream SourceProxy]))
+   [manifold.stream SourceProxy]
+   (java.nio.charset StandardCharsets)))
 
 ;; Coerce request body  ------------------------------
 
@@ -39,6 +41,17 @@
    (rs/coerce schema (coerce-request-body body media-type) :json))
   ([body media-type]
    (json/decode body keyword)))
+
+(defn ^:private <-transit-string [^String s type]
+  (let [i (ByteArrayInputStream. (.getBytes s (. StandardCharsets UTF_8)))
+        r (transit/reader i type)]
+    (transit/read r)))
+
+(defmethod coerce-request-body "application/transit+json"
+  ([representation media-type schema]
+    (rs/coerce schema (coerce-request-body representation media-type) :transit+json))
+  ([representation _]
+    (<-transit-string representation :json)))
 
 (defmethod coerce-request-body "application/octet-stream"
   [body media-type schema]
@@ -155,6 +168,27 @@
   (let [pretty (get-in representation [:media-type :parameters "pretty"])]
     (str (json/encode s {:pretty pretty}) \newline)))
 
+;; application/transit+json
+
+(defn ^:private ->transit-string [v type]
+  (let [o (ByteArrayOutputStream. 100)
+        w (transit/writer o type)]
+    (transit/write w v)
+    (.toString o)))
+
+(defn ^:private ->transit+json-string [v pretty?]
+  (->transit-string v (if pretty? :json-verbose :json)))
+
+(defmethod render-map "application/transit+json"
+  [m representation]
+  (let [pretty (get-in representation [:media-type :parameters "pretty"])]
+    (->transit+json-string m pretty)))
+
+(defmethod render-seq "application/transit+json"
+  [s representation]
+  (let [pretty (get-in representation [:media-type :parameters "pretty"])]
+    (->transit+json-string s pretty)))
+
 ;; application/edn
 
 (defmethod render-map "application/edn"
@@ -249,6 +283,13 @@
                                    :data (pr-str (ex-data ei))} jg)))
 
 (defmethod render-error "application/json"
+  [status error representation {:keys [id options]}]
+  {:status status
+   :message (get-error-message status)
+   :id id
+   :error error})
+
+(defmethod render-error "application/transit+json"
   [status error representation {:keys [id options]}]
   {:status status
    :message (get-error-message status)
