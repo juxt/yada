@@ -3,30 +3,33 @@
             [yada.body :refer [coerce-request-body]]
             [schema.core :refer [defschema] :as s]))
 
-(defschema TestSchema
+(s/defschema TestSchema
   {:a s/Str
-   :b s/Int})
+   :b s/Keyword
+   :c [s/Int]})
+
+(def ^:private test-map {:a "Hello" :b :foo :c [4 5 6]})
+
+(defmacro is-coercing-correctly?
+  ([expected value content-type schema]
+   `(is (= ~expected
+           (coerce-request-body ~value ~content-type ~schema))))
+  ([expected value content-type]
+   `(is (= ~expected
+           (coerce-request-body ~value ~content-type)))))
 
 (deftest coerce-request-body-test
 
-  (testing "coercing application/json"
-    (is (= {:a "Hello" :b 123}
-           (coerce-request-body
-             "{\"a\": \"Hello\", \"b\": 123}"
-             "application/json"
-             TestSchema)))
-    (is (= [1 2 3]
-           (coerce-request-body
-             "[1, 2, 3]"
-             "application/json"))))
+  (let [content-type "application/json"
+        s "{\"a\": \"Hello\", \"b\": \"foo\", \"c\": [4, 5, 6]}"]
+    (testing (str "coercing " content-type)
+      (is-coercing-correctly? test-map s content-type TestSchema)
+      (is-coercing-correctly?
+        (update test-map :b name)
+        s content-type)))
 
-  (testing "coercing application/edn"
-    (is (= {:a "Hello" :b 123}
-           (coerce-request-body
-             "{:a \"Hello\" :b 123}"
-             "application/edn"
-             TestSchema)))
-    (is (= [1 2 3]
-           (coerce-request-body
-             "[1 2 3]"
-             "application/edn")))))
+  (let [content-type "application/edn"
+        s "{:a \"Hello\" :b :foo :c [4 5 6]}"]
+    (testing (str "coercing " content-type)
+      (is-coercing-correctly? test-map s content-type TestSchema)
+      (is-coercing-correctly? test-map s content-type))))
