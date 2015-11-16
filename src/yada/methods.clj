@@ -311,7 +311,7 @@
   (interpret-options-result [f ctx]
     (interpret-options-result (f ctx) ctx))
   nil
-  (interpret-post-result [_ ctx] ctx))
+  (interpret-options-result [_ ctx] ctx))
 
 (deftype OptionsMethod [])
 
