@@ -12,3 +12,4 @@
 /examples/phonebook/.nrepl-port
 /examples/phonebook/target/classes/META-INF/maven/yada/phonebook/pom.properties
 /examples/phonebook/target/repl-port
+/issues
