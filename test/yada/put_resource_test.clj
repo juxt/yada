@@ -7,7 +7,8 @@
    [clojure.java.io :as io]
    [juxt.iota :refer (given)]
    [manifold.stream :as s]
-   [yada.test.util :refer [to-string to-manifold-stream]]
+   [yada.test.util :refer [to-string]]
+   [yada.util :refer [to-manifold-stream]]
    [yada.yada :refer [yada]]))
 
 (defn add-headers [request m]

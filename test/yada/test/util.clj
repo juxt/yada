@@ -13,13 +13,6 @@
 (defn to-string [s]
   (bs/convert s String))
 
-(defn to-manifold-stream [in]
-  (let [s (s/stream 100)]
-    (doseq [b (bs/to-byte-buffers in)]
-      (s/put! s b)
-      (s/close! s))
-    s))
-
 
 #_(s/take! (to-manifold-stream (java.io.ByteArrayInputStream. (.getBytes "Hello World!"))))
 

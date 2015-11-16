@@ -35,6 +35,8 @@
    [yada.util :refer [parse-csv remove-nil-vals]])
   (:import [java.util Date]))
 
+(def CHUNK-SIZE 16384)
+
 (defn make-context [properties]
   {:properties properties
    :response (->Response)})
@@ -226,7 +228,7 @@
           (and (= (:name content-type) "multipart/form-data")
                (map? required-type))
           (let [boundary (get-in content-type [:parameters "boundary"])
-                request-buffer-size 16384 ; as Aleph default, TODO: derive this
+                request-buffer-size CHUNK-SIZE ; as Aleph default, TODO: derive this
                 window-size (* 4 request-buffer-size)]
             (d/chain
              (->> (parse-multipart boundary window-size request-buffer-size (:body request))
@@ -266,9 +268,12 @@
 
           (and (= (:name content-type) "application/x-www-form-urlencoded")
                (get-in coercers [method parameter-key]))
-          (let [coercer (get-in coercers [method parameter-key])]
+          (let [coercer (get-in coercers [method parameter-key])
+                bufs (:body request)]
+
             (d/chain
-             (stream/reduce (fn [acc buf] (conj acc buf)) [] (:body request))
+             (stream/reduce (fn [acc buf] (conj acc buf))
+                            [] bufs)
              (fn [bufs]
                (let [cs (req/character-encoding request)]
                  (-> ctx
@@ -345,7 +350,7 @@
       (case (:name mt)
         "multipart/form-data"           ; special processing required
         (let [boundary (get-in mt [:parameters "boundary"])
-              request-buffer-size 16384 ; as Aleph default
+              request-buffer-size CHUNK-SIZE ; as Aleph default
               window-size (* 4 request-buffer-size)]
 
           ;; TODO: If boundary is malformed, throw a 400

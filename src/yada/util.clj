@@ -4,9 +4,14 @@
   (:require
    [clojure.java.io :as io]
    [clojure.string :as str]
+   [clojure.tools.logging :refer :all]
+   [byte-streams :as bs]
    [manifold.deferred :as d]
+   [manifold.stream :as s]
    clojure.core.async.impl.protocols)
-  (:import [clojure.core.async.impl.protocols ReadPort]))
+  (:import
+   [clojure.core.async.impl.protocols ReadPort]
+   [java.nio ByteBuffer]))
 
 ;; Old comment :-
 ;; If this is something we can take from, in the core.async
@@ -122,3 +127,15 @@
 
 (defn remove-nil-vals [m]
   (reduce-kv (fn [acc k v] (if v (assoc acc k v) acc)) {} m))
+
+;; Stream coercers
+
+(defn to-manifold-stream [in]
+  (let [s (s/stream 100)]
+    (doseq [b (bs/to-byte-buffers in)]
+      (s/put! s b))
+    (s/close! s)
+    s))
+
+#_(bs/to-byte-buffers
+ (java.io.ByteArrayInputStream. (.getBytes "Hello World!")) {:chunk-size 10})

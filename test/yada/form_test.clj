@@ -5,12 +5,13 @@
    [clojure.test :refer :all]
    [byte-streams :as bs]
    [juxt.iota :refer (given)]
-   [yada.test.util :refer [to-manifold-stream]]
    [ring.mock.request :as mock]
    [ring.util.codec :as codec]
    [schema.core :as s]
    [yada.resources.misc :refer (just-methods)]
-   [yada.yada :as yada :refer [yada]]))
+   [yada.yada :as yada :refer [yada]]
+   [yada.util :refer [to-manifold-stream]]
+   ))
 
 (deftest post-test
   (let [handler (yada
@@ -32,7 +33,8 @@
                                 ;; manifold stream the test hangs, find
                                 ;; out why this is and cope with it
                                 ;; better.
-                                (update :body to-manifold-stream)))]
+                                (update :body to-manifold-stream)
+                                ))]
       @response
       (given @response
         :status := 200
