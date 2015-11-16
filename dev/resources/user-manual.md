@@ -757,29 +757,22 @@ Let's delve a little deeper into how the _Hello World!_ example works.
 
 Here is the actual code that tells yada about Java strings. The
 namespace declaration and comments have been removed, but otherwise this
-is all the code that is required to adapt Java strings into yada
-resources.
+is all the code that is required to tell yada about Java strings.
 
 ```clojure
 (defrecord StringResource [s last-modified]
 
-  Representations
-  (representations [_]
-    [{:media-type "text/plain" :charset platform-charsets}])
-
-  ResourceModification
-  (last-modified [_ _] last-modified)
-
-  ResourceVersion
-  (version [_ _] s)
+  p/Properties
+  (properties [_]
+    {:representations
+     [{:media-type "text/plain"
+       :charset charset/platform-charsets}]})
+  (properties [_ ctx]
+    {:last-modified last-modified
+     :version s})
 
   Get
   (GET [_ _] s))
-
-(extend-protocol ResourceCoercion
-  String
-  (as-resource [s]
-    (->StringResource s (to-date (now)))))
 ```
 
 Recall the _Hello World!_ example.
