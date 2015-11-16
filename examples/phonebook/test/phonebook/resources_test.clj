@@ -9,7 +9,7 @@
    [juxt.iota :refer (given)]
    [clojure.edn :as edn]
    [ring.mock.request :refer [request]]
-   ;;[yada.util :refer [to-manifold-stream]]
+   [yada.util :refer [to-manifold-stream]]
    [phonebook.util :refer [to-string]]
    [phonebook.db :as db]
    [phonebook.api :refer [api]]))
@@ -47,7 +47,8 @@
 (deftest create-entry
   (let [db (db/create-db {})
         h (make-handler (create-api db))
-        req (request :post "/phonebook" {"surname" "Pither" "firstname" "Jon" "phone" "1235"})
+        req (-> (request :post "/phonebook" {"surname" "Pither" "firstname" "Jon" "phone" "1235"})
+                (update :body to-manifold-stream))
         response @(h req)]
 
     (given response
@@ -62,7 +63,7 @@
     (let [req (->
                (request :put "/phonebook/2" (slurp (io/resource "phonebook/update-data")))
                (assoc-in [:headers "content-type"] "multipart/form-data; boundary=ABCD")
-               ;;(update :body to-manifold-stream)
+               (update :body to-manifold-stream)
                )
           response @(h req)]
 
