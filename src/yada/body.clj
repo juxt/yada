@@ -38,13 +38,13 @@
   ([body media-type encoding schema]
    (rs/coerce schema (coerce-request-body body media-type encoding) :json))
   ([body media-type encoding]
-   (json/decode (bs/convert body String {:encoding encoding}) keyword)))
+    (when body (json/decode (bs/convert body String {:encoding encoding}) keyword))))
 
 (defmethod coerce-request-body "application/octet-stream"
   [body media-type encoding schema]
   (cond
-    (instance? String schema) (bs/convert body String {:encoding encoding})
-    :otherwise (bs/convert body String {:encoding encoding})))
+    (instance? String schema) (when body (bs/convert body String {:encoding encoding}))
+    :otherwise (when body (bs/convert body String {:encoding encoding}))))
 
 (defmethod coerce-request-body nil
   [body media-type schema] nil)
@@ -53,7 +53,7 @@
   ([body media-type encoding schema]
    (rs/coerce schema (coerce-request-body body media-type encoding) :query))
   ([body media-type encoding]
-   (keywordize-keys (codec/form-decode (bs/convert body String {:encoding encoding})))))
+   (keywordize-keys (codec/form-decode (when body (bs/convert body String {:encoding encoding}))))))
 
 (defprotocol MessageBody
   (to-body [resource representation] "Construct the reponse body for the given resource, given the negotiated representation (metadata)")
