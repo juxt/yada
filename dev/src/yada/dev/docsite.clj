@@ -45,7 +45,7 @@
       (infof "source is %s" source)
       ((yada source) req))))
 
-(defn index [{:keys [*router *cors-demo-router *talks-router *phonebook config]}]
+(defn index [{:keys [*router *cors-demo-router *talks-router *console-router *phonebook *selfie config]}]
   (yada
    (new-template-resource
     "templates/page.html"
@@ -59,6 +59,19 @@
                [:li [:a {:href (path-for @*router :yada.dev.user-manual/user-manual)} "The " [:span.yada "yada"] " manual"]
                 " - the single authority on all things " [:span.yada "yada"]]
 
+               [:li "Examples - self-contained apps for you to explore"
+                [:ul
+                 [:li
+                  [:a {:href (str
+                              (config/phonebook-origin config)
+                              (path-for (:server @*phonebook) :phonebook.api/index))} "Phonebook"] " - to demonstrate custom records implementing standard HTTP methods"]
+                 [:li [:a {:href (str
+                                (config/selfie-origin config)
+                                (path-for (:server @*selfie) :selfie.api/index))} "Selfie"] " - to demonstrate asynchronous processing of large request bodies"]
+                 [:li [:a {:href (str
+                                (config/cors-demo-origin config)
+                                (path-for @*cors-demo-router :yada.dev.cors-demo/index))} "CORS demo"] " - to demonstrate CORS support"]]]
+
                [:li [:a {:href
                          (format "%s/index.html?url=%s/swagger.json"
                                  (path-for @*router :swagger-ui)
@@ -66,21 +79,24 @@
                                  )}
                      "Swagger UI"]
                 " - to demonstrate Swagger integration"]
+
                [:li [:a {:href (str
-                                (config/cors-demo-origin config)
-                                (path-for @*cors-demo-router :yada.dev.cors-demo/index))} "CORS demo"] " - to demonstrate CORS support"]
+                                (config/console-origin config)
+                                (path-for @*console-router :yada.dev.console/index :path ""))}
+                     "The " [:span.yada "yada"] " console"] " - to capture traffic and debug your API (work in progress)"]
+
+
                [:li [:a {:href (str
                                 (config/talks-origin config)
                                 (path-for @*talks-router :yada.dev.talks/index))} "Talks"]]
-               [:li [:a {:href (str
-                                (config/phonebook-origin config)
-                                (path-for (:server @*phonebook) :phonebook.api/index))} "Phonebook"]]
 
                [:li "Relevant RFCs"
                 [:ul
                  (for [i (sort (keys titles))]
                    [:li [:a {:href (format "/spec/rfc%d" i)}
-                         (format "RFC %d: %s" i (or (get titles i) ""))]])]]]
+                         (format "RFC %d: %s" i (or (get titles i) ""))]])]]
+
+               ]
               ])}))
 
    {:id ::index}))
@@ -88,6 +104,7 @@
 (s/defrecord Docsite [*router :- (co-dep Router)
                       *cors-demo-router :- (co-dep Router)
                       *talks-router :- (co-dep Router)
+                      *console-router :- (co-dep Router)
                       *phonebook :- (co-dep CoDependencySystemMap)
                       *selfie :- (co-dep SystemMap)
                       config :- config/ConfigSchema]
@@ -100,4 +117,4 @@
 
 (defn new-docsite [& {:as opts}]
   (-> (map->Docsite opts)
-      (co-using [:router :cors-demo-router :talks-router :phonebook])))
+      (co-using [:router :cors-demo-router :talks-router :console-router :phonebook])))

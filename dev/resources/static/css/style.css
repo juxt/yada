@@ -168,6 +168,10 @@ span.yada {
     padding-left: 0.08em;
 }
 
+a, a:hover {
+    text-decoration: none;
+}
+
 code span.yada, b span.yada {
     font-family: inherit;
     font-size: inherit;

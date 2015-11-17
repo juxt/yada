@@ -161,6 +161,7 @@
   {:docsite {:router :docsite-router
              :cors-demo-router :cors-demo-router
              :talks-router :talks-router
+             :console-router :console-router
              :phonebook :phonebook
              :selfie :selfie}
    :user-manual {:router :docsite-router}

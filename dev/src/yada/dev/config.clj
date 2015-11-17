@@ -44,6 +44,9 @@
 (defn phonebook-port [config]
   (-> config :phonebook :port))
 
+(defn selfie-port [config]
+  (-> config :selfie :port))
+
 (defn docsite-origin [config]
   (str (:prefix config)
        (when-let [port (docsite-port config)]
@@ -62,4 +65,14 @@
 (defn phonebook-origin [config]
   (str (:prefix config)
        (when-let [port (phonebook-port config)]
+         (str ":" port))))
+
+(defn selfie-origin [config]
+  (str (:prefix config)
+       (when-let [port (selfie-port config)]
+         (str ":" port))))
+
+(defn console-origin [config]
+  (str (:prefix config)
+       (when-let [port (console-port config)]
          (str ":" port))))
