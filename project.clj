@@ -27,7 +27,8 @@
    [ring-basic-authentication "1.0.5"]
    [org.clojure/core.async "0.1.346.0-17112a-alpha"]
    [org.clojure/tools.reader "0.9.1"]
-   [org.clojars.ikoblik/clj-index "0.0.2"]]
+   [org.clojars.ikoblik/clj-index "0.0.2"]
+   [com.cognitect/transit-clj "0.8.285"]]
 
   :pedantic? :abort
 
