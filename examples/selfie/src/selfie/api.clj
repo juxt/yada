@@ -8,11 +8,23 @@
    [com.stuartsierra.component :refer [using]]
    [hiccup.core :refer [html]]
    [schema.core :as s]
-   [selfie.www :refer [new-index-resource]]
+   [yada.methods :as m]
+   [yada.protocols :as p]
    [yada.yada :refer [yada]]))
 
+(defrecord SelfieIndexResource []
+  p/Properties
+  (properties [_] {:doc/description "POST your selfies here!"})
+
+  m/Post
+  (POST [_ ctx]
+    (throw (ex-info "TODO" {:request (:request ctx)})))
+
+  m/Get
+  (GET [_ ctx] "Index"))
+
 (defn api []
-  ["/selfie" (yada (new-index-resource))])
+  ["" [["/selfie" (yada (->SelfieIndexResource))]]])
 
 (s/defrecord ApiComponent []
   RouteProvider
