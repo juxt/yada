@@ -11,7 +11,7 @@
    [yada.util :refer [OWS CRLF]])
   (:import
    [java.io ByteArrayInputStream BufferedReader InputStreamReader]
-   [java.nio.charset Charset]))
+   [java.nio.charset Charset StandardCharsets]))
 
 ;; Ring's multipart-params middleware wraps Apache's commons file-upload
 ;; library which expects a single input-stream for multipart/* content.
@@ -446,6 +446,8 @@
 
 ;; Assembly of multipart/form-data
 
+()
+
 (defn xf-add-header-info []
   (map
    (fn [piece]
@@ -462,7 +464,7 @@
                              n
                              (recur (inc n))))))]
             (let [hin (as-> (ByteArrayInputStream. bytes 0 n) %
-                        (InputStreamReader. % (Charset/forName "US-ASCII"))
+                        (InputStreamReader. % StandardCharsets/US_ASCII)
                         (BufferedReader. %)
                         (line-seq %)
                         (map #(str/split % #":") %)
