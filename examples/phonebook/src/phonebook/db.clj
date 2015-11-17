@@ -2,6 +2,7 @@
 
 (ns phonebook.db
   (:require
+   [clojure.tools.logging :refer :all]
    [schema.core :as s]))
 
 (s/defschema PhonebookEntry {:surname String :firstname String :phone String})
@@ -44,6 +45,31 @@
 (s/defn get-entries :- Phonebook
   [db]
   @(:phonebook db))
+
+(s/defn matches? [q :- String
+                 entry :- PhonebookEntry]
+  (some (partial re-seq (re-pattern (str "(?i:\\Q" q "\\E)")))
+        (map str (vals (second entry)))))
+
+(s/defn search-entries :- Phonebook
+  [db q]
+  (let [entries (get-entries db)
+        f (filter (partial matches? q) entries)
+        res (into {} f)]
+    (infof "entries is %s" entries)
+    (infof "q is %s" q)
+    (infof "f is %s" (pr-str f))
+    (infof "res is %s" res)
+    res
+    ))
+
+#_(into {} (filter (partial matches? "12")
+                 (get-entries (->> dev/system :phonebook :atom-db))
+                 ))
+
+;;(search-entries (->> dev/system :phonebook :atom-db) "Sparks")
+
+
 
 (s/defn get-entry :- PhonebookEntry
   [db id]

@@ -37,9 +37,12 @@
 
   m/Get
   (GET [_ ctx]
-    (let [entries (db/get-entries db)]
+    (let [q (get-in ctx [:parameters :query :q])
+          entries (if q
+                    (db/search-entries db q)
+                    (db/get-entries db))]
       (case (yada/content-type ctx)
-        "text/html" (html/index-html entries @*routes)
+        "text/html" (html/index-html entries @*routes q)
         entries))))
 
 (defn new-index-resource [db *routes]

@@ -6,11 +6,11 @@
    [clojure.java.io :as io]
    [hiccup.core :refer [html]]))
 
-(defn index-html [entries routes]
+(defn index-html [entries routes q]
   (html
    [:body
     [:form#search {:method :get}
-     [:input {:type :text :name :q}]
+     [:input {:type :text :name :q :value q}]
      [:input {:type :submit :value "Search"}]]
 
     (if (not-empty entries)
