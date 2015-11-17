@@ -17,6 +17,7 @@
    yada.resources.file-resource
    [yada.yada :as yada :refer [yada]])
   (:import [modular.bidi Router]
+           [com.stuartsierra.component SystemMap]
            [modular.component.co_dependency CoDependencySystemMap]))
 
 (def titles
@@ -88,6 +89,7 @@
                       *cors-demo-router :- (co-dep Router)
                       *talks-router :- (co-dep Router)
                       *phonebook :- (co-dep CoDependencySystemMap)
+                      *selfie :- (co-dep SystemMap)
                       config :- config/ConfigSchema]
   RouteProvider
   (routes [component]

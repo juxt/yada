@@ -12,4 +12,6 @@
                           :phone "1234"}
                        2 {:surname "Pither"
                           :firstname "Jon"
-                          :phone "1235"}}}}
+                          :phone "1235"}}}
+
+ :selfie {:port 8098}}

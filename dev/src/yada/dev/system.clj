@@ -27,7 +27,8 @@
    [yada.dev.hello :refer (new-hello-world-example)]
    [yada.dev.error-example :refer (new-error-example)]
 
-   [phonebook.system :refer (new-phonebook)]))
+   [phonebook.system :refer (new-phonebook)]
+   [selfie.system :refer (new-selfie-app)]))
 
 (defn database-components [system]
   (assoc system :database (new-database)))
@@ -100,6 +101,9 @@
 (defn phonebook-components [system config]
   (assoc system :phonebook (new-phonebook (:phonebook config))))
 
+(defn selfie-components [system config]
+  (assoc system :selfie (new-selfie-app (:selfie config))))
+
 (defn new-system-map
   [config]
   (apply system-map
@@ -115,6 +119,7 @@
         (cors-demo-components config)
         (talks-components config)
         (phonebook-components config)
+        (selfie-components config)
 
         (assoc :docsite-redirect (new-redirect :from "/" :to :yada.dev.docsite/index))
         (assoc :console-redirect (new-redirect :from "/" :to :yada.dev.console/index))
@@ -156,7 +161,8 @@
   {:docsite {:router :docsite-router
              :cors-demo-router :cors-demo-router
              :talks-router :talks-router
-             :phonebook :phonebook}
+             :phonebook :phonebook
+             :selfie :selfie}
    :user-manual {:router :docsite-router}
    :console {:router :console-router}
    :cors-demo {:router :cors-demo-router}

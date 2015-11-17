@@ -16,7 +16,9 @@
            :talks UserPort
            }
    :phonebook {:port UserPort
-               :entries Phonebook}})
+               :entries Phonebook}
+   :selfie {:port UserPort
+            }})
 
 (defn config
   "Return a map of the static configuration used in the component

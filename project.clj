@@ -92,9 +92,16 @@
           [re-frame "0.4.1"]
           [kibu/pushy "0.3.2"]]
 
-         :source-paths ["dev/src" "examples/phonebook/src"]
-         :test-paths ["test" "examples/phonebook/test"]
-         :resource-paths ["dev/resources" "examples/phonebook/resources"]}
+         :source-paths ["dev/src"
+                        "examples/phonebook/src"
+                        "examples/selfie/src"]
+         :test-paths ["test"
+                      "examples/phonebook/test"
+                      "examples/selfie/test"]
+
+         :resource-paths ["dev/resources"
+                          "examples/phonebook/resources"
+                          "examples/selfie/resources"]}
    :test
    {:source-paths ["yada.test/src"]}
 
