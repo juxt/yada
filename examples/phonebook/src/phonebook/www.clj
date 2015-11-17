@@ -29,12 +29,6 @@
                   :post {:form {:surname String :firstname String :phone String}}}
      :representations representations})
 
-  m/Post
-  (POST [_ ctx]
-    (let [id (db/add-entry db (get-in ctx [:parameters :form]))]
-      (yada/redirect-after-post
-       ctx (path-for @*routes :phonebook.api/entry :entry id))))
-
   m/Get
   (GET [_ ctx]
     (let [q (get-in ctx [:parameters :query :q])
@@ -43,7 +37,13 @@
                     (db/get-entries db))]
       (case (yada/content-type ctx)
         "text/html" (html/index-html entries @*routes q)
-        entries))))
+        entries)))
+
+  m/Post
+  (POST [_ ctx]
+    (let [id (db/add-entry db (get-in ctx [:parameters :form]))]
+      (yada/redirect-after-post
+       ctx (path-for @*routes :phonebook.api/entry :entry id)))))
 
 (defn new-index-resource [db *routes]
   (->IndexResource db *routes))
