@@ -19,7 +19,7 @@
    [clj-time "0.9.0"]
    [hiccup "1.0.5"]
    [json-html "0.3.1"]
-   [manifold "0.1.1-alpha4"]
+   [manifold "0.1.1"]
    [metosin/ring-http-response "0.6.5"]
    [metosin/ring-swagger "0.20.2" :exclusions [potemkin]]
    [prismatic/schema "0.4.3" :exclusions [potemkin]]
