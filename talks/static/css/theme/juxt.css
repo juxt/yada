@@ -334,3 +334,11 @@ body:after {
 
 .reveal .slide-number {
   display: none; }
+
+.reveal code span.focus {
+  border-left: 10px solid yellow;
+  border-right: 10px solid yellow;
+  background-color: #772; }
+
+.reveal code span.focus span {
+  border: none; }

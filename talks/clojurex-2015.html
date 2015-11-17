@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Phonebook</title>
+<meta name="author" content="(Malcolm Sparks)"/>
+<link rel="stylesheet" href="static/css/reveal.css"/>
+<link rel="stylesheet" href="static/css/theme/juxt.css" id="theme"/>
+<link rel="stylesheet" href="static/css/extra.css"/>
+<!-- If the query includes 'print-pdf', include the PDF print sheet -->
+<script>
+    if( window.location.search.match( /print-pdf/gi ) ) {
+        var link = document.createElement( 'link' );
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = 'static/css/print/pdf.css';
+        document.getElementsByTagName( 'head' )[0].appendChild( link );
+    }
+</script>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+<section id="sec-title-slide">
+<h1>Phonebook</h1>
+<h2>Malcolm Sparks</h2>
+<h2><a href="mailto:@malcolmsparks">@malcolmsparks</a></h2>
+<h2></h2>
+</section>
+
+<section>
+<section id="slide-orgheadline3">
+<h2 id="orgheadline3">The Index</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure">(defrecord IndexResource [db *routes]
+  p/Properties
+  (properties [_]
+    {:parameters
+     {:get {:query {(s/optional-key :q) String}}
+
+      :post {:form {:surname String
+                    :firstname String
+                    :phone String}}}
+
+     :representations [{:media-type #{"text/html"
+                                      "application/edn;q=0.9"
+                                      "application/json;q=0.8"}
+
+                        :charset "UTF-8"}]}))
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline1">
+<h3 id="orgheadline1">GET</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">m/Get
+(GET [_ ctx]
+  (let [q (get-in ctx [:parameters :query :q])
+        entries (if q
+                  (db/search-entries db q)
+                  (db/get-entries db))]
+    (case (yada/content-type ctx)
+      "text/html" (html/index-html entries @*routes q)
+      entries)))
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline2">
+<h3 id="orgheadline2">POST</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">m/Post
+(POST [_ ctx]
+  (let [id (db/add-entry db (get-in ctx [:parameters :form]))]
+    (yada/redirect-after-post
+     ctx (path-for @*routes :phonebook.api/entry :entry id))))
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline4">
+<h2 id="orgheadline4">A long and winding road…</h2>
+</section>
+</section>
+</div>
+</div>
+<script src="static/lib/js/head.min.js"></script>
+<script src="static/js/reveal.js"></script>
+
+<script>
+// Full list of configuration options available here:
+// https://github.com/hakimel/reveal.js#configuration
+Reveal.initialize({
+
+controls: false,
+progress: true,
+history: true,
+center: true,
+slideNumber: true,
+rollingLinks: false,
+keyboard: true,
+previewLinks: true,
+overview: true,
+margin: 0.00,
+minScale: 1.00,
+maxScale: 1.40,
+
+theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+transition: Reveal.getQueryHash().transition || 'fade', // default/cube/page/concave/zoom/linear/fade/none
+transitionSpeed: 'fast',
+multiplex: {
+    secret: '', // null if client
+    id: '', // id, obtained from socket.io server
+    url: '' // Location of socket.io server
+},
+
+// Optional libraries used to extend on reveal.js
+dependencies: [
+ { src: 'static/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+ { src: 'static/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+ { src: 'static/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+ { src: 'static/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }]
+});
+</script>
+</body>
+</html>

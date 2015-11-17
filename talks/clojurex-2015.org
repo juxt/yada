@@ -1,0 +1,65 @@
+#+EXPORT_EXCLUDE_TAGS:  noexport
+#+AUTHOR:               Malcolm Sparks
+#+EMAIL:                @malcolmsparks
+#+TITLE:                Phonebook
+#+LANGUAGE:             en
+#+OPTIONS:              toc:nil
+#+OPTIONS:              reveal_center:t reveal_progress:t reveal_history:t reveal_control:nil
+#+OPTIONS:              reveal_mathjax:nil reveal_rolling_links:nil reveal_keyboard:t reveal_overview:t num:nil
+#+OPTIONS:              width:1600 height:900
+#+REVEAL_HLEVEL:        1
+#+REVEAL_MARGIN:        0.0
+#+REVEAL_MIN_SCALE:     1.0
+#+REVEAL_MAX_SCALE:     1.4
+#+REVEAL_THEME:         juxt
+#+REVEAL_TRANS:         fade
+#+REVEAL_SPEED:         fast
+#+REVEAL_ROOT:          static
+#+REVEAL_PLUGINS: (highlight markdown notes)
+#+REVEAL_EXTRA_CSS: static/css/extra.css
+
+* The Index
+
+#+BEGIN_SRC clojure
+  (defrecord IndexResource [db *routes]
+    p/Properties
+    (properties [_]
+      {:parameters
+       {:get {:query {(s/optional-key :q) String}}
+
+        :post {:form {:surname String
+                      :firstname String
+                      :phone String}}}
+
+       :representations [{:media-type #{"text/html"
+                                        "application/edn;q=0.9"
+                                        "application/json;q=0.8"}
+
+                          :charset "UTF-8"}]}))
+#+END_SRC
+
+** GET
+
+#+BEGIN_SRC clojure
+m/Get
+(GET [_ ctx]
+  (let [q (get-in ctx [:parameters :query :q])
+        entries (if q
+                  (db/search-entries db q)
+                  (db/get-entries db))]
+    (case (yada/content-type ctx)
+      "text/html" (html/index-html entries @*routes q)
+      entries)))
+#+END_SRC
+
+** POST
+
+#+BEGIN_SRC clojure
+m/Post
+(POST [_ ctx]
+  (let [id (db/add-entry db (get-in ctx [:parameters :form]))]
+    (yada/redirect-after-post
+     ctx (path-for @*routes :phonebook.api/entry :entry id))))
+#+END_SRC
+
+* A long and winding road…

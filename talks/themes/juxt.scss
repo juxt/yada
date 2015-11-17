@@ -103,4 +103,15 @@ body:after {
     .slide-number {
         display: none;
     }
+
+    code span.focus {
+        border-left: 10px solid yellow;
+        border-right: 10px solid yellow;
+        background-color: #772;
+    }
+
+    code span.focus span {
+        border: none;
+    }
+
 }
