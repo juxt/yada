@@ -13,7 +13,7 @@
 
   :dependencies
   [[bidi "1.21.0" :exclusions [ring/ring-core]]
-   [byte-streams "0.2.0" :exclusions [clj-tuple]]
+   [byte-streams "0.2.1-alpha1" :exclusions [clj-tuple]]
    [camel-snake-kebab "0.1.4"]
    [cheshire "5.4.0"]
    [clj-time "0.9.0"]

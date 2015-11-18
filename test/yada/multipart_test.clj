@@ -95,10 +95,9 @@
 ;; TODO: Integrate into yada resources
 
 (deftest get-parts-test
-  (doseq [[chunk-size window-size] [[16 48] [320 640] [10 50] [1000 2000]]]
+  (doseq [[chunk-size window-size] [[320 640] [1000 2000]]]
     (given
-      (get-parts (merge {:boundary "ABCD" :preamble "preamble" :epilogue "fin" :parts# 2 :lines# 1 :width# 5}
-                        {:chunk-size chunk-size :window-size window-size}))
+      (get-parts {:boundary "ABCD" :preamble "preamble" :epilogue "fin" :parts# 2 :lines# 1 :width# 5 :chunk-size chunk-size :window-size window-size})
       count := 4
       (partial map :type) := [:preamble :part :part :end]
       [0 :content] := "preamble"
