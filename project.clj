@@ -35,6 +35,8 @@
   :repl-options {:init-ns user
                  :welcome (println "Type (dev) to start")}
 
+  :jvm-opts ["-Xms4g" "-Xmx4g" "-server" "-Dio.netty.leakDetectionLevel=advanced"]
+
   :profiles
   {:dev {:main yada.dev.main
 
