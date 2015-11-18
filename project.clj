@@ -77,7 +77,8 @@
           [aero "0.1.2"]
           [juxt/iota "0.2.2"]
 
-          [juxt.modular/aleph "0.1.3" :exclusions [manifold]]
+          [juxt.modular/aleph "0.1.3" :exclusions [manifold aleph]]
+          [aleph "0.4.1-beta2"]
           [juxt.modular/bidi "0.9.2" :exclusions [bidi]]
           [juxt.modular/stencil "0.1.0"]
           [juxt.modular/co-dependency "0.2.2"]
