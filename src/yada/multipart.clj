@@ -326,6 +326,9 @@
   (if (identical? ::drained chunk)
     (finish-up m)
 
+    ;; Converting the chunk to a byte-array here also has the effect of
+    ;; releasing the netty chunk.  See
+    ;; http://ideolalia.com/aleph/literate.html
     (let [chunk (b/to-byte-array chunk)]
       (-> m
           (assoc :chunk chunk)
@@ -445,8 +448,6 @@
 
 
 ;; Assembly of multipart/form-data
-
-()
 
 (defn xf-add-header-info []
   (map

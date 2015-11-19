@@ -18,13 +18,18 @@
 
   m/Post
   (POST [_ ctx]
-    (throw (ex-info "TODO" {:request (:request ctx)})))
+    (throw (ex-info "TODO: body should be accessible somewhere" {:request (:request ctx)})))
 
   m/Get
   (GET [_ ctx] "Index"))
 
+;; TODO: Note, I think that request content-types need to be support on a resource-by-resource basis rather than globally. Think about this. It's analogous to known-methods and allowed-methods. See swagger's consumes. This is an ideal place to use it!
+
 (defn api []
-  ["" [["/selfie" (yada (->SelfieIndexResource))]]])
+  ["" [["/selfie" (yada (->SelfieIndexResource)
+                        ;; TODO: what's a better name for this?
+                        {:body-receiver nil}
+                        )]]])
 
 (s/defrecord ApiComponent []
   RouteProvider

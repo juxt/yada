@@ -29,7 +29,7 @@
    [yada.protocols :as p]
    [yada.response :refer [->Response]]
    [yada.resource :as resource]
-   [yada.request-body :as request-body]
+   [yada.request-body :as rb]
    [yada.service :as service]
    [yada.media-type :as mt]
    [yada.util :refer [parse-csv remove-nil-vals]])
@@ -197,7 +197,29 @@
                                        :errors errors}))
         (assoc ctx :parameters (remove-nil-vals parameters))))))
 
-(defn process-request-body [ctx]
+(defn process-request-body
+  "Process the request body, if necessary. RFC 7230 section 3.3 states
+  \"The presence of a message body in a request is signaled by a
+  Content-Length or Transfer-Encoding header field. Request message
+  framing is independent of method semantics, even if the method does
+  not define any use for a message body\".
+
+  Therefore we process the request body if the request contains a
+  Content-Length or Transfer-Encoding header, regardless of the method
+  semantics."
+  [{:keys [request] :as ctx}]
+  (cond
+    (-> request :headers (filter #{"content-length" "transfer-encoding"}) not-empty)
+    (let [content-type (mt/string->media-type
+                        (get-in request [:headers "content-type"]))]
+      (rb/process-request-body
+       ctx
+       (stream/map bs/to-byte-array (:body request))
+       content-type))
+
+    :otherwise ctx))
+
+#_(defn process-request-body [ctx]
   ;; Only read the body if the parameters include :form or :body,
   ;; otherwise leave it available for method implementations. No! Can't
   ;; do this, because a method implementation cannot be asynchronous. It
@@ -205,7 +227,6 @@
   ;; declaration. Yes! can do this because a method implementation /can/
   ;; be asynchronous, it can return a d/chain which contains a d/loop
 
-  ;; TODO: Unknown or unsupported Content-* header
   ;; TODO: Request entity too large - need to indicate this in parameters
 
   ;; Let's try to read the request body
@@ -692,7 +713,7 @@
           (apply d/chain ctx))
 
      (d/catch
-         java.lang.Object
+         clojure.lang.ExceptionInfo
          (fn [e]
            (error-handler e)
            (let [data (error-data e)]
@@ -723,8 +744,11 @@
                   (cond-> (make-context {})
                     status (assoc-in [:response :status] status)
                     (:headers data) (assoc-in [:response :headers] (:headers data))
-                    (not (:body data)) (assoc-in [:response :body]
-                                                 (body/to-body (body/render-error status e rep ctx) rep))
+                    (not (:body data)) ((fn [ctx]
+                                          (let [b (body/to-body (body/render-error status e rep ctx) rep)]
+                                            (-> ctx
+                                                (assoc-in [:response :body] b)
+                                                (assoc-in [:response :headers "content-length"] (body/content-length b))))))
 
                     rep (assoc-in [:response :representation] rep))
                   create-response))

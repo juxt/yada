@@ -17,7 +17,8 @@
    [schema.core :as s]
    [yada.charset :as charset]
    [yada.journal :as journal]
-   [yada.media-type :as mt])
+   [yada.media-type :as mt]
+   [yada.util :refer [CRLF]])
   (:import
    [clojure.core.async.impl.channels ManyToManyChannel]
    [java.io File]
@@ -227,7 +228,11 @@
 
 (defmethod render-error "text/plain"
   [status error representation {:keys [id options]}]
-  (str error \newline))
+  (if (instance? clojure.lang.ExceptionInfo error)
+    ;; TODO: pprint uses Java system property line.separator, consider
+    ;; using fip or one that can print CRLF line endings.
+    (str (.getMessage error) CRLF CRLF (with-out-str (pprint (ex-data error))))
+    (str (.getMessage error) CRLF)))
 
 (defmethod render-error :default
   [status error representation {:keys [id options]}]
