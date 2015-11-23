@@ -85,7 +85,7 @@
 
   (testing "safe-by-default"
     (let [resource "Hello World!"
-          handler (yada/resource resource)]
+          handler (yada/yada resource)]
 
       (doseq [method [:put :post :delete]]
         (given @(handler (request method "/"))

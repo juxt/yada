@@ -15,7 +15,7 @@
    :expose-headers ["Server" "Date" "Content-Length" "Access-Control-Allow-Origin"]})
 
 (defn index [idx]
-  (yada/resource
+  (yada/yada
    (fn [ctx]
      (case (-> ctx :response :representation :media-type :name)
        "text/html"
@@ -37,7 +37,7 @@
     :charset charset/platform-charsets}))
 
 (defn entry [e]
-  (yada/resource e {:media-type "text/html"
+  (yada/yada e {:media-type "text/html"
                     :charset charset/platform-charsets
                     :access-control access-control}))
 

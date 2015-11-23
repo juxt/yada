@@ -37,7 +37,7 @@
     (when (>! ch (format "Hello World! (%d)" t))
       (<! (timeout 100))
       (recur (inc t))))
-  (yada/resource ch))
+  (yada/yada ch))
 
 (defn hello-different-origin-1 [config]
   ;; TODO: Replace with {:error-handler nil} and have implementation

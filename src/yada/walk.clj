@@ -2,8 +2,8 @@
 
 (ns yada.walk
   (:require
-   [yada.core :refer (resource)]
-   [clojure.walk :refer (postwalk)])
+   [yada.core :refer [yada]]
+   [clojure.walk :refer [postwalk]])
   (:import [yada.core Handler]))
 
 ;; Functions to update inner routes
@@ -20,7 +20,7 @@
   (update-routes routes
                  (fn [{:keys [base options]}]
                    ;; Recreate the resource from the base, but with new options
-                   (resource base (merge options other-options)))))
+                   (yada base (merge options other-options)))))
 
 (defn basic-auth [realm auth-fn routes]
   (merge-options

@@ -11,34 +11,27 @@
            [java.util Date]
            [java.io BufferedReader InputStreamReader]))
 
-;; A UrlResource is a Java resource.
+;; A UrlResource is a Java resource on the classpath.
 
 (extend-type URL
   p/ResourceCoercion
-  (as-resource [url] url)
+  (as-resource [url]
+    {:properties
+     (fn [ctx]
+       {:last-modified (when-let [f (as-file url)]
+                         (when (.exists f)
+                           (Date. (.lastModified f))))})
 
-  p/Properties
-  (properties
-    ([u]
-     {:representations
-      [{:media-type #{(ext-mime-type (.getPath u))}
-        :charset charset/platform-charsets}]})
-    ([u ctx]
-     {:last-modified (when-let [f (as-file u)]
-                       (when (.exists f)
-                         (.lastModified f)))}))
-
-  ;; TODO: This is wrong. First, an InputStreamReader does not coerce the
-  ;; encoding, simply converts a byte stream to a character stream and is
-  ;; told the encoding OF the byte stream for it to do so. Second, it is
-  ;; reasonable to guess the media-type, but the charset must be provided
-  ;; by the options - this means that there must be more sophisticated way
-  ;; of (representations) accessing the options itself. We must pass
-  ;; options to representations. This requires a change to the protocol.
-
-  Get
-  (GET [u ctx]
-    (if (= (get-in ctx [:response :representation :media-type :type]) "text")
-      (BufferedReader.
-       (InputStreamReader. (.openStream u) (or (get-in ctx [:response :server-charset]) "UTF-8")))
-      (.openStream u))))
+     :methods
+     {:get
+      {:produces
+       [{:media-type #{(ext-mime-type (.getPath url))}
+         :charset charset/platform-charsets}]
+       :handler
+       (fn [ctx]
+         (if (= (get-in ctx [:response :representation :media-type :type]) "text")
+           (BufferedReader.
+            ;; Is the resource coded in a different charset? Can't use
+            ;; default coercion, supply a custom resource.
+            (InputStreamReader. (.openStream url) "UTF-8"))
+           (.openStream url)))}}}))

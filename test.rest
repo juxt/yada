@@ -1,0 +1,2 @@
+# -*-restclient-*-
+GET http://localhost:8099/phonebook

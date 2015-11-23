@@ -4,9 +4,9 @@
   (:require [yada.resources.url-resource :refer :all]
             [clojure.test :refer :all]
             [clojure.java.io :as io]
-            [yada.core :refer (resource)]
             [juxt.iota :refer [given]]
             [ring.mock.request :as mock]
+            [yada.core :refer [yada]]
             )
   (:import [java.io BufferedReader]))
 
@@ -18,7 +18,7 @@
 
 (deftest resource-test
   (let [resource (io/resource "static/css/fonts.css")
-        handler (yada.core/resource resource)
+        handler (yada resource)
         response @(handler (mock/request :get "/"))]
     (given response
       identity :? some?

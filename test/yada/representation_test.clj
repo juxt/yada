@@ -320,7 +320,7 @@
   select-representation-test
 
   (testing "Best quality charset"
-    (is (= (rep/select-representation
+    (is (= (rep/select-best-representation
             {:headers {"accept" "text/html"}}
             [{:media-type (mt/string->media-type "text/html")
               :charset (charset/to-charset-map "windows-1255;q=0.9")}
@@ -338,27 +338,27 @@
               {:media-type (mt/string->media-type "image/png")}]]
 
     (testing "No headers. Implied Accept: */*"
-      (is (= (rep/select-representation
+      (is (= (rep/select-best-representation
               {:headers {}} reps)
              {:media-type (mt/string->media-type "text/html")
               :charset (charset/to-charset-map "utf-8")})))
 
     (testing "Basic match"
-      (is (= (rep/select-representation
+      (is (= (rep/select-best-representation
               {:headers {"accept" "text/html"}} reps)
              {:media-type (mt/string->media-type "text/html")
               :charset (charset/to-charset-map "utf-8")}))
 
-      (is (= (rep/select-representation {:headers {"accept" "text/xml"}} reps)
+      (is (= (rep/select-best-representation {:headers {"accept" "text/xml"}} reps)
              {:media-type (mt/string->media-type "text/xml;q=0.9")
               :charset (charset/to-charset-map "utf-8")}))
 
-      (is (= (rep/select-representation
+      (is (= (rep/select-best-representation
               {:headers {"accept" "image/png"}} reps)
              {:media-type (mt/string->media-type "image/png")})))
 
     (testing "Wildcard match"
-      (is (= (rep/select-representation
+      (is (= (rep/select-best-representation
               {:headers {"accept" "image/*"}}
               reps)
              {:media-type (mt/string->media-type "image/png")})))

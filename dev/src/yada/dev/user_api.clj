@@ -9,6 +9,7 @@
    [com.stuartsierra.component :refer (Lifecycle)]
    [ring.mock.request :refer (request)]
    [schema.core :as s]
+   [yada.charset :as charset]
    [yada.protocols :as p]
    [yada.swagger :refer (swaggered)]
    [yada.yada :as yada]))
@@ -34,13 +35,13 @@
         :basePath "/api"}
        ["" {"/users"
             {""
-             (yada/resource
+             (yada/yada
               (:users db)
               {:swagger {:get {:summary "Get users"
                                :description "Get a list of all known users"}}})
 
              ["/" :username]
-             {"" (yada/resource
+             {"" (yada/yada
                   (fn [ctx]
                     (when-let [user (get (:users db)
                                          (-> ctx :parameters :username))]
@@ -50,9 +51,11 @@
                                    :responses {200 {:description "Known user"}
                                                404 {:description "Unknown user"}}}}
                    :parameters {:get {:path {:username s/Str}}}
-                   :representations (:representations (p/properties (p/as-resource {})))})
+                   :produces [{:media-type
+                               #{"application/edn" "application/json;q=0.9" "text/html;q=0.8"}
+                               :charset charset/platform-charsets}]})
 
-              "/posts" (yada/resource
+              "/posts" (yada/yada
                         (fn [ctx] nil)
                         {:swagger {:post {:summary "Create a new post"}}
                          :methods [:post] })}}}])

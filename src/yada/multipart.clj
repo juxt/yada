@@ -3,11 +3,17 @@
 (ns yada.multipart
   (:require
    [byte-streams :as b]
-   [clojure.string :as str]
    [clj-index.core :refer [bm-index match]]
+   [clojure.string :as str]
+   [clojure.pprint :refer [pprint]]
+   [clojure.tools.logging :refer :all]
    [manifold.deferred :as d]
    [manifold.stream :as s]
-   [clojure.tools.logging :refer :all]
+   [ring.swagger.coerce :as rsc]
+   [schema.coerce :as sc]
+   [yada.coerce :as coerce]
+   [yada.media-type :as mt]
+   [yada.request-body :refer [process-request-body]]
    [yada.util :refer [OWS CRLF]])
   (:import
    [java.io ByteArrayInputStream BufferedReader InputStreamReader]
@@ -23,13 +29,9 @@
 
 ;; Secondly, we use a faster algorithm (Boyer-Moore, 1977) for finding
 ;; boundaries in the content in order separate the parts. This algorithm
-;; has the useful property of being able to hop through the byte-buffer,
-;; rather than comparing each byte in turn.
-
-;; Rather than use a stream-based approach, which slightly diminishes
-;; performance, we apply this algorithm to the each byte buffer in
-;; turn. If a given buffer does not end in a boundary, we store the
-;; partial data until a boundary is found in a subsequent buffer.
+;; has the useful property of being able to hop through the byte-buffer
+;; (backwards from the end of the buffer), rather than comparing each
+;; byte in turn.
 
 (defn- copy-bytes [source from to]
   (let [len (- to from)]
@@ -320,7 +322,8 @@
   (s/close! (:stream m))
   (assoc m :state :done))
 
-;; TODO: I think there's a bug with manifold catching of Throwables (or at least arity errors). Try to cause this again.
+;; TODO: I think there's a bug with manifold catching of Throwables (or
+;; at least arity errors). Try to cause this again.
 
 (defn- process-chunk [{:keys [pos window] :as m} chunk]
   (if (identical? ::drained chunk)
@@ -446,7 +449,6 @@
 
     (->> stream s/source-only (s/mapcat identity))))
 
-
 ;; Assembly of multipart/form-data
 
 (defn xf-add-header-info []
@@ -503,9 +505,10 @@
 ;; The point of these protocols is to facilitate advanced users who need
 ;; to plug-in their own support for large http payloads.
 
-(defprotocol PartReceiver
-  (receive-part [_ state part] "Return state with part attached")
-  (start-partial [_ piece] "Return a partial"))
+(defprotocol PartConsumer
+  (consume-part [_ state part] "Return state with part attached")
+  (start-partial [_ piece] "Return a partial")
+  (part-coercion-matcher [_] "Return a coercer that can coerce the part into a declared parameter type"))
 
 (defprotocol Partial
   (continue [_ piece] "Return thyself")
@@ -516,6 +519,8 @@
 
 ;; These default implementations are in-memory. Other implementations
 ;; could stream to storage.
+
+(defrecord DefaultPart [])
 
 (defrecord DefaultPartial [initial]
   Partial
@@ -529,24 +534,31 @@
                               (concat [(:bytes initial)]
                                       (map :bytes (:pieces this))
                                       [(:bytes piece)]))))
-              (assoc :pieces (map (fn [x] (update x :bytes count)) (concat [initial] (:pieces this) [piece]))))]
+              (assoc :pieces (map (fn [x] (update x :bytes count)) (concat [initial] (:pieces this) [piece])))
+              map->DefaultPart)]
       (update state :parts conj part))))
 
-(defrecord DefaultPartReceiver []
-  PartReceiver
-  (receive-part [_ state part] (update state :parts conj part))
-  (start-partial [_ piece] (->DefaultPartial piece)))
-
-;; Reduce pieces into parts
+(defrecord DefaultPartConsumer []
+  PartConsumer
+  (consume-part [_ state part] (update state :parts (fnil conj []) (map->DefaultPart part)))
+  (start-partial [_ piece] (->DefaultPartial piece))
+  (part-coercion-matcher [_]
+    ;; Coerce a DefaultPart into the following keys
+    {String (fn [^DefaultPart part]
+              (let [offset (get part :body-offset 0)]
+                (String. (:bytes part) offset (- (count (:bytes part)) offset))))}))
 
 (defn reduce-piece
-  [{:keys [state receiver partial] :as acc} piece]
+  "Reducing function for assembling pieces into parts. Seed the reduce
+  with a map that contains an entry for :consumer with a value
+  satisfying PartConsumer."
+  [{:keys [state consumer partial] :as acc} piece]
   (case (:type piece)
     :preamble acc
     :preamble-continuation acc
     :preamble-completion acc
-    :part (update acc :state (fn [state] (receive-part receiver state piece)))
-    :partial (assoc acc :partial (start-partial receiver piece))
+    :part (update acc :state (fn [state] (consume-part consumer state piece)))
+    :partial (assoc acc :partial (start-partial consumer piece))
     :partial-continuation (update acc :partial (fn [p] (continue p piece)))
     :partial-completion (-> acc
                             (update :state (fn [s] (if-let [p partial]
@@ -554,4 +566,98 @@
                                                     ;; Ignore
                                                     s)))
                             (dissoc :partial))
+    ;; Return the state
     :end (:state acc)))
+
+;; Putting it altogether
+
+(def CHUNK-SIZE 16384)
+
+(defmethod process-request-body "multipart/form-data"
+  [ctx body-stream media-type & args]
+  (let [content-type (mt/string->media-type (get-in ctx [:request :headers "content-type"]))
+        boundary (get-in content-type [:parameters "boundary"])
+        request-buffer-size CHUNK-SIZE ; as Aleph default, TODO: derive this
+        window-size (* 4 request-buffer-size)
+        part-consumer (get-in ctx [:handler :options :part-consumer] (->DefaultPartConsumer))]
+    (infof "process-request-body multipart/form-data")
+    (d/chain
+     (->> (parse-multipart boundary window-size request-buffer-size body-stream)
+          ;; Since we're multipart/form-data, we're expecting each part
+          ;; (or part beginning) to have a content-disposition header,
+          ;; let's use a transducer to add that info into the part,
+          ;; before we hand the part off to the PartConsumer.
+          (s/transform (comp (xf-add-header-info)
+                             (xf-parse-content-disposition)))
+          ;; Now we assemble (via reduction) the parts. We pass each
+          ;; part (or partial part) to a consumer that assembles and
+          ;; stores the parts. This might be on-heap, off-heap, in a
+          ;; database, as a file. etc.
+          (s/reduce
+           reduce-piece
+           {:consumer part-consumer :state {}}))
+     (fn [{:keys [parts] :as body}]
+
+       ;; Regardless of parameter schemas, we use the
+       ;; Content-Disposition header to produce a map between fields and
+       ;; content.  There is no obligation for the part consumer to
+       ;; return a byte[]. In fact, it may produce a java.io.File, or
+       ;; stream, handle or database key.
+
+       ;; As we're multipart/form-data, let's make use of the expected
+       ;; Content-Disposition headers.
+
+       (let [schemas (get-in ctx [:handler :methods (:method ctx) :parameters])
+             fields
+             (reduce
+              (fn [acc part] (cond-> acc
+                              (= (:type part) :part)
+                              (assoc (get-in part [:content-disposition :params "name"]) part)))
+              {} parts)]
+
+         (cond
+           (:form schemas)
+           (let [coercer (sc/coercer
+                          (:form schemas)
+                          (fn [schema]
+                            (or
+                             (coerce/+parameter-key-coercions+ schema)
+                             ((part-coercion-matcher part-consumer) schema)
+                             ((rsc/coercer :json) schema))))
+                 params (coercer fields)]
+             (infof "params is %s" params)
+             (if-not (schema.utils/error? params)
+               (assoc-in ctx [:parameters :body] params)
+               (d/error-deferred (ex-info "Bad form fields"
+                                          {:status 400 :error params}))))
+
+           (:body schemas) (throw (ex-info "TODO" {}))
+
+           :otherwise (assoc ctx :body fields)))
+
+       #_(let [schemas (get-in ctx [:handler :methods (:method ctx) :parameters])]
+           (cond-> ctx
+             body (assoc :body body)
+
+             ;; If form exists
+             ;;           (:form params)
+
+             #_body #_(assoc-in [:parameters parameter-key]
+                                (let [params (into {}
+                                                   (map
+                                                    (juxt #(get-in % [:content-disposition :params "name"])
+                                                          (fn [part]
+                                                            (let [offset (get part :body-offset 0)]
+                                                              (String. (:bytes part) offset (- (count (:bytes part)) offset)))))
+                                                    (filter #(= (:type %) :part) (:parts body))))]
+                                  (if-let [schema (get-in parameters [method parameter-key])]
+                                    ;; ?? Don't we have coercers already in place?
+                                    (let [params ((sc/coercer schema
+                                                              (or
+                                                               coerce/+parameter-key-coercions+
+                                                               (rsc/coercer :json))) params)]
+
+                                      (if (schema.utils/error? params)
+                                        (throw (ex-info "Unexpected body" {:status 400}))
+                                        params))
+                                    params)))))))))

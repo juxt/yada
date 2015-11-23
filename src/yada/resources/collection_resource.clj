@@ -10,7 +10,7 @@
    [yada.methods :refer [Get GET]])
   (:import [clojure.lang APersistentMap]))
 
-(defrecord MapResource [m last-modified]
+#_(defrecord MapResource [m last-modified]
   p/Properties
   (properties [_]
     {:representations
@@ -23,7 +23,7 @@
   Get
   (GET [_ ctx] m))
 
-(extend-protocol p/ResourceCoercion
+#_(extend-protocol p/ResourceCoercion
   APersistentMap
   (as-resource [m]
     (->MapResource m (to-date (now)))))

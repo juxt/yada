@@ -201,7 +201,7 @@
     (given
       (->> (s/->source (to-chunks (slurp-byte-array (io/resource "yada/multipart-3")) chunk-size))
            (parse-multipart "----WebKitFormBoundaryZ3oJB7WHOBmOjrEi" (:window-size spec) (:chunk-size spec))
-           (s/reduce reduce-piece {:receiver (->DefaultPartReceiver) :state {:parts []}})
+           (s/reduce reduce-piece {:receiver (->DefaultPartConsumer) :state {:parts []}})
            deref)
       [:parts (partial map :type)] := [:part :part :part :part]
       [:parts last :pieces count] := 7
@@ -216,7 +216,7 @@
       (->> (s/->source (to-chunks (slurp-byte-array (io/resource "yada/multipart-3")) chunk-size))
            (parse-multipart "----WebKitFormBoundaryZ3oJB7WHOBmOjrEi" (:window-size spec) (:chunk-size spec))
            (s/transform (comp (xf-add-header-info) (xf-parse-content-disposition)))
-           (s/reduce reduce-piece {:receiver (->DefaultPartReceiver) :state {:parts []}})
+           (s/reduce reduce-piece {:receiver (->DefaultPartConsumer) :state {:parts []}})
            deref)
       [:parts (partial map :type)] := [:part :part :part :part]
       [:parts first (juxt (comp count :bytes) :body-offset) (partial apply -)] := (count "Malcolm")

@@ -29,63 +29,215 @@
 </section>
 
 <section>
-<section id="slide-orgheadline3">
-<h2 id="orgheadline3">The Index</h2>
-<div class="org-src-container">
-
-<pre><code class="clojure">(defrecord IndexResource [db *routes]
-  p/Properties
-  (properties [_]
-    {:parameters
-     {:get {:query {(s/optional-key :q) String}}
-
-      :post {:form {:surname String
-                    :firstname String
-                    :phone String}}}
-
-     :representations [{:media-type #{"text/html"
-                                      "application/edn;q=0.9"
-                                      "application/json;q=0.8"}
-
-                        :charset "UTF-8"}]}))
-</code></pre>
-</div>
-
-</section>
+<section id="slide-orgheadline10">
+<h2 id="orgheadline10">Some pedantic observations about Tom's code</h2>
+<div class="outline-text-2" id="text-orgheadline10">
+</div></section>
 <section id="slide-orgheadline1">
-<h3 id="orgheadline1">GET</h3>
-<div class="org-src-container">
+<h3 id="orgheadline1">Only serves humans (who read English)</h3>
+<ul>
+<li>Only supports HTML, encourages scraping</li>
+<li>Only English supported</li>
+<li>Would need more thinking to be an API</li>
 
-<pre><code class="clojure">m/Get
-(GET [_ ctx]
-  (let [q (get-in ctx [:parameters :query :q])
-        entries (if q
-                  (db/search-entries db q)
-                  (db/get-entries db))]
-    (case (yada/content-type ctx)
-      "text/html" (html/index-html entries @*routes q)
-      entries)))
-</code></pre>
-</div>
+</ul>
 
 </section>
 <section id="slide-orgheadline2">
-<h3 id="orgheadline2">POST</h3>
+<h3 id="orgheadline2">Vulnerable to attack</h3>
+<ul>
+<li>No security headers</li>
+<li>No parameter validation</li>
+
+</ul>
+
+</section>
+<section id="slide-orgheadline3">
+<h3 id="orgheadline3">Wasteful</h3>
+<ul>
+<li>Doesn't support If-Modified-Since (dates)</li>
+<li>Doesn't support If-Not-Match (etags)</li>
+<li>No cache-control headers</li>
+<li>No content-encoding (e.g. gzip)</li>
+
+</ul>
+
+</section>
+<section id="slide-orgheadline4">
+<h3 id="orgheadline4">Blocking I/O</h3>
+
+</section>
+<section id="slide-orgheadline5">
+<h3 id="orgheadline5">Incorrect (with respect to HTTP)</h3>
+<ul>
+<li>Wrong method yields 404 (Not Found) instead of 405 (No Such Method)</li>
+
+</ul>
+
+</section>
+<section id="slide-orgheadline6">
+<h3 id="orgheadline6">No service metadata</h3>
+<ul>
+<li>No data about what the service does (e.g. Swagger, RAML)</li>
+<li>No HEAD, OPTIONS or TRACE methods</li>
+
+</ul>
+
+</section>
+<section id="slide-orgheadline7">
+<h3 id="orgheadline7">Ad-hoc</h3>
+<ul>
+<li>'Hand-crafted'</li>
+<li>Hypermedia links are hand-coded</li>
+<li>Service can't be generated</li>
+<li>Leads to masses of brittle, duplicate code</li>
+
+</ul>
+
+</section>
+<section id="slide-orgheadline8">
+<h3 id="orgheadline8">DON'T PANIC</h3>
+<ul>
+<li>There are solutions for most of these issues</li>
+<li>Trouble is, things get <i>complex</i></li>
+<li>How can we fix all these issues at once?</li>
+
+</ul>
+
+</section>
+<section id="slide-orgheadline9" data-background="#f8f8f8" class="juxt_hide-heading">
+<h3 id="orgheadline9">Solution</h3>
+<span style="font-family: yada; font-size: 4em">yada</span>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline13">
+<h2 id="orgheadline13">The phonebook index</h2>
 <div class="org-src-container">
 
-<pre><code class="clojure">m/Post
-(POST [_ ctx]
-  (let [id (db/add-entry db (get-in ctx [:parameters :form]))]
-    (yada/redirect-after-post
-     ctx (path-for @*routes :phonebook.api/entry :entry id))))
+<pre><code class="clojure">{:description "Phonebook index"
+ :properties {…}
+ :methods {:get {…}
+           :post {…}}
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline11">
+<h3 id="orgheadline11">GET</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">{:get {:parameters {:query {(s/optional-key :q) String}}
+       :produces {:media-type #{"text/html" "application/json;q=0.9"}
+                  :charset "UTF-8"}
+       :handler (fn [ctx]
+                  (let [q (get-in ctx [:parameters :query :q])
+                        entries (if q
+                                  (db/search-entries db q)
+                                  (db/get-entries db))]
+                    (case (yada/content-type ctx)
+                      "text/html" (html/index-html entries @*routes q)
+                      entries)))}}
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline12">
+<h3 id="orgheadline12">POST</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">{:post
+ {:parameters {:form {:surname String :firstname String :phone String}}
+  :consumes {:media-type "multipart/form-data"
+             :charset "UTF-8"}
+  :handler (fn [ctx]
+             (let [id (db/add-entry db (get-in ctx [:parameters :form]))]
+               (yada/redirect-after-post
+                ctx (path-for @*routes :phonebook.api/entry :entry id))))}}
 </code></pre>
 </div>
 
 </section>
 </section>
 <section>
-<section id="slide-orgheadline4">
-<h2 id="orgheadline4">A long and winding road…</h2>
+<section id="slide-orgheadline17">
+<h2 id="orgheadline17">The phonebook entry</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure">{:description "Phonebook entry"
+ :parameters {:path {:entry Long}}
+ :methods {:get {…}
+           :put {…}
+           :delete {…}}}
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline14">
+<h3 id="orgheadline14">Phonebook entry GET</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">{:get
+ {:produces
+  {:media-type #{"text/html" "application/json;q=0.8"}
+   :charset "UTF-8"}
+  :handler
+  (fn [ctx]
+    (let [id (get-in ctx [:parameters :path :entry])
+          {:keys [firstname surname phone] :as entry}
+          (db/get-entry db id)]
+      (when entry
+        (case (get-in ctx [:response :representation :media-type :name])
+          "text/html"
+          (html/entry-html
+           entry
+           {:entry (path-for @*routes :phonebook.api/entry :entry id)
+            :index (path-for @*routes :phonebook.api/index)})
+          entry))))}}
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline15">
+<h3 id="orgheadline15">Phonebook entry DELETE</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">{:delete
+ {:handler
+  (fn [ctx]
+    (let [id (get-in ctx [:parameters :path :entry])]
+      (db/delete-entry db id)))}}
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline16">
+<h3 id="orgheadline16">Phonebook entry PUT</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">{:put
+ {:parameters
+  {:form {:surname String
+          :firstname String
+          :phone String}}
+  :consumes {:media-type "multipart/form-data"}
+  :handler
+  (fn [ctx]
+    (let [entry (get-in ctx [:parameters :path :entry])
+          body (get-in ctx [:parameters :body])]
+      (db/update-entry db entry body)))}}
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline18">
+<h2 id="orgheadline18">yada roadmap</h2>
+<p>
+(Tolkien map with location, somewhere around The Dead Marshes)
+</p>
 </section>
 </section>
 </div>

@@ -9,14 +9,13 @@
    yada.resources.atom-resource
    yada.resources.collection-resource
    yada.resources.file-resource
-   yada.resources.misc
    yada.resources.string-resource
    yada.resources.url-resource
    yada.resources.sse
    [potemkin :refer (import-vars)]))
 
 (import-vars
- [yada.core yada handler resource]
+ [yada.core yada handler]
  [yada.swagger swaggered])
 
 ;; Convenience functions, allowing us to encapsulate the context

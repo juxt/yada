@@ -10,7 +10,7 @@
    [yada.yada :as yada]))
 
 (defn hello-error [journal]
-  (yada/resource
+  (yada/yada
    (fn [ctx] (throw (ex-info "TODO: 123" {:foo :bar})))
    {:allowed-methods #{:get}
     :representations [{:media-type "text/html"}]

@@ -17,8 +17,9 @@
     (:name content-type)))
 
 ;; We return 418 if there's a content-type which we don't
-;; recognise. Using the multimethods :default method is a nice trick for
-;; this, because it's open for extension.
+;; recognise. Using the multimethods :default method is a way of
+;; returning a 418 even if the resource declares that it consumes an
+;; (unsupported) media type.
 (defmethod process-request-body :default
   [ctx body-stream media-type & args]
   (d/error-deferred (ex-info "Unsupported Media Type" {:status 418})))

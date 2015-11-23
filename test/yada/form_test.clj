@@ -8,17 +8,18 @@
    [ring.mock.request :as mock]
    [ring.util.codec :as codec]
    [schema.core :as s]
-   [yada.resources.misc :refer (just-methods)]
    [yada.yada :as yada :refer [yada]]
+   [yada.resource :refer [new-custom-resource]]
    [yada.util :refer [to-manifold-stream]]
    ))
 
 (deftest post-test
   (let [handler (yada
-                 (just-methods
-                  :post {:parameters {:form {(s/required-key "foo") s/Str}}
-                         :response (fn [ctx]
-                                     (pr-str (:parameters ctx)))}))]
+                 (new-custom-resource
+                  {:methods
+                   {:post {:parameters {:form {(s/required-key "foo") s/Str}}
+                           :handler (fn [ctx]
+                                      (pr-str (:parameters ctx)))}}}))]
 
     ;; Nil post body
     (let [response (handler (mock/request :post "/"))]
@@ -40,12 +41,12 @@
         :status := 200
         [:body bs/to-string edn/read-string] := {:form {"foo" "bar"}}))))
 
-#_(deftest post-test-with-query-params
+(deftest post-test-with-query-params
   (let [handler (yada
-                 (just-methods
-                  :post {:parameters {:query {(s/required-key "foo") s/Str}
-                                      :form {(s/required-key "bar") s/Str}}
-                         :response (fn [ctx] (pr-str (:parameters ctx)))}))]
+                 (new-custom-resource
+                  {:method {:post {:parameters {:query {(s/required-key "foo") s/Str}
+                                                :form {(s/required-key "bar") s/Str}}
+                                   :handler (fn [ctx] (pr-str (:parameters ctx)))}}}))]
 
     ;; Nil post body
     (let [response (handler (mock/request :post "/?foo=123"))]

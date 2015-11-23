@@ -18,48 +18,154 @@
 #+REVEAL_PLUGINS: (highlight markdown notes)
 #+REVEAL_EXTRA_CSS: static/css/extra.css
 
-* The Index
+* Some pedantic observations about Tom's code
+
+** Only serves humans (who read English)
+
+- Only supports HTML, encourages scraping
+- Only English supported
+- Would need more thinking to be an API
+
+** Vulnerable to attack
+
+- No security headers
+- No parameter validation
+
+** Wasteful
+
+- Doesn't support If-Modified-Since (dates)
+- Doesn't support If-Not-Match (etags)
+- No cache-control headers
+- No content-encoding (e.g. gzip)
+
+** Blocking I/O
+
+** Incorrect (with respect to HTTP)
+
+- Wrong method yields 404 (Not Found) instead of 405 (No Such Method)
+
+** No service metadata
+
+- No data about what the service does (e.g. Swagger, RAML)
+- No HEAD, OPTIONS or TRACE methods
+
+** Ad-hoc
+
+- 'Hand-crafted'
+- Hypermedia links are hand-coded
+- Service can't be generated
+- Leads to masses of brittle, duplicate code
+
+** DON'T PANIC
+
+- There are solutions for most of these issues
+- Trouble is, things get /complex/
+- How can we fix all these issues at once?
+
+** Solution
+  :PROPERTIES:
+  :reveal_background: #f8f8f8
+  :reveal_extra_attr: class="juxt_hide-heading"
+  :END:
+
+#+REVEAL_HTML: <span style="font-family: yada; font-size: 4em">yada</span>
+
+* The phonebook index
 
 #+BEGIN_SRC clojure
-  (defrecord IndexResource [db *routes]
-    p/Properties
-    (properties [_]
-      {:parameters
-       {:get {:query {(s/optional-key :q) String}}
-
-        :post {:form {:surname String
-                      :firstname String
-                      :phone String}}}
-
-       :representations [{:media-type #{"text/html"
-                                        "application/edn;q=0.9"
-                                        "application/json;q=0.8"}
-
-                          :charset "UTF-8"}]}))
+{:description "Phonebook index"
+ :properties {…}
+ :methods {:get {…}
+           :post {…}}
 #+END_SRC
 
 ** GET
 
 #+BEGIN_SRC clojure
-m/Get
-(GET [_ ctx]
-  (let [q (get-in ctx [:parameters :query :q])
-        entries (if q
-                  (db/search-entries db q)
-                  (db/get-entries db))]
-    (case (yada/content-type ctx)
-      "text/html" (html/index-html entries @*routes q)
-      entries)))
+  {:get {:parameters {:query {(s/optional-key :q) String}}
+         :produces {:media-type #{"text/html" "application/json;q=0.9"}
+                    :charset "UTF-8"}
+         :handler (fn [ctx]
+                    (let [q (get-in ctx [:parameters :query :q])
+                          entries (if q
+                                    (db/search-entries db q)
+                                    (db/get-entries db))]
+                      (case (yada/content-type ctx)
+                        "text/html" (html/index-html entries @*routes q)
+                        entries)))}}
 #+END_SRC
 
 ** POST
 
 #+BEGIN_SRC clojure
-m/Post
-(POST [_ ctx]
-  (let [id (db/add-entry db (get-in ctx [:parameters :form]))]
-    (yada/redirect-after-post
-     ctx (path-for @*routes :phonebook.api/entry :entry id))))
+  {:post
+   {:parameters {:form {:surname String :firstname String :phone String}}
+    :consumes {:media-type "multipart/form-data"
+               :charset "UTF-8"}
+    :handler (fn [ctx]
+               (let [id (db/add-entry db (get-in ctx [:parameters :form]))]
+                 (yada/redirect-after-post
+                  ctx (path-for @*routes :phonebook.api/entry :entry id))))}}
 #+END_SRC
 
-* A long and winding road…
+* The phonebook entry
+
+#+BEGIN_SRC clojure
+{:description "Phonebook entry"
+ :parameters {:path {:entry Long}}
+ :methods {:get {…}
+           :put {…}
+           :delete {…}}}
+#+END_SRC
+
+** Phonebook entry GET
+
+#+BEGIN_SRC clojure
+  {:get
+   {:produces
+    {:media-type #{"text/html" "application/json;q=0.8"}
+     :charset "UTF-8"}
+    :handler
+    (fn [ctx]
+      (let [id (get-in ctx [:parameters :path :entry])
+            {:keys [firstname surname phone] :as entry}
+            (db/get-entry db id)]
+        (when entry
+          (case (get-in ctx [:response :representation :media-type :name])
+            "text/html"
+            (html/entry-html
+             entry
+             {:entry (path-for @*routes :phonebook.api/entry :entry id)
+              :index (path-for @*routes :phonebook.api/index)})
+            entry))))}}
+#+END_SRC
+
+** Phonebook entry DELETE
+
+#+BEGIN_SRC clojure
+  {:delete
+   {:handler
+    (fn [ctx]
+      (let [id (get-in ctx [:parameters :path :entry])]
+        (db/delete-entry db id)))}}
+#+END_SRC
+
+** Phonebook entry PUT
+
+#+BEGIN_SRC clojure
+  {:put
+   {:parameters
+    {:form {:surname String
+            :firstname String
+            :phone String}}
+    :consumes {:media-type "multipart/form-data"}
+    :handler
+    (fn [ctx]
+      (let [entry (get-in ctx [:parameters :path :entry])
+            body (get-in ctx [:parameters :body])]
+        (db/update-entry db entry body)))}}
+#+END_SRC
+
+* yada roadmap
+
+(Tolkien map with location, somewhere around The Dead Marshes)

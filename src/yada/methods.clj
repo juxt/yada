@@ -100,7 +100,7 @@
 
 ;; --------------------------------------------------------------------------------
 
-(defprotocol Get
+(defprotocol ^:deprecated Get
   (GET [_ ctx]
     "Return the state. Can be formatted to a representation of the given
   media-type and charset. Returning nil results in a 404. Get the
@@ -123,14 +123,10 @@
     (assoc-in ctx [:response :body] o))
   nil
   (interpret-get-result [_ ctx]
-    (d/error-deferred (ex-info "" {:status 404}))
-
-    #_(throw (ex-info "" {:status 404})))
+    (d/error-deferred (ex-info "" {:status 404})))
   clojure.lang.Fn
   (interpret-get-result [f ctx]
-    (interpret-get-result (f ctx) ctx))
-
-  )
+    (interpret-get-result (f ctx) ctx)))
 
 (deftype GetMethod [])
 
@@ -141,29 +137,32 @@
   (idempotent? [_] true)
   (request [this ctx]
 
-    ;; TODO: exists? could be still deferred
-    (when-not (ctx/exists? ctx)
-      (throw (ex-info "" {:status 404})))
-
-    (when-not (-> ctx :response :representation)
-      (throw
-       (ex-info "" {:status 406})))
-
     (->
      (d/chain
 
-      ;; GET request normally returns a (possibly deferred) body.
+      (ctx/exists? ctx)
 
-      (if (satisfies? Get (:resource ctx))
-        (try
-          (GET (:resource ctx) ctx)
-          (catch Exception e
-            (d/error-deferred e)))
+      (fn [exists?]
+        (if exists?
+          (-> ctx :response :representation)
+          (d/error-deferred (ex-info "" {:status 404}))))
 
-        ;; No GET
-        (d/error-deferred
-         (ex-info (format "Resource %s does not implement GET" (type (:resource ctx)))
-                  {:status 500})))
+      (fn [representation]
+        (if representation
+          :ok
+          (d/error-deferred (ex-info "" {:status 406}))))
+
+      ;; function normally returns a (possibly deferred) body.
+      (fn [x]
+        (if-let [f (get-in ctx [:handler :methods (:method ctx) :handler])]
+          (try
+            (f ctx)
+            (catch Exception e
+              (d/error-deferred e)))
+          ;; No handler!
+          (d/error-deferred
+           (ex-info (format "Resource %s does not provide a handler for :get" (type (:resource ctx)))
+                    {:status 500}))))
 
       (fn [res]
         (interpret-get-result res ctx))
@@ -187,7 +186,7 @@
 
 ;; --------------------------------------------------------------------------------
 
-(defprotocol Put
+#_(defprotocol Put
   (PUT [_ ctx]
     "Overwrite the state with the data. To avoid inefficiency in
   abstraction, satisfying types are required to manage the parsing of
@@ -203,14 +202,21 @@
   (safe? [_] false)
   (idempotent? [_] true)
   (request [_ ctx]
-    (let [res (PUT (:resource ctx) ctx)]
-      (assoc-in ctx [:response :status]
-                (cond
-                  ;; TODO: A 202 may be not what the developer wants!
-                  ;; TODO: See RFC7240
-                  (d/deferred? res) 202
-                  (ctx/exists? ctx) 204
-                  :otherwise 201)))))
+    (let [f (get-in ctx [:handler :methods (:method ctx) :handler]
+                    (constantly (d/error-deferred
+                                 (ex-info (format "Resource %s does not provide a handler for :put" (type (:resource ctx)))
+                                          {:status 500}))))]
+      (d/chain
+       (f ctx)
+       (fn [res]
+         (assoc-in ctx [:response :status]
+                   (cond
+                     ;; TODO: A 202 may be not what the user wants!
+                     ;; TODO: See RFC7240
+                     (d/deferred? res) 202
+                     (ctx/exists? ctx) 204
+                     :otherwise 201)))))))
+
 
 ;; --------------------------------------------------------------------------------
 
@@ -276,13 +282,14 @@
 
 ;; --------------------------------------------------------------------------------
 
-(defprotocol Delete
+#_(defprotocol Delete
   (DELETE [_ ctx]
     "Delete the state. If a deferred is returned, the HTTP response
   status is set to 202. Side-effects are permissiable. Can return a
   deferred result."))
 
 (deftype DeleteMethod [])
+
 (extend-protocol Method
   DeleteMethod
   (keyword-binding [_] :delete)
@@ -290,7 +297,15 @@
   (idempotent? [_] true)
   (request [_ ctx]
     (d/chain
-     (DELETE (:resource ctx) ctx)
+     (if-let [f (get-in ctx [:handler :methods (:method ctx) :handler])]
+       (try
+         (f ctx)
+         (catch Exception e
+           (d/error-deferred e)))
+       ;; No handler!
+       (d/error-deferred
+        (ex-info (format "Resource %s does not provide a handler for :get" (type (:resource ctx)))
+                 {:status 500})))
      (fn [res]
        ;; TODO: Could we support 202 somehow?
        (assoc-in ctx [:response :status] 204)))))
@@ -404,7 +419,7 @@
 
 ;; The function is a very useful type to extend, so we do so here.
 
-(extend-type clojure.lang.Fn
+#_(extend-type clojure.lang.Fn
   Get (GET [f ctx] (f ctx))
   Put (PUT [f ctx] (f ctx))
   Post (POST [f ctx] (f ctx))
@@ -412,7 +427,7 @@
   Options (OPTIONS [f ctx] (f ctx)))
 
 
-(defn infer-methods
+#_(defn ^:deprecated infer-methods
   "Determine methods from an object based on the protocols it
   satisfies."
   [o]
@@ -420,5 +435,5 @@
     (satisfies? Get o) (conj :get)
     (satisfies? Put o) (conj :put)
     (satisfies? Post o) (conj :post)
-    (satisfies? Delete o) (conj :delete)
+    #_(satisfies? Delete o) #_(conj :delete)
     (satisfies? Options o) (conj :options)))

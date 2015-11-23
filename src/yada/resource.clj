@@ -113,3 +113,11 @@
       (p/properties r ctx)
       (catch IllegalArgumentException e {})
       (catch AbstractMethodError e {})))))
+
+;; --
+(defrecord CustomResource []
+  p/ResourceCoercion
+  (as-resource [this] this))
+
+(defn new-custom-resource [m]
+  (map->CustomResource m))

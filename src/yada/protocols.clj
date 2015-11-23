@@ -3,7 +3,8 @@
 (ns yada.protocols
   (:import
    [java.io File]
-   [java.util Date]))
+   [java.util Date]
+   [clojure.lang APersistentMap]))
 
 ;; Resource protocols
 
@@ -17,11 +18,15 @@
   Last-Modified-Date."))
 
 (extend-protocol ResourceCoercion
+  clojure.lang.Fn
+  (as-resource [f] {})
+
   Object
-  (as-resource [o] o)
+  (as-resource [o] {})
 
   nil
-  (as-resource [_] nil))
+  (as-resource [_] {:exists? false
+                    :methods {:get {}}}))
 
 (defprotocol Properties
   (properties [_] [_ ctx] "If the semantics of the method are
@@ -43,12 +48,10 @@
 
   nil
   (properties
-
     ([_] {:allowed-methods
           ;; We do allow :get on nil, but the response will be a 404
           #{:get}})
     ([_ ctx] {:exists? false})))
-
 
 ;; Allowed methods
 

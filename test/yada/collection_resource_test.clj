@@ -11,13 +11,13 @@
    [yada.representation :as rep]
    [juxt.iota :refer (given)]
    [yada.test.util :refer (to-string)]
-   [yada.yada :refer [resource]]))
+   [yada.yada :refer [yada]]))
 
 ;; Collections can be resources too, we should test them
 
 (deftest map-resource-test
   (testing "map"
-    (let [handler (resource {:name "Frank"})
+    (let [handler (yada {:name "Frank"})
           request (mock/request :get "/")
           response @(handler request)
           last-modified (some-> response :headers (get "last-modified") parse-date)]

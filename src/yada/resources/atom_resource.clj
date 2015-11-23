@@ -31,15 +31,15 @@
   m/Get
   (GET [_ ctx] @*a)
 
-  m/Put
-  (PUT [_ ctx]
+  #_m/Put
+  #_(PUT [_ ctx]
     ;; We can't PUT a nil, because nils mean no representation and yield
     ;; 404s on GET, hence this when guard
     (when-let [body (get-in ctx [:parameters :body])]
       (reset! *a body)))
 
-  m/Delete
-  (DELETE [_ ctx] (reset! *a nil))
+  #_m/Delete ; commented in the move to pure-data
+  #_(DELETE [_ ctx] (reset! *a nil))
   )
 
 (extend-protocol p/ResourceCoercion

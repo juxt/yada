@@ -15,7 +15,7 @@
    [yada.representation :as rep]
    [yada.resource :refer [Representation RepresentationSets]]
    [yada.protocols :as p]
-   [yada.methods :refer (Get GET Put PUT Post POST Delete DELETE)]
+   [yada.methods :refer (Get GET #_Put #_PUT Post POST #_Delete #_DELETE)]
    [yada.media-type :as mt])
   (:import [java.io File]
            [java.util Date TimeZone]
@@ -68,11 +68,11 @@
                    file)))
 
 
-  Put
-  (PUT [_ ctx] (bs/transfer (-> ctx :request :body) file))
+  #_Put ;; Commented during the move to pure-data
+  #_(PUT [_ ctx] (bs/transfer (-> ctx :request :body) file))
 
-  Delete
-  (DELETE [_ ctx] (.delete file)))
+  #_Delete ;; Commented during the move to pure-data
+  #_(DELETE [_ ctx] (.delete file)))
 
 (defn filename-ext
   "Returns the file extension of a filename or filepath."

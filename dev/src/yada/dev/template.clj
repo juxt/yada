@@ -14,6 +14,7 @@
    [yada.charset :as charset]
    [yada.methods :as m]
    [yada.protocols :as p]
+   [yada.resource :refer [new-custom-resource]]
    [yada.util :refer [as-file]]))
 
 (s/defrecord TemplateResource
@@ -28,49 +29,15 @@
    [_]
    (let [resource (loader/find-file template-name)]
      {:allowed-methods #{:get}
-      :representations [{:media-type (or (ext-mime-type template-name)
-                                         "application/octet-stream"
-                                         )
-                         ;; Since stencil produces strings, we can
-                         ;; specify the encoding and yada's
-                         ;; representation logic takes care of the
-                         ;; encoding.
-
-                         ;; TODO: Is this necessary? Doesn't yada
-                         ;; default to this anyway?
-                         :charset charset/default-platform-charset}]
-
       ;; We can work out last-modified, iff model is not a function
       ;; then last-modified date is now
-
-      ::create-time (.getMillis (now))
-      ::resource resource
-      ::file (as-file resource)}))
+      }))
   (properties
    [_ ctx]
    ;; TODO: What about a delay?
    (when-not (fn? model)
      {:last-modified (max (-> ctx :properties ::file .lastModified)
-                          (-> ctx :properties ::create-time))}))
-
-  m/Get
-  (GET [_ ctx]
-       (let [props (:properties ctx)
-             template @*template]
-         (when (or (nil? template)
-                   (when-let [f (::file props)]
-                     (when-let [t (.getMillis (:date template))]
-                       (< t (.lastModified f)))))
-
-           (reset! *template
-                   {:date (now)
-                    :parsed-template (when-let [res (::resource props)] (stencil.parser/parse (slurp res)))}))
-         (when-let [pt (:parsed-template @*template)]
-           (stencil/render pt (cond (fn? model) (model ctx)
-                                    (delay? model) @model
-                                    :otherwise model))
-           ;; Returning nil causes a 404
-           ))))
+                          (-> ctx :properties ::create-time))})))
 
 (defn new-template-resource
   "Create a yada resource that uses Stencil to server the template. The
@@ -81,6 +48,43 @@
   template is reloaded and parsed. Also, last-modified-time is computed
   if possible."
   [template-name model]
-  (let [res (->TemplateResource template-name model (atom nil))]
-    (s/validate (type res) res)
-    res))
+  (let [*template (atom nil)
+        resource (loader/find-file template-name)
+        file (as-file resource)
+        create-time (.getMillis (now))]
+
+    (new-custom-resource
+     {:methods
+      {:get
+       {:produces
+        [{:media-type (or (ext-mime-type template-name)
+                          "application/octet-stream"
+                          )
+          ;; Since stencil produces strings, we can
+          ;; specify the encoding and yada's
+          ;; representation logic takes care of the
+          ;; encoding.
+
+          ;; TODO: Is this necessary? Doesn't yada
+          ;; default to this anyway?
+          :charset charset/default-platform-charset}]
+
+        :handler
+        (fn [ctx]
+          (let [props (:properties ctx)
+                template @*template]
+
+            (when (or (nil? template)
+                      (when-let [f file]
+                        (when-let [t (.getMillis (:date template))]
+                          (< t (.lastModified f)))))
+              (reset! *template
+                      {:date (now)
+                       :parsed-template (stencil.parser/parse (slurp resource))}))
+
+            (when-let [pt (:parsed-template @*template)]
+              (stencil/render pt (cond (fn? model) (model ctx)
+                                       (delay? model) @model
+                                       :otherwise model))
+              ;; Returning nil causes a 404
+              )))}}})))

@@ -283,14 +283,14 @@
        (or (-> % :encoding second) 1)
        (or (-> % :language second) 1))))
 
-(defn select-representation
+(defn select-best-representation
   "Given a request and a collection of representations, pick the best
   representation. This scores each representation against each of 4
   dimensions, each score contributes to its overall rating, the best
   being decided by the given algorithm, which defaults to
   'agent-preference-sequential-compare'."
   ([req reps]
-   (select-representation req reps agent-preference-sequential-compare))
+   (select-best-representation req reps agent-preference-sequential-compare))
   ([req reps rater]
    (let [best
          (->> reps

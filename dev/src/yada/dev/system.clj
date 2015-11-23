@@ -109,17 +109,17 @@
   (apply system-map
     (apply concat
       (-> {}
-        (database-components)
-        (api-components)
-        (docsite-components config)
-        (swagger-ui-components)
-        (http-server-components config)
-        (hello-world-components config)
-        (error-components)
-        (cors-demo-components config)
-        (talks-components config)
-        (phonebook-components config)
-        (selfie-components config)
+          (database-components)
+          (api-components)
+          (docsite-components config)
+          (swagger-ui-components)
+          (http-server-components config)
+          (hello-world-components config)
+          (error-components)
+          (cors-demo-components config)
+          (talks-components config)
+          (phonebook-components config)
+          (selfie-components config)
 
         (assoc :docsite-redirect (new-redirect :from "/" :to :yada.dev.docsite/index))
         (assoc :console-redirect (new-redirect :from "/" :to :yada.dev.console/index))

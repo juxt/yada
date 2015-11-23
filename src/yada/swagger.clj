@@ -116,4 +116,4 @@
         modified-date (to-date (now))]
     (->Swaggered spec route
                  (into {} (for [ct ["application/edn" "application/json" "text/html"]]
-                            [ct (yada/resource (->SwaggerSpec spec modified-date ct))])))))
+                            [ct (yada/yada (->SwaggerSpec spec modified-date ct))])))))
