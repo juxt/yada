@@ -506,9 +506,12 @@
 ;; to plug-in their own support for large http payloads.
 
 (defprotocol PartConsumer
-  (consume-part [_ state part] "Return state with part attached")
-  (start-partial [_ piece] "Return a partial")
-  (part-coercion-matcher [_] "Return a coercer that can coerce the part into a declared parameter type"))
+  (consume-part [_ state part]
+    "Return state with part attached")
+  (start-partial [_ piece]
+    "Return a partial")
+  (part-coercion-matcher [_]
+    "Return a map between a target type and the function that coerces this type into that type"))
 
 (defprotocol Partial
   (continue [_ piece] "Return thyself")
@@ -615,23 +618,26 @@
                               (assoc (get-in part [:content-disposition :params "name"]) part)))
               {} parts)]
 
+         (infof "fields is %s" fields)
+
          (cond
-           (:form schemas)
+           ;; In Swagger 2.0 you can't have both form and body
+           ;; parameters, which seems reasonable
+           (or (:form schemas) (:body schemas))
            (let [coercer (sc/coercer
-                          (:form schemas)
+                          (or (:form schemas) (:body schemas))
                           (fn [schema]
                             (or
                              (coerce/+parameter-key-coercions+ schema)
                              ((part-coercion-matcher part-consumer) schema)
                              ((rsc/coercer :json) schema))))
                  params (coercer fields)]
-             (infof "params is %s" params)
              (if-not (schema.utils/error? params)
-               (assoc-in ctx [:parameters :body] params)
+               (do
+                 (infof "here, params is %s, %s" params (if (:form schemas) :form :body))
+                 (assoc-in ctx [:parameters (if (:form schemas) :form :body)] params))
                (d/error-deferred (ex-info "Bad form fields"
                                           {:status 400 :error params}))))
-
-           (:body schemas) (throw (ex-info "TODO" {}))
 
            :otherwise (assoc ctx :body fields)))
 

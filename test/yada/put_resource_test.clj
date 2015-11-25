@@ -8,7 +8,6 @@
    [juxt.iota :refer (given)]
    [manifold.stream :as s]
    [yada.test.util :refer [to-string]]
-   [yada.util :refer [to-manifold-stream]]
    [yada.yada :refer [yada]]))
 
 (defn add-headers [request m]
@@ -28,7 +27,6 @@
         [:body to-string] := "Bradley")
 
       (given @(handler (-> (request :put "/" "Chelsea")
-                           (update :body to-manifold-stream)
                            (add-headers {"content-type" "text/plain"})))
         :status := 204
         [:headers keys set] :⊃ #{"content-type"}

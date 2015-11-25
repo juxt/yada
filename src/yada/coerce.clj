@@ -97,7 +97,7 @@
 
 ;; TODO: Add tests
 
-((coercer {(s/optional-key "first.name") s/Str
+#_((coercer {(s/optional-key "first.name") s/Str
            :surname s/Str
            :phone [s/Str]
            } +parameter-key-coercions+)
@@ -105,7 +105,7 @@
  )
 
 
-(let [c (coercer {(s/optional-key "first.name") s/Str
+#_(let [c (coercer {(s/optional-key "first.name") s/Str
                      :surname s/Str
                      :phone [s/Str]
                      }

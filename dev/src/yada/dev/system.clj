@@ -42,6 +42,8 @@
    :user-manual (new-user-manual :prefix (config/docsite-origin config))
 
    :docsite (new-docsite :config config)
+
+   ;; TODO: Replace new-web-resources with a yada equivalent
    :jquery (new-web-resources
             :key :jquery
             :uri-context "/jquery"
@@ -55,7 +57,7 @@
                    :resource-prefix "static")
    :highlight-js-resources
    (new-archived-web-resources :archive (io/resource "highlight.zip") :uri-context "/hljs/")
-   :console (new-console config)
+;;   :console (new-console config)
    ))
 
 (defn swagger-ui-components [system]
@@ -144,7 +146,7 @@
                     :highlight-js-resources
                     :docsite-redirect]
 
-   :console-router [:console
+   :console-router [;;:console
                     :console-redirect]
 
    :cors-demo-router [:cors-demo
@@ -165,7 +167,7 @@
              :phonebook :phonebook
              :selfie :selfie}
    :user-manual {:router :docsite-router}
-   :console {:router :console-router}
+;;   :console {:router :console-router}
    :cors-demo {:router :cors-demo-router}
    :talks {:router :talks-router}})
 

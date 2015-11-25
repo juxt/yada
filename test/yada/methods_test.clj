@@ -8,7 +8,6 @@
    [ring.mock.request :as mock]
    [ring.util.codec :as codec]
    [schema.core :as s]
-   [yada.methods :refer (Get Post)]
    [yada.protocols :as p]
    [yada.resource :refer [new-custom-resource]]
    [yada.yada :as yada :refer [yada]]))
@@ -16,14 +15,14 @@
 (deftest post-test
   (let [handler (yada
                  (new-custom-resource
-                  {:method {:post
-                            {:handler (fn [ctx]
-                                        (assoc (:response ctx)
-                                               :status 201
-                                               :body "foo"))}}}))]
+                  {:methods {:post
+                             {:handler (fn [ctx]
+                                         (assoc (:response ctx)
+                                                :status 201
+                                                :body "foo"))}}}))]
     (given @(handler (mock/request :post "/"))
-      :status := 201
-      [:body bs/to-string] := "foo")))
+           :status := 201
+           [:body bs/to-string] := "foo")))
 
 (deftest dynamic-post-test
   (let [handler (yada
@@ -49,9 +48,9 @@
 
 ;; To ensure coercion to StringResource which satisfies GET (tested
 ;; below)
-(require 'yada.resources.string-resource)
+#_(require 'yada.resources.string-resource)
 
-(deftest allowed-methods-test
+#_(deftest allowed-methods-test
   (testing "methods-deduced"
     (are [r e] (= (:allowed-methods (yada r)) e)
       nil #{:get :head :options}

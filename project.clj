@@ -12,17 +12,17 @@
                org.clojure/tools.reader]
 
   :dependencies
-  [[bidi "1.21.0" :exclusions [ring/ring-core]]
-   [byte-streams "0.2.1-alpha1" :exclusions [clj-tuple]]
+  [[bidi "1.23.1" :exclusions [ring/ring-core]]
+   [byte-streams "0.2.1-alpha2" :exclusions [clj-tuple]]
    [camel-snake-kebab "0.1.4"]
    [cheshire "5.4.0"]
    [clj-time "0.9.0"]
    [hiccup "1.0.5"]
    [json-html "0.3.1"]
-   [manifold "0.1.1"]
+   [manifold "0.1.2-alpha1"]
    [metosin/ring-http-response "0.6.5"]
    [metosin/ring-swagger "0.20.2" :exclusions [potemkin]]
-   [prismatic/schema "0.4.3" :exclusions [potemkin]]
+   [prismatic/schema "1.0.3"]
    [potemkin "0.4.1" :exclusions [riddley]]
    [ring-basic-authentication "1.0.5"]
    [org.clojure/core.async "0.1.346.0-17112a-alpha"]
@@ -44,7 +44,6 @@
                    ;;[lein-less "1.7.5"]
                    [lein-figwheel "0.3.7" :exclusions [[org.clojure/clojure]
                                                        [org.codehaus.plexus/plexus-utils]
-                                                       #_[org.clojure/tools.reader]
                                                        ]]]
 
          :cljsbuild {:builds
@@ -53,11 +52,13 @@
                                 :compiler {:output-to "target/cljs/console.js"
                                            :pretty-print true}}}}
 
+         :exclusions [[org.clojure/tools.nrepl]]
+
          :dependencies
          [[org.clojure/clojure "1.7.0"]
-          [org.clojure/clojurescript "1.7.58"]
+          [org.clojure/clojurescript "1.7.170"]
 
-
+          [org.clojure/tools.nrepl "0.2.12"] ; otherwise pedantic check fails
           [org.clojure/tools.logging "0.3.1"]
           [org.clojure/tools.trace "0.7.8"]
 
@@ -67,8 +68,8 @@
           [org.slf4j/jcl-over-slf4j "1.7.2"]
           [org.slf4j/log4j-over-slf4j "1.7.2"]
 
-          [com.stuartsierra/component "0.2.3"]
-          [org.clojure/tools.namespace "0.2.5"]
+          [com.stuartsierra/component "0.3.1"]
+          [org.clojure/tools.namespace "0.2.10"]
           [org.clojure/data.zip "0.1.1"]
 
           [markdown-clj "0.9.62"]
@@ -81,7 +82,7 @@
           [aleph "0.4.1-beta2"]
           [juxt.modular/bidi "0.9.2" :exclusions [bidi]]
           [juxt.modular/stencil "0.1.0"]
-          [juxt.modular/co-dependency "0.2.2"]
+          [juxt.modular/co-dependency "0.3.0"]
           [juxt.modular/test "0.1.0"]
           [juxt.modular/template "0.6.3"]
 

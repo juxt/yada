@@ -102,6 +102,9 @@
    {:id ::index}))
 
 (s/defrecord Docsite [*router :- (co-dep Router)
+                      ;; TODO: I don't think these need to be co-deps,
+                      ;; only the docsite's own route needs to be a
+                      ;; co-dep.
                       *cors-demo-router :- (co-dep Router)
                       *talks-router :- (co-dep Router)
                       *console-router :- (co-dep Router)

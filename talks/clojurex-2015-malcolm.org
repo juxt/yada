@@ -1,0 +1,244 @@
+#+EXPORT_EXCLUDE_TAGS:  noexport
+#+AUTHOR:               Malcolm Sparks
+#+TITLE:                Clojure/REST (pt. 2)
+#+EMAIL:                @malcolmsparks
+#+LANGUAGE:             en
+#+OPTIONS:              toc:nil
+#+OPTIONS:              reveal_center:t reveal_progress:t reveal_history:t reveal_control:nil
+#+OPTIONS:              reveal_mathjax:nil reveal_rolling_links:nil reveal_keyboard:t reveal_overview:t num:nil
+#+OPTIONS:              width:1920 height:1080
+#+REVEAL_HLEVEL:        1
+#+REVEAL_MARGIN:        0.0
+#+REVEAL_MIN_SCALE:     1.0
+#+REVEAL_MAX_SCALE:     1.4
+#+REVEAL_THEME:         juxt
+#+REVEAL_TRANS:         fade
+#+REVEAL_SPEED:         fast
+#+REVEAL_ROOT:          static
+#+REVEAL_PLUGINS: (highlight markdown notes)
+#+REVEAL_EXTRA_CSS: static/css/extra.css
+
+* Let's review
+** The good points
+- Simple & easy
+- Idiomatic
+- Good as an example
+- Exercises many parts of REST
+- Stateful, resource-based
+** No content negotiation
+- Only produces HTML (in UTF-8)
+- Only speaks English
+- No support for compression (e.g. gzip)
+- No machine-readable API
+** Inefficient
+- No cache-control headers
+- Doesn't support If-Modified-Since (dates)
+- Doesn't support If-Not-Match (etags)
+ - Responsive UIs need fast server responses
+ - om.next
+ - What about your upstream systems?
+
+#+BEGIN_SRC picture
+                         /------- Other system 1
+  om.next               /
+  Browser <--------- Server -------- Other system 2
+                        \
+                         \------ Other system 3
+#+END_SRC
+
+** Vulnerable to attack
+- No security headers
+- Ad-hoc parameter validation
+** No service metadata
+- No data about what the service does (e.g. Swagger, RAML)
+- No HEAD, OPTIONS or TRACE methods
+** Blocking I/O
+- Unlike Play, Ratpack, Vert.x, Dropwizard, etc.
+** Ad-hoc
+- 'Hand-crafted'
+- Hypermedia links are hand-coded
+- Services can't be (easily) stamped-out
+- Consequences?
+ - Lots of similar yet inconsistent (and buggy) code
+ - Business logic coupled to infrastructure
+ - 'YAGNI' mentality to REST
+* What are our options?
+#+ATTR_REVEAL: :frag (appear appear appear)
+- Functional model
+ - Function composition (Ring middleware)
+- Execution model
+ - Liberator
+- Resource model
+ - Define resource using a Clojure map
+** yada
+  :PROPERTIES:
+  :reveal_background: #fff
+  :reveal_extra_attr: class="juxt_hide-heading"
+  :END:
+
+#+REVEAL_HTML: <span style="font-family: yada; font-size: 4em">yada</span>
+
+** API
+  :PROPERTIES:
+  :reveal_extra_attr: class="bigity"
+  :END:
+#+ATTR_REVEAL: :frag (appear)
+#+BEGIN_SRC clojure
+ (def handler (yada data))
+#+END_SRC
+
+** features
+
+- Parameter validation (and coercion)
+- Automatic full HTTP compliance
+ - correct HTTP method semantics, response codes
+ - content negotiation, allow, vary
+ - conditional requests, entity tags
+ - custom methods/media-types
+ - security headers, CORS
+ - range-requests, transfer-encoding, multipart
+- Automatic Swagger spec. generation
+- Async 'on demand'
+ - database trips, SSE, streaming downloads/uploads
+
+# ** single stack
+
+# - yada 1.0
+# - manifold 0.1.1
+#  - async interface and toolbox
+# - aleph 0.4
+#  - netty wrapper for Clojure
+# - netty 4.1
+#  - highly-respected efficient transport layer
+
+
+* The phonebook index
+  :PROPERTIES:
+  :reveal_extra_attr: class="bigity"
+  :END:
+
+#+BEGIN_SRC clojure
+{:description "Phonebook index"
+ :properties {…}
+ :methods {:get {…}
+           :post {…}}
+#+END_SRC
+
+** GET
+
+#+BEGIN_SRC clojure
+  {:get
+   {:parameters {:query {(s/optional-key :q) String}}
+
+    :produces [{:media-type #{"text/html" "application/json;q=0.9"}
+                :charset "UTF-8"}]
+
+    :handler
+    (fn [ctx]
+      (let [q (get-in ctx [:parameters :query :q])
+            entries (if q
+                      (db/search-entries db q)
+                      (db/get-entries db))]
+        (case (get-in ctx [:response :representation :media-type :name])
+          "text/html" (html/index-html entries @*routes q)
+          entries)))}}
+#+END_SRC
+
+** POST
+
+#+BEGIN_SRC clojure
+  {:post
+   {:parameters
+    {:form {:surname String :firstname String :phone [String]}}
+
+    :consumes
+    [{:media-type "application/x-www-form-urlencoded"
+      :charset "UTF-8"}]
+
+    :handler
+    (fn [ctx]
+      (let [id (db/add-entry db (get-in ctx [:parameters :form]))]
+        (-> (:response ctx)
+            (assoc :status 303)
+            (update :headers merge
+              {"location"
+               (bidi/path-for @*routes ::entry :entry id)}))))}}
+#+END_SRC
+
+* The phonebook entry
+
+#+BEGIN_SRC clojure
+    {:description "Phonebook entry"
+     :parameters {:path {:entry Long}}
+     :properties (fn [ctx] {:last-modified …
+                            :version …})
+     :produces {:media-type #{"text/html"
+                              "application/json;q=0.8"}
+                :charset "UTF-8"}
+     :methods {:get {…}
+               :put {…}
+               :delete {…}}}
+#+END_SRC
+
+** Phonebook entry GET
+
+#+BEGIN_SRC clojure
+  {:get
+   {:handler
+    (fn [ctx]
+      (when-let [entry (db/get-entry db
+                         (get-in ctx [:parameters :path :entry]))]
+        (case (get-in ctx [:response :representation :media-type :name])
+          "text/html" (html/entry-html entry)
+          entry)))}}
+#+END_SRC
+
+** Phonebook entry DELETE
+
+#+BEGIN_SRC clojure
+  {:delete
+   {:handler
+    (fn [ctx]
+      (let [id (get-in ctx [:parameters :path :entry])]
+        (db/delete-entry db id)))}}
+#+END_SRC
+
+
+
+** Phonebook entry PUT
+
+#+BEGIN_SRC clojure
+[:button {:onclick (format "phonebook.update('%s')" entry)} "Update"]
+#+END_SRC
+
+#+BEGIN_SRC javascript
+    update: function(url) {
+        x = new XMLHttpRequest()
+        x.open("PUT", url)
+        // FormData is built-in, sends multipart/form-data
+        x.send(new FormData(document.getElementById("entry")))
+    }
+#+END_SRC
+
+** Phonebook entry PUT (pt. 2)
+
+#+BEGIN_SRC clojure
+  {:put
+   {:consumes [{:media-type #{"multipart/form-data"}}]
+
+    :parameters
+    {:form {:surname String
+            :firstname String
+            :phone [String]
+            :photo java.io.File}}
+
+    :handler
+    (fn [ctx]
+      (let [entry (get-in ctx [:parameters :path :entry])
+            form (get-in ctx [:parameters :form])]
+        (db/update-entry db entry form)))}}
+#+END_SRC
+
+** References
+
+- https://github.com/juxt/yada

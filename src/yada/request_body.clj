@@ -2,10 +2,11 @@
 
 (ns yada.request-body
   (:require
-   [byte-streams :as b]
+   [byte-streams :as bs]
    [clojure.tools.logging :refer :all]
    [ring.swagger.schema :as rs]
    [manifold.deferred :as d]
+   [ring.util.request :as req]
    [manifold.stream :as s]
    [yada.media-type :as mt]))
 
@@ -45,6 +46,27 @@
    (fn [acc]
      (infof ":default acc is %s" acc)))
   ctx)
+
+(defn read-body-to-string [request]
+  (d/chain
+   (s/reduce (fn [acc buf] (conj acc buf)) [] (:body request))
+   (fn [bufs]
+     (bs/to-byte-array (seq bufs)))
+
+   #_(s/connect (yada.util/to-manifold-stream (:body request)) (java.io.ByteArrayOutputStream.))
+   #_(fn [x]
+     (bs/transfer (seq x) String))
+   #_(s/reduce (fn [acc buf] (conj acc buf)) [] (:body request))
+   #_(fn [bufs]
+     (bs/to-byte-array bufs)
+     #_(apply bs/to-string (seq bufs)
+            (if-let [cs (req/character-encoding request)]
+              [{:encoding cs}]
+              [])))))
+
+(defmethod process-request-body "application/x-www-form-urlencoded"
+  [ctx body-stream media-type & args]
+  (throw (ex-info "TODO: check body against parameters" {:body (read-body-to-string (:request ctx))})))
 
 ;; Deprecated?
 

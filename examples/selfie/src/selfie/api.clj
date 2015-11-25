@@ -12,23 +12,18 @@
    [yada.protocols :as p]
    [yada.yada :refer [yada]]))
 
-(defrecord SelfieIndexResource []
-  p/Properties
-  (properties [_] {:doc/description "POST your selfies here!"})
-
-  m/Post
-  (POST [_ ctx]
-    (throw (ex-info "TODO: body should be accessible somewhere" {:request (:request ctx)})))
-
-  m/Get
-  (GET [_ ctx] "Index"))
-
-;; TODO: Note, I think that request content-types need to be support on a resource-by-resource basis rather than globally. Think about this. It's analogous to known-methods and allowed-methods. See swagger's consumes. This is an ideal place to use it!
+(defn selfie-index-resource []
+  {:description "POST your selfies here!"
+   :properties {}
+   :methods
+   {:get {:handler (fn [ctx] "Index")}
+    :post {:handler (fn [ctx]
+                      (throw (ex-info "TODO: body should be accessible somewhere"
+                                      {:request (:request ctx)})))}}})
 
 (defn api []
-  ["" [["/selfie" (yada (->SelfieIndexResource)
-                        ;; TODO: what's a better name for this?
-                        {:body-receiver nil}
+  ["" [["/selfie" (yada (selfie-index-resource)
+                        {:body-consumer nil}
                         )]]])
 
 (s/defrecord ApiComponent []

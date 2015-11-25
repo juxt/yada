@@ -79,7 +79,7 @@
     (when-not (ctx/exists? ctx)
       (d/error-deferred (ex-info "" {:status 404})))
 
-    (when-not (:representation ctx)
+    (when-not (get-in ctx [:response :produces])
       (d/error-deferred
        (ex-info "" {:status 406})))
 
@@ -100,7 +100,7 @@
 
 ;; --------------------------------------------------------------------------------
 
-(defprotocol ^:deprecated Get
+#_(defprotocol ^:deprecated Get
   (GET [_ ctx]
     "Return the state. Can be formatted to a representation of the given
   media-type and charset. Returning nil results in a 404. Get the
@@ -144,7 +144,7 @@
 
       (fn [exists?]
         (if exists?
-          (-> ctx :response :representation)
+          (-> ctx :response :produces)
           (d/error-deferred (ex-info "" {:status 404}))))
 
       (fn [representation]
@@ -168,7 +168,7 @@
         (interpret-get-result res ctx))
 
       (fn [ctx]
-        (let [representation (get-in ctx [:response :representation])]
+        (let [representation (get-in ctx [:response :produces])]
           ;; representation could be nil, for example, resource could be a java.io.File
           (update-in ctx [:response :body] body/to-body representation)))
 
@@ -220,7 +220,7 @@
 
 ;; --------------------------------------------------------------------------------
 
-(defprotocol Post
+#_(defprotocol Post
   (POST [_ ctx]
     "Post the new data. Return a result.  If a function is returned, it
   is invoked with the context as the only parameter. If a string is
@@ -271,7 +271,8 @@
   (idempotent? [_] false)
   (request [_ ctx]
     (d/chain
-     (POST (:resource ctx) ctx)
+     (when-let [f (get-in ctx [:handler :methods (:method ctx) :handler])]
+       (f ctx))
      (fn [res]
        (interpret-post-result res ctx))
      (fn [ctx]

@@ -30,12 +30,50 @@
    [yada.response :refer [->Response]]
    [yada.resource :as resource]
    [yada.request-body :as rb]
+   [yada.schema :as ys]
    [yada.service :as service]
    [yada.media-type :as mt]
    [yada.util :as util])
   (:import [java.util Date]))
 
 #_(def CHUNK-SIZE 16384)
+
+(defn merge-schemas [m]
+  (let [p (:parameters m)]
+    (assoc m :methods
+           (reduce-kv
+            (fn [acc k v]
+              (assert (associative? v) (format "v is not associative: %s" v))
+              (assoc acc k (update v :parameters (fn [lp] (merge p lp)))))
+            {} (get m :methods {})))))
+
+;; TODO: We are expanding shorthands using schema, but we must now
+;; consider whether it is possible to use schema to also enact the
+;; representation-seq on the result, or to do this 'manually'.
+
+(defn expand-shorthands
+  "Turns a resource into handler properties by expanding a
+  human-author-friendly short-forms."
+  ;; TODO: When structure is more stable, use coercions to achieve this
+  ;; rather than postwalk. This has the benefit of being more formally
+  ;; defined.
+  [resource]
+  (->> resource
+       (postwalk
+        (fn [x]
+          (if (and (vector? x) (= (first x) :produces))
+            [:produces (-> (second x)
+                           rep/coerce-representations
+                           rep/representation-seq)]
+            x)))
+       (postwalk
+        (fn [x]
+          (if (and (vector? x) (= (first x) :consumes))
+            [:consumes (-> (second x)
+                           rep/coerce-representations
+                           rep/representation-seq)]
+            x)))
+       (merge-schemas)))
 
 (defn make-context [properties]
   {:properties properties
@@ -60,7 +98,7 @@
 
 (defn known-method?
   [ctx]
-  (if-not (:method-instance ctx)
+  (if-not (:method-wrapper ctx)
     (d/error-deferred (ex-info "" {:status 501 ::method (:method ctx)}))
     ctx))
 
@@ -77,7 +115,7 @@
       (d/error-deferred
        (ex-info "Method Not Allowed"
                 {:status 405}))
-      (methods/request (:method-instance ctx) ctx))
+      (methods/request (:method-wrapper ctx) ctx))
     ctx))
 
 (defn method-allowed?
@@ -98,13 +136,25 @@
   (let [method (:method ctx)
         request (:request ctx)
 
-        schemas  (get-in ctx [:handler :methods method :parameters])
+        schemas (get-in ctx [:handler :methods method :parameters])
 
-        parameters {:path (when-let [schema (:path schemas)]
-                            (rs/coerce schema (:route-params request) :query))}
+        parameters {:path (if-let [schema (:path schemas)]
+                            (rs/coerce schema (:route-params request) :query)
+                            (:route-params request))
+                    :query (let [qp (:query-params (assoc-query-params request (or (:charset ctx) "UTF-8")))]
+                             (if-let [schema (:query schemas)]
+                               (let [coercer (sc/coercer schema
+                                                         (or
+                                                          coerce/+parameter-key-coercions+
+                                                          (rsc/coercer :query)
+                                                          ))]
+                                 (coercer qp))
+                               qp
+                               ))}
+
+
 
         #_parameters #_(-> ctx :handler :parameters)
-        #_coercers #_(-> ctx :handler :parameter-coercers)
 
         #_parameters
         #_(when parameters
@@ -197,7 +247,6 @@
   (let [method (:method ctx)
         request (:request ctx)
         parameters (-> ctx :handler :parameters)
-        coercers (-> ctx :handler :parameter-coercers)
 
         ;; TODO: What if content-type is malformed?
         content-type (mt/string->media-type (get-in request [:headers "content-type"]))
@@ -357,23 +406,23 @@
         ;; Otherwise
         ctx)))
 
+(defn- update-produces [props ])
+
 (defn get-properties
   [ctx]
   (let [propsfn (get-in ctx [:handler :properties] (constantly {}))]
     (d/chain
-
-     (propsfn ctx) ; propsfn can returned a deferred
-
+     (propsfn ctx)                     ; propsfn can returned a deferred
      (fn [props]
-       (assoc ctx :properties props))
+       (let [props (expand-shorthands props)]
+         (cond-> (assoc ctx :properties props)
+           (:produces props) (assoc-in [:response :vary] (rep/vary (:produces props))))))
+     (fn [ctx]
+       (infof "Result from get-properties is %s" (:properties ctx))
+       ctx
+       )
+     )))
 
-     ;; Need a way of allowing produces to be dynamic
-     #_(fn [props]
-       ;; Canonicalize possible representations if they are reasserted.
-       (cond-> props
-         (:representations props)
-         (update-in [:representations]
-                    (comp rep/representation-seq rep/coerce-representations)))))))
 
 #_(defn authentication
   "Authentication"
@@ -405,42 +454,45 @@
 
 (defn select-representation
   [ctx]
-  (let [produces (get-in ctx [:handler :methods (:method ctx) :produces])
+  ;; TODO: Need metadata to say whether the :produces property 'replaces'
+  ;; or 'augments' the static produces declaration. Currently only
+  ;; 'replaces' is supported.
+  (let [produces (or (get-in ctx [:properties :produces])
+                     (concat (get-in ctx [:handler :methods (:method ctx) :produces])
+                             (get-in ctx [:handler :produces])))
         rep (rep/select-best-representation (:request ctx) produces)]
     (cond-> ctx
-      rep (assoc-in [:response :representation] rep)
+      produces (assoc :produces produces)
+      rep (assoc-in [:response :produces] rep)
       (and rep (-> ctx :handler :vary)) (assoc-in [:response :vary] (-> ctx :handler :vary)))))
 
 ;; Conditional requests - last modified time
 (defn check-modification-time [ctx]
-  (d/chain
-   (or
-    (-> ctx :options :last-modified)
-    (-> ctx :properties :last-modified))
+  (if-let [last-modified
+           (or
+            (-> ctx :options :last-modified)
+            (-> ctx :properties :last-modified))]
 
-   (fn [last-modified]
-     (if last-modified
+    (if-let [if-modified-since
+             (some-> (:request ctx)
+                     (get-in [:headers "if-modified-since"])
+                     ring.util.time/parse-date)]
+      (if (<=
+           (.getTime last-modified)
+           (.getTime if-modified-since))
 
-       (if-let [if-modified-since
-                (some-> (:request ctx)
-                        (get-in [:headers "if-modified-since"])
-                        ring.util.time/parse-date)]
-         (if (<=
-              (.getTime last-modified)
-              (.getTime if-modified-since))
+        ;; exit with 304
+        (d/error-deferred
+         (ex-info "" (merge {:status 304} ctx)))
 
-           ;; exit with 304
-           (d/error-deferred
-            (ex-info "" (merge {:status 304} ctx)))
+        (assoc-in ctx [:response :last-modified] (ring.util.time/format-date last-modified)))
 
-           (assoc-in ctx [:response :last-modified] (ring.util.time/format-date last-modified)))
-
-         (or
-          (some->> last-modified
-                   ring.util.time/format-date
-                   (assoc-in ctx [:response :last-modified]))
-          ctx))
-       ctx))))
+      (or
+       (some->> last-modified
+                ring.util.time/format-date
+                (assoc-in ctx [:response :last-modified]))
+       ctx))
+    ctx))
 
 ;; Check ETag - we already have the representation details,
 ;; which are necessary for a strong validator. See
@@ -454,7 +506,7 @@
 
     ;; We have an If-Match to process
     (cond
-      (and (contains? matches "*") (-> ctx :representations count pos?))
+      (and (contains? matches "*") (-> ctx :produces count pos?))
       ;; No need to compute etag, exit
       ctx
 
@@ -465,7 +517,7 @@
       (-> ctx :properties :version)
       (let [version (-> ctx :properties :version)
             etags (into {}
-                        (for [rep (:representations ctx)]
+                        (for [rep (:produces ctx)]
                           [rep (p/to-etag version rep)]))]
 
         (if (empty? (set/intersection matches (set (vals etags))))
@@ -481,7 +533,7 @@
           ;; resource state didn't change), then this
           ;; etag will do for the response.
           (assoc-in ctx [:response :etag]
-                    (get etags (:representation ctx))))))
+                    (get etags (:produces ctx))))))
     ctx))
 
 ;; If-None-Match check
@@ -502,7 +554,7 @@
         (-> ctx :properties :version)
       (let [version (-> ctx :properties :version)
             etags (into {}
-                        (for [rep (:representations ctx)]
+                        (for [rep (:produces ctx)]
                           [rep (p/to-etag version rep)]))]
 
         (when (not-empty (set/intersection matches (set (vals etags))))
@@ -516,16 +568,49 @@
 (defn invoke-method
   "Methods"
   [ctx]
-  (methods/request (:method-instance ctx) ctx))
+  (methods/request (:method-wrapper ctx) ctx))
 
+
+#_(let [propsfn (get-in ctx [:handler :properties] (constantly {}))]
+    (d/chain
+
+     (propsfn ctx)                     ; propsfn can returned a deferred
+
+     (fn [props]
+       (assoc
+        ctx
+        :properties
+        (cond-> props
+          (:produces props) ; representations shorthand is expanded
+          (update-in [:produces]
+                     (comp rep/representation-seq rep/coerce-representations)))))))
 (defn get-new-properties
   "If the method is unsafe, call properties again. This will
   pick up any changes that are used in subsequent interceptors, such as
   the new version of the resource."
   [ctx]
   (let [resource (:resource ctx)]
-    (if (not (methods/safe? (:method-instance ctx)))
-      (d/chain
+    (if (not (methods/safe? (:method-wrapper ctx)))
+
+      (let [propsfn (get-in ctx [:handler :properties] (constantly {}))]
+        (d/chain
+
+         (propsfn ctx)                 ; propsfn can returned a deferred
+
+         (fn [props]
+           (assoc
+            ctx
+            :new-properties
+            (cond-> props
+              (:produces props)  ; representations shorthand is
+                                 ; expanded, is this necessary at this
+                                 ; stage?
+              (update-in [:produces]
+                         (comp rep/representation-seq rep/coerce-representations)))))))
+
+
+      ;; Old code to indicate how to do schema validation/coercion on properties
+      #_(d/chain
        (try
          (resource/properties-on-request resource ctx)
          (catch AbstractMethodError e {}))
@@ -559,7 +644,7 @@
   (if-let [version (or
                     (-> ctx :new-properties :version)
                     (-> ctx :properties :version))]
-    (let [etag (p/to-etag version (get-in ctx [:response :representation]))]
+    (let [etag (p/to-etag version (get-in ctx [:response :produces]))]
       (assoc-in ctx [:response :etag] etag))
     ctx))
 
@@ -598,14 +683,14 @@
                    ;; effect of this change.
                    (when (not= (:method ctx) :options)
                      (merge {}
-                            (when-let [x (get-in ctx [:response :representation :media-type])]
-                              (let [y (get-in ctx [:response :representation :charset])]
+                            (when-let [x (get-in ctx [:response :produces :media-type])]
+                              (let [y (get-in ctx [:response :produces :charset])]
                                 (if (and y (= (:type x) "text"))
                                   {"content-type" (mt/media-type->string (assoc-in x [:parameters "charset"] (charset/charset y)))}
                                   {"content-type" (mt/media-type->string x)})))
-                            (when-let [x (get-in ctx [:response :representation :encoding])]
+                            (when-let [x (get-in ctx [:response :produces :encoding])]
                               {"content-encoding" x})
-                            (when-let [x (get-in ctx [:response :representation :language])]
+                            (when-let [x (get-in ctx [:response :produces :language])]
                               {"content-language" x})
                             (when-let [x (get-in ctx [:response :last-modified])]
                               {"last-modified" x})
@@ -673,7 +758,7 @@
              (make-context (:properties handler))
              {:id id
               :method method
-              :method-instance (get (:known-methods handler) method)
+              :method-wrapper (get (:known-methods handler) method)
               :interceptor-chain interceptor-chain
               :handler handler
               :resource (:resource handler)
@@ -718,7 +803,7 @@
                                               (assoc-in [:response :body] b)
                                               (assoc-in [:response :headers "content-length"] (body/content-length b))))))
 
-                  rep (assoc-in [:response :representation] rep))
+                  rep (assoc-in [:response :produces] rep))
                 create-response))))))))
 
 (defrecord Handler []
@@ -726,6 +811,7 @@
   (invoke [this req]
     (handle-request this req))
 
+  ;; see new-custom-resource, want this for meta-yada, i.e. (-> x yada yada yada)
   #_p/Properties
   #_(properties
       [this]
@@ -776,39 +862,10 @@
    create-response
    ])
 
-(defn merge-schemas [m]
-  (let [p (:parameters m)]
-    (assoc m :methods
-           (reduce-kv
-            (fn [acc k v]
-              (assoc acc k (update v :parameters (fn [lp] (merge p lp)))))
-            {} (:methods m)))))
-
-(defn expand-shorthand
-  "Turns a resource into handler properties by expanding a
-  human-author-friendly short-forms."
-  [resource]
-  (->> resource
-       (postwalk
-        (fn [x]
-          (if (and (vector? x) (= (first x) :produces))
-            [:produces (-> (second x)
-                           rep/coerce-representations
-                           rep/representation-seq)]
-            x)))
-       (postwalk
-        (fn [x]
-          (if (and (vector? x) (= (first x) :consumes))
-            [:consumes (-> (second x)
-                           rep/coerce-representations
-                           rep/representation-seq)]
-            x)))
-       (merge-schemas)))
-
-(defn handler
+(defn yada
   "Create a Ring handler"
   ([resource]                   ; Single-arity form with default options
-   (yada.core/handler resource {}))
+   (yada resource {}))
 
   ([resource options]
    (let [base resource
@@ -817,20 +874,32 @@
                     (p/as-resource resource)
                     resource)
 
+         ;; Validate the resource structure, with coercion if
+         ;; necessary.
+         resource (ys/resource-coercer resource)
+         _ (assert (not (schema.utils/error? resource)) (pr-str resource))
+
          ;; This handler services a collection of resources
          ;; (TODO: this is ambiguous, what do we mean exactly?)
+         ;; See yada.resources.file-resource for an example.
          collection? (or (:collection? options)
                          (:collection? resource))
 
          known-methods (methods/known-methods)
 
+
          allowed-methods (let [methods (set
                                         (or (:allowed-methods options)
                                             (keys (:methods resource))))]
                            (cond-> methods
-                             (#{:get} methods) (conj :head)
+                             (some #{:get} methods) (conj :head)
                              true (conj :options)))
 
+         ;; The point of calculating the coercers here is that
+         ;; parameters are wholly static (if schema checking is desired,
+         ;; non-declarative (dynamic, runtime) implementations can do
+         ;; their own dynamical checking!). As such, we want to
+         ;; pre-calculate them here rather than on every request.
          #_parameter-coercers
          #_(->> (for [[method schemas] parameters]
                   [method
@@ -859,7 +928,11 @@
                                 ;; Default
                                 [{}])))
 
-         #_vary #_(rep/vary representations)
+         vary (when-let [produces (:produces resource)]
+                (infof "static produces is %s" (pr-str produces))
+                (rep/vary produces))
+
+         _ (infof "static vary is %s" vary)
 
          ]
 
@@ -868,6 +941,7 @@
                                                 :type (type resource)})))
 
      (map->Handler
+
       (merge {
               :id (or (:id options) (java.util.UUID/randomUUID))
 
@@ -881,16 +955,13 @@
               :interceptor-chain default-interceptor-chain
 
               ;;        :parameters parameters
-              ;;        :parameter-coercers parameter-coercers
               ;;        :representations representations
               ;;        :properties properties
-              ;;        :vary vary
+              :vary vary
 
               :collection? collection?
               }
 
-             (expand-shorthand resource)
+             resource
 
              )))))
-
-(def yada handler)

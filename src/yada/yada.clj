@@ -15,19 +15,19 @@
    [potemkin :refer (import-vars)]))
 
 (import-vars
- [yada.core yada handler]
+ [yada.core yada]
  [yada.swagger swaggered])
 
 ;; Convenience functions, allowing us to encapsulate the context
 ;; structure.
 (defn content-type [ctx]
-  (get-in ctx [:response :representation :media-type :name]))
+  (get-in ctx [:response :produces :media-type :name]))
 
 (defn charset [ctx]
-  (get-in ctx [:response :representation :charset :alias]))
+  (get-in ctx [:response :produces :charset :alias]))
 
 (defn language [ctx]
-  (get-in ctx [:response :representation :language]))
+  (get-in ctx [:response :produces :language]))
 
 (defn redirect-after-post
   "Return a response, modified with a 303 status and location

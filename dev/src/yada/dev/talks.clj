@@ -33,14 +33,14 @@
                      (new-directory-resource
                       (io/file "talks")
                       {:custom-suffices
-                       {"md" {:representations [{:media-type #{"text/html" "text/plain;q=0.9"}}]
+                       {"md" {:produces [{:media-type #{"text/html" #_"text/plain;q=0.9"}}]
                               :reader (fn [f rep]
                                         (cond
                                           (= (-> rep :media-type :name) "text/html")
                                           (str (md-to-html-string (slurp f)) \newline)
                                           :otherwise f)
                                         )}
-                        "org" {:representations [{:media-type "text/plain"}]}}
+                        "org" {:produces [{:media-type #{"text/plain"}}]}}
 
                        :index-files ["README.md"]
                        })

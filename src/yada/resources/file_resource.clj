@@ -13,66 +13,61 @@
    [schema.core :as s]
    [yada.charset :as charset]
    [yada.representation :as rep]
-   [yada.resource :refer [Representation RepresentationSets]]
+   [yada.resource :refer [Representation RepresentationSets new-custom-resource]]
    [yada.protocols :as p]
-   [yada.methods :refer (Get GET #_Put #_PUT Post POST #_Delete #_DELETE)]
    [yada.media-type :as mt])
   (:import [java.io File]
            [java.util Date TimeZone]
            [java.text SimpleDateFormat]
            [java.nio.charset Charset]))
 
-(s/defrecord FileResource [file :- File
-                           reader :- (s/maybe (s/=> s/Any File Representation))
-                           representations :- (s/maybe RepresentationSets)]
-  p/Properties
-  (properties [_]
-    {:allowed-methods #{:get}
+(defn respond-with-file [ctx file reader]
+  ;; The reason to use bs/transfer is to allow an efficient copy of byte buffers
+  ;; should the following be true:
 
-     ;; A representation can be given as a parameter, or deduced from
-     ;; the filename. The latter is unreliable, as it depends on file
-     ;; suffixes.
-     :representations (or representations
-                          [{:media-type (or (ext-mime-type (.getName file))
-                                            "application/octet-stream")}])})
+  ;; 1. The web server is aleph
+  ;; 2. Aleph has been started with the raw-stream? option set to true
 
-  (properties [_ ctx]
-    {:exists? (.exists file)
-     :last-modified (Date. (.lastModified file))
-     })
+  ;; In which case, byte-streams will efficiently copy the Java NIO
+  ;; byte buffers to the file without streaming.
 
-  Get
-  (GET [_ ctx]
-    ;; The reason to use bs/transfer is to allow an efficient copy of byte buffers
-    ;; should the following be true:
+  ;; However, if the body is a 'plain old' java.io.InputStream, the
+  ;; file will still be written In summary, the best of both worlds.
 
-    ;; 1. The web server is aleph
-    ;; 2. Aleph has been started with the raw-stream? option set to true
+  ;; The analog of this is the ability to return a java.io.File as the
+  ;; response body and have aleph efficiently stream it via NIO. This
+  ;; code allows the same efficiency for file uploads.
 
-    ;; In which case, byte-streams will efficiently copy the Java NIO
-    ;; byte buffers to the file without streaming.
+  ;; A non-nil reader can be applied to the file, to produce
+  ;; another file, string or other body content.
+  (assoc (:response ctx)
+         :body (if reader
+                 (reader file (-> ctx :response :produces))
+                 file)))
 
-    ;; However, if the body is a 'plain old' java.io.InputStream, the
-    ;; file will still be written In summary, the best of both worlds.
+(s/defn new-file-resource
+  [file :- File
+   {:keys [reader produces]}
+   :- {(s/optional-key :reader) (s/=> s/Any File Representation)
+       (s/optional-key :produces) RepresentationSets}]
 
-    ;; The analog of this is the ability to return a java.io.File as the
-    ;; response body and have aleph efficiently stream it via NIO. This
-    ;; code allows the same efficiency for file uploads.
+  (new-custom-resource
+   {::type :file
+    :description (format "File source of %s" file)
+    :properties (fn [ctx]
+                  {
+                   ;; A representation can be given as a parameter, or deduced from
+                   ;; the filename. The latter is unreliable, as it depends on file
+                   ;; suffixes.
+                   :produces (or produces
+                                 [{:media-type (or (ext-mime-type (.getName file))
+                                                   "application/octet-stream")}])
+                   :exists? (.exists file)
+                   :last-modified (Date. (.lastModified file))})
 
-    ;; A non-nil reader can be applied to the file, to produce
-    ;; another file, string or other body content.
-
-    (assoc (:response ctx)
-           :body (if reader
-                   (reader file (-> ctx :response :representation))
-                   file)))
-
-
-  #_Put ;; Commented during the move to pure-data
-  #_(PUT [_ ctx] (bs/transfer (-> ctx :request :body) file))
-
-  #_Delete ;; Commented during the move to pure-data
-  #_(DELETE [_ ctx] (.delete file)))
+    :methods {:get {:handler (fn [ctx] (respond-with-file ctx file reader))}
+              :put {:handler (fn [ctx] (bs/transfer (-> ctx :request :body) file))}
+              :delete {:handler (fn [ctx] (.delete file))}}}))
 
 (defn filename-ext
   "Returns the file extension of a filename or filepath."
@@ -127,9 +122,76 @@
   [dir ctx]
   {::file dir})
 
-(first (filter #{"README.md" "README.org" "index.html"} ["f" "index.html" "README.org"]))
+(s/defn new-directory-resource
+  [dir :- File
+   ;; A map between file suffices and extra args that will be used
+   ;; when constructing the FileResource. This enables certain files
+   ;; (e.g. markdown, org-mode) to be handled. The reader entry calls
+   ;; a function to return the body (arguments are the file and the
+   ;; negotiated representation)
+   {:keys [custom-suffices index-files]}
+   :- {(s/optional-key :custom-suffices)
+       {String                          ; suffix
+        {(s/optional-key :reader) (s/=> s/Any File Representation)
+         :produces RepresentationSets}}
+       (s/optional-key :index-files) [String]}]
 
-(s/defrecord DirectoryResource
+  (new-custom-resource
+   {:description (format "Directory listing of %s" dir)
+
+    ;; This tells the handler to match a route, even if there is some
+    ;; remaining path-info.
+    ;; TODO: Rename to 'path-info?' ?
+    :collection? true
+
+    :properties
+    (fn [ctx]
+      (infof "path-info is %s" (-> ctx :request :path-info))
+      (if-let [path-info (-> ctx :request :path-info)]
+        (let [f (io/file dir path-info)
+              suffix (filename-ext (.getName f))
+              custom-suffix-args (get custom-suffices suffix)]
+          (cond
+            (.isFile f)
+            {:exists? (.exists f)
+             :produces (if custom-suffix-args
+                         (:produces custom-suffix-args)
+                         [{:media-type (or (ext-mime-type (.getName f)) "application/octet-stream")}])
+             :last-modified (Date. (.lastModified f))
+             ::reader (some-> custom-suffix-args :reader)
+             ::file f}
+
+            (and (.isDirectory f) (.exists f))
+            (if-let [index-file (first (filter (set (seq (.list f))) index-files))]
+              (throw
+               (ex-info "Redirect"
+                        {:status 302
+                         :headers {"Location" (str (get-in ctx [:request :uri]) index-file)}}))
+              {:exists? true
+               :produces [{:media-type #{"text/html"
+                                         "text/plain;q=0.9"}}]
+               :last-modified (Date. (.lastModified f))
+               ::file f})
+
+            :otherwise
+            {:exists? false}))
+
+        {:exists? false}))
+
+    :methods
+    {:get
+     {:handler
+      (fn [ctx]
+        (infof "properties is %s" (:properties ctx))
+        (let [f (get-in ctx [:properties ::file])]
+          (assert f)
+          (cond
+            (.isFile f) (respond-with-file ctx f (get-in ctx [:properties ::reader]))
+            (.isDirectory f) (dir-index f
+                                        (-> ctx :response :produces :media-type)))))
+      :produces [{:media-type #{"text/plain"}}]}}}))
+
+#_(s/defrecord DirectoryResource
     [dir :- File
      ;; A map between file suffices and extra args that will be used
      ;; when constructing the FileResource. This enables certain files
@@ -140,48 +202,11 @@
                                   {:reader (s/=> s/Any File Representation)
                                    :representations RepresentationSets}})
      index-files :- (s/maybe [String])]
-
   p/Properties
   (properties
    [_]
    {:allowed-methods #{:get}
     :collection? true})
-
-  (properties
-   [_ ctx]
-   (if-let [path-info (-> ctx :request :path-info)]
-     (let [f (io/file dir path-info)
-           suffix (filename-ext (.getName f))
-           custom-suffix-args (get custom-suffices suffix)]
-       (cond
-         (and (.isFile f) custom-suffix-args)
-         (let [f (map->FileResource (merge custom-suffix-args {:file f}))]
-           (merge (p/properties f) {::file f}))
-
-         (.isFile f)
-         {:exists? (.exists f)
-          :representations [{:media-type (or (ext-mime-type (.getName f))
-                                             "application/octet-stream")}]
-          :last-modified (.lastModified f)
-          ::file f}
-
-         (and (.isDirectory f) (.exists f))
-         (if-let [index-file (first (filter (set (seq (.list f))) index-files))]
-           (throw
-            (ex-info "Redirect"
-                     {:status 302
-                      :headers {"Location" (str (get-in ctx [:request :uri] ) index-file)}})
-            )
-           {:exists? true
-            :representations [{:media-type #{"text/html" "text/plain;q=0.9"}}]
-            :last-modified (.lastModified f)
-            ::file f})
-
-         :otherwise
-         {:exists? false}))
-
-     {:exists? false}))
-
   Get
   (GET [this ctx]
        (let [f (get-in ctx [:properties ::file])]
@@ -193,12 +218,10 @@
            (dir-index f
                       (-> ctx :response :representation :media-type))))))
 
-(defn new-directory-resource [dir opts]
-  (map->DirectoryResource (merge opts {:dir dir})))
-
 (extend-protocol p/ResourceCoercion
   File
   (as-resource [f]
     (if (.isDirectory f)
-      (map->DirectoryResource {:dir f})
-      (map->FileResource {:file f}))))
+      (new-directory-resource f {})
+      (throw (ex-info "TODO: files" {}))
+      #_(new-file-resource f {}))))

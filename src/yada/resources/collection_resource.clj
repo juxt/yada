@@ -7,37 +7,31 @@
    [clj-time.coerce :refer (to-date)]
    [yada.charset :as charset]
    [yada.protocols :as p]
-   [yada.methods :refer [Get GET]])
-  (:import [clojure.lang APersistentMap]))
+   [yada.resource :refer [new-custom-resource]])
+  (:import [clojure.lang APersistentMap PersistentVector]))
 
-#_(defrecord MapResource [m last-modified]
-  p/Properties
-  (properties [_]
-    {:representations
-     [{:media-type
-       #{"application/edn" "application/json;q=0.9" "text/html;q=0.8"}
-       :charset charset/platform-charsets}]})
-  (properties [_ ctx]
-    {:last-modified last-modified})
-
-  Get
-  (GET [_ ctx] m))
-
-#_(extend-protocol p/ResourceCoercion
+(extend-protocol p/ResourceCoercion
   APersistentMap
   (as-resource [m]
-    (->MapResource m (to-date (now)))))
+    (let [last-modified (to-date (now))]
+      {:properties
+       (fn [ctx] {:last-modified last-modified})
+       :produces
+       [{:media-type #{"application/edn" "application/json;q=0.9" "text/html;q=0.8"}
+         :charset charset/platform-charsets}]
+       ;; TODO: Nice to only return m here, not a function, also, nice
+       ;; to be able to able to avoid :handler if nothing else.
+       :methods {:get {:handler (fn [ctx] m)}}
+       }))
 
-(extend-type clojure.lang.PersistentVector
-  p/Properties
-  (properties
-    ([_]
-     {:representations
-      [{:media-type
-        #{"application/edn" "application/json;q=0.9" "text/html;q=0.8"}
-        :charset charset/platform-charsets}]})
-    ([_ ctx] {}))
-
-
-  Get
-  (GET [this ctx] this))
+  PersistentVector
+  (as-resource [v]
+    (let [last-modified (to-date (now))]
+      {:properties
+       (fn [ctx] {:last-modified last-modified})
+       :produces
+       [{:media-type #{"application/edn" "application/json;q=0.9" "text/html;q=0.8"}
+         :charset charset/platform-charsets}]
+       ;; TODO: See TODO above.
+       :methods {:get {:handler (fn [ctx] v)}}
+       })))

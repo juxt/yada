@@ -16,10 +16,10 @@
    [ring.util.response :refer (redirect)]
    [schema.core :as s]
    [yada.charset :as charset]
-   [yada.methods :refer (Get GET)]
    [yada.media-type :as mt]
    [yada.protocols :as p]
-   [yada.core :as yada]
+   [yada.resource :refer [new-custom-resource]]
+   [yada.core :as yada :refer [yada]]
    [yada.util :refer (md5-hash)])
   (:import (clojure.lang PersistentVector Keyword)))
 
@@ -34,42 +34,42 @@
 (defn to-path [route]
   (let [path (->> route :path (map encode) (apply str))
         handler (-> route :handler)
-        {:keys [resource options allowed-methods parameters representations]} handler
+        {:keys [resource options allowed-methods parameters produces]} handler
         swagger (:swagger options)]
+
     [path
-     (merge-with merge
-                 (into {}
-                       (for [method allowed-methods
-                             :let [parameters (get parameters method)
-                                   representations (filter (fn [rep] (or (nil? (:method rep))
-                                                                        (contains? (:method rep) method))) representations)
-                                   produces (when (#{:get} method)
-                                              (distinct (map :name (map :media-type representations))))]]
-                         ;; Responses must be added in the static swagger section
-                         {method (merge (when produces {:produces produces})
-                                        {:parameters parameters})}))
-                 swagger)]))
+     (merge-with
+      merge
+      (into {}
+            (for [method allowed-methods
+                  :let [parameters (get parameters method)
+                        produces (distinct
+                                  (concat
+                                   (map :name (map :media-type produces))
+                                   (get-in handler [:methods method :produces])))]]
+              ;; Responses must be added in the static swagger section
+              {method (merge
+                       (when produces {:produces2 produces})
+                       {:parameters parameters})}))
+      swagger)]))
 
-(defrecord SwaggerSpec [spec created-at content-type]
-  p/Properties
-  (properties
-    [_]
-    {:representations
-     (case content-type
-       "application/json" [{:media-type #{"application/json"
-                                          "application/json;pretty=true"}
-                            :charset #{"UTF-8" "UTF-16;q=0.9" "UTF-32;q=0.9"}}]
-       "text/html" [{:media-type "text/html"
-                     :charset charset/platform-charsets}]
-       "application/edn" [{:media-type #{"application/edn"
-                                         "application/edn;pretty=true"}
-                           :charset #{"UTF-8"}}])})
-  (properties [_ ctx]
-     {:last-modified created-at
-      :version spec})
+(defn swagger-spec [spec created-at content-type]
+  (new-custom-resource
+   {:properties (fn [ctx] {:last-modified created-at
+                          :version spec}) ; TODO would be nice to use a
+                                        ; value rather than a lambda
+    :produces
+    (case content-type
+      "application/json" [{:media-type #{"application/json"
+                                         "application/json;pretty=true"}
+                           :charset #{"UTF-8" "UTF-16;q=0.9" "UTF-32;q=0.9"}}]
+      "text/html" [{:media-type "text/html"
+                    :charset charset/platform-charsets}]
+      "application/edn" [{:media-type #{"application/edn"
+                                        "application/edn;pretty=true"}
+                          :charset #{"UTF-8"}}])
 
-  Get
-  (GET [_ ctx] (rs/swagger-json spec)))
+    :methods {:get {:handler (fn [ctx] (rs/swagger-json spec))}}}))
 
 (defrecord Swaggered [spec route spec-handlers]
   Matched
@@ -116,4 +116,4 @@
         modified-date (to-date (now))]
     (->Swaggered spec route
                  (into {} (for [ct ["application/edn" "application/json" "text/html"]]
-                            [ct (yada/yada (->SwaggerSpec spec modified-date ct))])))))
+                            [ct (yada (swagger-spec spec modified-date ct))])))))

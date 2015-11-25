@@ -1,0 +1,168 @@
+#+EXPORT_EXCLUDE_TAGS:  noexport
+#+AUTHOR:               Thomas van der Veen
+#+TITLE:                Clojure and RESTful Web Services
+#+EMAIL:                @thomasvdv007
+#+LANGUAGE:             en
+#+OPTIONS:              toc:nil
+#+OPTIONS:              reveal_center:t reveal_progress:t reveal_history:t reveal_control:nil
+#+OPTIONS:              reveal_mathjax:nil reveal_rolling_links:nil reveal_keyboard:t reveal_overview:t num:nil
+#+OPTIONS:              width:1920 height:1080
+#+REVEAL_HLEVEL:        1
+#+REVEAL_MARGIN:        0.0
+#+REVEAL_MIN_SCALE:     1.0
+#+REVEAL_MAX_SCALE:     1.4
+#+REVEAL_THEME:         base
+#+REVEAL_TRANS:         fade
+#+REVEAL_SPEED:         fast
+#+REVEAL_ROOT:          static
+#+REVEAL_PLUGINS: (highlight markdown notes)
+#+REVEAL_EXTRA_CSS: static/css/extra.css
+
+** Acceptance Criteria
+
+- List all entries in the phone book
+- Create a new entry in the phone book
+- Remove an existing entry from the phone book
+- Update an existing entry in the phone book
+- Search for entries by surname
+- An entry has the following
+ - Surname
+ - First name
+ - Address (optional)
+
+** CRUD
+
+Create: POST
+
+Read: GET
+
+Update: PUT
+
+Delete: DELETE
+
+
+** Validating input using Prismatic Schema
+
+#+BEGIN_SRC clojure
+  (def schema
+    {:first-name s/Str
+     :surname s/Str
+     :phone-number s/Str
+     (s/optional-key :address)
+     {:place s/Str
+      :country s/Str}})
+#+END_SRC
+
+** Our main data-structure
+
+#+BEGIN_SRC clojure
+  (def phonebook
+    (atom
+     {:db
+      {"80a8ea00-…"
+       {:first-name "Thomas"
+        :surname "van der Veen"
+        :phone-number "0783312345"
+        :address {:street "High Street"
+                  :postcode "SO21 1QQ"}}
+       "38d77ce0-…"
+       {:first-name "Malcolm"
+        :surname "Sparks"
+        :phone-number "07123456"}}
+
+      :last-added "38d77ce0-…"}))
+#+END_SRC
+
+** Compojure Routes
+
+#+BEGIN_SRC clojure
+  (defroutes app-routes
+    (GET "/v1/phonebook" [] (get-phonebook))
+    (POST "/v1/phonebook" {body :body}
+          (add-user (slurp body)))
+    (PUT "/v1/phonebook/:id"
+         {body :body params :params}
+         (update-user (:id params)
+                      (slurp body)))
+    (DELETE "/v1/phonebook/:id" [id]
+            (delete-user id))
+    (GET "/v1/phonebook/search"
+         {params :params}
+         (search-users params))
+    (route/not-found "Not Found"))
+#+END_SRC
+
+** Adding a new entry
+
+#+BEGIN_SRC clojure
+  (defn atom-user-add [db data]
+    (let [new-uuid (.toString (UUID/randomUUID))
+          new-db (assoc-in db [:db new-uuid] data)]
+      (assoc-in new-db [:last-added] new-uuid)))
+
+  (defn add-user [data]
+    (let [parsed-data (edn/read-string data)]
+      (if-let [error (s/check schema parsed-data)]
+        {:status 400
+         :body (str "malformd request:\n" error)}
+        (do
+          (let [{id :last-added}
+                (swap! phonebook-db atom-user-add parsed-data)]
+            {:status 201 :body (pr-str id)})))))
+#+END_SRC
+
+** Getting the entries
+
+#+BEGIN_SRC clojure
+  (defn get-phonebook []
+    (let [data (pr-str (:db @phonebook-db))]
+      (-> (r/response data)
+          (r/content-type
+           "application/edn"))))
+#+END_SRC
+
+** Updating an entry
+
+#+BEGIN_SRC clojure
+  (defn update-user [id data]
+    (let [parsed-data (edn/read-string data)]
+      (if (contains? (:db @phonebook-db) id)
+        (do
+          (if-let [error (s/check schema parsed-data)]
+            {:status 400
+             :body (str "malformed request\n" error)}
+            (do
+              (swap! phonebook-db assoc-in [:db id]
+                     parsed-data)
+              {:status 200})))
+        {:status 404 :body (str id " does not exist\n")})))
+#+END_SRC
+
+** Deleting an entry
+
+#+BEGIN_SRC clojure
+  (defn delete-user [id]
+    (if (contains? (:db @phonebook-db) id)
+      (do (swap! phonebook-db update-in
+                 [:db] dissoc id)
+          {:status 200})
+      {:status 404 :body
+       (str id " does not exist\n")}))
+#+END_SRC
+
+** Searching for an entry
+
+#+BEGIN_SRC clojure
+  (defn search-users [params]
+    (let [surname (:surname params)
+          filtered (into {}
+                         (filter
+                          #(= surname (:surname (second %)))
+                          (:db @phonebook-db)))]
+      (-> (r/response (pr-str filtered))
+          (r/content-type "application/edn"))))
+#+END_SRC
+
+** References
+
+- https://github.com/thomas-shares/phonebook

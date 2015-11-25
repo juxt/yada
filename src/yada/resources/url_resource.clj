@@ -4,7 +4,6 @@
   (:require
    [yada.charset :as charset]
    [yada.protocols :as p]
-   [yada.methods :refer (Get)]
    [yada.util :refer [as-file]]
    [ring.util.mime-type :refer (ext-mime-type)])
   (:import [java.net URL]

@@ -12,10 +12,3 @@
 
 (defn to-string [s]
   (bs/convert s String))
-
-
-#_(s/take! (to-manifold-stream (java.io.ByteArrayInputStream. (.getBytes "Hello World!"))))
-
-#_(s/stream->seq (to-manifold-stream (java.io.ByteArrayInputStream. (.getBytes "Hello World!"))))
-
-#_(s/stream->seq (to-manifold-stream (java.io.ByteArrayInputStream. (.getBytes "Hello World!"))) 100)

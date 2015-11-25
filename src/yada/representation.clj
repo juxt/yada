@@ -5,7 +5,7 @@
    [clojure.java.io :as io]
    [clojure.string :as str]
    [clojure.tools.logging :refer :all]
-
+   [clojure.tools.trace :refer [deftrace]]
    [schema.core :as s]
    [yada.coerce :refer (to-set to-list)]
    [yada.charset :as charset]
@@ -299,7 +299,7 @@
               (best-by (comp rater :qualities)))]
      (-> best (dissoc :qualities)))))
 
-;; TODO: Might be able to remove tihs, because yada.resource now does
+;; TODO: Might be able to remove this, because yada.resource now does
 ;; automatic coercions. However, still some requirement for checking bad
 ;; charsets, which could be moved into yada.resource now.
 (defn coerce-representations

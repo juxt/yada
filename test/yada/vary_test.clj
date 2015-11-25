@@ -33,7 +33,7 @@
 
 (st/deftest vary-header-test []
   (let [resource "Hello World!"
-        handler (yada resource {:media-type #{"text/plain" "text/html"}})
+        handler (yada resource #_{:produces [{:media-type #{"text/plain" "text/html"}}]})
         request (request :head "/")
         response @(handler request)]
     (given response

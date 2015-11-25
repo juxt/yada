@@ -6,7 +6,6 @@
    [yada.test.util :refer (to-string)]
    [juxt.iota :refer [given]]
    [yada.yada :refer [yada]]
-   [yada.methods :refer [Get]]
    [yada.protocols :as p]
    [ring.mock.request :refer [request header]]))
 
@@ -21,10 +20,9 @@
   )
 
 (defrecord SecureResource [user password]
+  p/ResourceCoercion
+  (as-resource [_] {:methods {:get (fn [ctx] "Hello Friend!")}}))
 
-  Get
-  (GET [_ ctx] "Hello Friend!")
-  )
 
 #_(deftest authorization-test []
   (testing "Secure resource"
@@ -35,8 +33,6 @@
       (given response
         :status := 401
         [:body to-string] := "Hello Friend!"))))
-
-
 
 ;; If the resource is secured, yet open, check we can call OPTIONS
 ;; without requiring an Authorization header

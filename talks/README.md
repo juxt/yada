@@ -4,7 +4,8 @@ Here are various yada-based talks
 
 * [SkillsMatter 2015](skillsmatter-reagent.html)
 * [ClojuTRE 2015](clojutre-2015.html)
-* [Skills Matter Clojure eXchange 2015](clojurex-2015.html)
+* [Skills Matter Clojure eXchange 2015 - Thomas van der Veen](clojurex-2015-thomas.html)
+* [Skills Matter Clojure eXchange 2015 - Malcolm Sparks](clojurex-2015-malcolm.html)
 
 ## Building
 

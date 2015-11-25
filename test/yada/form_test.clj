@@ -9,9 +9,7 @@
    [ring.util.codec :as codec]
    [schema.core :as s]
    [yada.yada :as yada :refer [yada]]
-   [yada.resource :refer [new-custom-resource]]
-   [yada.util :refer [to-manifold-stream]]
-   ))
+   [yada.resource :refer [new-custom-resource]]))
 
 (deftest post-test
   (let [handler (yada
@@ -28,14 +26,8 @@
         [:body bs/to-string edn/read-string] := {}))
 
     ;; Form post body
-    (let [response (handler (-> (mock/request :post "/"
-                                              {"foo" "bar"})
-                                ;; TODO: If we don't convert to a
-                                ;; manifold stream the test hangs, find
-                                ;; out why this is and cope with it
-                                ;; better.
-                                (update :body to-manifold-stream)
-                                ))]
+    (let [response (handler (mock/request :post "/"
+                                          {"foo" "bar"}))]
       @response
       (given @response
         :status := 200

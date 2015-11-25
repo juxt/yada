@@ -4,11 +4,13 @@
   (:require
    [bidi.bidi :refer [RouteProvider]]
    [clojure.core.async :refer (chan go <! >! timeout go-loop)]
+   [clojure.tools.logging :refer :all]
    [com.stuartsierra.component :refer [Lifecycle]]
    [schema.core :as s]
    [yada.dev.config :as config]
    [yada.swagger :refer [swaggered]]
-   [yada.yada :as yada :refer [yada]]))
+   [yada.yada :as yada :refer [yada]]
+   yada.resources.sse))
 
 (defn hello []
   (yada "Hello World!\n" {:error-handler identity}))
@@ -69,22 +71,27 @@
 
   RouteProvider
   (routes [_]
-    [""
-     [["/hello" (hello)]
-      ["/hello-atom" (hello-atom)]
+          (try
+            [""
+             [["/hello" (hello)]
+              ["/hello-atom" (hello-atom)]
 
-      ;; Swagger
-      ["/hello-api" (hello-api)]
-      ["/hello-atom-api" (hello-atom-api)]
+              ;; Swagger
+              ["/hello-api" (hello-api)]
+              ["/hello-atom-api" (hello-atom-api)]
 
-      ;; Realtime
-      ["/hello-sse" (hello-sse channel)]
+              ;; Realtime
+              ["/hello-sse" (hello-sse channel)]
 
-      ;; Remote access
-      ["/hello-different-origin/1" (hello-different-origin-1 config)]
-      ["/hello-different-origin/2" (hello-different-origin-2 config)]
-      ["/hello-different-origin/3" (hello-different-origin-3 config)]
-      ]]))
+              ;; Remote access
+              ["/hello-different-origin/1" (hello-different-origin-1 config)]
+              ["/hello-different-origin/2" (hello-different-origin-2 config)]
+              ["/hello-different-origin/3" (hello-different-origin-3 config)]
+              ]]
+            (catch Exception e
+              (errorf e "Getting exception on hello routes")
+              ["" false]
+              ))))
 
 (defn new-hello-world-example [config]
   (map->HelloWorldExample {:config config}))

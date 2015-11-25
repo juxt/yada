@@ -342,11 +342,3 @@ body {
 .reveal section.bigity pre code {
   font-size: 150%;
   line-height: 150%; }
-
-/* JUXT logo */
-body:after {
-  content: url(../../assets/pres.png);
-  width: 10 !important;
-  position: fixed;
-  bottom: 1.5em;
-  left: 1.5em; }

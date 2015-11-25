@@ -2,17 +2,17 @@
 
 (ns yada.dev.user-api
   (:require
-   [bidi.bidi :refer (RouteProvider tag)]
-   [bidi.ring :refer (make-handler)]
-   [cheshire.core :refer (decode)]
+   [bidi.bidi :refer [RouteProvider tag]]
+   [bidi.ring :refer [make-handler]]
+   [cheshire.core :refer [decode]]
    [clojure.tools.logging :refer :all]
-   [com.stuartsierra.component :refer (Lifecycle)]
-   [ring.mock.request :refer (request)]
+   [com.stuartsierra.component :refer [Lifecycle]]
+   [ring.mock.request :refer [request]]
    [schema.core :as s]
    [yada.charset :as charset]
    [yada.protocols :as p]
-   [yada.swagger :refer (swaggered)]
-   [yada.yada :as yada]))
+   [yada.swagger :refer [swaggered]]
+   [yada.yada :as yada :refer [yada]]))
 
 (defrecord VerboseUserApi []
   Lifecycle
@@ -35,7 +35,7 @@
         :basePath "/api"}
        ["" {"/users"
             {""
-             (yada/yada
+             (yada
               (:users db)
               {:swagger {:get {:summary "Get users"
                                :description "Get a list of all known users"}}})

@@ -130,7 +130,7 @@
 
 ;; Stream coercers
 
-(defn to-manifold-stream [in]
+#_(defn to-manifold-stream [in]
   (let [s (s/stream 100)]
     (doseq [b (bs/to-byte-buffers in)]
       (s/put! s b))

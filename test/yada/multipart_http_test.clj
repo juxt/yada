@@ -30,9 +30,6 @@
      (char 13) (char 10)
      (apply str (repeat n (apply str (map char (range (int \A) (inc (int \Z)))))))))))
 
-
-(ms/take! (ms/->source (create-body 20000)))
-
 (defn new-system
   "Define a minimal system which is just enough for the tests in this
   namespace to run"
@@ -53,8 +50,9 @@
 
 (deftest system-sanity-test
   (given *system*
-    [:phonebook :api routes] :!? nil?
-    [:phonebook :api routes] :- RoutePair))
+         [:phonebook :api routes] :!? nil?
+         [:phonebook :api routes] :- RoutePair
+    ))
 
 (deftest get-test
   (given @(http/put "http://localhost:9015/phonebook/2" {:body (create-body 4)})

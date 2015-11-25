@@ -160,7 +160,6 @@
 (extend-protocol ETag
   Object
   (to-etag [o rep]
-    (str (hash {:value o
-                :representation rep})))
+    (str (hash {:value o :representation rep})))
   nil
   (to-etag [o rep] nil))

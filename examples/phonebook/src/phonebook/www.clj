@@ -18,13 +18,14 @@
 (defn new-index-resource [db *routes]
   (new-custom-resource
    {:description "Phonebook index"
+    :produces [{:media-type
+                #{"text/html" "application/edn;q=0.9" "application/json;q=0.8"}
+                :charset "UTF-8"}]
     :methods
     {:get {:parameters {:query {(s/optional-key :q) String}}
-           :produces [{:media-type
-                       #{"text/html" "application/edn;q=0.9" "application/json;q=0.8"}
-                       :charset "UTF-8"}]
            :handler (fn [ctx]
                       (let [q (get-in ctx [:parameters :query :q])
+                            _ (infof "q is %s" q)
                             entries (if q
                                       (db/search-entries db q)
                                       (db/get-entries db))]
@@ -34,11 +35,9 @@
 
      :post {:parameters {:form {:surname String :firstname String :phone String}}
             :consumes [{:media-type
-                        #{"multipart/form-data"
-                          "application/x-www-form-urlencoded"
-                          "application/json"
-                          "application/edn"}
+                        #{"application/x-www-form-urlencoded"}
                         :charset "UTF-8"}]
+
             :handler (fn [ctx]
                        (let [id (db/add-entry db (get-in ctx [:parameters :form]))]
                          (yada/redirect-after-post
@@ -48,18 +47,17 @@
   (new-custom-resource
    {:description "Phonebook entry"
     :parameters {:path {:entry Long}}
+    :produces
+    [{:media-type #{"text/html"
+                    "application/edn;q=0.9"
+                    "application/json;q=0.8"}
+      :charset "UTF-8"}]
     :methods
     {:get
-     {:produces
-      [{:media-type #{"text/html"
-                      "application/edn;q=0.9"
-                      "application/json;q=0.8"}
-        :charset "UTF-8"}]
-      :handler
+     {:handler
       (fn [ctx]
         (let [id (get-in ctx [:parameters :path :entry])
               {:keys [firstname surname phone] :as entry} (db/get-entry db id)]
-          (infof "Phonebook entry is %s" entry)
           (when entry
             (case (yada/content-type ctx)
               "text/html"
@@ -75,15 +73,12 @@
               :firstname String
               :phone String}}
       :consumes
-      [{:media-type #{"multipart/form-data"
-                      "application/x-www-form-urlencoded"
-                      "application/json"
-                      "application/edn"}}]
+      [{:media-type #{"multipart/form-data"}}]
       :handler
       (fn [ctx]
         (let [entry (get-in ctx [:parameters :path :entry])
-              body (get-in ctx [:parameters :body])]
-          (db/update-entry db entry body)))}
+              form (get-in ctx [:parameters :form])]
+          (db/update-entry db entry form)))}
 
      :delete
      {:handler
