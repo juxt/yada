@@ -725,6 +725,7 @@
                     (:headers data) (assoc-in [:response :headers] (:headers data))
                     (not (:body data)) (assoc-in [:response :body]
                                                  (body/to-body (body/render-error status e rep ctx) rep))
+                    (:body data)  (assoc-in [:response :body] (body/to-body (:body data) rep))
 
                     rep (assoc-in [:response :representation] rep))
                   create-response))
