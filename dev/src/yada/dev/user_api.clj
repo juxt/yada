@@ -35,30 +35,31 @@
         :basePath "/api"}
        ["" {"/users"
             {""
-             (yada
-              (:users db)
-              {:swagger {:get {:summary "Get users"
-                               :description "Get a list of all known users"}}})
+             (merge (yada (:users db))
+                    {:swagger {:get {:summary "Get users"
+                                     :description "Get a list of all known users"}}})
 
              ["/" :username]
              {"" (yada/yada
-                  (fn [ctx]
-                    (when-let [user (get (:users db)
-                                         (-> ctx :parameters :username))]
-                      {:user user}))
-                  {:swagger {:get {:summary "Get user"
-                                   :description "Get the details of a known user"
-                                   :responses {200 {:description "Known user"}
-                                               404 {:description "Unknown user"}}}}
-                   :parameters {:get {:path {:username s/Str}}}
-                   :produces [{:media-type
-                               #{"application/edn" "application/json;q=0.9" "text/html;q=0.8"}
-                               :charset charset/platform-charsets}]})
+                  {:methods
+                   {:get {:summary "Get user"
+                          :description "Get the details of a known user"
+                          :parameters {:path {:username s/Str}}
+                          :produces [{:media-type
+                                      #{"application/edn" "application/json;q=0.9" "text/html;q=0.8"}
+                                      :charset charset/platform-charsets}]
+                          :handler (fn [ctx]
+                                     (when-let [user (get (:users db)
+                                                          (-> ctx :parameters :username))]
+                                       {:user user}))
+                          :responses {200 {:description "Known user"}
+                                      404 {:description "Unknown user"}}}}
+                   
+                   })
 
               "/posts" (yada/yada
-                        (fn [ctx] nil)
                         {:swagger {:post {:summary "Create a new post"}}
-                         :methods [:post] })}}}])
+                         :methods {:post (fn [ctx] nil)}})}}}])
       ;; TODO: Might be able to unresolve-handler on yada's Endpoint and
       ;; not have to tag like this, that would be nice!
       (tag ::user-api))]))

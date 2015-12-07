@@ -117,7 +117,7 @@
           (swagger-ui-components)
           (http-server-components config)
           (hello-world-components config)
-          (error-components)
+          ;;(error-components) ; Uncomment when we reinstate custom error handling
           (cors-demo-components config)
           (talks-components config)
           (phonebook-components config)
@@ -137,7 +137,7 @@
 
    :docsite-router [:swagger-ui
                     :hello-world
-                    :error-example
+                    ;;:error-example
                     :user-api
                     :user-manual
                     :docsite

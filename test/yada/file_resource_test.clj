@@ -66,8 +66,7 @@
       (io/delete-file f)
       (is (not (exists? f)))
 
-      (let [options {:allowed-methods #{:get :head :put :delete}}
-            newstate {:username "alice" :name "Alice"}]
+      (let [newstate {:username "alice" :name "Alice"}]
 
         ;; A PUT request arrives on a new URL, containing a
         ;; representation which is parsed into the following model :-
@@ -75,46 +74,49 @@
                   (merge (request :put "/" )
                          {:headers {"x-yada-debug" "true"}}
                          {:body (ByteArrayInputStream. (.getBytes (pr-str newstate)))}))]
-
           ;; If this resource didn't allow the PUT method, we'd get a 405.
-          (let [handler (yada f (update-in options [:allowed-methods] disj :put))]
+          (let [handler (yada (update (yada/as-resource f) :methods dissoc :put))]
             (given @(handler (make-put))
-              :status := 405))
+                   :status := 405))
 
           ;; The resource allows a PUT, the server
           ;; should create the resource with the given content and
           ;; receive a 201.
 
-          (let [handler (yada f options)]
+          (let [handler (yada f)]
             (given @(handler (make-put))
-              :status := 201
-              :body :? nil?))
+                   :status := 201
+                   :body :? nil?))
 
           (is (= (edn/read-string (slurp f)) newstate)
               "The file content after the PUT was not the same as that
                 in the request")
 
-          (let [handler (yada f options)]
+          
+          (infof "Here")
+          
+          (let [handler (yada f)]
             (given @(handler (request :get "/"))
-              :status := 200
-              [:headers "content-type"] := "application/edn"
-              [:body slurp edn/read-string] := newstate)
+                   :status := 200
+                   [:headers "content-type"] := "application/edn"
+                   [:body slurp edn/read-string] := newstate
+                   )
 
             ;; Update the resource, since it already exists, we get a 204
             ;; TODO Check spec, is this the correct status code?
 
             (given @(handler (make-put))
-              :status := 204)
+                   :status := 204)
 
             (is (exists? f))
 
             (given @(handler (request :delete "/"))
-              :status := 204)
+                     :status := 204)
 
             (is (not (exists? f)))
 
             (given @(handler (request :get "/"))
-              :status := 404))
+                     :status := 404))
 
           (is (not (.exists f)) "File should have been deleted by the DELETE"))))))
 
@@ -126,3 +128,4 @@
     (is (nil? resp))
     (clojure.pprint/pprint (to-string (:body resp)))
     (is (nil? (to-string (:body resp))))))
+

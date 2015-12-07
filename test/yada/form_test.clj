@@ -11,11 +11,13 @@
    [yada.yada :as yada :refer [yada]]
    [yada.resource :refer [new-custom-resource]]))
 
+
 (deftest post-test
   (let [handler (yada
                  (new-custom-resource
                   {:methods
-                   {:post {:parameters {:form {(s/required-key "foo") s/Str}}
+                   {:post {:parameters {:form {:foo s/Str}}
+                           :consumes "application/x-www-form-urlencoded"
                            :handler (fn [ctx]
                                       (pr-str (:parameters ctx)))}}}))]
 
@@ -23,7 +25,7 @@
     (let [response (handler (mock/request :post "/"))]
       (given @response
         :status := 200
-        [:body bs/to-string edn/read-string] := {}))
+        [:body edn/read-string] := {}))
 
     ;; Form post body
     (let [response (handler (mock/request :post "/"
@@ -31,27 +33,30 @@
       @response
       (given @response
         :status := 200
-        [:body bs/to-string edn/read-string] := {:form {"foo" "bar"}}))))
+        [:body edn/read-string] := {:form {:foo "bar"}}
+        ))))
+
+;; Need to test where strings are used rather than keywords
 
 (deftest post-test-with-query-params
   (let [handler (yada
                  (new-custom-resource
-                  {:method {:post {:parameters {:query {(s/required-key "foo") s/Str}
-                                                :form {(s/required-key "bar") s/Str}}
-                                   :handler (fn [ctx] (pr-str (:parameters ctx)))}}}))]
+                  {:methods
+                   {:post {:parameters {:query {:foo s/Str}
+                                        :form {:bar s/Str}}
+                           :consumes "application/x-www-form-urlencoded"
+                           :handler (fn [ctx] (pr-str (:parameters ctx)))}}}))]
 
     ;; Nil post body
     (let [response (handler (mock/request :post "/?foo=123"))]
       (given @response
         :status := 200
-        [:body bs/to-string edn/read-string] := {"foo" "123"
-                                                 :query {"foo" "123"}}))
+        [:body edn/read-string] := {:query {:foo "123"}}))
 
     ;; Form post body
     (let [response (handler (mock/request :post "/?foo=123"
                                           {"bar" "456"}))]
       (given @response
         :status := 200
-        [:body bs/to-string edn/read-string] := {"foo" "123" "bar" "456"
-                                                 :query {"foo" "123"}
-                                                 :form {"bar" "456"}}))))
+        [:body edn/read-string] := {:query {:foo "123"}
+                                    :form {:bar "456"}}))))

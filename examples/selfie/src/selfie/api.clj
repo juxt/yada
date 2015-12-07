@@ -22,9 +22,7 @@
                                       {:request (:request ctx)})))}}})
 
 (defn api []
-  ["" [["/selfie" (yada (selfie-index-resource)
-                        {:body-consumer nil}
-                        )]]])
+  ["" [["/selfie" (yada (selfie-index-resource))]]])
 
 (s/defrecord ApiComponent []
   RouteProvider

@@ -27,13 +27,12 @@
     (vary
      (representation-seq (coerce-representations [{:media-type #{"text/plain" "text/html"}
                                                    :charset #{"UTF-8" "Latin-1"}}])))
-    identity := #{:media-type :charset})
-
-  )
+    identity := #{:media-type :charset}))
 
 (st/deftest vary-header-test []
   (let [resource "Hello World!"
-        handler (yada resource #_{:produces [{:media-type #{"text/plain" "text/html"}}]})
+        handler (yada (merge (yada/as-resource resource)
+                             {:produces #{"text/plain" "text/html"}}))
         request (request :head "/")
         response @(handler request)]
     (given response

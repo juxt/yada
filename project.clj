@@ -76,7 +76,7 @@
           [ring-mock "0.1.5"]
 
           [aero "0.1.2"]
-          [juxt/iota "0.2.2"]
+          [juxt/iota "0.2.3"]
 
           [juxt.modular/aleph "0.1.3" :exclusions [manifold aleph]]
           [aleph "0.4.1-beta2"]

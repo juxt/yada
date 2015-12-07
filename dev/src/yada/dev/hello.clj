@@ -13,10 +13,10 @@
    yada.resources.sse))
 
 (defn hello []
-  (yada "Hello World!\n" {:error-handler identity}))
+  (yada "Hello World!\n" #_{:error-handler identity}))
 
 (defn hello-atom []
-  (yada (atom "Hello World!\n") {:error-handler identity}))
+  (yada (atom "Hello World!\n") #_{:error-handler identity}))
 
 (defn hello-api []
   (swaggered {:info {:title "Hello World!"
@@ -44,19 +44,19 @@
 (defn hello-different-origin-1 [config]
   ;; TODO: Replace with {:error-handler nil} and have implementation
   ;; check with contains? for key
-  (yada "Hello World!\n" {:error-handler identity
+  (yada "Hello World!\n" #_{:error-handler identity
                           :access-control {:allow-origin (config/cors-demo-origin config)
                                            :allow-headers #{"authorization"}}
                           :representations [{:media-type "text/plain"}]}))
 
 (defn hello-different-origin-2 [config]
-  (yada "Hello World!\n" {:error-handler identity
+  (yada "Hello World!\n" #_{:error-handler identity
                           :access-control {:allow-origin true ; only show incoming origin
                                            :allow-credentials true}
                           :representations [{:media-type "text/plain"}]}))
 
 (defn hello-different-origin-3 [config]
-  (yada "Hello World!\n" {:error-handler identity
+  (yada "Hello World!\n" #_{:error-handler identity
                           :access-control {:allow-origin "*"
                                            :allow-credentials true}
                           :representations [{:media-type "text/plain"}]}))

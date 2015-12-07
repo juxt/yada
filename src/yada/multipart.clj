@@ -599,8 +599,8 @@
           (s/reduce
            reduce-piece
            {:consumer part-consumer :state {}}))
-     (fn [{:keys [parts] :as body}]
 
+     (fn [{:keys [parts] :as body}]
        ;; Regardless of parameter schemas, we use the
        ;; Content-Disposition header to produce a map between fields and
        ;; content.  There is no obligation for the part consumer to
@@ -609,7 +609,6 @@
 
        ;; As we're multipart/form-data, let's make use of the expected
        ;; Content-Disposition headers.
-
        (let [schemas (get-in ctx [:handler :methods (:method ctx) :parameters])
              fields
              (reduce
@@ -617,8 +616,6 @@
                               (= (:type part) :part)
                               (assoc (get-in part [:content-disposition :params "name"]) part)))
               {} parts)]
-
-         (infof "fields is %s" fields)
 
          (cond
            ;; In Swagger 2.0 you can't have both form and body

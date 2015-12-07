@@ -16,7 +16,9 @@
 
 (import-vars
  [yada.core yada]
- [yada.swagger swaggered])
+ [yada.swagger swaggered]
+ [yada.protocols as-resource])
+
 
 ;; Convenience functions, allowing us to encapsulate the context
 ;; structure.

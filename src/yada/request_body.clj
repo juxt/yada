@@ -4,26 +4,35 @@
   (:require
    [byte-streams :as bs]
    [clojure.tools.logging :refer :all]
-   [ring.swagger.schema :as rs]
    [manifold.deferred :as d]
-   [ring.util.request :as req]
    [manifold.stream :as s]
+   [ring.swagger.coerce :as rsc]
+   [ring.swagger.schema :as rs]
+   [ring.util.request :as req]
+   [ring.util.codec :as codec]
+   [schema.coerce :as sc]
+   [schema.utils :refer [error?]]
+   [yada.coerce :as coerce]
    [yada.media-type :as mt]))
 
 (def application_octet-stream
   (mt/string->media-type "application/octet-stream"))
 
 (defmulti process-request-body
+  "Process the request body, filling out and coercing any parameters
+  identified in the context."
   (fn [ctx body-stream content-type & args]
-    (:name content-type)))
+    content-type))
 
-;; We return 418 if there's a content-type which we don't
+;; See rfc7231#section-3.1.1.5 - we should assume application/octet-stream
+
+;; We return 415 if there's a content-type which we don't
 ;; recognise. Using the multimethods :default method is a way of
-;; returning a 418 even if the resource declares that it consumes an
+;; returning a 415 even if the resource declares that it consumes an
 ;; (unsupported) media type.
 (defmethod process-request-body :default
   [ctx body-stream media-type & args]
-  (d/error-deferred (ex-info "Unsupported Media Type" {:status 418})))
+  (d/error-deferred (ex-info "Unsupported Media Type" {:status 415})))
 
 ;; A nil (or missing) Content-Type header is treated as
 ;; application/octet-stream.
@@ -47,26 +56,48 @@
      (infof ":default acc is %s" acc)))
   ctx)
 
-(defn read-body-to-string [request]
-  (d/chain
-   (s/reduce (fn [acc buf] (conj acc buf)) [] (:body request))
-   (fn [bufs]
-     (bs/to-byte-array (seq bufs)))
-
-   #_(s/connect (yada.util/to-manifold-stream (:body request)) (java.io.ByteArrayOutputStream.))
-   #_(fn [x]
-     (bs/transfer (seq x) String))
-   #_(s/reduce (fn [acc buf] (conj acc buf)) [] (:body request))
-   #_(fn [bufs]
-     (bs/to-byte-array bufs)
-     #_(apply bs/to-string (seq bufs)
-            (if-let [cs (req/character-encoding request)]
-              [{:encoding cs}]
-              [])))))
-
 (defmethod process-request-body "application/x-www-form-urlencoded"
   [ctx body-stream media-type & args]
-  (throw (ex-info "TODO: check body against parameters" {:body (read-body-to-string (:request ctx))})))
+  
+  (let [body-string (bs/to-string body-stream)
+        ;; Form and body schemas have to been done at the method level
+        ;; - TODO: Build this contraint in yada.schema.
+        schemas (get-in ctx [:handler :methods (:method ctx) :parameters])]
+    
+    (cond
+      ;; In Swagger 2.0 you can't have both form and body
+      ;; parameters, which seems reasonable
+      (or (:form schemas) (:body schemas))
+      (let [fields (codec/form-decode
+                    body-string
+                    (req/character-encoding (:request ctx)))
+
+            coercer (sc/coercer
+                     (or (:form schemas) (:body schemas))
+                     (fn [schema]
+                       (or
+                        (coerce/+parameter-key-coercions+ schema)
+                        ((rsc/coercer :json) schema))))
+
+            params (coercer fields)]
+
+        (if-not (error? params)
+          (assoc-in ctx [:parameters (if (:form schemas) :form :body)] params)
+          (d/error-deferred (ex-info "Bad form fields"
+                                     {:status 400 :error params}))))
+
+      :otherwise (assoc ctx :body body-string))))
+
+;; Looking for multipart/form-data? Its defmethod can be found in
+;; yada.multipart.
+
+(defmethod process-request-body "text/plain"
+  [ctx body-stream media-type & args]
+  (let [body-string (bs/to-string body-stream)]
+    (-> ctx
+        ;; TODO: Only if body parameter, and now coerce too!
+        (assoc-in [:parameters :body] body-string)
+        (assoc-in [:body] body-string))))
 
 ;; Deprecated?
 

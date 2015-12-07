@@ -30,21 +30,24 @@
             ["" [["/talks/"
                   (s/with-fn-validation
                     (yada
-                     (new-directory-resource
-                      (io/file "talks")
-                      {:custom-suffices
-                       {"md" {:produces [{:media-type #{"text/html" #_"text/plain;q=0.9"}}]
-                              :reader (fn [f rep]
-                                        (cond
-                                          (= (-> rep :media-type :name) "text/html")
-                                          (str (md-to-html-string (slurp f)) \newline)
-                                          :otherwise f)
-                                        )}
-                        "org" {:produces [{:media-type #{"text/plain"}}]}}
+                     (merge
+                      (new-directory-resource
+                       (io/file "talks")
+                       {:custom-suffices
+                        {"md" {:produces [{:media-type #{"text/html" #_"text/plain;q=0.9"}}]
+                               :reader (fn [f rep]
+                                         (cond
+                                           (= (-> rep :media-type :name) "text/html")
+                                           (str (md-to-html-string (slurp f)) \newline)
+                                           :otherwise f)
+                                         )}
+                         "org" {:produces [{:media-type #{"text/plain"}}]}}
 
-                       :index-files ["README.md"]
-                       })
-                     {:id ::index}))]
+                        :index-files ["README.md"]
+                        })
+                      {:id ::index}
+                      )
+                     ))]
                  ["/hello" (-> "Hello World!" yada)]
                  ["/hello-meta" (-> "Hello World!" yada yada)]
                  ["/hello-atom-meta" (-> "Hello World!" atom yada yada)]
@@ -60,3 +63,4 @@
 (defn new-talks [config]
   (-> (map->Talks {:config config})
       (co-using [:router])))
+

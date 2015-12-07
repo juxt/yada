@@ -8,7 +8,7 @@
             [ring.mock.request :as mock]
             [yada.core :refer [yada]]
             )
-  (:import [java.io BufferedReader]))
+  (:import [java.io BufferedInputStream]))
 
 ;; Test a single Java resource. Note that this isn't a particularly useful
 ;; resource, because it contains no knowledge of when it was modified,
@@ -24,6 +24,8 @@
       identity :? some?
       :status := 200
       [:headers "content-type"] := "text/css;charset=utf-8"
+      ;; TODO: This is wrong, I think we MUST have a content-length
+      ;; with every response payload, or use transfer encoding.
       [:headers "content-length"] :? nil?
-      :body :instanceof BufferedReader
+      :body :instanceof BufferedInputStream
       )))

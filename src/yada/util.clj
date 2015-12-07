@@ -125,8 +125,8 @@
 
 ;; Useful functions
 
-(defn remove-nil-vals [m]
-  (reduce-kv (fn [acc k v] (if v (assoc acc k v) acc)) {} m))
+(defn remove-empty-vals [m]
+  (reduce-kv (fn [acc k v] (if (not-empty v) (assoc acc k v) acc)) {} m))
 
 ;; Stream coercers
 

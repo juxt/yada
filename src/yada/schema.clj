@@ -1,17 +1,54 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(ns yada.schema
+(ns ^{:doc
+      "This namespace provides the coercions to transform a wide
+variety of shorthand descriptions of a resource into a canonical
+resource map. This allows the rest of the yada code-base to remain
+agnostic to the syntax of shorthand forms, which significantly
+simplifies coding while giving the author of yada resources the
+convenience of terse, expressive short-hand descriptions."}
+    yada.schema
   (:require
    [clojure.walk :refer [postwalk]]
    [yada.media-type :as mt]
    [schema.core :as s]
    [schema.coerce :as sc]
+   [schema.utils :refer [error?]]
    [yada.charset :refer [to-charset-map]])
   (:import
    [yada.charset CharsetMap]
    [yada.media_type MediaTypeMap]))
 
-(s/defschema Context {})
+(s/defschema NamespacedKeyword
+  (s/constrained s/Keyword namespace))
+
+(defprotocol SetCoercion
+  (as-set [_] ""))
+
+(extend-protocol SetCoercion
+  clojure.lang.APersistentSet
+  (as-set [s] s)
+  Object
+  (as-set [s] #{s}))
+
+(defprotocol VectorCoercion
+  (as-vector [_] ""))
+
+(extend-protocol VectorCoercion
+  clojure.lang.PersistentVector
+  (as-vector [v] v)
+  Object
+  (as-vector [o] [o]))
+
+(s/defschema ResourceParameters
+  {(s/optional-key :parameters)
+   {(s/optional-key :query) s/Any
+    (s/optional-key :path) s/Any
+    (s/optional-key :cookie) s/Any
+    (s/optional-key :header) s/Any
+    }})
+
+(def ParametersMappings {})
 
 (s/defschema Representation
   (s/constrained
@@ -47,26 +84,8 @@
 (defprotocol MediaTypeCoercion
   (as-media-type [_] ""))
 
-(defprotocol SetCoercion
-  (as-set [_] ""))
-
-(defprotocol VectorCoercion
-  (as-vector [_] ""))
-
 (defprotocol RepresentationSetCoercion
   (as-representation-set [_] ""))
-
-(extend-protocol SetCoercion
-  clojure.lang.APersistentSet
-  (as-set [s] s)
-  Object
-  (as-set [s] #{s}))
-
-(extend-protocol VectorCoercion
-  clojure.lang.PersistentVector
-  (as-vector [v] v)
-  Object
-  (as-vector [o] [o]))
 
 (extend-protocol MediaTypeCoercion
   MediaTypeMap
@@ -94,7 +113,13 @@
   (sc/coercer [RepresentationSet] RepresentationSetMappings))
 
 (def RepresentationSeqMappings
-  {[Representation] (comp representation-seq representation-set-coercer)})
+  ;; If representation-set-coercer is an error, don't proceed with the
+  ;; representation-set-coercer
+  {[Representation] (fn [x]
+                      (let [s (representation-set-coercer x)]
+                        (if (error? s)
+                          s
+                          (representation-seq s))))})
 
 (def representation-seq-coercer
   (sc/coercer [Representation] RepresentationSeqMappings))
@@ -112,28 +137,68 @@
   clojure.lang.Fn
   (as-fn [f] f)
   Object
-  (as-fn [o] (constantly o)))
+  (as-fn [o] (constantly o))
+  nil
+  (as-fn [_] (constantly nil)))
+
+(s/defschema Context {})
 
 (s/defschema HandlerFunction
   (s/=> s/Any Context))
 
-(s/defschema PropertiesResult
+(s/defschema Handler
+  {:handler HandlerFunction})
+
+(s/defschema StaticProperties
   {(s/optional-key :last-modified) s/Inst
-   (s/optional-key :version) s/Any})
+   (s/optional-key :version) s/Any
+   (s/optional-key :exists?) s/Bool})
+
+(s/defschema PropertiesResult
+  (merge StaticProperties
+         Produces))
 
 (s/defschema PropertiesHandlerFunction
   (s/=> PropertiesResult Context))
 
 (s/defschema Properties
-  {(s/optional-key :properties) PropertiesHandlerFunction})
+  {(s/optional-key :properties) (s/conditional
+                                 fn? PropertiesHandlerFunction
+                                 (comp not fn?) StaticProperties)})
+
+(def PropertiesMappings {})
+
+(def PropertiesResultMappings (merge RepresentationSeqMappings))
+
+(def properties-result-coercer (sc/coercer PropertiesResult PropertiesResultMappings))
+
+(def Documentation
+  {(s/optional-key :summary) String
+   (s/optional-key :description) String})
+
+(def MethodDocumentation
+  (merge Documentation
+         {(s/optional-key :responses) {s/Int {:description String}}}))
+
+(s/defschema MethodParameters
+  (merge-with
+   merge
+   ResourceParameters               ; Method params can override these
+   {(s/optional-key :parameters)
+    {(s/optional-key :form) s/Any
+     (s/optional-key :body) s/Any}}))
 
 (s/defschema Method
-  (merge {:handler HandlerFunction}
+  (merge Handler
+         MethodParameters
          Produces
-         Consumes))
+         Consumes
+         MethodDocumentation
+         {NamespacedKeyword s/Any}))
 
 (s/defschema Methods
-  {:methods {s/Keyword Method}})
+  {(s/optional-key :methods) ; nil, for example, has no methods.
+   {s/Keyword Method}})
 
 (defprotocol MethodCoercion
   (as-method-map [_] "Coerce to Method"))
@@ -146,21 +211,31 @@
                       :produces "text/plain"})
   Object
   (as-method-map [o] {:handler o
-                      :produces "application/octet-stream"}))
+                      :produces "application/octet-stream"})
+  nil
+  (as-method-map [o] {:handler nil}))
 
 (def MethodsMappings
   (merge {Method as-method-map
           HandlerFunction as-fn}
          RepresentationSeqMappings))
 
+(def ResourceDocumentation (merge Documentation))
+
 (def Resource
-  (merge Properties
+  (merge {(s/optional-key :collection?) Boolean
+          (s/optional-key :exists?) Boolean
+          (s/optional-key :id) s/Any}
+         Properties
+         ResourceParameters
          Produces
          Consumes
-         Methods))
+         Methods
+         ResourceDocumentation
+         {NamespacedKeyword s/Any}))
 
 (def ResourceMappings
-  (merge {PropertiesHandlerFunction as-fn}
+  (merge PropertiesMappings
          RepresentationSeqMappings
          MethodsMappings))
 

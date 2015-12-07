@@ -7,10 +7,11 @@
   (:refer-clojure :exclude [partial])
   (:require
    [clojure.tools.logging :refer :all]
-   [yada.core :refer (yada make-context)]
+   [yada.handler :refer [make-context]]
+   [yada.core :refer [yada]]
    [bidi.bidi :refer (Matched resolve-handler unresolve-handler succeed)]
    [bidi.ring :refer (Ring request)])
-  (:import [yada.core Handler]))
+  (:import [yada.handler Handler]))
 
 (def k-bidi-match-context :bidi/match-context)
 

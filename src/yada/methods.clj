@@ -137,6 +137,7 @@
   (idempotent? [_] true)
   (request [this ctx]
 
+    (infof "GetMethod, exists? %s" (ctx/exists? ctx))
     (->
      (d/chain
 

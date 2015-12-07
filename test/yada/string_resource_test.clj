@@ -12,6 +12,8 @@
    [ring.util.time :refer (format-date)]
    [yada.yada :as yada :refer [yada]]))
 
+(yada/as-resource "Hello World")
+
 (deftest string-test
   (testing "Producing a Java string implies utf-8 charset"
     ;; Yada should make life easy for developers. If the developer does not
@@ -24,17 +26,18 @@
     (let [resource "Hello World"
           handler
           (yada
-           resource
-           {:representations [{:media-type #{"text/plain"}
-                               ;; TODO: See comment above, this
-                               ;; should not be necessary, somehow
-                               ;; the charset should default to
-                               ;; UTF-8 on strings, not sure how.
-                               :charset #{"UTF-8"}}]})
+           (merge
+            (yada/as-resource resource)
+            {:produces {:media-type #{"text/plain"}
+                        ;; TODO: See comment above, this
+                        ;; should not be necessary, somehow
+                        ;; the charset should default to
+                        ;; UTF-8 on strings, not sure how.
+                        :charset #{"UTF-8"}}}))
           request (request :get "/")
           response @(handler request)]
       (given response
-        [:headers "content-type"] := "text/plain;charset=utf-8"))
+             [:headers "content-type"] := "text/plain;charset=utf-8"))
 
     ;; TODO: If strings are used, then an explicit charset provided in
     ;; the :produces entry should be honored and used when writing the
@@ -60,28 +63,28 @@
         :body :? (partial instance? java.nio.ByteBuffer))))
 
   (testing "if-last-modified"
-    (time/do-at (time/minus (time/now) (time/days 6))
-      (let [resource "Hello World!"
-            handler (yada resource)]
+    ;; We set the time to yesterday, to avoid producing dates in the future
+    (time/do-at (time/minus (time/now) (time/days 1))
 
-        (time/do-at (time/minus (time/now) (time/days 3))
+                (let [resource "Hello World!"
+                      handler (yada resource)]
 
-          (let [request (request :get "/")
-                response @(handler request)]
+                  (let [request (assoc (request :get "/") :id 1)
+                        response @(handler request)]
 
-            (given response
-              :status := 200
-              :headers :> {"content-length" (count "Hello World!")}
-              :body :? (partial instance? java.nio.ByteBuffer))))
+                    ;; First request gets a 200
+                    (given response
+                           :status := 200
+                           :headers :> {"content-length" (count "Hello World!")}
+                           :body :? (partial instance? java.nio.ByteBuffer)))
 
-        (time/do-at (time/minus (time/now) (time/days 2))
+                  
+                  (let [request (merge-with merge (request :get "/")
+                                            {:headers {"if-modified-since" (format-date (to-date (time/plus (time/now) (time/hours 1))))}})
+                        response @(handler request)]
 
-          (let [request (merge-with merge (request :get "/")
-                                    {:headers {"if-modified-since" (format-date (to-date (time/minus (time/now) (time/days 2))))}})
-                response @(handler request)]
-
-            (given response
-              :status := 304))))))
+                    (given response
+                           :status := 304)))))
 
   (testing "safe-by-default"
     (let [resource "Hello World!"
@@ -101,3 +104,4 @@
         (given @(handler (request :put "/"))
           :status := 200
           ))))
+

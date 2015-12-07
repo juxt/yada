@@ -7,6 +7,8 @@
    [clojure.pprint :refer [pprint]]
    [ring.mock.request :as mock]
    [clojure.java.io :as io]
+   [clj-time.core :as time]
+   [clj-time.coerce :refer [to-date]]
    [ring.util.time :refer (parse-date format-date)]
    [yada.representation :as rep]
    [juxt.iota :refer (given)]
@@ -15,15 +17,20 @@
 
 ;; Collections can be resources too, we should test them
 
+(defn yesterday []
+  (time/minus (time/now) (time/days 1)))
+
 (deftest map-resource-test
   (testing "map"
-    (let [handler (yada {:name "Frank"})
+    (let [handler (time/do-at (yesterday) (yada {:name "Frank"}))
           request (mock/request :get "/")
           response @(handler request)
           last-modified (some-> response :headers (get "last-modified") parse-date)]
 
       (is last-modified)
       (is (instance? java.util.Date last-modified))
+
+      (infof "last-modified is %s"  last-modified)
 
       (given response
         :status := 200
@@ -32,7 +39,7 @@
         :body :instanceof java.nio.HeapByteBuffer)
 
       (let [request (merge (mock/request :get "/")
-                           {:headers {"if-modified-since" (format-date last-modified)}})
+                           {:headers {"if-modified-since" (format-date (to-date (time/now)))}})
             response @(handler request)]
         (given response
           :status := 304)))))

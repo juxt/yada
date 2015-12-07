@@ -10,7 +10,7 @@
    [hiccup.core :refer [html]]
    [selfie.api :refer [new-api-component]]
    [schema.core :as s]
-   [yada.yada :refer [yada]]))
+   [yada.yada :as yada]))
 
 (defn describe-routes
   "An example of the kind of thing you can do when your routes are data"
@@ -21,29 +21,27 @@
      :handler handler}))
 
 (defn index-page [api port]
-  (yada
-   (html
-    [:div
-     [:h1 "Selfie"]
-     (for [{:keys [path description handler]} (describe-routes api)]
-       [:div
-        [:h2 path]
-        [:p description]
-        (for [method (:allowed-methods handler)
-              :let [meth (str/upper-case (str (name method)))]]
-          [:div
-           [:h3 meth]
-           [:pre (format "curl -i -X %s http://localhost:%d%s" meth port path)]])])])
-
-   {:representations [{:media-type "text/html"
-                       ;; TODO: Forget this charset and we get an
-                       ;; error thrown, find out why!
-                       :charset "UTF-8"}]}))
+  (yada/yada
+   (merge
+    (yada/as-resource
+     (html
+      [:div
+       [:h1 "Selfie"]
+       (for [{:keys [path description handler]} (describe-routes api)]
+         [:div
+          [:h2 path]
+          [:p description]
+          (for [method (:allowed-methods handler)
+                :let [meth (str/upper-case (str (name method)))]]
+            [:div
+             [:h3 meth]
+             [:pre (format "curl -i -X %s http://localhost:%d%s" meth port path)]])])]))
+    {:produces "text/html"})))
 
 (defn create-routes [api port]
   ["" [["/" (index-page api port)]
        (bidi/routes api)
-       [true (yada nil)]]])
+       [true (yada/yada nil)]]])
 
 (defrecord ServerComponent [api port]
   Lifecycle
@@ -77,3 +75,4 @@
 (s/defn new-selfie-app [config :- {:port UserPort}]
   (-> (new-system-map config)
       (system-using (new-dependency-map))))
+

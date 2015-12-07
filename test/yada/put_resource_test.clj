@@ -35,7 +35,8 @@
         ;; Or rather, why does it have a content-type at all, given
         ;; there is no body?
         :headers :⊃ {"content-type" "text/plain;charset=utf-8"}
-        :body := nil)
+        :body := nil
+        )
 
       (is (= @resource "Chelsea"))
 

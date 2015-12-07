@@ -220,13 +220,12 @@
               ;; case. But it works OK for the "Hello World!" example. But
               ;; perhaps the use of 'fetch functions' is a placeholder for
               ;; a better design.
-              (yada (new-template-resource
-                     "templates/page.html"
-                     (delay (body component
-                             (post-process-doc component xbody)
-                             replacements)))
-
-                    {:id ::user-manual})))]]]]])))
+              (yada (-> (new-template-resource
+                         "templates/page.html"
+                         (delay (body component
+                                      (post-process-doc component xbody)
+                                      replacements)))
+                        (assoc :id ::user-manual)))))]]]]])))
 
 (defmethod clojure.core/print-method UserManual
   [o ^java.io.Writer writer]

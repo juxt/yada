@@ -10,8 +10,9 @@
 
 (deftest head-test []
   (let [resource "Hello World!"
-        handler (yada resource {:media-type "text/plain"
-                                :charset "UTF-8"})
+        handler (yada (merge (yada/as-resource resource)
+                             {:produces {:media-type "text/plain"
+                                         :charset "UTF-8"}}))
         request (request :head "/")
         response @(handler request)]
     (given response

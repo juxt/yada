@@ -47,18 +47,20 @@
   (new-custom-resource
    {:description "Phonebook entry"
     :parameters {:path {:entry Long}}
-    :produces
-    [{:media-type #{"text/html"
-                    "application/edn;q=0.9"
-                    "application/json;q=0.8"}
-      :charset "UTF-8"}]
+    :produces [{:media-type #{"text/html"
+                              "application/edn;q=0.9"
+                              "application/json;q=0.8"}
+                :charset "UTF-8"}]
     :methods
     {:get
      {:handler
       (fn [ctx]
+        
         (let [id (get-in ctx [:parameters :path :entry])
+              _ (infof "id is %s, type is %s" id (type id))
               {:keys [firstname surname phone] :as entry} (db/get-entry db id)]
           (when entry
+            (infof "entry found")
             (case (yada/content-type ctx)
               "text/html"
               (html/entry-html
@@ -73,7 +75,8 @@
               :firstname String
               :phone String}}
       :consumes
-      [{:media-type #{"multipart/form-data"}}]
+      [{:media-type #{"multipart/form-data"
+                      "application/x-www-form-urlencoded"}}]
       :handler
       (fn [ctx]
         (let [entry (get-in ctx [:parameters :path :entry])

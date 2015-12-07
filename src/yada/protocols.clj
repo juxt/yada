@@ -18,15 +18,8 @@
   Last-Modified-Date."))
 
 (extend-protocol ResourceCoercion
-  clojure.lang.Fn
-  (as-resource [f] {})
-
-  Object
-  (as-resource [o] {})
-
   nil
-  (as-resource [_] {:exists? false
-                    :methods {:get {}}}))
+  (as-resource [_] {:exists? false}))
 
 (defprotocol Properties
   (properties [_] [_ ctx] "If the semantics of the method are

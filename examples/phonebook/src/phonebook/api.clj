@@ -14,9 +14,11 @@
    [yada.yada :refer [yada]]))
 
 (defn api [db *routes]
-  ["/phonebook" {"" (yada (new-index-resource db *routes) {:id ::index})
-                 ["/" :entry] (yada (new-entry-resource db *routes)
-                                    {:id ::entry})}])
+  ["/phonebook"
+   {"" (yada (merge (new-index-resource db *routes)
+                    {:id ::index}))
+    ["/" :entry] (yada (merge (new-entry-resource db *routes)
+                              {:id ::entry}))}])
 
 (s/defrecord ApiComponent [db *server]
   RouteProvider

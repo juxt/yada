@@ -51,10 +51,9 @@
 (deftest system-sanity-test
   (given *system*
          [:phonebook :api routes] :!? nil?
-         [:phonebook :api routes] :- RoutePair
-    ))
+         [:phonebook :api routes] :- RoutePair))
 
-(deftest get-test
+#_(deftest put-test
   (given @(http/put "http://localhost:9015/phonebook/2" {:body (create-body 4)})
     :status := 204
     :body :!= nil

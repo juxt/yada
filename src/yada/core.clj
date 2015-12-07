@@ -23,16 +23,16 @@
    [yada.body :as body]
    [yada.charset :as charset]
    [yada.coerce :as coerce]
+   [yada.handler :refer [new-handler create-response]]
    [yada.journal :as journal]
    [yada.methods :as methods]
+   [yada.media-type :as mt]
    [yada.representation :as rep]
    [yada.protocols :as p]
-   [yada.response :refer [->Response]]
    [yada.resource :as resource]
    [yada.request-body :as rb]
    [yada.schema :as ys]
    [yada.service :as service]
-   [yada.media-type :as mt]
    [yada.util :as util])
   (:import [java.util Date]))
 
@@ -47,38 +47,6 @@
               (assoc acc k (update v :parameters (fn [lp] (merge p lp)))))
             {} (get m :methods {})))))
 
-;; TODO: We are expanding shorthands using schema, but we must now
-;; consider whether it is possible to use schema to also enact the
-;; representation-seq on the result, or to do this 'manually'.
-
-(defn expand-shorthands
-  "Turns a resource into handler properties by expanding a
-  human-author-friendly short-forms."
-  ;; TODO: When structure is more stable, use coercions to achieve this
-  ;; rather than postwalk. This has the benefit of being more formally
-  ;; defined.
-  [resource]
-  (->> resource
-       (postwalk
-        (fn [x]
-          (if (and (vector? x) (= (first x) :produces))
-            [:produces (-> (second x)
-                           rep/coerce-representations
-                           rep/representation-seq)]
-            x)))
-       (postwalk
-        (fn [x]
-          (if (and (vector? x) (= (first x) :consumes))
-            [:consumes (-> (second x)
-                           rep/coerce-representations
-                           rep/representation-seq)]
-            x)))
-       (merge-schemas)))
-
-(defn make-context [properties]
-  {:properties properties
-   :response (->Response)})
-
 ;; TODO: Read and understand the date algo presented in RFC7232 2.2.1
 
 (def realms-xf
@@ -89,12 +57,25 @@
 (defn available?
   "Is the service available?"
   [ctx]
-  (let [res (service/service-available? (-> ctx :handler :options :service-available?) ctx)]
+  (let [res (service/service-available? (-> ctx :handler :service-available?) ctx)]
     (if-not (service/interpret-service-available res)
       (d/error-deferred
        (ex-info "" (merge {:status 503}
                           (when-let [retry-after (service/retry-after res)] {:headers {"retry-after" retry-after}}))))
       ctx)))
+
+(defn exists?
+  "Does this resource exist? Can we tell without calling properties?
+  For example, this is to allow resources to declare they don't
+  actually exist, e.g. the nil resource. The value of the exists?
+  entry must be explicitly false not just falsey (nil)."
+  [ctx]
+  (infof "interceptor: exists?")
+  (if (false? (get-in ctx [:handler :exists?]))
+    (do
+      (infof "Oh no!! 404")
+      (d/error-deferred (ex-info "" {:status 404})))
+    ctx))
 
 (defn known-method?
   [ctx]
@@ -104,7 +85,7 @@
 
 (defn uri-too-long?
   [ctx]
-  (if (service/request-uri-too-long? (-> ctx :options :request-uri-too-long?) (-> ctx :request :uri))
+  (if (service/request-uri-too-long? (-> ctx :request-uri-too-long?) (-> ctx :request :uri))
     (d/error-deferred (ex-info "" {:status 414}))
     ctx))
 
@@ -130,13 +111,28 @@
 
     ctx))
 
+(defn merge-parameters
+  "Merge parameters such that method parameters override resource
+  parameters, and that parameter schemas (except for the single body
+  parameter) are combined with merge."
+  [resource-params method-params]
+  (merge
+   (apply merge-with merge (map #(dissoc % :body) [resource-params method-params]))
+   (select-keys resource-params [:body])
+   (select-keys method-params [:body])))
+
 (defn parse-parameters
   "Parse request and coerce parameters."
   [ctx]
+  (infof "Parse parameters")
   (let [method (:method ctx)
         request (:request ctx)
 
-        schemas (get-in ctx [:handler :methods method :parameters])
+        schemas (merge-parameters (get-in ctx [:handler :parameters])
+                                  (get-in ctx [:handler :methods method :parameters]))
+
+        ;; TODO: Creating coercers on every request is unnecessary and
+        ;; expensive, should pre-compute them.
 
         parameters {:path (if-let [schema (:path schemas)]
                             (rs/coerce schema (:route-params request) :query)
@@ -149,54 +145,21 @@
                                                           (rsc/coercer :query)
                                                           ))]
                                  (coercer qp))
-                               qp
-                               ))}
+                               qp))
+                    
+                    #_:header #_(when-let [schema (get-in parameters [method :header])]
+                                  (let [params (-> request :headers)]
+                                    (rs/coerce (assoc schema String String) params :query)))
+                    }
 
 
-
-        #_parameters #_(-> ctx :handler :parameters)
-
-        #_parameters
-        #_(when parameters
-            {:path
-             (when-let [schema (get-in parameters [method :path])]
-               (rs/coerce schema (:route-params request) :query))
-
-             :query
-             (when-let [coercer (get-in coercers [method :query])]
-               ;; We'll call assoc-query-params with the negotiated charset, falling back to UTF-8.
-               ;; Also, read this:
-               ;; http://www.w3.org/TR/html5/forms.html#application/x-www-form-urlencoded-encoding-algorithm
-
-               (coercer
-                (-> request (assoc-query-params (or (:charset ctx) "UTF-8")) :query-params)))
-
-             #_:form
-             #_(cond
-                 (and (req/urlencoded-form? request) (get-in coercers [method :form]))
-                 (when-let [coercer (get-in coercers [method :form])]
-                   (coercer (ring.util.codec/form-decode (read-body (-> ctx :request))
-                                                         (req/character-encoding request)))))
-
-             #_:body
-             #_(when-let [schema (get-in parameters [method :body])]
-                 (let [body (read-body (-> ctx :request))]
-                   (body/coerce-request-body
-                    body
-                    ;; See rfc7231#section-3.1.1.5 - we should assume application/octet-stream
-                    (or (req/content-type request) "application/octet-stream")
-                    schema)))
-
-             :header
-             (when-let [schema (get-in parameters [method :header])]
-               (let [params (-> request :headers)]
-                 (rs/coerce (assoc schema String String) params :query)))})]
+        ]
 
     (let [errors (filter (comp schema.utils/error? second) parameters)]
       (if (not-empty errors)
         (d/error-deferred (ex-info "" {:status 400
                                        :errors errors}))
-        (assoc ctx :parameters (util/remove-nil-vals parameters))))))
+        (assoc ctx :parameters (util/remove-empty-vals parameters))))))
 
 (defn safe-read-content-length [req]
   (let [len (get-in req [:headers "content-length"])]
@@ -205,6 +168,22 @@
         (Long/parseLong len)
         (catch Exception e
           (throw (ex-info "Malformed Content-Length" {:value len})))))))
+
+(defn get-properties
+  [ctx]
+  (infof "Get properties")
+  (let [props (get-in ctx [:handler :properties] {})
+        props (if (fn? props) (props ctx) props)]
+    (d/chain
+     props                           ; propsfn can returned a deferred
+     (fn [props]
+       (let [props (ys/properties-result-coercer props)]
+         (if-not (schema.utils/error? props)
+           (cond-> (assoc ctx :properties props)
+             (:produces props) (assoc-in [:response :vary] (rep/vary (:produces props))))
+           (d/error-deferred
+            (ex-info "Properties malformed" {:status 500
+                                             :error (:error props)}))))))))
 
 (defn process-request-body
   "Process the request body, if necessary. RFC 7230 section 3.3 states
@@ -219,16 +198,28 @@
   [{:keys [request] :as ctx}]
   (if (-> request :headers (filter #{"content-length" "transfer-encoding"}) not-empty)
     (let [content-type (mt/string->media-type (get-in request [:headers "content-type"]))
-          content-length (safe-read-content-length request)]
+          content-length (safe-read-content-length request)
 
-      ;; TODO: Check if we consume...
-      (infof "content-type is %s" (:name content-type))
-      (infof "content-length is %s" content-length)
+          _ (infof "or: %s"
+                   (pr-str (or (get-in ctx [:properties :consumes])
+                               (concat (get-in ctx [:handler :methods (:method ctx) :consumes])
+                                       (get-in ctx [:handler :consumes])))))
+          
+          consumes-mt (set (map (comp :name :media-type)
+                                (or (get-in ctx [:properties :consumes])
+                                    (concat (get-in ctx [:handler :methods (:method ctx) :consumes])
+                                            (get-in ctx [:handler :consumes])))))]
 
-      (cond-> ctx
-        ;; TODO: Check options to see if we have a maximum requested entity size, default is no.
-        (and content-length (pos? content-length))
-        (rb/process-request-body (stream/map bs/to-byte-array (:body request)) content-type)))
+      (if-not (contains? consumes-mt (:name content-type))
+        (d/error-deferred
+         (ex-info "Unsupported Media Type"
+                  {:status 415
+                   :message "Method does not declare that it consumes this content-type"
+                   :consumes consumes-mt
+                   :content-type content-type}))
+        (if (and content-length (pos? content-length))
+          (rb/process-request-body ctx (stream/map bs/to-byte-array (bs/to-byte-buffers (:body request))) (:name content-type))
+          ctx)))
 
     ;; else
     ctx))
@@ -401,28 +392,8 @@
            (fn [parts]
              (assoc ctx :body parts))))
 
-
-
         ;; Otherwise
         ctx)))
-
-(defn- update-produces [props ])
-
-(defn get-properties
-  [ctx]
-  (let [propsfn (get-in ctx [:handler :properties] (constantly {}))]
-    (d/chain
-     (propsfn ctx)                     ; propsfn can returned a deferred
-     (fn [props]
-       (let [props (expand-shorthands props)]
-         (cond-> (assoc ctx :properties props)
-           (:produces props) (assoc-in [:response :vary] (rep/vary (:produces props))))))
-     (fn [ctx]
-       (infof "Result from get-properties is %s" (:properties ctx))
-       ctx
-       )
-     )))
-
 
 #_(defn authentication
   "Authentication"
@@ -457,6 +428,9 @@
   ;; TODO: Need metadata to say whether the :produces property 'replaces'
   ;; or 'augments' the static produces declaration. Currently only
   ;; 'replaces' is supported.
+  
+  (infof "Select rep")
+
   (let [produces (or (get-in ctx [:properties :produces])
                      (concat (get-in ctx [:handler :methods (:method ctx) :produces])
                              (get-in ctx [:handler :produces])))
@@ -468,15 +442,13 @@
 
 ;; Conditional requests - last modified time
 (defn check-modification-time [ctx]
-  (if-let [last-modified
-           (or
-            (-> ctx :options :last-modified)
-            (-> ctx :properties :last-modified))]
+  (if-let [last-modified (-> ctx :properties :last-modified)]
 
     (if-let [if-modified-since
              (some-> (:request ctx)
                      (get-in [:headers "if-modified-since"])
                      ring.util.time/parse-date)]
+
       (if (<=
            (.getTime last-modified)
            (.getTime if-modified-since))
@@ -568,6 +540,8 @@
 (defn invoke-method
   "Methods"
   [ctx]
+  (infof "Invoke method")
+
   (methods/request (:method-wrapper ctx) ctx))
 
 
@@ -584,6 +558,7 @@
           (:produces props) ; representations shorthand is expanded
           (update-in [:produces]
                      (comp rep/representation-seq rep/coerce-representations)))))))
+
 (defn get-new-properties
   "If the method is unsafe, call properties again. This will
   pick up any changes that are used in subsequent interceptors, such as
@@ -649,10 +624,10 @@
     ctx))
 
 (defn access-control-headers [ctx]
-  (let [allow-origin (get-in ctx [:options :access-control :allow-origin])
+  (let [allow-origin (get-in ctx [:access-control :allow-origin])
         interpreted-allow-origin (when allow-origin (service/allow-origin allow-origin ctx))
-        expose-headers (get-in ctx [:options :access-control :expose-headers])
-        allow-headers (get-in ctx [:options :access-control :allow-headers])]
+        expose-headers (get-in ctx [:access-control :expose-headers])
+        allow-headers (get-in ctx [:access-control :allow-headers])]
 
     (cond-> ctx
       interpreted-allow-origin
@@ -668,50 +643,7 @@
                 (apply str
                        (interpose ", " allow-headers))))))
 
-;; Response
-(defn create-response
-  [ctx]
-  (let [response
-        {:status (or (get-in ctx [:response :status])
-                     (service/status (-> ctx :handler :options :status) ctx)
-                     200)
-         :headers (merge
-                   (get-in ctx [:response :headers])
-                   ;; TODO: The context and its response
-                   ;; map must be documented so users are
-                   ;; clear what they can change and the
-                   ;; effect of this change.
-                   (when (not= (:method ctx) :options)
-                     (merge {}
-                            (when-let [x (get-in ctx [:response :produces :media-type])]
-                              (let [y (get-in ctx [:response :produces :charset])]
-                                (if (and y (= (:type x) "text"))
-                                  {"content-type" (mt/media-type->string (assoc-in x [:parameters "charset"] (charset/charset y)))}
-                                  {"content-type" (mt/media-type->string x)})))
-                            (when-let [x (get-in ctx [:response :produces :encoding])]
-                              {"content-encoding" x})
-                            (when-let [x (get-in ctx [:response :produces :language])]
-                              {"content-language" x})
-                            (when-let [x (get-in ctx [:response :last-modified])]
-                              {"last-modified" x})
-                            (when-let [x (get-in ctx [:response :vary])]
-                              (when (not-empty x)
-                                {"vary" (rep/to-vary-header x)}))
-                            (when-let [x (get-in ctx [:response :etag])]
-                              {"etag" x})))
-                   (when-let [x (get-in ctx [:response :content-length])]
-                     {"content-length" x})
 
-                   #_(when true
-                       {"access-control-allow-origin" "*"})
-
-                   ;; TODO: Resources can add headers via their methods
-                   (service/headers (-> ctx :handler :options :headers) ctx))
-
-         ;; TODO :status and :headers should be implemented like this in all cases
-         :body (get-in ctx [:response :body])}]
-    (debugf "Returning response: %s" (dissoc response :body))
-    response))
 
 (defn wrap-journaling [journal-entry]
   (fn [interceptor]
@@ -731,100 +663,10 @@
                                              :duration (- t1 t0)})
              output)))))))
 
-(defn error-data
-  [e]
-  (cond
-    (instance? clojure.lang.ExceptionInfo e) (ex-data e)
-    (instance? java.lang.Throwable e) nil
-    :else e))
 
-(defn default-error-handler [e]
-  (let [data (error-data e)]
-    (when-not (and (:status data) (< (:status data) 500))
-      (when (instance? java.lang.Throwable e)
-        (errorf e "Internal Error %s" (or (some-> data :status str) "")))
-      (when data (errorf "ex-data: %s" data)))))
 
-(defn- handle-request
-  "Handle Ring request"
-  [handler request]
-  (let [method (:request-method request)
-        interceptor-chain (:interceptor-chain handler)
-        options (:options handler)
-        id (java.util.UUID/randomUUID)
-        error-handler (or (:error-handler options)
-                          default-error-handler)
-        ctx (merge
-             (make-context (:properties handler))
-             {:id id
-              :method method
-              :method-wrapper (get (:known-methods handler) method)
-              :interceptor-chain interceptor-chain
-              :handler handler
-              :resource (:resource handler)
-              :request request
-              :allowed-methods (:allowed-methods handler)
-              :options options})]
 
-    (->
-     (apply d/chain ctx interceptor-chain)
 
-     (d/catch
-         clojure.lang.ExceptionInfo
-         (fn [e]
-           (error-handler e)
-           (let [data (error-data e)]
-             (let [status (or (:status data) 500)
-                   rep (rep/select-best-representation
-                        (:request ctx)
-                        (rep/representation-seq
-                         (rep/coerce-representations
-                          ;; Possibly in future it will be possible
-                          ;; to support more media-types to render
-                          ;; errors, including image and video
-                          ;; formats.
-                          [{:media-type #{"text/plain"
-                                          "text/html;q=0.8"
-                                          "application/json;q=0.75"
-                                          "application/json;pretty=true;q=0.7"
-                                          "application/edn;q=0.6"
-                                          "application/edn;pretty=true;q=0.5"}
-                            :charset charset/platform-charsets}])))]
-
-               ;; TODO: Custom error handlers
-
-               (d/chain
-                (cond-> (make-context {})
-                  status (assoc-in [:response :status] status)
-                  (:headers data) (assoc-in [:response :headers] (:headers data))
-                  (not (:body data)) ((fn [ctx]
-                                        (let [b (body/to-body (body/render-error status e rep ctx) rep)]
-                                          (-> ctx
-                                              (assoc-in [:response :body] b)
-                                              (assoc-in [:response :headers "content-length"] (body/content-length b))))))
-
-                  rep (assoc-in [:response :produces] rep))
-                create-response))))))))
-
-(defrecord Handler []
-  clojure.lang.IFn
-  (invoke [this req]
-    (handle-request this req))
-
-  ;; see new-custom-resource, want this for meta-yada, i.e. (-> x yada yada yada)
-  #_p/Properties
-  #_(properties
-      [this]
-      {:allowed-methods #{:get}
-       :representations [{:media-type #{"text/html"
-                                        "application/edn"
-                                        "application/json"
-                                        "application/edn;pretty=true"
-                                        "application/json;pretty=true"}}]})
-
-  #_(properties [_ ctx] {})
-  #_methods/Get
-  #_(GET [this ctx] (into {} this)))
 
 (defrecord NoAuthorizationSpecified []
   service/Service
@@ -833,6 +675,7 @@
 
 (def default-interceptor-chain
   [available?
+   exists? 
    known-method?
    uri-too-long?
    TRACE
@@ -840,9 +683,9 @@
    method-allowed?
    parse-parameters
 
-   process-request-body
-
    get-properties
+
+   process-request-body
 
 ;;   authentication
 ;;   authorization
@@ -864,10 +707,7 @@
 
 (defn yada
   "Create a Ring handler"
-  ([resource]                   ; Single-arity form with default options
-   (yada resource {}))
-
-  ([resource options]
+  ([resource]
    (let [base resource
 
          resource (if (satisfies? p/ResourceCoercion resource)
@@ -882,15 +722,12 @@
          ;; This handler services a collection of resources
          ;; (TODO: this is ambiguous, what do we mean exactly?)
          ;; See yada.resources.file-resource for an example.
-         collection? (or (:collection? options)
-                         (:collection? resource))
+         collection? (:collection? resource)
 
          known-methods (methods/known-methods)
 
 
-         allowed-methods (let [methods (set
-                                        (or (:allowed-methods options)
-                                            (keys (:methods resource))))]
+         allowed-methods (let [methods (set (keys (:methods resource)))]
                            (cond-> methods
                              (some #{:get} methods) (conj :head)
                              true (conj :options)))
@@ -929,25 +766,17 @@
                                 [{}])))
 
          vary (when-let [produces (:produces resource)]
-                (infof "static produces is %s" (pr-str produces))
                 (rep/vary produces))
-
-         _ (infof "static vary is %s" vary)
 
          ]
 
-     (when-not (map? resource)
-       (throw (ex-info "Resource is not a map" {:resource resource
-                                                :type (type resource)})))
-
-     (map->Handler
+     (new-handler
 
       (merge {
-              :id (or (:id options) (java.util.UUID/randomUUID))
+              :id (java.util.UUID/randomUUID)
 
               :base base
               :resource resource
-              :options options
 
               :allowed-methods allowed-methods
               :known-methods known-methods

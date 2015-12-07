@@ -2,5 +2,11 @@
 
 (ns yada.context)
 
-(defn exists? [ctx]
-  (get (-> ctx :handler) :exists? true))
+(defn exists?
+  "We assume every resource exists unless it says otherwise, with an
+  explicit exists? entry in its properties."
+  [ctx]
+  (let [props (:properties ctx)]
+    (if (contains? props :exists?)
+      (:exists? props)
+      true)))
