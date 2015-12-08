@@ -33,7 +33,7 @@ a contributor!
 
 [Back to index](/)
 
-## Forward
+## Foreword
 
 State is everywhere. The world is moving and we need to keep up. We need
 our computers to help us stay up-to-date with the latest information,
