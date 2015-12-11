@@ -24,17 +24,6 @@
    [yada.util :as util])
   (:import [java.util Date]))
 
-(defn merge-schemas [m]
-  (let [p (:parameters m)]
-    (assoc m :methods
-           (reduce-kv
-            (fn [acc k v]
-              (assert (associative? v) (format "v is not associative: %s" v))
-              (assoc acc k (update v :parameters (fn [lp] (merge p lp)))))
-            {} (get m :methods {})))))
-
-;; TODO: Read and understand the date algo presented in RFC7232 2.2.1
-
 (defn available?
   "Is the service available?"
   [ctx]
@@ -80,13 +69,13 @@
 (defn method-allowed?
   "Is method allowed on this resource?"
   [ctx]
-
   (if-not (contains? (-> ctx :handler :allowed-methods) (:method ctx))
     (d/error-deferred
      (ex-info "Method Not Allowed"
               {:status 405
-               :headers {"allow" (str/join ", " (map (comp (memfn toUpperCase) name) (-> ctx :handler :allowed-methods)))}}))
-
+               :headers {"allow" (str/join ", "
+                                           (map (comp (memfn toUpperCase) name)
+                                                (-> ctx :handler :allowed-methods)))}}))
     ctx))
 
 (defn merge-parameters

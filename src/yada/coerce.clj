@@ -95,22 +95,3 @@
    (kw-map-matcher schema)
    (multiple-args-matcher schema)))
 
-;; TODO: Add to tests
-
-#_((coercer {(s/optional-key "first.name") s/Str
-           :surname s/Str
-           :phone [s/Str]
-           } +parameter-key-coercions+)
- {"phone" ["789"] "first.name" "Frank" "surname" "Briggs"}
- )
-
-
-#_(let [c (coercer {(s/optional-key "first.name") s/Str
-                     :surname s/Str
-                     :phone [s/Str]
-                     }
-                    (or
-                     +parameter-key-coercions+
-                     (rsc/coercer :json)))]
-  (c {"phone" ["789"] "first.name" "Frank" "surname" "Briggs"})
-  )

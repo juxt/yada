@@ -81,39 +81,6 @@
    CharsetSchemaSet as-set
    StringSet as-set})
 
-(def coerce-properties
-  (sc/coercer Properties +properties-coercions+))
-
-(def default-properties
-  {:representations
-   [{:media-type #{"text/plain" "application/octet-stream;q=0.1"}
-     :charset yada.charset/default-platform-charset}]})
-
-(s/defn properties :- Properties
-  [r]
-  (let [res
-        (coerce-properties
-         (try
-           (merge default-properties (p/properties r))
-           (catch IllegalArgumentException e default-properties)
-           (catch AbstractMethodError e default-properties)))]
-    (when (su/error? res)
-      (throw (ex-info "Resource properties are not valid" {:error res})))
-    res))
-
-;; ---
-
-;; The reason we can't have multiple arities is that s/defn has a
-;; limitation that 'all arities must share the same output schema'.
-(s/defn properties-on-request :- Properties
-  [r ctx]
-  (coerce-properties
-   (merge
-    {:exists? true}
-    (try
-      (p/properties r ctx)
-      (catch IllegalArgumentException e {})
-      (catch AbstractMethodError e {})))))
 
 ;; --
 (defrecord CustomResource []

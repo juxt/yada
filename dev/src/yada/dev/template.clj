@@ -17,28 +17,6 @@
    [yada.resource :refer [new-custom-resource]]
    [yada.util :refer [as-file]]))
 
-(s/defrecord TemplateResource
-    [template-name :- String
-     model :- (s/either
-               {s/Keyword s/Any}
-               (s/pred delay?)
-               (s/=> {s/Keyword s/Any} s/Any))
-     *template]
-  p/Properties
-  (properties
-   [_]
-   (let [resource (loader/find-file template-name)]
-     {:allowed-methods #{:get}
-      ;; We can work out last-modified, iff model is not a function
-      ;; then last-modified date is now
-      }))
-  (properties
-   [_ ctx]
-   ;; TODO: What about a delay?
-   (when-not (fn? model)
-     {:last-modified (max (-> ctx :properties ::file .lastModified)
-                          (-> ctx :properties ::create-time))})))
-
 (defn new-template-resource
   "Create a yada resource that uses Stencil to server the template. The
   model can be a value, delayed value or a 1-arity function taking the

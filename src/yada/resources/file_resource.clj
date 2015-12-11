@@ -192,33 +192,6 @@
                                         (-> ctx :response :produces :media-type)))))
       :produces [{:media-type #{"text/plain"}}]}}}))
 
-#_(s/defrecord DirectoryResource
-    [dir :- File
-     ;; A map between file suffices and extra args that will be used
-     ;; when constructing the FileResource. This enables certain files
-     ;; (e.g. markdown, org-mode) to be handled. The reader entry calls
-     ;; a function to return the body (arguments are the file and the
-     ;; negotiated representation)
-     custom-suffices :- (s/maybe {String ; suffix
-                                  {:reader (s/=> s/Any File Representation)
-                                   :representations RepresentationSets}})
-     index-files :- (s/maybe [String])]
-  p/Properties
-  (properties
-   [_]
-   {:allowed-methods #{:get}
-    :collection? true})
-  Get
-  (GET [this ctx]
-       (let [f (get-in ctx [:properties ::file])]
-         (assert f)
-         (cond
-           (instance? FileResource f) (GET f ctx)
-           (.isFile f) f
-           (.isDirectory f)
-           (dir-index f
-                      (-> ctx :response :representation :media-type))))))
-
 (extend-protocol p/ResourceCoercion
   File
   (as-resource [f]

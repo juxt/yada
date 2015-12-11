@@ -49,18 +49,6 @@
 
   (request-uri-too-long? [f uri] (request-uri-too-long? (f uri) uri))
 
-  #_(body [f ctx]
-    (let [res (f ctx)]
-      (if (deferrable? res)
-        (d/chain res #(body % ctx))
-        (body res ctx))))
-
-  #_(last-modified [f ctx]
-    (let [res (f ctx)]
-      (if (deferrable? res)
-        (d/chain res #(last-modified % ctx))
-        (last-modified res ctx))))
-
   (authorize [f ctx] (f ctx))
   (allow-origin [f ctx] (f ctx))
   (status [f ctx] (f ctx))

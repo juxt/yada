@@ -128,14 +128,4 @@
 (defn remove-empty-vals [m]
   (reduce-kv (fn [acc k v] (if (not-empty v) (assoc acc k v) acc)) {} m))
 
-;; Stream coercers
 
-#_(defn to-manifold-stream [in]
-  (let [s (s/stream 100)]
-    (doseq [b (bs/to-byte-buffers in)]
-      (s/put! s b))
-    (s/close! s)
-    s))
-
-#_(bs/to-byte-buffers
- (java.io.ByteArrayInputStream. (.getBytes "Hello World!")) {:chunk-size 10})

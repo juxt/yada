@@ -100,17 +100,6 @@
 
 ;; --------------------------------------------------------------------------------
 
-#_(defprotocol ^:deprecated Get
-  (GET [_ ctx]
-    "Return the state. Can be formatted to a representation of the given
-  media-type and charset. Returning nil results in a 404. Get the
-  charset from the context [:request :charset], if you can support
-  different charsets. A nil charset at [:request :charset] means the
-  user-agent can support all charsets, so just pick one. If you don't
-  return a String, a representation will be attempted from whatever you
-  do return. Side-effects are not permissiable. Can return a deferred
-  result."))
-
 (defprotocol GetResult
   (interpret-get-result [_ ctx]))
 
@@ -185,14 +174,6 @@
 
 ;; --------------------------------------------------------------------------------
 
-#_(defprotocol Put
-  (PUT [_ ctx]
-    "Overwrite the state with the data. To avoid inefficiency in
-  abstraction, satisfying types are required to manage the parsing of
-  the representation in the request body. If a deferred is returned, the
-  HTTP response status is set to 202. Side-effects are permissiable. Can
-  return a deferred result."))
-
 (deftype PutMethod [])
 
 (extend-protocol Method
@@ -219,14 +200,6 @@
 
 ;; --------------------------------------------------------------------------------
 
-#_(defprotocol Post
-  (POST [_ ctx]
-    "Post the new data. Return a result.  If a function is returned, it
-  is invoked with the context as the only parameter. If a string is
-  returned, it is assumed to be the body. See yada.methods/PostResult
-  for full details of what can be returned. Side-effects are
-  permissiable. Can return a deferred result."))
-
 (defprotocol PostResult
   (interpret-post-result [_ ctx]))
 
@@ -243,21 +216,6 @@
   clojure.lang.Fn
   (interpret-post-result [f ctx]
     (interpret-post-result (f ctx) ctx))
-  #_java.util.Map
-  #_(interpret-post-result [m ctx]
-      ;; TODO: Factor out hm (header-merge) so it can be tested independently
-      (letfn [(hm [x y]
-                (cond
-                  (and (nil? x) (nil? y)) nil
-                  (or (nil? x) (nil? y)) (or x y)
-                  (and (coll? x) (coll? y)) (concat x y)
-                  (and (coll? x) (not (coll? y))) (concat x [y])
-                  (and (not (coll? x)) (coll? y)) (concat [x] y)
-                  :otherwise (throw (ex-info "Unexpected headers case" {:x x :y y}))))]
-        (cond-> ctx
-          (:status m) (assoc-in [:response :status] (:status m))
-          (:headers m) (update-in [:response :headers] #(merge-with hm % (:headers m)))
-          (:body m) (assoc-in [:response :body] (:body m)))))
   nil
   (interpret-post-result [_ ctx] ctx))
 
@@ -281,12 +239,6 @@
            (not (-> ctx :response :body)) zero-content-length))))))
 
 ;; --------------------------------------------------------------------------------
-
-#_(defprotocol Delete
-  (DELETE [_ ctx]
-    "Delete the state. If a deferred is returned, the HTTP response
-  status is set to 202. Side-effects are permissiable. Can return a
-  deferred result."))
 
 (deftype DeleteMethod [])
 
@@ -413,27 +365,3 @@
                         "content-length" (.length body)}
               :body body
               }))))
-
-
-;; -----
-
-;; The function is a very useful type to extend, so we do so here.
-
-#_(extend-type clojure.lang.Fn
-  Get (GET [f ctx] (f ctx))
-  Put (PUT [f ctx] (f ctx))
-  Post (POST [f ctx] (f ctx))
-  Delete (DELETE [f ctx] (f ctx))
-  Options (OPTIONS [f ctx] (f ctx)))
-
-
-#_(defn ^:deprecated infer-methods
-  "Determine methods from an object based on the protocols it
-  satisfies."
-  [o]
-  (cond-> #{}
-    (satisfies? Get o) (conj :get)
-    (satisfies? Put o) (conj :put)
-    (satisfies? Post o) (conj :post)
-    #_(satisfies? Delete o) #_(conj :delete)
-    (satisfies? Options o) (conj :options)))
