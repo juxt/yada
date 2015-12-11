@@ -633,31 +633,4 @@
                (d/error-deferred (ex-info "Bad form fields"
                                           {:status 400 :error params}))))
 
-           :otherwise (assoc ctx :body fields)))
-
-       #_(let [schemas (get-in ctx [:handler :methods (:method ctx) :parameters])]
-           (cond-> ctx
-             body (assoc :body body)
-
-             ;; If form exists
-             ;;           (:form params)
-
-             #_body #_(assoc-in [:parameters parameter-key]
-                                (let [params (into {}
-                                                   (map
-                                                    (juxt #(get-in % [:content-disposition :params "name"])
-                                                          (fn [part]
-                                                            (let [offset (get part :body-offset 0)]
-                                                              (String. (:bytes part) offset (- (count (:bytes part)) offset)))))
-                                                    (filter #(= (:type %) :part) (:parts body))))]
-                                  (if-let [schema (get-in parameters [method parameter-key])]
-                                    ;; ?? Don't we have coercers already in place?
-                                    (let [params ((sc/coercer schema
-                                                              (or
-                                                               coerce/+parameter-key-coercions+
-                                                               (rsc/coercer :json))) params)]
-
-                                      (if (schema.utils/error? params)
-                                        (throw (ex-info "Unexpected body" {:status 400}))
-                                        params))
-                                    params)))))))))
+           :otherwise (assoc ctx :body fields)))))))

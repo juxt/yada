@@ -5,38 +5,24 @@
    [clojure.set :as set]
    [clojure.string :as str]
    [clojure.tools.logging :refer :all :exclude [trace]]
-   [clojure.walk :refer [postwalk]]
    [byte-streams :as bs]
-   [bidi.bidi :as bidi]
    [manifold.deferred :as d]
    [manifold.stream :as stream]
-   ring.middleware.basic-authentication
    [ring.middleware.params :refer [assoc-query-params]]
    [ring.swagger.schema :as rs]
    [ring.swagger.coerce :as rsc]
-   ring.util.codec
-   [ring.util.request :as req]
-   ring.util.time
-   schema.utils
-   [schema.core :as s]
    [schema.coerce :as sc]
-   [yada.body :as body]
-   [yada.charset :as charset]
    [yada.coerce :as coerce]
    [yada.handler :refer [new-handler create-response]]
-   [yada.journal :as journal]
    [yada.methods :as methods]
    [yada.media-type :as mt]
    [yada.representation :as rep]
    [yada.protocols :as p]
-   [yada.resource :as resource]
    [yada.request-body :as rb]
    [yada.schema :as ys]
-   [yada.service :as service]
+   [yada.service :as service] ; deprecate
    [yada.util :as util])
   (:import [java.util Date]))
-
-#_(def CHUNK-SIZE 16384)
 
 (defn merge-schemas [m]
   (let [p (:parameters m)]
@@ -48,11 +34,6 @@
             {} (get m :methods {})))))
 
 ;; TODO: Read and understand the date algo presented in RFC7232 2.2.1
-
-(def realms-xf
-  (comp
-   (filter (comp (partial = :basic) :type))
-   (map :realm)))
 
 (defn available?
   "Is the service available?"
@@ -130,26 +111,22 @@
         ;; TODO: Creating coercers on every request is unnecessary and
         ;; expensive, should pre-compute them.
 
-        parameters {:path (if-let [schema (:path schemas)]
-                            (rs/coerce schema (:route-params request) :query)
-                            (:route-params request))
-                    :query (let [qp (:query-params (assoc-query-params request (or (:charset ctx) "UTF-8")))]
-                             (if-let [schema (:query schemas)]
-                               (let [coercer (sc/coercer schema
-                                                         (or
-                                                          coerce/+parameter-key-coercions+
-                                                          (rsc/coercer :query)
-                                                          ))]
-                                 (coercer qp))
-                               qp))
+        parameters
+        {:path (if-let [schema (:path schemas)]
+                 (rs/coerce schema (:route-params request) :query)
+                 (:route-params request))
+         :query (let [qp (:query-params (assoc-query-params request (or (:charset ctx) "UTF-8")))]
+                  (if-let [schema (:query schemas)]
+                    (let [coercer (sc/coercer schema
+                                              (or
+                                               coerce/+parameter-key-coercions+
+                                               (rsc/coercer :query)))]
+                      (coercer qp))
+                    qp))
                     
-                    #_:header #_(when-let [schema (get-in parameters [method :header])]
-                                  (let [params (-> request :headers)]
-                                    (rs/coerce (assoc schema String String) params :query)))
-                    }
-
-
-        ]
+         #_:header #_(when-let [schema (get-in parameters [method :header])]
+                       (let [params (-> request :headers)]
+                         (rs/coerce (assoc schema String String) params :query)))}]
 
     (let [errors (filter (comp schema.utils/error? second) parameters)]
       (if (not-empty errors)
@@ -214,177 +191,6 @@
     ;; else
     ctx))
 
-#_(defn process-request-body [ctx]
-  ;; Only read the body if the parameters include :form or :body,
-  ;; otherwise leave it available for method implementations. No! Can't
-  ;; do this, because a method implementation cannot be asynchronous. It
-  ;; must indicate its body processing expectation via the :parameters
-  ;; declaration. Yes! can do this because a method implementation /can/
-  ;; be asynchronous, it can return a d/chain which contains a d/loop
-
-  ;; TODO: Request entity too large - need to indicate this in parameters
-
-  ;; Let's try to read the request body
-  (let [method (:method ctx)
-        request (:request ctx)
-        parameters (-> ctx :handler :parameters)
-
-        ;; TODO: What if content-type is malformed?
-        content-type (mt/string->media-type (get-in request [:headers "content-type"]))
-        parameter-key (cond (some? (get-in parameters [method :body])) :body
-                            (some? (get-in parameters [method :form])) :form)]
-
-    (if-not parameter-key
-      ctx       ; defer body processing to method implementation, unless
-                                        ; there's a parameter declaration.
-      (let [required-type (get-in parameters [method parameter-key])]
-        (cond
-          ;; multipart/form-data
-          (and (= (:name content-type) "multipart/form-data")
-               (map? required-type))
-          (let [boundary (get-in content-type [:parameters "boundary"])
-                request-buffer-size CHUNK-SIZE ; as Aleph default, TODO: derive this
-                window-size (* 4 request-buffer-size)]
-            (d/chain
-             (->> (parse-multipart boundary window-size request-buffer-size (:body request))
-                  (stream/transform (comp (xf-add-header-info) (xf-parse-content-disposition)))
-                  (stream/reduce
-                   reduce-piece
-                   { ;; We could support other ways of assembling 'large'
-                    ;; parts. This default implementation uses memory but
-                    ;; other strategies could be brought in.
-                    :receiver (->DefaultPartReceiver)
-                    ;; TODO: Would be nice not to have to specify the
-                    ;; empty vector here
-                    :state {:parts []}}))
-             (fn [body]
-               (if body
-                 (-> ctx
-                     (assoc :body :processed)
-                     (assoc-in [:parameters parameter-key]
-                               (let [params (into {}
-                                                  (map
-                                                   (juxt #(get-in % [:content-disposition :params "name"])
-                                                         (fn [part]
-                                                           (let [offset (get part :body-offset 0)]
-                                                             (String. (:bytes part) offset (- (count (:bytes part)) offset)))))
-                                                   (filter #(= (:type %) :part) (:parts body))))]
-                                 (if-let [schema (get-in parameters [method parameter-key])]
-                                   ;; ?? Don't we have coercers already in place?
-                                   (let [params ((sc/coercer schema
-                                                             (or
-                                                              coerce/+parameter-key-coercions+
-                                                              (rsc/coercer :json))) params)]
-
-                                     (if (schema.utils/error? params)
-                                       (throw (ex-info "Unexpected body" {:status 400}))
-                                       params))
-                                   params))))))))
-
-          (and (= (:name content-type) "application/x-www-form-urlencoded")
-               (get-in coercers [method parameter-key]))
-          (let [coercer (get-in coercers [method parameter-key])
-                bufs (:body request)]
-
-            (d/chain
-             (stream/reduce (fn [acc buf] (conj acc buf))
-                            [] bufs)
-             (fn [bufs]
-               (let [cs (req/character-encoding request)]
-                 (-> ctx
-                     (assoc :body :processed)
-                     (assoc-in [:parameters parameter-key]
-                               (coercer (ring.util.codec/form-decode
-                                         (apply bs/to-string bufs
-                                                (if cs [{:encoding cs}] []))
-                                         cs))))))))
-
-          (= required-type String)
-          ;; Return a deferred which will consume the request body,
-          ;; finally turning the contents into a String
-          (d/chain
-           (stream/reduce (fn [acc buf] (conj acc buf)) [] (:body request))
-           (fn [bufs]
-             (-> ctx
-                 (assoc :body :processed)
-                 (assoc-in [:parameters parameter-key]
-                           (apply bs/to-string bufs
-                                  (if-let [cs (req/character-encoding request)]
-                                    [{:encoding cs}]
-                                    []))))))
-
-          :otherwise ctx
-          )))
-
-
-    ;; However, (:body ctx) is going to be the request body
-
-    ;; First process the body. Under certain circumstances, (content
-    ;; type is application/json or application/edn), we can coerce, and
-    ;; the result can be merged into (:parameters ctx)
-
-    ;; Going into request body processing logic we have
-    ;; a) the request's declared content-type
-    ;; b) the server's expectation, declared in schema
-
-    ;; For now, we'll simply process the body as per the declared Content-Type.
-    ;; We assume the body will be chunked.
-
-    #_(if-let [schema (get-in parameters [method :body])]
-        (rs/coerce schema (:route-params request) :query))
-
-    #_(when-let [schema (get-in parameters [method :body])]
-        (let [body (read-body (-> ctx :request))]
-          (body/coerce-request-body
-           body
-           ;; See rfc7231#section-3.1.1.5 - we should assume application/octet-stream
-           (or (req/content-type request) "application/octet-stream")
-           schema)))
-
-    #_(when parameters
-        {
-         #_:form
-         #_(cond
-             (and (req/urlencoded-form? request) (get-in coercers [method :form]))
-             (when-let [coercer (get-in coercers [method :form])]
-               (coercer (ring.util.codec/form-decode (read-body (-> ctx :request))
-                                                     (req/character-encoding request)))))
-
-         #_:body
-         #_(when-let [schema (get-in parameters [method :body])]
-             (let [body (read-body (-> ctx :request))]
-               (body/coerce-request-body
-                body
-                ;; See rfc7231#section-3.1.1.5 - we should assume application/octet-stream
-                (or (req/content-type request) "application/octet-stream")
-                schema)))
-         }))
-
-  #_(let [mt (mt/string->media-type (get-in (:request ctx) [:headers "content-type"]))]
-
-      (case (:name mt)
-        "multipart/form-data"           ; special processing required
-        (let [boundary (get-in mt [:parameters "boundary"])
-              request-buffer-size CHUNK-SIZE ; as Aleph default
-              window-size (* 4 request-buffer-size)]
-
-          ;; TODO: If boundary is malformed, throw a 400
-          (d/chain
-           (->> (parse-multipart boundary window-size request-buffer-size (:body (:request ctx)))
-                (stream/transform (comp (xf-add-header-info) (xf-parse-content-disposition)))
-
-                (stream/reduce reduce-piece {:receiver (->DefaultPartReceiver)
-                                             ;; TODO: Would be nice not to
-                                             ;; have to specify the empty
-                                             ;; vector here
-                                             :state {:parts []}}))
-
-           (fn [parts]
-             (assoc ctx :body parts))))
-
-        ;; Otherwise
-        ctx)))
-
 #_(defn authentication
   "Authentication"
   [ctx]
@@ -394,6 +200,11 @@
            (:basic-authentication (ring.middleware.basic-authentication/basic-authentication-request
                                    (:request ctx)
                                    (fn [user password] {:user user :password password}))))))
+
+(def realms-xf
+  (comp
+   (filter (comp (partial = :basic) :type))
+   (map :realm)))
 
 #_(defn authorization
   "Authorization"
@@ -458,7 +269,6 @@
 ;; which are necessary for a strong validator. See
 ;; section 2.3.3 of RFC 7232.
 
-;; If-Match check
 (defn if-match
   [ctx]
 
@@ -485,65 +295,43 @@
            (ex-info "Precondition failed"
                     {:status 412}))
 
-          ;; Otherwise, let's use the etag we've just
-          ;; computed. Note, this might yet be
-          ;; overridden by the (unsafe) method returning
-          ;; a modified response. But if the method
-          ;; chooses not to reset the etag (perhaps the
-          ;; resource state didn't change), then this
-          ;; etag will do for the response.
+          ;; Otherwise, let's use the etag we've just computed. Note,
+          ;; this might yet be overridden by the (unsafe) method
+          ;; returning a modified response. But if the method chooses
+          ;; not to reset the etag (perhaps the resource state didn't
+          ;; change), then this etag will do for the response.
           (assoc-in ctx [:response :etag]
                     (get etags (:produces ctx))))))
     ctx))
 
-;; If-None-Match check
-(defn if-none-match
-  [ctx]
-
+(defn if-none-match [ctx]
   (if-let [matches (some->> (get-in (:request ctx) [:headers "if-none-match"]) util/parse-csv set)]
 
-    ;; TODO: Weak comparison. Since we don't (yet) support the issuance
-    ;; of weak entity tags, weak and strong comparison are identical
-    ;; here.
+    ;; TODO: Weak comparison. Since we don't (yet) support the
+    ;; issuance of weak entity tags, weak and strong comparison are
+    ;; identical here.
 
     (if
-        ;; Create a map of representation -> etag. This was done in
-        ;; if-match, but it is unlikely that we have if-match and
-        ;; if-none-match in the same request, so a performance
-        ;; optimization is unwarranted.
         (-> ctx :properties :version)
-      (let [version (-> ctx :properties :version)
-            etags (into {}
-                        (for [rep (:produces ctx)]
-                          [rep (p/to-etag version rep)]))]
+        (let [version (-> ctx :properties :version)
+              etags (into {}
+                          ;; Create a map of representation -> etag. This was done in
+                          ;; if-match, but it is unlikely that we have if-match and
+                          ;; if-none-match in the same request, so a performance
+                          ;; optimization is unwarranted.
+                          (for [rep (:produces ctx)]
+                            [rep (p/to-etag version rep)]))]
 
-        (when (not-empty (set/intersection matches (set (vals etags))))
-          (d/error-deferred
-           (ex-info ""
-                    {:status 304}))
-
-          )))
+          (when (not-empty (set/intersection matches (set (vals etags))))
+            (d/error-deferred
+             (ex-info ""
+                      {:status 304})))))
     ctx))
 
 (defn invoke-method
   "Methods"
   [ctx]
   (methods/request (:method-wrapper ctx) ctx))
-
-
-#_(let [propsfn (get-in ctx [:handler :properties] (constantly {}))]
-    (d/chain
-
-     (propsfn ctx)                     ; propsfn can returned a deferred
-
-     (fn [props]
-       (assoc
-        ctx
-        :properties
-        (cond-> props
-          (:produces props) ; representations shorthand is expanded
-          (update-in [:produces]
-                     (comp rep/representation-seq rep/coerce-representations)))))))
 
 (defn get-new-properties
   "If the method is unsafe, call properties again. This will
@@ -558,6 +346,8 @@
 
          (propsfn ctx)                 ; propsfn can returned a deferred
 
+         ;; TODO: Do validation/coercion on properties as before - see
+         ;; get-properties - perhaps refactor for code re-use
          (fn [props]
            (assoc
             ctx
@@ -568,19 +358,6 @@
                                  ; stage?
               (update-in [:produces]
                          (comp rep/representation-seq rep/coerce-representations)))))))
-
-
-      ;; Old code to indicate how to do schema validation/coercion on properties
-      #_(d/chain
-       (try
-         (resource/properties-on-request resource ctx)
-         (catch AbstractMethodError e {}))
-       (fn [props]
-         (if (schema.utils/error? props)
-           (d/error-deferred
-            (ex-info "Internal Server Error"
-                     {:status 500}))
-           (assoc ctx :new-properties props))))
       ctx)))
 
 ;; Compute ETag, if not already done so
@@ -629,67 +406,31 @@
                 (apply str
                        (interpose ", " allow-headers))))))
 
-
-
-(defn wrap-journaling [journal-entry]
-  (fn [interceptor]
-    (fn [ctx]
-      (let [t0 (System/nanoTime)]
-        (d/chain
-         (interceptor ctx)
-         (fn [output]
-           (let [t1 (System/nanoTime)]
-             (swap! journal-entry
-                    update-in [:chain] conj {:interceptor interceptor
-                                             :old (select-keys ctx [:response])
-                                             :new (cond
-                                                    (instance? yada.response.Response output) output
-                                                    :otherwise (select-keys output [:response]))
-                                             :t0 t0 :t1 t1
-                                             :duration (- t1 t0)})
-             output)))))))
-
-
-
-
-
-
-(defrecord NoAuthorizationSpecified []
-  service/Service
-  (authorize [b ctx] true)
-  (authorization [_] nil))
-
 (def default-interceptor-chain
   [available?
    exists? 
    known-method?
    uri-too-long?
    TRACE
-
    method-allowed?
    parse-parameters
-
    get-properties
-
    process-request-body
-
 ;;   authentication
 ;;   authorization
-
    check-modification-time
-
    select-representation
-   ;; if-match and if-none-match computes the etag of the selected representations, so
-   ;; needs to be run after select-representation
+   ;; if-match and if-none-match computes the etag of the selected
+   ;; representations, so needs to be run after select-representation
+   ;; - TODO: Specify dependencies as metadata so we can validate any
+   ;; given interceptor chain
    if-match
    if-none-match
-
    invoke-method
    get-new-properties
    compute-etag
    access-control-headers
-   create-response
-   ])
+   create-response])
 
 (defn yada
   "Create a Ring handler"
@@ -717,66 +458,17 @@
                            (cond-> methods
                              (some #{:get} methods) (conj :head)
                              true (conj :options)))
-
-         ;; The point of calculating the coercers here is that
-         ;; parameters are wholly static (if schema checking is desired,
-         ;; non-declarative (dynamic, runtime) implementations can do
-         ;; their own dynamical checking!). As such, we want to
-         ;; pre-calculate them here rather than on every request.
-         #_parameter-coercers
-         #_(->> (for [[method schemas] parameters]
-                  [method
-                   (merge
-                    (when-let [schema (:query schemas)]
-                      {:query (when-let [schema (:query schemas)]
-                                (sc/coercer schema
-                                            (or
-                                             coerce/+parameter-key-coercions+
-                                             (rsc/coercer :query)
-                                             )))})
-                    (when-let [schema (:form schemas)]
-                      {:form (when-let [schema (:form schemas)]
-                               (sc/coercer schema
-                                           (or
-                                            coerce/+parameter-key-coercions+
-                                            (rsc/coercer :json)
-                                            )))}))])
-                (filter (comp not nil? second))
-                (into {}))
-
-         #_representations #_(rep/representation-seq
-                              (rep/coerce-representations
-                               (or
-                                (get :produces properties)
-                                ;; Default
-                                [{}])))
-
+         
          vary (when-let [produces (:produces resource)]
-                (rep/vary produces))
-
-         ]
+                (rep/vary produces))]
 
      (new-handler
-
-      (merge {
-              :id (java.util.UUID/randomUUID)
-
+      (merge {:id (java.util.UUID/randomUUID)
               :base base
               :resource resource
-
               :allowed-methods allowed-methods
               :known-methods known-methods
-
               :interceptor-chain default-interceptor-chain
-
-              ;;        :parameters parameters
-              ;;        :representations representations
-              ;;        :properties properties
               :vary vary
-
-              :collection? collection?
-              }
-
-             resource
-
-             )))))
+              :collection? collection?}
+             resource)))))
