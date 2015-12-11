@@ -29,14 +29,9 @@
       (given @(handler (-> (request :put "/" "Chelsea")
                            (add-headers {"content-type" "text/plain"})))
         :status := 204
-        [:headers keys set] :⊃ #{"content-type"}
+        [:headers keys set] :⊅ #{"content-type"}
         [:headers keys set] :⊅ #{"content-length"}
-        ;; TODO: Hang on, why does this have a content-type and no body?
-        ;; Or rather, why does it have a content-type at all, given
-        ;; there is no body?
-        :headers :⊃ {"content-type" "text/plain;charset=utf-8"}
-        :body := nil
-        )
+        :body := nil)
 
       (is (= @resource "Chelsea"))
 

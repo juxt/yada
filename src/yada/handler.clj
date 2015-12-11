@@ -35,7 +35,11 @@
 ;; Response
 (defn create-response
   [ctx]
-  (let [response
+
+  (let [method (:method ctx)
+        body (get-in ctx [:response :body])
+
+        response
         {:status (or (get-in ctx [:response :status])
                      (service/status (-> ctx :handler :options :status) ctx)
                      200)
@@ -48,10 +52,11 @@
                    (when (not= (:method ctx) :options)
                      (merge {}
                             (when-let [x (get-in ctx [:response :produces :media-type])]
-                              (let [y (get-in ctx [:response :produces :charset])]
-                                (if (and y (= (:type x) "text"))
-                                  {"content-type" (mt/media-type->string (assoc-in x [:parameters "charset"] (charset/charset y)))}
-                                  {"content-type" (mt/media-type->string x)})))
+                              (when (or (= method :head) body)
+                                (let [y (get-in ctx [:response :produces :charset])]
+                                  (if (and y (= (:type x) "text"))
+                                    {"content-type" (mt/media-type->string (assoc-in x [:parameters "charset"] (charset/charset y)))}
+                                    {"content-type" (mt/media-type->string x)}))))
                             (when-let [x (get-in ctx [:response :produces :encoding])]
                               {"content-encoding" x})
                             (when-let [x (get-in ctx [:response :produces :language])]
@@ -59,7 +64,7 @@
                             (when-let [x (get-in ctx [:response :last-modified])]
                               {"last-modified" x})
                             (when-let [x (get-in ctx [:response :vary])]
-                              (when (not-empty x)
+                              (when (and (not-empty x) (or (= method :head) body))
                                 {"vary" (rep/to-vary-header x)}))
                             (when-let [x (get-in ctx [:response :etag])]
                               {"etag" x})))

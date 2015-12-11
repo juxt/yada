@@ -214,11 +214,18 @@
     (d/error-deferred (ex-info "" {:status 403}))))
 
 (defn select-representation
+  "Proactively negotatiate the best representation for the payload
+  body of the response. This does not mean that the
+  response will have a payload body (that is determined by the
+  method (which we know) and the status code (which is yet to be
+  determined)."
   [ctx]
   ;; TODO: Need metadata to say whether the :produces property 'replaces'
   ;; or 'augments' the static produces declaration. Currently only
   ;; 'replaces' is supported. What does Swagger do?
   
+  ;; TODO We select the representation
+
   (let [produces (or (get-in ctx [:properties :produces])
                      (concat (get-in ctx [:handler :methods (:method ctx) :produces])
                              (get-in ctx [:handler :produces])))
