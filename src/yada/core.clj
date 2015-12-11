@@ -70,11 +70,8 @@
   actually exist, e.g. the nil resource. The value of the exists?
   entry must be explicitly false not just falsey (nil)."
   [ctx]
-  (infof "interceptor: exists?")
   (if (false? (get-in ctx [:handler :exists?]))
-    (do
-      (infof "Oh no!! 404")
-      (d/error-deferred (ex-info "" {:status 404})))
+    (d/error-deferred (ex-info "" {:status 404}))
     ctx))
 
 (defn known-method?
@@ -124,7 +121,6 @@
 (defn parse-parameters
   "Parse request and coerce parameters."
   [ctx]
-  (infof "Parse parameters")
   (let [method (:method ctx)
         request (:request ctx)
 
@@ -171,7 +167,6 @@
 
 (defn get-properties
   [ctx]
-  (infof "Get properties")
   (let [props (get-in ctx [:handler :properties] {})
         props (if (fn? props) (props ctx) props)]
     (d/chain
@@ -200,11 +195,6 @@
     (let [content-type (mt/string->media-type (get-in request [:headers "content-type"]))
           content-length (safe-read-content-length request)
 
-          _ (infof "or: %s"
-                   (pr-str (or (get-in ctx [:properties :consumes])
-                               (concat (get-in ctx [:handler :methods (:method ctx) :consumes])
-                                       (get-in ctx [:handler :consumes])))))
-          
           consumes-mt (set (map (comp :name :media-type)
                                 (or (get-in ctx [:properties :consumes])
                                     (concat (get-in ctx [:handler :methods (:method ctx) :consumes])
@@ -427,10 +417,8 @@
   [ctx]
   ;; TODO: Need metadata to say whether the :produces property 'replaces'
   ;; or 'augments' the static produces declaration. Currently only
-  ;; 'replaces' is supported.
+  ;; 'replaces' is supported. What does Swagger do?
   
-  (infof "Select rep")
-
   (let [produces (or (get-in ctx [:properties :produces])
                      (concat (get-in ctx [:handler :methods (:method ctx) :produces])
                              (get-in ctx [:handler :produces])))
@@ -540,8 +528,6 @@
 (defn invoke-method
   "Methods"
   [ctx]
-  (infof "Invoke method")
-
   (methods/request (:method-wrapper ctx) ctx))
 
 

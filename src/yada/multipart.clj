@@ -583,7 +583,6 @@
         request-buffer-size CHUNK-SIZE ; as Aleph default, TODO: derive this
         window-size (* 4 request-buffer-size)
         part-consumer (get-in ctx [:handler :options :part-consumer] (->DefaultPartConsumer))]
-    (infof "process-request-body multipart/form-data")
     (d/chain
      (->> (parse-multipart boundary window-size request-buffer-size body-stream)
           ;; Since we're multipart/form-data, we're expecting each part
@@ -630,9 +629,7 @@
                              ((rsc/coercer :json) schema))))
                  params (coercer fields)]
              (if-not (schema.utils/error? params)
-               (do
-                 (infof "here, params is %s, %s" params (if (:form schemas) :form :body))
-                 (assoc-in ctx [:parameters (if (:form schemas) :form :body)] params))
+               (assoc-in ctx [:parameters (if (:form schemas) :form :body)] params)
                (d/error-deferred (ex-info "Bad form fields"
                                           {:status 400 :error params}))))
 

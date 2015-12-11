@@ -66,14 +66,10 @@
                    :last-modified (Date. (.lastModified file))})
 
     :methods {:get {:handler (fn [ctx]
-                               (infof "GET on file %s" file)
                                (respond-with-file ctx file reader))}
               :put {:handler (fn [ctx]
-                               (infof "Putting body to file %s" file)
-                               (bs/transfer (-> ctx :request :body) file)
-                               
-                               (infof "file length is %s" (.length file))
-                               )}
+                               (bs/transfer (-> ctx :request :body) file))}
+              
               :delete {:handler (fn [ctx] (.delete file))}}}))
 
 (defn filename-ext
@@ -153,7 +149,6 @@
 
     :properties
     (fn [ctx]
-      (infof "path-info is %s" (-> ctx :request :path-info))
       (if-let [path-info (-> ctx :request :path-info)]
         (let [f (io/file dir path-info)
               suffix (filename-ext (.getName f))
@@ -189,7 +184,6 @@
     {:get
      {:handler
       (fn [ctx]
-        (infof "properties is %s" (:properties ctx))
         (let [f (get-in ctx [:properties ::file])]
           (assert f)
           (cond

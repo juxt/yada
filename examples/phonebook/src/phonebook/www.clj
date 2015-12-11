@@ -25,7 +25,6 @@
     {:get {:parameters {:query {(s/optional-key :q) String}}
            :handler (fn [ctx]
                       (let [q (get-in ctx [:parameters :query :q])
-                            _ (infof "q is %s" q)
                             entries (if q
                                       (db/search-entries db q)
                                       (db/get-entries db))]

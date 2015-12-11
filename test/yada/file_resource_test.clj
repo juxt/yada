@@ -92,9 +92,6 @@
               "The file content after the PUT was not the same as that
                 in the request")
 
-          
-          (infof "Here")
-          
           (let [handler (yada f)]
             (given @(handler (request :get "/"))
                    :status := 200

@@ -30,8 +30,6 @@
       (is last-modified)
       (is (instance? java.util.Date last-modified))
 
-      (infof "last-modified is %s"  last-modified)
-
       (given response
         :status := 200
         :headers :⊃ {"content-type" "application/edn"
