@@ -45,7 +45,7 @@
       (infof "source is %s" source)
       ((yada source) req))))
 
-(defn index [{:keys [*router *cors-demo-router *talks-router *console-router *phonebook *selfie config]}]
+(defn index [{:keys [*router cors-demo-router talks-router console-router phonebook selfie config]}]
   (yada
    (->
     (new-template-resource
@@ -62,16 +62,18 @@
 
                 [:li "Examples - self-contained apps for you to explore"
                  [:ul
+                  [:li [:a {:href (path-for @*router ::hello)} "Hello World!"] " - to introduce " [:span.yada "yada"] " in the proper way"]
+                  
                   [:li
                    [:a {:href (str
                                (config/phonebook-origin config)
-                               (path-for (:server @*phonebook) :phonebook.api/index))} "Phonebook"] " - to demonstrate custom records implementing standard HTTP methods"]
+                               (path-for (:server phonebook) :phonebook.api/index))} "Phonebook"] " - to demonstrate custom records implementing standard HTTP methods"]
                   [:li [:a {:href (str
                                    (config/selfie-origin config)
-                                   (path-for (:server @*selfie) :selfie.api/index))} "Selfie"] " - to demonstrate asynchronous processing of large request bodies"]
+                                   (path-for (:server selfie) :selfie.api/index))} "Selfie"] " - to demonstrate asynchronous processing of large request bodies"]
                   [:li [:a {:href (str
                                    (config/cors-demo-origin config)
-                                   (path-for @*cors-demo-router :yada.dev.cors-demo/index))} "CORS demo"] " - to demonstrate CORS support"]]]
+                                   (path-for cors-demo-router :yada.dev.cors-demo/index))} "CORS demo"] " - to demonstrate CORS support"]]]
 
                 [:li [:a {:href
                           (format "%s/index.html?url=%s/swagger.json"
@@ -83,15 +85,15 @@
 
                 [:li [:a {:href (str
                                  (config/console-origin config)
-                                 (path-for @*console-router :yada.dev.console/index :path ""))}
+                                 (path-for console-router :yada.dev.console/index :path ""))}
                       "The " [:span.yada "yada"] " console"] " - to capture traffic and debug your API (work in progress)"]
 
 
                 [:li [:a {:href (str
                                  (config/talks-origin config)
-                                 (path-for @*talks-router :yada.dev.talks/index))} "Talks"]]
+                                 (path-for talks-router :yada.dev.talks/index))} "Talks"]]
 
-                [:li "Relevant RFCs"
+                [:li "Boring RFCs!"
                  [:ul
                   (for [i (sort (keys titles))]
                     [:li [:a {:href (format "/spec/rfc%d" i)}
@@ -102,22 +104,52 @@
     (assoc :id ::index))))
 
 (s/defrecord Docsite [*router :- (co-dep Router)
-                      ;; TODO: I don't think these need to be co-deps,
-                      ;; only the docsite's own route needs to be a
-                      ;; co-dep.
-                      *cors-demo-router :- (co-dep Router)
-                      *talks-router :- (co-dep Router)
-                      *console-router :- (co-dep Router)
-                      *phonebook :- (co-dep CoDependencySystemMap)
-                      *selfie :- (co-dep SystemMap)
+                      cors-demo-router :- Router
+                      talks-router :- Router
+                      console-router :- Router
+                      phonebook :- SystemMap
+                      selfie :- SystemMap
                       config :- config/ConfigSchema]
   RouteProvider
   (routes [component]
     ["/"
      [["index.html" (index component)]
-      [["spec/rfc" :rfc] (rfc)]
-      ]]))
+
+      ["hello.html"
+       (yada
+        (assoc
+         (new-template-resource
+          "templates/page.html"
+          (delay {:content
+                  (html
+                   [:div.container
+                    [:h2 "Demo: Hello World!"]
+                    [:ul
+                     [:li [:a {:href (path-for @*router :yada.dev.hello/hello)} "Hello!"] " - the simplest possible demo, showing the effect of " [:span.yada "yada"] " on a simple string"]
+
+                     [:li [:a {:href
+                               (format "%s/index.html?url=%s/swagger.json"
+                                       (path-for @*router :swagger-ui)
+                                       (path-for @*router :yada.dev.hello/hello-swagger))}
+                           
+                           "Hello Swagger!"] " - demonstration of the Swagger interface on a simple string"]
+
+                     [:li [:a {:href (path-for @*router :yada.dev.hello/hello-atom)} "Hello atom!"] " - demonstrating the use of Clojure's reference types to manage mutable state"]
+
+                     [:li [:a {:href
+                               (format "%s/index.html?url=%s/swagger.json"
+                                       (path-for @*router :swagger-ui)
+                                       (path-for @*router :yada.dev.hello/hello-atom-swagger))}
+
+                           "Hello Swaggatom!"] " - demonstration of the Swagger interface on an atom"]]
+                    
+                    [:p [:a {:href (path-for @*router ::index)} "Index"]]])}))
+         :id ::hello))]
+
+      ;;Boring specs
+      [["spec/rfc" :rfc] (rfc)]]]))
 
 (defn new-docsite [& {:as opts}]
   (-> (map->Docsite opts)
-      (co-using [:router :cors-demo-router :talks-router :console-router :phonebook])))
+      (using [:phonebook :cors-demo-router :talks-router :console-router :selfie])
+      (co-using [:router])))

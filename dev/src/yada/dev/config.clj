@@ -4,9 +4,8 @@
   (:require
    [schema.core :as s]
    [aero.core :refer (read-config)]
-   [phonebook.db :refer [Phonebook]]))
-
-(s/defschema UserPort (s/both s/Int (s/pred #(<= 1024 % 65535))))
+   [phonebook.schema :refer [PhonebookEntry Phonebook UserPort]]
+   ))
 
 (s/defschema ConfigSchema
   {:prefix s/Str

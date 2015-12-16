@@ -146,6 +146,12 @@
                     :highlight-js-resources
                     :docsite-redirect]
 
+   :docsite {:phonebook :phonebook
+             :cors-demo-router :cors-demo-router
+             :talks-router :talks-router
+             :console-router :console-router
+             :selfie :selfie}
+
    :console-router [;;:console
                     :console-redirect]
 
@@ -160,12 +166,7 @@
 
 (defn new-co-dependency-map
   []
-  {:docsite {:router :docsite-router
-             :cors-demo-router :cors-demo-router
-             :talks-router :talks-router
-             :console-router :console-router
-             :phonebook :phonebook
-             :selfie :selfie}
+  {:docsite {:router :docsite-router}
    :user-manual {:router :docsite-router}
 ;;   :console {:router :console-router}
    :cors-demo {:router :cors-demo-router}
