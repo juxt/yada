@@ -253,8 +253,7 @@
             (s/put! (:stream m) [{:type :end
                                   :epilogue (String. (copy-bytes (:window m) (+ (count "--") e) (:pos m)))
                                   :debug [:finish-up :start :epilogue]}])
-            ;; try to trigger this via a test
-            (throw (ex-info "No end delimiter (1)" {}))))
+            (throw (ex-info "Multipart not properly terminated" {:status 400}))))
 
         ;; No boundary found at all. This can be treated as all preamble and no parts
         (do
@@ -414,9 +413,11 @@
           (try
             (process-chunk m chunk)
             (catch clojure.lang.ExceptionInfo e
-              (errorf e "err, exception info %s" (pr-str (ex-data e))))
+              (errorf e "multipart error")
+              (d/error-deferred e))
             (catch Exception e
-              (errorf e "err, error!"))))
+              (errorf e "unexpected multipart error")
+              (d/error-deferred e))))
 
         ;; Wait for the result from `process-chunk` to be realized
         (fn [m]
@@ -427,7 +428,7 @@
            (fn [e]
              (errorf e "Failed: %s" (ex-data e))
              (d/chain
-              (s/put! stream [{:error :error :message (.getMessage e) :data (ex-data e)}])
+              (s/put! stream [{:type :error :error e :message (.getMessage e) :data (ex-data e)}])
               (fn [b]
                 (s/close! stream)))))
 
@@ -435,7 +436,7 @@
            (fn [e]
              (errorf e "Failed: %s" (ex-data e))
              (d/chain
-              (s/put! stream [{:error :error :message (.getMessage e)}])
+              (s/put! stream [{:type :error :error e :message (.getMessage e)}])
               (fn [b]
                 (s/close! stream)))))
 
@@ -443,7 +444,7 @@
            (fn [o]
              (errorf "Failed: %s" o)
              (d/chain
-              (s/put! stream [{:error :error :object o}])
+              (s/put! stream [{:type :error :object o}])
               (fn [b]
                 (s/close! stream)))))))
 
@@ -569,6 +570,7 @@
                                                     ;; Ignore
                                                     s)))
                             (dissoc :partial))
+    :error (throw (if-let [error (:error piece)] error (ex-info "Multipart error" {:error piece})))
     ;; Return the state
     :end (:state acc)))
 
@@ -583,54 +585,57 @@
         request-buffer-size CHUNK-SIZE ; as Aleph default, TODO: derive this
         window-size (* 4 request-buffer-size)
         part-consumer (get-in ctx [:handler :options :part-consumer] (->DefaultPartConsumer))]
-    (d/chain
-     (->> (parse-multipart boundary window-size request-buffer-size body-stream)
-          ;; Since we're multipart/form-data, we're expecting each part
-          ;; (or part beginning) to have a content-disposition header,
-          ;; let's use a transducer to add that info into the part,
-          ;; before we hand the part off to the PartConsumer.
-          (s/transform (comp (xf-add-header-info)
-                             (xf-parse-content-disposition)))
-          ;; Now we assemble (via reduction) the parts. We pass each
-          ;; part (or partial part) to a consumer that assembles and
-          ;; stores the parts. This might be on-heap, off-heap, in a
-          ;; database, as a file. etc.
-          (s/reduce
-           reduce-piece
-           {:consumer part-consumer :state {}}))
+    (cond
+      (not boundary) (throw (ex-info "No boundary parameter in multipart" {:status 400}))
+      :otherwise
+      (d/chain
+       (->> (parse-multipart boundary window-size request-buffer-size body-stream)
+            ;; Since we're multipart/form-data, we're expecting each part
+            ;; (or part beginning) to have a content-disposition header,
+            ;; let's use a transducer to add that info into the part,
+            ;; before we hand the part off to the PartConsumer.
+            (s/transform (comp (xf-add-header-info)
+                               (xf-parse-content-disposition)))
+            ;; Now we assemble (via reduction) the parts. We pass each
+            ;; part (or partial part) to a consumer that assembles and
+            ;; stores the parts. This might be on-heap, off-heap, in a
+            ;; database, as a file. etc.
+            (s/reduce
+             reduce-piece
+             {:consumer part-consumer :state {}}))
 
-     (fn [{:keys [parts] :as body}]
-       ;; Regardless of parameter schemas, we use the
-       ;; Content-Disposition header to produce a map between fields and
-       ;; content.  There is no obligation for the part consumer to
-       ;; return a byte[]. In fact, it may produce a java.io.File, or
-       ;; stream, handle or database key.
+       (fn [{:keys [parts] :as body}]
+         ;; Regardless of parameter schemas, we use the
+         ;; Content-Disposition header to produce a map between fields and
+         ;; content.  There is no obligation for the part consumer to
+         ;; return a byte[]. In fact, it may produce a java.io.File, or
+         ;; stream, handle or database key.
 
-       ;; As we're multipart/form-data, let's make use of the expected
-       ;; Content-Disposition headers.
-       (let [schemas (get-in ctx [:handler :methods (:method ctx) :parameters])
-             fields
-             (reduce
-              (fn [acc part] (cond-> acc
-                              (= (:type part) :part)
-                              (assoc (get-in part [:content-disposition :params "name"]) part)))
-              {} parts)]
+         ;; As we're multipart/form-data, let's make use of the expected
+         ;; Content-Disposition headers.
+         (let [schemas (get-in ctx [:handler :methods (:method ctx) :parameters])
+               fields
+               (reduce
+                (fn [acc part] (cond-> acc
+                                 (= (:type part) :part)
+                                 (assoc (get-in part [:content-disposition :params "name"]) part)))
+                {} parts)]
 
-         (cond
-           ;; In Swagger 2.0 you can't have both form and body
-           ;; parameters, which seems reasonable
-           (or (:form schemas) (:body schemas))
-           (let [coercer (sc/coercer
-                          (or (:form schemas) (:body schemas))
-                          (fn [schema]
-                            (or
-                             (coerce/+parameter-key-coercions+ schema)
-                             ((part-coercion-matcher part-consumer) schema)
-                             ((rsc/coercer :json) schema))))
-                 params (coercer fields)]
-             (if-not (schema.utils/error? params)
-               (assoc-in ctx [:parameters (if (:form schemas) :form :body)] params)
-               (d/error-deferred (ex-info "Bad form fields"
-                                          {:status 400 :error params}))))
+           (cond
+             ;; In Swagger 2.0 you can't have both form and body
+             ;; parameters, which seems reasonable
+             (or (:form schemas) (:body schemas))
+             (let [coercer (sc/coercer
+                            (or (:form schemas) (:body schemas))
+                            (fn [schema]
+                              (or
+                               (coerce/+parameter-key-coercions+ schema)
+                               ((part-coercion-matcher part-consumer) schema)
+                               ((rsc/coercer :json) schema))))
+                   params (coercer fields)]
+               (if-not (schema.utils/error? params)
+                 (assoc-in ctx [:parameters (if (:form schemas) :form :body)] params)
+                 (d/error-deferred (ex-info "Bad form fields"
+                                            {:status 400 :error params}))))
 
-           :otherwise (assoc ctx :body fields)))))))
+             :otherwise (assoc ctx :body fields))))))))
