@@ -17,22 +17,22 @@
    yada.resources.sse))
 
 (defn hello []
-  (yada "Hello World!\n" #_{:error-handler identity}))
+  (yada "Hello World!\n"))
 
 (defn hello-atom []
-  (yada (atom "Hello World!\n") #_{:error-handler identity}))
+  (yada (atom "Hello World!\n")))
 
 (defn hello-swagger []
   (swaggered {:info {:title "Hello World!"
                      :version "1.0"
-                     :description "Demonstrating yada + swagger"}
+                     :description "A swaggered String"}
               :basePath "/hello-swagger"}
              ["/hello" (hello)]))
 
 (defn hello-atom-swagger []
   (swaggered {:info {:title "Hello World!"
                      :version "1.0"
-                     :description "Demonstrating yada + swagger"}
+                     :description "A String inside a Clojure atom, swaggered"}
               :basePath "/hello-atom-swagger"}
              ["/hello" (hello-atom)]))
 
@@ -124,7 +124,7 @@
               ["/hello-different-origin/2" (hello-different-origin-2 config)]
               ["/hello-different-origin/3" (hello-different-origin-3 config)]
               ]]
-            (catch Exception e
+            (catch Throwable e
               (errorf e "Getting exception on hello routes")
               ["" false]
               ))))

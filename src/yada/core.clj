@@ -79,24 +79,14 @@
                                                 (-> ctx :handler :allowed-methods)))}}))
     ctx))
 
-(defn merge-parameters
-  "Merge parameters such that method parameters override resource
-  parameters, and that parameter schemas (except for the single body
-  parameter) are combined with merge."
-  [resource-params method-params]
-  (merge
-   (apply merge-with merge (map #(dissoc % :body) [resource-params method-params]))
-   (select-keys resource-params [:body])
-   (select-keys method-params [:body])))
-
 (defn parse-parameters
   "Parse request and coerce parameters."
   [ctx]
   (let [method (:method ctx)
         request (:request ctx)
 
-        schemas (merge-parameters (get-in ctx [:handler :parameters])
-                                  (get-in ctx [:handler :methods method :parameters]))
+        schemas (util/merge-parameters (get-in ctx [:handler :parameters])
+                                       (get-in ctx [:handler :methods method :parameters]))
 
         ;; TODO: Creating coercers on every request is unnecessary and
         ;; expensive, should pre-compute them.
@@ -234,8 +224,8 @@
         rep (rep/select-best-representation (:request ctx) produces)]
     (cond-> ctx
       produces (assoc :produces produces)
-      rep (assoc-in [:response :produces] rep)
-      (and rep (-> ctx :handler :vary)) (assoc-in [:response :vary] (-> ctx :handler :vary)))))
+      produces (assoc-in [:response :vary] (rep/vary produces))
+      rep (assoc-in [:response :produces] rep))))
 
 ;; Conditional requests - last modified time
 (defn check-modification-time [ctx]
@@ -433,16 +423,21 @@
 (defn yada
   "Create a Ring handler"
   ([resource]
-   (let [base resource
 
-         resource (if (satisfies? p/ResourceCoercion resource)
-                    (p/as-resource resource)
-                    resource)
+   (when (not (satisfies? p/ResourceCoercion resource))
+     (throw (ex-info "Resource must satisfy ResourceCoercion" {:resource resource})))
+   
+   (let [base resource
 
          ;; Validate the resource structure, with coercion if
          ;; necessary.
-         resource (ys/resource-coercer resource)
-         _ (assert (not (schema.utils/error? resource)) (pr-str resource))
+         resource (ys/resource-coercer (p/as-resource resource))
+
+         _ (when (schema.utils/error? resource)
+             (throw (ex-info "Resource does not conform to schema"
+                             {:resource base
+                              :error (:error resource)
+                              :schema ys/Resource})))
 
          ;; This handler services a collection of resources
          ;; (TODO: this is ambiguous, what do we mean exactly?)
@@ -455,10 +450,7 @@
          allowed-methods (let [methods (set (keys (:methods resource)))]
                            (cond-> methods
                              (some #{:get} methods) (conj :head)
-                             true (conj :options)))
-         
-         vary (when-let [produces (:produces resource)]
-                (rep/vary produces))]
+                             true (conj :options)))]
 
      (new-handler
       (merge {:id (java.util.UUID/randomUUID)
@@ -467,6 +459,5 @@
               :allowed-methods allowed-methods
               :known-methods known-methods
               :interceptor-chain default-interceptor-chain
-              :vary vary
               :collection? collection?}
              resource)))))

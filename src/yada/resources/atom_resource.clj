@@ -19,18 +19,27 @@
      (fn [_ _ _ _]
        (reset! *last-modified (to-date (now)))))
     (resource
-     {:produces (:produces val)
-      :properties (fn [ctx] {:last-modified @*last-modified})
-      :methods {:get {:handler (fn [ctx] @*a)}
-                :put {:parameters {:body String}
-                      :consumes "text/plain"
-                      :handler (fn [ctx]
-                                 ;; We can't PUT a nil, because nils mean
-                                 ;; no representation and yield 404s on
-                                 ;; GET, hence this when guard
-                                 (when-let [body (get-in ctx [:parameters :body])]
-                                   (reset! *a body)))}
-                :delete {:handler (fn [ctx] (reset! *a nil))}}})))
+     (merge
+      (when-let [produces (:produces val)]
+        {:produces produces})
+      {:properties (fn [ctx] {:last-modified @*last-modified})
+       :methods {:get (merge (get-in val [:methods :get])
+                             {:description "Derefrence to get the value of the atom"
+                              :summary "Get the atom's value"
+                              :handler (fn [ctx] @*a)})
+                 :put {:description "Reset the atom to the value parameter of the form"
+                       :summary "Reset the atom to a given value"
+                       :parameters {:form {:value String}}
+                       :consumes "application/x-www-form-urlencoded"
+                       :handler (fn [ctx]
+                                  ;; We can't PUT a nil, because nils mean
+                                  ;; no representation and yield 404s on
+                                  ;; GET, hence this when guard
+                                  (when-let [body (get-in ctx [:parameters :form :value])]
+                                    (reset! *a body)))}
+                 :delete {:description "Reset the atom to nil, such that this resource has no representation"
+                          :summary "Reset the atom to nil"
+                          :handler (fn [ctx] (reset! *a nil))}}}))))
 
 (extend-protocol p/ResourceCoercion
   clojure.lang.Atom
@@ -39,3 +48,5 @@
       (cond
         (string? v) (string-atom-resource *a)
         :otherwise (throw (ex-info (format "Unsupported value type: %s" (type v)) {}))))))
+
+

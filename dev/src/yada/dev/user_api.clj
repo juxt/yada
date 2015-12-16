@@ -26,43 +26,48 @@
 
   RouteProvider
   (routes [{:keys [db]}]
-    ["/api"
-     (->
-      (swaggered
-       {:info {:title "User API"
-               :version "0.0.1"
-               :description "Example user API"}
-        :basePath "/api"}
-       ["" {"/users"
-            {""
-             (merge (yada (:users db))
-                    {:swagger {:get {:summary "Get users"
-                                     :description "Get a list of all known users"}}})
+    (try
+      ["/api" 
+       (->
+          (swaggered
+           {:info {:title "User API"
+                   :version "1.0"
+                   :description "Example user API"}
+            :basePath "/api"}
+           ["" {"/users"
+                {""
+                 (merge (yada (:users db))
+                        {:swagger {:get {:summary "Get users"
+                                         :description "Get a list of all known users"}}})
 
-             ["/" :username]
-             {"" (yada/yada
-                  {:methods
-                   {:get {:summary "Get user"
-                          :description "Get the details of a known user"
-                          :parameters {:path {:username s/Str}}
-                          :produces [{:media-type
-                                      #{"application/edn" "application/json;q=0.9" "text/html;q=0.8"}
-                                      :charset charset/platform-charsets}]
-                          :handler (fn [ctx]
-                                     (when-let [user (get (:users db)
-                                                          (-> ctx :parameters :username))]
-                                       {:user user}))
-                          :responses {200 {:description "Known user"}
-                                      404 {:description "Unknown user"}}}}
-                   
-                   })
+                 ["/" :username]
+                 {"" (yada/yada
+                      {:methods
+                       {:get {:summary "Get user"
+                              :description "Get the details of a known user"
+                              :parameters {:path {:username s/Str}}
+                              :produces [{:media-type
+                                          #{"application/edn" "application/json;q=0.9" "text/html;q=0.8"}
+                                          :charset charset/platform-charsets}]
+                              :handler (fn [ctx]
+                                         (when-let [user (get (:users db)
+                                                              (-> ctx :parameters :username))]
+                                           {:user user}))
+                              :responses {200 {:description "Known user"}
+                                          404 {:description "Unknown user"}}}}
+                       
+                       })
 
-              "/posts" (yada/yada
-                        {:swagger {:post {:summary "Create a new post"}}
-                         :methods {:post (fn [ctx] nil)}})}}}])
-      ;; TODO: Might be able to unresolve-handler on yada's Endpoint and
-      ;; not have to tag like this, that would be nice!
-      (tag ::user-api))]))
+                  "/posts" (yada/yada
+                            {:swagger {:post {:summary "Create a new post"}}
+                             :methods {:post (fn [ctx] nil)}})}}}])
+          ;; TODO: Might be able to unresolve-handler on yada's Endpoint and
+          ;; not have to tag like this, that would be nice!
+          (tag ::user-api))]
+      (catch Throwable e
+        (errorf e "Getting exception on user-api routes")
+        ["" false]
+        ))))
 
 (defn new-verbose-user-api []
   (->VerboseUserApi))

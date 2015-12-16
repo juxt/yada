@@ -17,6 +17,7 @@
 (import-vars
  [yada.core yada]
  [yada.swagger swaggered]
+ [yada.resource resource]
  [yada.protocols as-resource])
 
 

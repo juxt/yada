@@ -129,3 +129,15 @@
   (reduce-kv (fn [acc k v] (if (not-empty v) (assoc acc k v) acc)) {} m))
 
 
+;; Parameters
+
+(defn merge-parameters
+  "Merge parameters such that method parameters override resource
+  parameters, and that parameter schemas (except for the single body
+  parameter) are combined with merge."
+  [resource-params method-params]
+  (merge
+   (apply merge-with merge (map #(dissoc % :body) [resource-params method-params]))
+   (select-keys resource-params [:body])
+   (select-keys method-params [:body])))
+

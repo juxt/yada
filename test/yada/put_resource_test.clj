@@ -26,8 +26,7 @@
                      "content-type" "text/plain;charset=utf-8"}
         [:body to-string] := "Bradley")
 
-      (given @(handler (-> (request :put "/" "Chelsea")
-                           (add-headers {"content-type" "text/plain"})))
+      (given @(handler (-> (request :put "/" {:value "Chelsea"})))
         :status := 204
         [:headers keys set] :⊅ #{"content-type"}
         [:headers keys set] :⊅ #{"content-length"}
