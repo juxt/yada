@@ -64,36 +64,38 @@
                           :representations [{:media-type "text/plain"}]}))
 
 (defn index [*router]
-  (yada
-   (assoc
-    (new-template-resource
-     "templates/page.html"
-     (delay ; Delay because our *router won't be delivered yet
-      {:content
-       (html
-        [:div.container
-         [:h2 "Demo: Hello World!"]
-         [:ul
-          [:li [:a {:href (path-for @*router ::hello)} "Hello!"] " - the simplest possible demo, showing the effect of " [:span.yada "yada"] " on a simple string"]
+  (-> (new-template-resource
+       "templates/page.html"
+       (delay      ; Delay because our *router won't be delivered yet
+        {:homeref (path-for @*router :yada.dev.docsite/index)
+         :content
+         (html
+          [:div.container
+           [:h2 "Demo: Hello World!"]
+           [:ul
+            [:li [:a {:href (path-for @*router ::hello)} "Hello!"]
+             " - the simplest possible demo, showing the effect of " [:span.yada "yada"] " on a simple string"]
 
-          [:li [:a {:href
-                    (format "%s/index.html?url=%s/swagger.json"
-                            (path-for @*router :swagger-ui)
-                            (path-for @*router ::hello-swagger))}
-                           
-                "Hello Swagger!"] " - demonstration of the Swagger interface on a simple string"]
+            [:li [:a {:href
+                      (format "%s/index.html?url=%s/swagger.json"
+                              (path-for @*router :swagger-ui)
+                              (path-for @*router ::hello-swagger))}
+                  "Hello Swagger!"]
+             " - demonstration of the Swagger interface on a simple string"]
 
-          [:li [:a {:href (path-for @*router ::hello-atom)} "Hello atom!"] " - demonstrating the use of Clojure's reference types to manage mutable state"]
+            [:li [:a {:href (path-for @*router ::hello-atom)} "Hello atom!"]
+             " - demonstrating the use of Clojure's reference types to manage mutable state"]
 
-          [:li [:a {:href
-                    (format "%s/index.html?url=%s/swagger.json"
-                            (path-for @*router :swagger-ui)
-                            (path-for @*router ::hello-atom-swagger))}
-
-                "Hello Swaggatom!"] " - demonstration of the Swagger interface on an atom"]]
-                    
-         [:p [:a {:href (path-for @*router ::index)} "Index"]]])}))
-    :id ::index)))
+            [:li [:a {:href
+                      (format "%s/index.html?url=%s/swagger.json"
+                              (path-for @*router :swagger-ui)
+                              (path-for @*router ::hello-atom-swagger))}
+                  "Hello Swaggatom!"]
+             " - demonstration of the Swagger interface on an atom"]]
+           
+           [:p [:a {:href (path-for @*router ::index)} "Index"]]])}))
+      (assoc :id ::index)
+      yada))
 
 (s/defrecord HelloWorldExample [channel
                                 config :- config/ConfigSchema]

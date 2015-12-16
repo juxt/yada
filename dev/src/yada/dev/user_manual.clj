@@ -151,7 +151,8 @@
       ))
 
 (defn body [{:keys [*router] :as user-manual} doc replacements]
-  {:content
+  {:homeref (path-for @*router ::yada.dev.docsite/index)
+   :content
    (-> (with-out-str (emit-element doc))
        (post-process-body replacements)
        )

@@ -58,7 +58,9 @@
                  ["/test.md" (yada (new-markdown-resource "# Heading\nHello"))]
                  ]]
             (catch clojure.lang.ExceptionInfo e
-              (errorf e "Problem with routes %s" (ex-data e))))))
+              (errorf e "Error building routes %s" (ex-data e)))
+            (catch Exception e
+              (errorf e "Error building routes %s")))))
 
 (defn new-talks [config]
   (-> (map->Talks {:config config})

@@ -53,7 +53,8 @@
      "templates/page.html"
      ;; We delay the model until after the component's start phase
      ;; because we need the *router.
-     (delay {:content
+     (delay {:banner true
+             :content
              (html
               [:div.container
                [:h2 "Welcome to " [:span.yada "yada"] "!"]
