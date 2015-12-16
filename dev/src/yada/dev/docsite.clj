@@ -15,6 +15,7 @@
    [yada.dev.config :as config]
    [yada.dev.template :refer [new-template-resource]]
    yada.resources.file-resource
+   [yada.dev.hello :as hello]
    [yada.yada :as yada :refer [yada]])
   (:import [modular.bidi Router]
            [com.stuartsierra.component SystemMap]
@@ -62,7 +63,7 @@
 
                 [:li "Examples - self-contained apps for you to explore"
                  [:ul
-                  [:li [:a {:href (path-for @*router ::hello)} "Hello World!"] " - to introduce " [:span.yada "yada"] " in the proper way"]
+                  [:li [:a {:href (path-for @*router :yada.dev.hello/index)} "Hello World!"] " - to introduce " [:span.yada "yada"] " in the proper way"]
                   
                   [:li
                    [:a {:href (str
@@ -115,36 +116,7 @@
     ["/"
      [["index.html" (index component)]
 
-      ["hello.html"
-       (yada
-        (assoc
-         (new-template-resource
-          "templates/page.html"
-          (delay {:content
-                  (html
-                   [:div.container
-                    [:h2 "Demo: Hello World!"]
-                    [:ul
-                     [:li [:a {:href (path-for @*router :yada.dev.hello/hello)} "Hello!"] " - the simplest possible demo, showing the effect of " [:span.yada "yada"] " on a simple string"]
-
-                     [:li [:a {:href
-                               (format "%s/index.html?url=%s/swagger.json"
-                                       (path-for @*router :swagger-ui)
-                                       (path-for @*router :yada.dev.hello/hello-swagger))}
-                           
-                           "Hello Swagger!"] " - demonstration of the Swagger interface on a simple string"]
-
-                     [:li [:a {:href (path-for @*router :yada.dev.hello/hello-atom)} "Hello atom!"] " - demonstrating the use of Clojure's reference types to manage mutable state"]
-
-                     [:li [:a {:href
-                               (format "%s/index.html?url=%s/swagger.json"
-                                       (path-for @*router :swagger-ui)
-                                       (path-for @*router :yada.dev.hello/hello-atom-swagger))}
-
-                           "Hello Swaggatom!"] " - demonstration of the Swagger interface on an atom"]]
-                    
-                    [:p [:a {:href (path-for @*router ::index)} "Index"]]])}))
-         :id ::hello))]
+      ["hello.html" (hello/index *router)]
 
       ;;Boring specs
       [["spec/rfc" :rfc] (rfc)]]]))

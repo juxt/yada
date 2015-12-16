@@ -6,8 +6,11 @@
    [clojure.core.async :refer (chan go <! >! timeout go-loop)]
    [clojure.tools.logging :refer :all]
    [com.stuartsierra.component :refer [Lifecycle]]
+   [hiccup.core :refer (html)]
+   [modular.bidi :refer (path-for)]
    [schema.core :as s]
    [yada.dev.config :as config]
+   [yada.dev.template :refer [new-template-resource]]
    [yada.swagger :refer [swaggered]]
    [yada.yada :as yada :refer [yada]]
    [bidi.bidi :refer [tag]]
@@ -59,6 +62,38 @@
                           :access-control {:allow-origin "*"
                                            :allow-credentials true}
                           :representations [{:media-type "text/plain"}]}))
+
+(defn index [*router]
+  (yada
+   (assoc
+    (new-template-resource
+     "templates/page.html"
+     (delay ; Delay because our *router won't be delivered yet
+      {:content
+       (html
+        [:div.container
+         [:h2 "Demo: Hello World!"]
+         [:ul
+          [:li [:a {:href (path-for @*router ::hello)} "Hello!"] " - the simplest possible demo, showing the effect of " [:span.yada "yada"] " on a simple string"]
+
+          [:li [:a {:href
+                    (format "%s/index.html?url=%s/swagger.json"
+                            (path-for @*router :swagger-ui)
+                            (path-for @*router ::hello-swagger))}
+                           
+                "Hello Swagger!"] " - demonstration of the Swagger interface on a simple string"]
+
+          [:li [:a {:href (path-for @*router ::hello-atom)} "Hello atom!"] " - demonstrating the use of Clojure's reference types to manage mutable state"]
+
+          [:li [:a {:href
+                    (format "%s/index.html?url=%s/swagger.json"
+                            (path-for @*router :swagger-ui)
+                            (path-for @*router ::hello-atom-swagger))}
+
+                "Hello Swaggatom!"] " - demonstration of the Swagger interface on an atom"]]
+                    
+         [:p [:a {:href (path-for @*router ::index)} "Index"]]])}))
+    :id ::index)))
 
 (s/defrecord HelloWorldExample [channel
                                 config :- config/ConfigSchema]
