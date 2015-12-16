@@ -27,6 +27,7 @@
    [ring-basic-authentication "1.0.5"]
    [org.clojure/core.async "0.1.346.0-17112a-alpha"]
    [org.clojure/tools.reader "0.9.1"]
+   [org.clojure/tools.trace "0.7.8"]
    [org.clojars.ikoblik/clj-index "0.0.2"]
    [com.cognitect/transit-clj "0.8.285"]]
 
@@ -60,7 +61,7 @@
 
           [org.clojure/tools.nrepl "0.2.12"] ; otherwise pedantic check fails
           [org.clojure/tools.logging "0.3.1"]
-          [org.clojure/tools.trace "0.7.8"]
+          
 
           [ch.qos.logback/logback-classic "1.0.7"
            :exclusions [org.slf4j/slf4j-api]]
@@ -75,8 +76,8 @@
           [markdown-clj "0.9.62"]
           [ring-mock "0.1.5"]
 
-          [aero "0.1.2"]
-          [juxt/iota "0.2.3"]
+          [aero "0.1.4"]
+          [juxt/iota "0.3.0-alpha2"]
 
           [juxt.modular/aleph "0.1.3" :exclusions [manifold aleph]]
           [aleph "0.4.1-beta2"]
