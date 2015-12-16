@@ -19,6 +19,7 @@
    [yada.representation :as rep]
    [yada.protocols :as p]
    [yada.request-body :as rb]
+   [yada.multipart]
    [yada.schema :as ys]
    [yada.service :as service] ; deprecate
    [yada.util :as util])
