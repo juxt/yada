@@ -146,13 +146,7 @@
   "Some whitespace reduction"
   [s replacements]
   (-> s
-      (str/replace #"\{\{now.date\}\}" (:now-date replacements))
-      (str/replace #"\{\{hello.date\}\}" (:hello-date replacements))
-      (str/replace #"\{\{hello.date.after\}\}" (:hello-date-after replacements))
-      (str/replace #"\{\{prefix\}\}" (:prefix replacements))
-      (str/replace #"\{\{(.+)\}\}" #(System/getProperty (last %)))
-      (str/replace #"<p>\s*</p>" "")
-      (str/replace #"(yada)(?![-/])" "<span class='yada'>yada</span>")
+      (str/replace #"(yada)(?![-/\.])" "<span class='yada'>yada</span>")
       (str/replace "http://localhost:8090" (:prefix replacements))
       ))
 
