@@ -43,7 +43,7 @@
       )))
 
 (deftest swagger-intro-test
-  (let [resource (hello/hello-api)
+  (let [resource (hello/hello-swagger)
         response @(resource (request :get "/swagger.json"))]
     #_(given response
       :status := 200

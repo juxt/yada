@@ -10,6 +10,7 @@
    [yada.dev.config :as config]
    [yada.swagger :refer [swaggered]]
    [yada.yada :as yada :refer [yada]]
+   [bidi.bidi :refer [tag]]
    yada.resources.sse))
 
 (defn hello []
@@ -18,20 +19,18 @@
 (defn hello-atom []
   (yada (atom "Hello World!\n") #_{:error-handler identity}))
 
-(defn hello-api []
+(defn hello-swagger []
   (swaggered {:info {:title "Hello World!"
                      :version "1.0"
                      :description "Demonstrating yada + swagger"}
-              :basePath "/hello-api"
-              }
+              :basePath "/hello-swagger"}
              ["/hello" (hello)]))
 
-(defn hello-atom-api []
+(defn hello-atom-swagger []
   (swaggered {:info {:title "Hello World!"
                      :version "1.0"
                      :description "Demonstrating yada + swagger"}
-              :basePath "/hello-api"
-              }
+              :basePath "/hello-atom-swagger"}
              ["/hello" (hello-atom)]))
 
 (defn hello-sse [ch]
@@ -73,12 +72,12 @@
   (routes [_]
           (try
             [""
-             [["/hello" (hello)]
-              ["/hello-atom" (hello-atom)]
+             [["/hello" (tag (hello) ::hello)]
+              ["/hello-atom" (tag (hello-atom) ::hello-atom)]
 
               ;; Swagger
-              ["/hello-api" (hello-api)]
-              ["/hello-atom-api" (hello-atom-api)]
+              ["/hello-swagger" (tag (hello-swagger) ::hello-swagger)]
+              ["/hello-atom-swagger" (tag (hello-atom-swagger) ::hello-atom-swagger)]
 
               ;; Realtime
               ["/hello-sse" (hello-sse channel)]
