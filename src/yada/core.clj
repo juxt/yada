@@ -158,28 +158,29 @@
   Content-Length or Transfer-Encoding header, regardless of the method
   semantics."
   [{:keys [request] :as ctx}]
-  (if (-> request :headers (filter #{"content-length" "transfer-encoding"}) not-empty)
-    (let [content-type (mt/string->media-type (get-in request [:headers "content-type"]))
-          content-length (safe-read-content-length request)
+  (let [content-length (safe-read-content-length request)]
+    (if (or (get-in request [:headers "transfer-encoding"])
+            (and content-length (pos? content-length)))
+      (let [content-type (mt/string->media-type (get-in request [:headers "content-type"]))
+            content-length (safe-read-content-length request)
+            consumes-mt (set (map (comp :name :media-type)
+                                  (or (get-in ctx [:properties :consumes])
+                                      (concat (get-in ctx [:handler :methods (:method ctx) :consumes])
+                                              (get-in ctx [:handler :consumes])))))]
 
-          consumes-mt (set (map (comp :name :media-type)
-                                (or (get-in ctx [:properties :consumes])
-                                    (concat (get-in ctx [:handler :methods (:method ctx) :consumes])
-                                            (get-in ctx [:handler :consumes])))))]
+        (if-not (contains? consumes-mt (:name content-type))
+          (d/error-deferred
+           (ex-info "Unsupported Media Type"
+                    {:status 415
+                     :message "Method does not declare that it consumes this content-type"
+                     :consumes consumes-mt
+                     :content-type content-type}))
+          (if (and content-length (pos? content-length))
+            (rb/process-request-body ctx (stream/map bs/to-byte-array (bs/to-byte-buffers (:body request))) (:name content-type))
+            ctx)))
 
-      (if-not (contains? consumes-mt (:name content-type))
-        (d/error-deferred
-         (ex-info "Unsupported Media Type"
-                  {:status 415
-                   :message "Method does not declare that it consumes this content-type"
-                   :consumes consumes-mt
-                   :content-type content-type}))
-        (if (and content-length (pos? content-length))
-          (rb/process-request-body ctx (stream/map bs/to-byte-array (bs/to-byte-buffers (:body request))) (:name content-type))
-          ctx)))
-
-    ;; else
-    ctx))
+      ;; else
+      ctx)))
 
 #_(defn authentication
   "Authentication"
