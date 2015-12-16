@@ -2,7 +2,7 @@
 
 Welcome to the yada manual!
 
-This manual corresponds with version 1.0.0-20150903.093751-9
+This manual corresponds with version 1.1-alpha1
 
 ### Table of Contents
 
@@ -27,26 +27,26 @@ questions you might have.
 If you spot a typo, misspelling, grammar problem, confusing text, or
 anything you feel you could improve, please go-ahead and
 [edit the source](https://github.com/juxt/yada/edit/master/dev/resources/user-manual.md). If
-your contribution is accepted you will have our eternal gratitude, help
-future readers and be forever acknowledged in the yada documentation as
-a contributor!
+your contribution is accepted you will have our eternal gratitude,
+help future readers and be forever acknowledged in the yada
+documentation as a contributor!
 
 [Back to index](/)
 
 ## Forward
 
-State is everywhere. The world is moving and we need to keep up. We need
-our computers to help us stay up-to-date with the latest information,
-chats, trends, stock-prices, news and weather updates, and other
-important stuff.
+State is everywhere. The world is moving and we need to keep up. We
+need our computers to help us stay up-to-date with the latest
+information, chats, trends, stock-prices, news and weather updates,
+and other important stuff.
 
 The web is primarily a means to move state around. You have some state
 here, and you want it over there. Or it's over there, but you want it
 over here.
 
-For two decades or more, the pre-dominant model for web programming has
-ignored state, instead requiring developers to work at the level of the
-HTTP protocol itself.
+For two decades or more, the pre-dominant model for web programming
+has ignored state, instead requiring developers to work at the level
+of the HTTP protocol itself.
 
 For example, in Java...
 
@@ -111,51 +111,75 @@ approach, focussing on what a web _resource_ is really about: _state_.
 
 ### What is yada?
 
-yada is a Clojure library that lets you create powerful Ring
-handlers that are fully compliant with HTTP specifications.
+yada is a Clojure library that lets you create services that are fully
+compliant with, and thereby taking full advantage of, HTTP
+specifications.
 
-Underlying yada is a number of Clojure protocols. Any Clojure data type
-that satisfies one or more of these protocols can be used to build a
-Ring handler. You can use the built-in types (strings, files,
-collections, atoms, etc.), create your own or re-use ones written by
-others.
+Underlying each service is a data description of a web _resource_,
+combining information about the nature of the resource's state, its properties,
+methods and representations with service configuration settings.
+
+```clojure
+{:properties {…}
+ :methods {:get {:handler (fn [ctx] "Hello World!")}
+           :put {…}
+           :brew {…}}
+ …
+}
+```
+
+Since the data description is defined as a simple Clojure nested map
+structure, it is straight-forward to author directly, generate or
+derive. And it's also straight-forward to use it as the basis for
+other API description formats. One such format that has become quite
+popular, Swagger 2.0, is provided out-of-the-box.
+
+yada provides an eponymous function that takes a data description for
+a resource and returns a handler that can be used by the Aleph
+asynchronous web server (other web servers may be supported at a
+future date).
+
+```clojure
+(yada {:properties {…} :methods {…}})
+```
 
 This approach has a number of advantages. Many things you would expect
 to have to code yourself are taken care of automatically, such as
 request validation, content negotiation, conditional requests, HEAD,
-OPTIONS and TRACE methods, cache-control, CORS and much more, leaving
-you time to focus on the functional parts of your application and
-leaving you with far less handler code to write and maintain.
+OPTIONS and TRACE methods, status codes, headers, cache-control,
+security and much more, leaving you time to focus on the functional
+parts of your application and leaving you with a lot less handler code
+to write and maintain.
 
-yada is built on a fully asynchronous core, allowing you to
-exploit the asynchronous features of modern web servers, to achieve
-greater scalability for your Clojure-powered websites and APIs.
-
-yada is data-centric, letting you specify your web resources
-as _data_. This has some compelling advantages, such as being able to
-dynamically generate parts of your application, or transform that data
-into other formats, such as [Swagger](http://swagger.io) specifications
-for API documentation.
+yada is built on a fully asynchronous core, bringing exceptional
+performance and scalability to your websites and APIs.
 
 However, yada is not a fully-fledged 'batteries-included' web
-'framework'. It does not offer URI routing and link formation, nor does
-it offer views and templating. It does, however, integrate seamlessly
-with its sibling library [bidi](https://github.com/juxt/bidi (for URI
-routing and formation) and other routing libraries. It can be integrated
-with the many template libraries available for Clojure and Java, so you
-can build your own web-framework from yada and other libraries.
+'framework'. It does not offer URI routing and link formation, nor
+does it offer views and templating. It does, however, integrate
+seamlessly with its sibling library
+[bidi](https://github.com/juxt/bidi (for URI routing and formation)
+and other routing libraries. It can be integrated with the many
+template libraries available for Clojure and Java, so you can build
+your own web-framework from yada and other libraries.
 
-yada is also agnostic to how you want to build your app. It is designed
-to be easy to use for HTML content and web APIs, in whatever style you
-decide is right for you (Swagger documented, hypermedia driven, ROCA, jsonapi, real-time, etc). The only constraint is that yada tries to comply as far
-as possible with current HTTP specifications, to promote richer, more
-interoperable and interconnected systems which are built to last.
+yada is also agnostic to how you want to build your app. It is
+designed to be as easy to use for simple HTML content as it is for
+APIs, in whatever style you decide is right for you (Swagger
+documented, hypermedia driven, ROCA, jsonapi, real-time, etc).
+
+With yada, yours can contribute to the number of systems which are
+richer, more interoperable and interconnected systems, and which are
+_built to last_.
 
 ### An introductory example: Hello World!
 
-Let's introduce yada properly by writing some code. Let's start with some state, a string: `Hello World!`. We'll be able to give an overview of many of yada's features using this simple example.
+Let's introduce yada properly by writing some code. Let's start with
+some state, a string: `Hello World!`. We'll be able to give an
+overview of many of yada's features using this simple example.
 
-We pass the string as a single argument to yada's `yada` function, and yada returns a Ring handler.
+We pass the string as a single argument to yada's `yada` function, and
+yada returns a handler.
 
 ```clojure
 (require '[yada.yada :refer [yada]])
@@ -163,11 +187,17 @@ We pass the string as a single argument to yada's `yada` function, and yada retu
 (yada "Hello World!\n")
 ```
 
-This web resource can be used as a Ring handler. By combining this handler with a web-server, we can start the service.
+You can see the result of this at [http://localhost:8090/hello](http://localhost:8090/hello).
+
+By combining this handler with a web-server, we can start the service.
 
 Here's how you can start the service using
-[Aleph](https://github.com/ztellman/aleph). (Note that Aleph is the only
-web server that yada currently supports).
+[Aleph](https://github.com/ztellman/aleph). (Note that you are free to
+choose any yada -compatible web server, as long as it's Aleph! Joking
+aside, as more web servers support end-to-end asynchronicity with
+back-pressure, all the way up to the application, then yada will
+support those. Currently Aleph is the only web server we know that
+offers this).
 
 ```clojure
 (require '[yada.yada :refer [yada]]
@@ -283,12 +313,12 @@ Now let's create a route structure housing this resource. This is our API.
 
 ```clojure
 (def api
-  ["/hello-api"
+  ["/hello-swagger"
       (yada/swaggered
         {:info {:title "Hello World!"
                 :version "1.0"
                 :description "Demonstrating yada + swagger"}
-                :basePath "/hello-api"}
+                :basePath "/hello-swagger"}
         ["/hello" hello])])
 ```
 
@@ -304,7 +334,7 @@ and start the web server.
   {:port 3000})
 ```
 
-The `yada/swaggered` wrapper provides a Swagger specification, in JSON, derived from its arguments. This specification can be used to drive a [Swagger UI](http://localhost:8090/swagger-ui/index.html?url=/hello-api/swagger.json).
+The `yada/swaggered` wrapper provides a Swagger specification, in JSON, derived from its arguments. This specification can be used to drive a [Swagger UI](http://localhost:8090/swagger-ui/index.html?url=/hello-swagger/swagger.json).
 
 ![Swagger](static/img/hello-swagger.png)
 
@@ -454,7 +484,7 @@ Before reverting our code back to the original, without the atom, let's see the 
 
 ![Swagger](static/img/mutable-hello-swagger.png)
 
-We now have a few more methods. [See for yourself](http://localhost:8090/swagger-ui/index.html?url=/hello-atom-api/swagger.json).
+We now have a few more methods. [See for yourself](http://localhost:8090/swagger-ui/index.html?url=/hello-atom-swagger/swagger.json).
 
 #### A HEAD request
 
@@ -582,8 +612,8 @@ Clojure application with a Leiningen `project.clj` file, include the
 following in the file's __:dependencies__ section.
 
 ```clojure
-[yada "1.0.0-20150903.093751-9"]
-[aleph "0.4.0"]
+[yada "1.1.0-SNAPSHOT"]
+[aleph "0.4.1-beta2"]
 ```
 
 If you want to use yada to create a web API, this is all you need to
