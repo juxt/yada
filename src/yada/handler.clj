@@ -122,10 +122,10 @@
                           ;; errors, including image and video
                           ;; formats.
 
-                          [{:media-type #{"text/plain"
+                          [{:media-type #{"application/json"
+                                          "application/json;pretty=true;q=0.96"
+                                          "text/plain;q=0.9"
                                           "text/html;q=0.8"
-                                          "application/json;q=0.75"
-                                          "application/json;pretty=true;q=0.7"
                                           "application/edn;q=0.6"
                                           "application/edn;pretty=true;q=0.5"}
                             :charset charset/platform-charsets}])))]
