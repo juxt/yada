@@ -152,7 +152,8 @@ convenience of terse, expressive short-hand descriptions."}
 (s/defschema StaticProperties
   {(s/optional-key :last-modified) s/Inst
    (s/optional-key :version) s/Any
-   (s/optional-key :exists?) s/Bool})
+   (s/optional-key :exists?) s/Bool
+   NamespacedKeyword s/Any})
 
 (s/defschema PropertiesResult
   (merge StaticProperties
