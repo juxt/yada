@@ -14,7 +14,7 @@
    [yada.charset :as charset]
    [yada.methods :as m]
    [yada.protocols :as p]
-   [yada.resource :refer [new-custom-resource]]
+   [yada.resource :refer [resource]]
    [yada.util :refer [as-file]]))
 
 (defn new-template-resource
@@ -27,11 +27,11 @@
   if possible."
   [template-name model]
   (let [*template (atom nil)
-        resource (loader/find-file template-name)
-        file (as-file resource)
+        template-resource (loader/find-file template-name)
+        file (as-file template-resource)
         create-time (.getMillis (now))]
 
-    (new-custom-resource
+    (resource
      {:methods
       {:get
        {:produces
@@ -58,7 +58,7 @@
                           (< t (.lastModified f)))))
               (reset! *template
                       {:date (now)
-                       :parsed-template (stencil.parser/parse (slurp resource))}))
+                       :parsed-template (stencil.parser/parse (slurp template-resource))}))
 
             (when-let [pt (:parsed-template @*template)]
               (stencil/render pt (cond (fn? model) (model ctx)

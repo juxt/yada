@@ -7,7 +7,7 @@
    [yada.charset :as charset]
    [yada.journal :as journal]
    [yada.protocols :as p]
-   [yada.resource :refer [new-custom-resource]]
+   [yada.resource :refer [resource]]
    [yada.yada :as yada :refer [yada]]))
 
 (def access-control
@@ -16,7 +16,7 @@
 
 (defn index [idx]
   (yada
-   (new-custom-resource
+   (resource
     {:produces [{:media-type #{"text/html" "application/edn" "application/edn;pretty=true"}
                  :charset charset/platform-charsets}]
      :access-control access-control

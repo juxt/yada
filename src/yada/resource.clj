@@ -83,10 +83,9 @@
 
 
 ;; --
-(defrecord CustomResource []
+(defrecord Resource []
   p/ResourceCoercion
   (as-resource [this] this))
 
-;; TODO: Rename to simply 'resource'
-(defn new-custom-resource [m]
-  (map->CustomResource (ys/resource-coercer m)))
+(defn resource [m]
+  (map->Resource (ys/resource-coercer m)))

@@ -8,7 +8,7 @@
    [yada.charset :as charset]
    [yada.protocols :as p]
    [yada.methods :as m]
-   [yada.resource :refer [new-custom-resource]]
+   [yada.resource :refer [resource]]
    yada.resources.string-resource))
 
 (defn string-atom-resource [*a]
@@ -18,7 +18,7 @@
      *a :last-modified
      (fn [_ _ _ _]
        (reset! *last-modified (to-date (now)))))
-    (new-custom-resource
+    (resource
      {:produces (:produces val)
       :properties (fn [ctx] {:last-modified @*last-modified})
       :methods {:get {:handler (fn [ctx] @*a)}

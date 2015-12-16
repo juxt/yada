@@ -9,12 +9,12 @@
    [ring.util.codec :as codec]
    [schema.core :as s]
    [yada.protocols :as p]
-   [yada.resource :refer [new-custom-resource]]
+   [yada.resource :refer [resource]]
    [yada.yada :as yada :refer [yada]]))
 
 (deftest post-test
   (let [handler (yada
-                 (new-custom-resource
+                 (resource
                   {:methods {:post
                              {:handler (fn [ctx]
                                          (assoc (:response ctx)
@@ -26,7 +26,7 @@
 
 (deftest dynamic-post-test
   (let [handler (yada
-                 (new-custom-resource
+                 (resource
                   {:methods {:post {:handler (fn [ctx]
                                                (assoc (:response ctx)
                                                       :status 201 :body "foo"))}}}))]
@@ -37,7 +37,7 @@
 (deftest multiple-headers-test
   (let [handler
         (yada
-         (new-custom-resource
+         (resource
           {:methods {:post {:handler (fn [ctx] (assoc (:response ctx)
                                                      :status 201 :headers {"set-cookie" ["a" "b"]}))}}}))]
     (given @(handler (mock/request :post "/"))

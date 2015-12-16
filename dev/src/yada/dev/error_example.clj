@@ -7,13 +7,13 @@
    [bidi.bidi :refer [RouteProvider tag]]
    [ring.mock.request :refer [request]]
    [yada.swagger :refer [swaggered]]
-   [yada.resource :refer [new-custom-resource]]
+   [yada.resource :refer [resource]]
    [yada.resources.journal-browser :refer [new-journal-browser-resources]]
    [yada.yada :as yada :refer [yada]]))
 
 (defn hello-error [journal]
   (yada
-   (new-custom-resource
+   (resource
     {:produces [{:media-type "text/html"}]
 ;;     :error-handler identity
 ;;     :journal journal

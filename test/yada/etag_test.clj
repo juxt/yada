@@ -6,7 +6,7 @@
    [clojure.tools.logging :refer :all]
    [juxt.iota :refer [given]]
    [ring.mock.request :as mock]
-   [yada.resource :refer [new-custom-resource]]
+   [yada.resource :refer [resource]]
    [yada.protocols :as p]
    [yada.test.util :refer (etag?)]
    [yada.yada :as yada :refer [yada]]))
@@ -14,7 +14,7 @@
 ;; ETags -------------------------------------------------------------
 
 (defn etag-test-resource [v]
-  (new-custom-resource
+  (resource
    {:properties (fn [ctx] {:version @v})
     ;; TODO: test with just map, or even just "text/plain"
     :produces [{:media-type "text/plain"}]

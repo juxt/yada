@@ -18,7 +18,7 @@
    [yada.charset :as charset]
    [yada.media-type :as mt]
    [yada.protocols :as p]
-   [yada.resource :refer [new-custom-resource]]
+   [yada.resource :refer [resource]]
    [yada.core :as yada :refer [yada]]
    [yada.util :refer (md5-hash)])
   (:import (clojure.lang PersistentVector Keyword)))
@@ -54,7 +54,7 @@
       swagger)]))
 
 (defn swagger-spec [spec created-at content-type]
-  (new-custom-resource
+  (resource
    {:properties (fn [ctx] {:last-modified created-at
                           :version spec}) ; TODO would be nice to use a
                                         ; value rather than a lambda

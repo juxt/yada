@@ -9,12 +9,12 @@
    [ring.util.codec :as codec]
    [schema.core :as s]
    [yada.yada :as yada :refer [yada]]
-   [yada.resource :refer [new-custom-resource]]))
+   [yada.resource :refer [resource]]))
 
 
 (deftest post-test
   (let [handler (yada
-                 (new-custom-resource
+                 (resource
                   {:methods
                    {:post {:parameters {:form {:foo s/Str}}
                            :consumes "application/x-www-form-urlencoded"
@@ -40,7 +40,7 @@
 
 (deftest post-test-with-query-params
   (let [handler (yada
-                 (new-custom-resource
+                 (resource
                   {:methods
                    {:post {:parameters {:query {:foo s/Str}
                                         :form {:bar s/Str}}

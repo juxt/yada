@@ -11,12 +11,12 @@
    [phonebook.html :as html]
    [yada.methods :as m]
    [yada.protocols :as p]
-   [yada.resource :refer [new-custom-resource]]
+   [yada.resource :refer [resource]]
    [yada.yada :as yada])
   (:import [manifold.stream.core IEventSource]))
 
 (defn new-index-resource [db *routes]
-  (new-custom-resource
+  (resource
    {:description "Phonebook index"
     :produces [{:media-type
                 #{"text/html" "application/edn;q=0.9" "application/json;q=0.8"}
@@ -43,7 +43,7 @@
                           ctx (path-for @*routes :phonebook.api/entry :entry id))))}}}))
 
 (defn new-entry-resource [db *routes]
-  (new-custom-resource
+  (resource
    {:description "Phonebook entry"
     :parameters {:path {:entry Long}}
     :produces [{:media-type #{"text/html"

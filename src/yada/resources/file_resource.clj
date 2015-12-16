@@ -13,7 +13,7 @@
    [schema.core :as s]
    [yada.charset :as charset]
    [yada.representation :as rep]
-   [yada.resource :refer [Representation RepresentationSets new-custom-resource]]
+   [yada.resource :refer [Representation RepresentationSets resource]]
    [yada.protocols :as p]
    [yada.media-type :as mt])
   (:import [java.io File]
@@ -51,7 +51,7 @@
    :- {(s/optional-key :reader) (s/=> s/Any File Representation)
        (s/optional-key :produces) RepresentationSets}]
 
-  (new-custom-resource
+  (resource
    {::type :file
     :description (format "File source of %s" file)
     :properties (fn [ctx]
@@ -139,7 +139,7 @@
          :produces RepresentationSets}}
        (s/optional-key :index-files) [String]}]
 
-  (new-custom-resource
+  (resource
    {:description (format "Directory listing of %s" dir)
 
     ;; This tells the handler to match a route, even if there is some

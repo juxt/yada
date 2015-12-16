@@ -7,7 +7,7 @@
    [clj-time.coerce :refer (to-date)]
    [yada.charset :as charset]
    [yada.protocols :as p]
-   [yada.resource :refer [new-custom-resource]])
+   [yada.resource :refer [resource]])
   (:import [clojure.lang APersistentMap PersistentVector]))
 
 (extend-protocol p/ResourceCoercion

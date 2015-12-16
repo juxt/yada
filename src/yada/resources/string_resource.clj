@@ -7,13 +7,13 @@
    [clj-time.coerce :refer (to-date)]
    [yada.charset :as charset]
    [yada.protocols :as p]
-   [yada.resource :refer [new-custom-resource]]
+   [yada.resource :refer [resource]]
    [yada.util :refer (md5-hash)]))
 
 (extend-protocol p/ResourceCoercion
   String
   (as-resource [s]
-    (new-custom-resource
+    (resource
      {;; TODO Would be nice if properties could be static too.
       :properties {:last-modified (to-date (now))
                    :version s}
