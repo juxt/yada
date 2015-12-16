@@ -3,11 +3,8 @@
 (ns phonebook.db
   (:require
    [clojure.tools.logging :refer :all]
-   [schema.core :as s]))
-
-(s/defschema PhonebookEntry {:surname String :firstname String :phone String})
-
-(s/defschema Phonebook {s/Int PhonebookEntry})
+   [schema.core :as s]
+   [phonebook.schema :refer [Phonebook PhonebookEntry]]))
 
 (s/defn create-db [entries :- Phonebook]
   (assert entries)
@@ -54,24 +51,10 @@
 (s/defn search-entries :- Phonebook
   [db q]
   (let [entries (get-entries db)
-        f (filter (partial matches? q) entries)
-        res (into {} f)]
-    (infof "entries is %s" entries)
-    (infof "q is %s" q)
-    (infof "f is %s" (pr-str f))
-    (infof "res is %s" res)
-    res
-    ))
+        f (filter (partial matches? q) entries)]
+    (into {} f)))
 
-#_(into {} (filter (partial matches? "12")
-                 (get-entries (->> dev/system :phonebook :atom-db))
-                 ))
-
-;;(search-entries (->> dev/system :phonebook :atom-db) "Sparks")
-
-
-
-(s/defn get-entry :- PhonebookEntry
+(s/defn get-entry :- (s/maybe PhonebookEntry)
   [db id]
   (get @(:phonebook db) id))
 

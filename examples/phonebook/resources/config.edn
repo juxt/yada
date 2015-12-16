@@ -1,0 +1,7 @@
+{:port 9500
+ :entries {1 {:surname "Sparks"
+              :firstname "Malcolm"
+              :phone "1234"}
+           2 {:surname "Pither"
+              :firstname "Jon"
+              :phone "1235"}}}

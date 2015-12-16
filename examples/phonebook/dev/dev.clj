@@ -2,25 +2,34 @@
 
 (ns dev
   (:require
+   [aero.core :refer (read-config)]
    [clojure.pprint :refer (pprint)]
    [clojure.reflect :refer (reflect)]
    [clojure.repl :refer (apropos dir doc find-doc pst source)]
    [clojure.tools.namespace.repl :refer (refresh refresh-all)]
    [clojure.java.io :as io]
    [com.stuartsierra.component :as component]
-   [modular.component.co-dependency :as co-dependency]
    [schema.core :as s]
-   [phonebook.system :refer (new-system-map new-dependency-map new-co-dependency-map)]))
+   [phonebook.schema :refer [Config]]
+   [phonebook.system :refer (new-system-map new-dependency-map)]
+   ))
 
 (def system nil)
+
+(defn config
+  "Return a map of the static configuration used in the component
+  constructors."
+  []
+  (read-config
+   (io/resource "config.edn")
+   {:schema Config}))
 
 (defn new-dev-system
   "Create a development system"
   []
-  (let [s-map (new-system-map)]
+  (let [s-map (new-system-map (config))]
     (-> s-map
-        (component/system-using (new-dependency-map))
-        (co-dependency/system-co-using (new-co-dependency-map)))))
+        (component/system-using (new-dependency-map)))))
 
 (defn init
   "Constructs the current development system."
@@ -46,7 +55,7 @@
   []
   (alter-var-root
    #'system
-   co-dependency/start-system)
+   component/start-system)
   (when-let [errors (check)]
     (println "Warning, component integrity violated!" errors)))
 
@@ -68,4 +77,4 @@
   (refresh :after 'dev/go))
 
 (defn test-all []
-  (clojure.test/run-all-tests #"yada.*test$"))
+  (clojure.test/run-all-tests #"phonebook.*test$"))

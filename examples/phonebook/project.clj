@@ -5,12 +5,12 @@
   :license {:name "The MIT License"
             :url "http://opensource.org/licenses/MIT"}
 
-  :dependencies [[aleph "0.4.0" :exclusions [org.clojure/clojure]]
-                 [com.stuartsierra/component "0.2.3"]
+  :dependencies [[aero "0.1.4"]
+                 [aleph "0.4.1-beta2" :exclusions [org.clojure/clojure byte-streams]]
+                 [com.stuartsierra/component "0.3.1"]
                  [hiccup "1.0.5" :exclusions [org.clojure/clojure]]
-                 [juxt.modular/co-dependency "0.2.1"]
-                 [org.clojure/tools.namespace "0.2.5"]
-                 [yada "1.0.0-SNAPSHOT" :exclusions [clj-tuple riddley potemkin manifold]]]
+                 [org.clojure/tools.namespace "0.2.10"]
+                 [yada "1.1.0-SNAPSHOT" :exclusions [clj-tuple riddley potemkin manifold]]]
 
   :pedantic? :abort
 
@@ -18,5 +18,5 @@
                  :welcome (println "Type (dev) to start")}
 
   :profiles {:dev {:dependencies [[org.clojure/clojure "1.7.0"]
-                                  [ring-mock "0.1.5"]]
+                                  [ring-mock "0.1.5" :exclusions [commons-codec]]]
                    :source-paths ["dev"]}})

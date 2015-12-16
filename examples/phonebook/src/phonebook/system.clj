@@ -6,15 +6,15 @@
    [bidi.bidi :as bidi]
    [bidi.ring :refer [make-handler]]
    [com.stuartsierra.component :refer [system-map Lifecycle system-using using]]
-   [modular.component.co-dependency :as co-dependency]
    [phonebook.db :as db]
    [phonebook.api :refer [new-api-component]]
+   [phonebook.schema :refer [Config]]
    [schema.core :as s]
    [yada.yada :refer [yada]]))
 
 (defn create-routes [api]
   ["" [["/" (fn [req] {:body "Phonebook"})]
-       (bidi/routes api)
+       (:routes api)
        [true (yada nil)] ; TODO: uncomment this when pure-data branch done
        ]])
 
@@ -22,6 +22,8 @@
   Lifecycle
   (start [component]
     (let [routes (create-routes api)]
+      ;; We promised a dependency to tell it what the final routes are
+      (deliver (:promise api) routes)
       (assoc component
              :routes routes
              :server (http/start-server (make-handler routes) {:port port :raw-stream? true}))))
@@ -43,13 +45,6 @@
   {:api {:db :atom-db}
    :server [:api]})
 
-(defn new-co-dependency-map []
-  {:api {:server :server}})
-
-(s/defschema UserPort (s/both s/Int (s/pred #(<= 1024 % 65535))))
-
-(s/defn new-phonebook [config :- {:port UserPort
-                                  :entries db/Phonebook}]
+(s/defn new-phonebook [config :- Config]
   (-> (new-system-map config)
-      (system-using (new-dependency-map))
-      (co-dependency/system-co-using (new-co-dependency-map))))
+      (system-using (new-dependency-map))))

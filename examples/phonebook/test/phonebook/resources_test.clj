@@ -2,11 +2,12 @@
 
 (ns phonebook.resources-test
   (:require
+   [byte-streams :as b]
    [bidi.bidi :as bidi]
    [bidi.ring :refer [make-handler]]
    [clojure.java.io :as io]
+   [clojure.set :as set]
    [clojure.test :refer :all]
-   [juxt.iota :refer (given)]
    [clojure.edn :as edn]
    [ring.mock.request :refer [request]]
    [phonebook.util :refer [to-string]]
@@ -35,13 +36,11 @@
                         {:headers {"accept" "application/edn"}})
         response @(h req)]
 
-    (given response
-      :status := 200
-      := nil)
+    (is (= 200 (:status response)))
 
-    (given (-> response :body to-string edn/read-string)
-      count := 2
-      [first second :firstname] := "Malcolm")))
+    (let [body (-> response :body to-string edn/read-string)]
+      (is (= 2 (count body)))
+      (is (= "Malcolm" (get-in body [1 :firstname]))))))
 
 (deftest create-entry
   (let [db (db/create-db {})
@@ -49,10 +48,10 @@
         req (request :post "/phonebook" {"surname" "Pither" "firstname" "Jon" "phone" "1235"})
         response @(h req)]
 
-    (given response
-      :status := 303
-      :headers :⊃ {"location" "/phonebook/1" "content-length" 0}
-      :body := nil)))
+    (is (= 303 (:status response)))
+    (is (set/superset? (set (keys (:headers response)))
+                       #{"location" "content-length"}))
+    (is (nil? (:body response)))))
 
 (deftest update-entry
   (let [db (db/create-db full-seed)
@@ -63,14 +62,11 @@
                (assoc-in [:headers "content-type"] "multipart/form-data; boundary=ABCD"))
           response @(h req)]
 
-      (given response
-        :status := 204
-        :body := nil)
+      (is (= 204 (:status response)))
+      (is (nil? (:body response)))
 
       (is (= (db/count-entries db) 2))
-      (given (db/get-entry db 2)
-        [:phone] := "8888"
-        ))))
+      (is (= "8888" (:phone (db/get-entry db 2)))))))
 
 (deftest delete-entry
   (let [db (db/create-db full-seed)
@@ -78,8 +74,6 @@
     (is (= (db/count-entries db) 2))
     (let [req (request :delete "/phonebook/1")
           response @(h req)]
-      (given response
-        :status := 204
-        :body := nil
-        )
+      (is (= 204 (:status response)))
+      (is (nil? (:body response)))
       (is (= (db/count-entries db) 1)))))

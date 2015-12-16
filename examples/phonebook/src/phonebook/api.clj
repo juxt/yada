@@ -5,10 +5,8 @@
    [bidi.bidi :refer [RouteProvider]]
    [clojure.tools.logging :refer :all]
    [clojure.java.io :as io]
-   [com.stuartsierra.component :refer [using]]
+   [com.stuartsierra.component :refer [using Lifecycle]]
    [hiccup.core :refer [html]]
-   [modular.component.co-dependency :refer [co-using]]
-   [modular.component.co-dependency.schema :refer [co-dep]]
    [schema.core :as s]
    [phonebook.www :refer [new-index-resource new-entry-resource]]
    [yada.yada :refer [yada]]))
@@ -20,14 +18,19 @@
     ["/" :entry] (yada (merge (new-entry-resource db *routes)
                               {:id ::entry}))}])
 
-(s/defrecord ApiComponent [db *server]
-  RouteProvider
-  (routes [_]
-          (let [*routes (delay (:routes @*server))]
-            (api db *routes))))
+(s/defrecord ApiComponent [db routes]
+  Lifecycle
+  (start [component]
+    (let [p (promise)]
+      ;; routes will be the overall routes structure, which we're in the
+      ;; process of creating. The final value will be delivered by a
+      ;; dependant.
+      (assoc component
+             :routes (api db p)
+             :promise p)))
+  (stop [component]))
 
 (defn new-api-component []
   (->
    (map->ApiComponent {})
-   (using [:db])
-   (co-using [:server])))
+   (using [:db])))
