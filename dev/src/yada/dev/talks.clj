@@ -34,7 +34,7 @@
                       (new-directory-resource
                        (io/file "talks")
                        {:custom-suffices
-                        {"md" {:produces [{:media-type #{"text/html" #_"text/plain;q=0.9"}}]
+                        {"md" {:produces [{:media-type #{"text/html" "text/plain;q=0.9"}}]
                                :reader (fn [f rep]
                                          (cond
                                            (= (-> rep :media-type :name) "text/html")
