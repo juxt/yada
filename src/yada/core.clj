@@ -12,6 +12,7 @@
    [ring.swagger.schema :as rs]
    [ring.swagger.coerce :as rsc]
    [schema.coerce :as sc]
+   [schema.utils :refer [error?]]
    [yada.coerce :as coerce]
    [yada.handler :refer [new-handler create-response]]
    [yada.methods :as methods]
@@ -108,7 +109,7 @@
                        (let [params (-> request :headers)]
                          (rs/coerce (assoc schema String String) params :query)))}]
 
-    (let [errors (filter (comp schema.utils/error? second) parameters)]
+    (let [errors (filter (comp error? second) parameters)]
       (if (not-empty errors)
         (d/error-deferred (ex-info "" {:status 400
                                        :errors errors}))
@@ -130,7 +131,7 @@
      props                           ; propsfn can returned a deferred
      (fn [props]
        (let [props (ys/properties-result-coercer props)]
-         (if-not (schema.utils/error? props)
+         (if-not (error? props)
            (cond-> (assoc ctx :properties props)
              (:produces props) (assoc-in [:response :vary] (rep/vary (:produces props))))
            (d/error-deferred
@@ -427,15 +428,20 @@
    (when (not (satisfies? p/ResourceCoercion resource))
      (throw (ex-info "Resource must satisfy ResourceCoercion" {:resource resource})))
    
+   ;; It's possible that we're being called with a resource that already has an error
+   (when (error? resource)
+     (throw (ex-info "yada function is being passed a resource that is an error"
+                     {:error (:error resource)})))
+
    (let [base resource
 
          ;; Validate the resource structure, with coercion if
          ;; necessary.
          resource (ys/resource-coercer (p/as-resource resource))
 
-         _ (when (schema.utils/error? resource)
+         _ (when (error? resource)
              (throw (ex-info "Resource does not conform to schema"
-                             {:resource base
+                             {:resource (p/as-resource base)
                               :error (:error resource)
                               :schema ys/Resource})))
 

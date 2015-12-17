@@ -17,8 +17,7 @@
 
 (defn new-index-resource [db *routes]
   (resource
-   {:description "Phonebook index"
-    :produces [{:media-type
+   {:produces [{:media-type
                 #{"text/html" "application/edn;q=0.9" "application/json;q=0.8"}
                 :charset "UTF-8"}]
     :methods
@@ -44,8 +43,7 @@
 
 (defn new-entry-resource [db *routes]
   (resource
-   {:description "Phonebook entry"
-    :parameters {:path {:entry Long}}
+   {:parameters {:path {:entry Long}}
     :produces [{:media-type #{"text/html"
                               "application/edn;q=0.9"
                               "application/json;q=0.8"}

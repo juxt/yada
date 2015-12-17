@@ -14,8 +14,7 @@
 
 (defn selfie-index-resource []
   (yada/resource
-   {:description "POST your selfies here!"
-    :properties {}
+   {:properties {}
     :methods
     {:get {:handler (fn [ctx] "Index")}
      :post {:handler (fn [ctx]

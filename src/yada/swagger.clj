@@ -79,17 +79,6 @@
   ring.swagger.swagger2-schema"} ring-swagger-coercer
   (sc/coercer rss/Swagger {rss/Parameters #(set/rename-keys % {:form :formData})}))
 
-#_(rs/swagger-json
- (ring-swagger-coercer
-  (create-spec {:info {:title "foo" :description "foo" :version "2.0"}}
-               ["/abc" (yada (atom "foo"))]
-               )))
-
-(create-spec {:info {:title "foo" :description "foo" :version "2.0"}}
-             ["/abc" (yada (atom "foo"))]
-             )
-
-
 (defn swagger-spec-resource [spec created-at content-type]
   (resource
    {:properties {:last-modified created-at

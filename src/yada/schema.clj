@@ -173,13 +173,10 @@ convenience of terse, expressive short-hand descriptions."}
 
 (def properties-result-coercer (sc/coercer PropertiesResult PropertiesResultMappings))
 
-(def Documentation
-  {(s/optional-key :summary) String
-   (s/optional-key :description) String})
-
 (def MethodDocumentation
-  (merge Documentation
-         {(s/optional-key :responses) {s/Int {:description String}}}))
+  {(s/optional-key :description) String
+   (s/optional-key :summary) String
+   (s/optional-key :responses) {s/Int {:description String}}})
 
 (s/defschema MethodParameters
   (merge-with
@@ -221,8 +218,6 @@ convenience of terse, expressive short-hand descriptions."}
           HandlerFunction as-fn}
          RepresentationSeqMappings))
 
-(def ResourceDocumentation (merge Documentation))
-
 (def Resource
   (merge {(s/optional-key :collection?) Boolean
           (s/optional-key :exists?) Boolean
@@ -232,7 +227,6 @@ convenience of terse, expressive short-hand descriptions."}
          Produces
          Consumes
          Methods
-         ResourceDocumentation
          {NamespacedKeyword s/Any}))
 
 (def ResourceMappings

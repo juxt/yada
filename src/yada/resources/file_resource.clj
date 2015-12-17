@@ -53,7 +53,6 @@
 
   (resource
    {::type :file
-    :description (format "File source of %s" file)
     :properties (fn [ctx]
                   {
                    ;; A representation can be given as a parameter, or deduced from
@@ -140,9 +139,7 @@
        (s/optional-key :index-files) [String]}]
 
   (resource
-   {:description (format "Directory listing of %s" dir)
-
-    ;; This tells the handler to match a route, even if there is some
+   {;; This tells the handler to match a route, even if there is some
     ;; remaining path-info.
     ;; TODO: Rename to 'path-info?' ?
     :collection? true

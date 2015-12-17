@@ -89,8 +89,6 @@
 
 (defn resource [m]
   (->> m
-       (merge {:version "Unspecified"
-               :title "Unknown"})
        ys/resource-coercer
        map->Resource))
 

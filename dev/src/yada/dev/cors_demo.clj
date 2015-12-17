@@ -17,13 +17,13 @@
 
 (defn index [{:keys [*router templater]}]
   (yada
-   (merge (new-template-resource
+   (assoc (new-template-resource
            "templates/page.html"
            {:content (html
                       [:div.container
                        [:h2 "CORS demo"]])
             :scripts ["ajax.js"]})
-          {:id ::index})))
+          :id ::index)))
 
 (s/defrecord CorsDemo [*router :- (co-dep Router)
                        config :- config/ConfigSchema]
