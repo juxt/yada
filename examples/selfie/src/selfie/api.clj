@@ -10,16 +10,17 @@
    [schema.core :as s]
    [yada.methods :as m]
    [yada.protocols :as p]
-   [yada.yada :refer [yada]]))
+   [yada.yada :refer [yada] :as yada]))
 
 (defn selfie-index-resource []
-  {:description "POST your selfies here!"
-   :properties {}
-   :methods
-   {:get {:handler (fn [ctx] "Index")}
-    :post {:handler (fn [ctx]
-                      (throw (ex-info "TODO: body should be accessible somewhere"
-                                      {:request (:request ctx)})))}}})
+  (yada/resource
+   {:description "POST your selfies here!"
+    :properties {}
+    :methods
+    {:get {:handler (fn [ctx] "Index")}
+     :post {:handler (fn [ctx]
+                       (throw (ex-info "TODO: body should be accessible somewhere"
+                                       {:request (:request ctx)})))}}}))
 
 (defn api []
   ["" [["/selfie" (yada (selfie-index-resource))]]])
