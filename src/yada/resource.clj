@@ -88,4 +88,13 @@
   (as-resource [this] this))
 
 (defn resource [m]
-  (map->Resource (ys/resource-coercer m)))
+  (->> m
+       (merge {:version "Unspecified"
+               :title "Unknown"})
+       ys/resource-coercer
+       map->Resource))
+
+(extend-protocol p/ResourceCoercion
+  nil
+  (as-resource [_] (resource {:exists? false})))
+

@@ -17,10 +17,6 @@
   knowing the time of construction, we can precisely state its
   Last-Modified-Date."))
 
-(extend-protocol ResourceCoercion
-  nil
-  (as-resource [_] {:exists? false}))
-
 (defprotocol ETag
   "The version function returns material that becomes the ETag response
   header. This is left open for extension. The ETag must differ between
