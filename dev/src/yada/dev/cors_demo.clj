@@ -32,7 +32,6 @@
     ["/"
      [["index.html" (index component)]
       ["ajax.js" (yada (new-template-resource "cors/ajax.js" {:origin (config/docsite-origin config)}))]
-      ["talk/" (yada (io/file "/home/malcolm/src/thi.ng/talks/we-are-the-incanters"))]
       ]]))
 
 (defn new-cors-demo [config]
