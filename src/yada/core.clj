@@ -132,7 +132,8 @@
      (fn [props]
        (let [props (ys/properties-result-coercer props)]
          (if-not (error? props)
-           (cond-> (assoc ctx :properties props)
+           (cond-> ctx
+             props (assoc :properties props)
              (:produces props) (assoc-in [:response :vary] (rep/vary (:produces props))))
            (d/error-deferred
             (ex-info "Properties malformed" {:status 500
@@ -376,24 +377,25 @@
     ctx))
 
 (defn access-control-headers [ctx]
-  (let [allow-origin (get-in ctx [:access-control :allow-origin])
-        interpreted-allow-origin (when allow-origin (service/allow-origin allow-origin ctx))
+  (infof "Properties: %s" (:properties ctx))
+  (let [access-control (get-in ctx [:properties :access-control]) 
+        ;;interpreted-allow-origin (when allow-origin (service/allow-origin allow-origin ctx))
         expose-headers (get-in ctx [:access-control :expose-headers])
         allow-headers (get-in ctx [:access-control :allow-headers])]
 
     (cond-> ctx
-      interpreted-allow-origin
-      (assoc-in [:response :headers "access-control-allow-origin"] interpreted-allow-origin)
+      (:allow-origin access-control)
+      (assoc-in [:response :headers "access-control-allow-origin"] (:allow-origin access-control))
 
-      expose-headers
+      (:expose-headers access-control)
       (assoc-in [:response :headers "access-control-expose-headers"]
                 (apply str
-                       (interpose ", " expose-headers)))
+                       (interpose ", " (:expose-headers access-control))))
 
-      allow-headers
+      (:allow-headers access-control)
       (assoc-in [:response :headers "access-control-allow-headers"]
                 (apply str
-                       (interpose ", " allow-headers))))))
+                       (interpose ", " (:allow-headers access-control)))))))
 
 (def default-interceptor-chain
   [available?

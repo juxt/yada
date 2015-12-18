@@ -9,14 +9,21 @@
    [hiccup.core :refer [html]]
    [schema.core :as s]
    [phonebook.www :refer [new-index-resource new-entry-resource]]
-   [yada.yada :refer [yada]]))
+   [yada.yada :as yada :refer [yada]]))
 
 (defn api [db *routes]
   ["/phonebook"
-   {"" (yada (merge (new-index-resource db *routes)
-                    {:id ::index}))
-    ["/" :entry] (yada (merge (new-entry-resource db *routes)
-                              {:id ::entry}))}])
+   (yada/swaggered
+    {:info {:title "Phonebook"
+            :version "1.0"
+            :description "A simple resource example"}
+     :basePath ""}
+    
+    ["" {"" (yada (merge (new-index-resource db *routes)
+                         {:id ::index}))
+         ["/" :entry] (yada (merge (new-entry-resource db *routes)
+                                   {:id ::entry}))}]
+    {:access-control {:allow-origin "*"}})])
 
 (s/defrecord ApiComponent [db routes]
   Lifecycle

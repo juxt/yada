@@ -153,6 +153,9 @@ convenience of terse, expressive short-hand descriptions."}
   {(s/optional-key :last-modified) s/Inst
    (s/optional-key :version) s/Any
    (s/optional-key :exists?) s/Bool
+   (s/optional-key :access-control) {(s/optional-key :allow-origin) String
+                                     (s/optional-key :expose-headers) String
+                                     (s/optional-key :allow-headers) String}
    NamespacedKeyword s/Any})
 
 (s/defschema PropertiesResult

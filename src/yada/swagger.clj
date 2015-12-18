@@ -79,10 +79,11 @@
   ring.swagger.swagger2-schema"} ring-swagger-coercer
   (sc/coercer rss/Swagger {rss/Parameters #(set/rename-keys % {:form :formData})}))
 
-(defn swagger-spec-resource [spec created-at content-type]
+(defn swagger-spec-resource [spec created-at content-type properties]
   (resource
-   {:properties {:last-modified created-at
-                 :version spec}
+   {:properties (merge {:last-modified created-at
+                        :version (md5-hash (pr-str spec))}
+                       properties)
     :produces
     (case content-type
       "application/json" [{:media-type #{"application/json"
@@ -137,7 +138,7 @@
     (let [handler (make-handler ["" this])]
       (handler req))))
 
-(defn swaggered [template routes]
+(defn swaggered [template routes & [properties]]
   (let [spec (-> (create-spec template routes) ring-swagger-coercer rs/swagger-json)]
     (map->Swaggered
      {:spec spec
@@ -145,4 +146,4 @@
       :spec-handlers
       (into {}
             (for [ct ["application/edn" "application/json" "text/html"]]
-              [ct (yada (swagger-spec-resource spec (to-date (now)) ct))]))})))
+              [ct (yada (swagger-spec-resource spec (to-date (now)) ct properties))]))})))
