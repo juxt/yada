@@ -13,9 +13,8 @@
    [yada.response :refer [->Response]]
    [yada.schema :refer [resource-coercer]]))
 
-(defn make-context [properties]
-  {:properties properties
-   :response (->Response)})
+(defn make-context []
+  {:response (->Response)})
 
 (defn error-data
   [e]
@@ -83,15 +82,14 @@
         error-handler (or (:error-handler options)
                           default-error-handler)
         ctx (merge
-             (make-context (:properties handler))
+             (make-context)
              {:id id
               :method method
               :method-wrapper (get (:known-methods handler) method)
               :interceptor-chain interceptor-chain
               :handler handler
-              :resource (:resource handler)
+              :resource (:resource handler) ; convenience
               :request request
-              :allowed-methods (:allowed-methods handler)
               :options options})]
 
     (->
@@ -124,7 +122,7 @@
                ;; TODO: Custom error handlers
 
                (d/chain
-                (cond-> (make-context {})
+                (cond-> (make-context)
                   status (assoc-in [:response :status] status)
                   (:headers data) (assoc-in [:response :headers] (:headers data))
                   (not (:body data)) ((fn [ctx]

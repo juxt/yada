@@ -38,10 +38,11 @@
 (defn exists?
   "Does this resource exist? Can we tell without calling properties?
   For example, this is to allow resources to declare they don't
-  actually exist, e.g. the nil resource. The value of the exists?
-  entry must be explicitly false not just falsey (nil)."
+  actually exist, e.g. the nil resource, by providing static
+  properties. The value of the exists?  entry must be explicitly false
+  not just falsey (nil)."
   [ctx]
-  (if (false? (get-in ctx [:handler :exists?]))
+  (if (false? (get-in ctx [:handler :resource :properties :exists?]))
     (d/error-deferred (ex-info "" {:status 404}))
     ctx))
 
@@ -71,9 +72,10 @@
     (d/error-deferred
      (ex-info "Method Not Allowed"
               {:status 405
-               :headers {"allow" (str/join ", "
-                                           (map (comp (memfn toUpperCase) name)
-                                                (-> ctx :handler :allowed-methods)))}}))
+               :headers {"allow"
+                         (str/join ", "
+                                   (map (comp (memfn toUpperCase) name)
+                                        (-> ctx :handler :allowed-methods)))}}))
     ctx))
 
 (defn parse-parameters
