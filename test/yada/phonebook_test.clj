@@ -44,6 +44,7 @@
 (deftest system-sanity-test
   (let [s (get-in *system* [:phonebook :api :routes])]
     (is (not (nil? s)))
+    ;; TODO: Not quite sure why this fails
     ;;(is (nil? (s/check RoutePair s)))
     ))
 
