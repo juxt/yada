@@ -9,7 +9,6 @@
    [yada.body :as body]
    [yada.context :as ctx]
    [yada.protocols :as p]
-   [yada.service :as service]
    yada.response)
   (:import
    [yada.response Response]

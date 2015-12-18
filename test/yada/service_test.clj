@@ -1,6 +1,5 @@
 (ns yada.service-test
-  (:require [yada.service :refer :all]
-            [clojure.test :refer :all]))
+  (:require [clojure.test :refer :all]))
 
 #_(deftest handlers
   (testing "Service Unavailable"

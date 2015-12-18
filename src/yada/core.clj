@@ -22,11 +22,10 @@
    [yada.request-body :as rb]
    [yada.multipart]
    [yada.schema :as ys]
-   [yada.service :as service] ; deprecate
    [yada.util :as util])
   (:import [java.util Date]))
 
-(defn available?
+#_(defn available?
   "Is the service available?"
   [ctx]
   (let [res (service/service-available? (-> ctx :handler :service-available?) ctx)]
@@ -52,20 +51,17 @@
     (d/error-deferred (ex-info "" {:status 501 ::method (:method ctx)}))
     ctx))
 
-(defn uri-too-long?
+#_(defn uri-too-long?
   [ctx]
-  (if (service/request-uri-too-long? (-> ctx :request-uri-too-long?) (-> ctx :request :uri))
+  (if (service/request-uri-too-long? (-> ctx :request-uri-too-long?)
+                                     (-> ctx :request :uri))
     (d/error-deferred (ex-info "" {:status 414}))
     ctx))
 
 (defn TRACE
   [ctx]
   (if (#{:trace} (:method ctx))
-    (if (false? (-> ctx :options :trace))
-      (d/error-deferred
-       (ex-info "Method Not Allowed"
-                {:status 405}))
-      (methods/request (:method-wrapper ctx) ctx))
+    (methods/request (:method-wrapper ctx) ctx)
     ctx))
 
 (defn method-allowed?
@@ -398,10 +394,10 @@
                        (interpose ", " (:allow-headers access-control)))))))
 
 (def default-interceptor-chain
-  [available?
+  [;;available?
    exists? 
    known-method?
-   uri-too-long?
+   ;;uri-too-long?
    TRACE
    method-allowed?
    parse-parameters

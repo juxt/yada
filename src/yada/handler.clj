@@ -11,8 +11,7 @@
    [yada.protocols :as p]
    [yada.representation :as rep]
    [yada.response :refer [->Response]]
-   [yada.schema :refer [resource-coercer]]
-   [yada.service :as service]))
+   [yada.schema :refer [resource-coercer]]))
 
 (defn make-context [properties]
   {:properties properties
@@ -40,9 +39,7 @@
         body (get-in ctx [:response :body])
 
         response
-        {:status (or (get-in ctx [:response :status])
-                     (service/status (-> ctx :handler :options :status) ctx)
-                     200)
+        {:status (get-in ctx [:response :status] 200)
          :headers (merge
                    (get-in ctx [:response :headers])
                    ;; TODO: The context and its response
@@ -69,13 +66,7 @@
                             (when-let [x (get-in ctx [:response :etag])]
                               {"etag" x})))
                    (when-let [x (get-in ctx [:response :content-length])]
-                     {"content-length" x})
-
-                   #_(when true
-                       {"access-control-allow-origin" "*"})
-
-                   ;; TODO: Resources can add headers via their methods
-                   (service/headers (-> ctx :handler :options :headers) ctx))
+                     {"content-length" x}))
 
          ;; TODO :status and :headers should be implemented like this in all cases
          :body (get-in ctx [:response :body])}]
