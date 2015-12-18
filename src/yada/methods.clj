@@ -288,7 +288,7 @@
   (idempotent? [_] true)
   (request [_ ctx]
     (let [ctx (assoc-in ctx [:response :headers "allow"]
-                        (str/join ", " (map (comp (memfn toUpperCase) name) (-> ctx :allowed-methods))))]
+                        (str/join ", " (map (comp (memfn toUpperCase) name) (-> ctx :handler :allowed-methods))))]
       ;; TODO: Build in explicit support for CORS pre-flight requests
       (if (satisfies? Options (:resource ctx))
         (d/chain
