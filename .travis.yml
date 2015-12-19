@@ -4,3 +4,6 @@ lein: lein2
 cache:
   directories:
     - $HOME/.m2
+jdk:
+    - openjdk8
+    - oraclejdk8
