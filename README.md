@@ -22,9 +22,7 @@ Incomplete documentation for 1.0.x is available [here](dev/resources/user-manual
 Add the following dependency to your
 `project.clj` file
 
-```clojure
-[yada "1.0.0"]
-```
+[![Clojars Project](http://clojars.org/yada/latest-version.svg)](http://clojars.org/yada)
 
 This 1.0.0 release is the same as the `1.0.0-20150903.093751-9` version, tagged on 2015-09-03. All new development has been taking place on the master branch (currently the 1.1.x series) which has changed the yada API and replaced most of the old protocols with a 'pure' data model. For the latest 'alpha' release in this series, use the following dependency instead :-
 
