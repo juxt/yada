@@ -32,6 +32,14 @@ For the previous 0.4.3 'alpha' release, which is now deprecated, use the followi
 
 Latest master status [![Build Status](https://travis-ci.org/juxt/yada.png)](https://travis-ci.org/juxt/yada)
 
+## Dependencies
+
+yada requires the following :-
+
+- a Java JDK/JRE installation, version 8 or above
+- Clojure 1.7.0 (provided)
+- Aleph 0.4.1 or above (provided)
+
 ## Status
 
 Please note that being a 0.x.y version indicates the provisional status
