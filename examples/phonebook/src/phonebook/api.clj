@@ -12,18 +12,17 @@
    [yada.yada :as yada :refer [yada]]))
 
 (defn api [db *routes]
-  ["/phonebook"
+  [""
    (yada/swaggered
     {:info {:title "Phonebook"
             :version "1.0"
             :description "A simple resource example"}
      :basePath ""}
     
-    ["" {"" (yada (merge (new-index-resource db *routes)
-                         {:id ::index}))
-         ["/" :entry] (yada (merge (new-entry-resource db *routes)
-                                   {:id ::entry}))}]
-    {:access-control {:allow-origin "*"}})])
+    ["/phonebook" {"" (yada (merge (new-index-resource db *routes)
+                                   {:id ::index}))
+                   ["/" :entry] (yada (merge (new-entry-resource db *routes)
+                                             {:id ::entry}))}])])
 
 (s/defrecord ApiComponent [db routes]
   Lifecycle

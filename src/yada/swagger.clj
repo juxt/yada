@@ -44,24 +44,21 @@
 
 (defn to-path [route]
   (let [path (->> route :path (map encode) (apply str))
-        handler (-> route :handler)
-        {:keys [resource methods parameters produces consumes]} handler
-        ]
-
+        {:keys [methods parameters produces consumes]} (-> route :handler :resource)]
     [path
      (into {}
            (for [m (keys methods)
                  :let [{:keys [description summary] :as method}
-                       (get-in handler [:methods m])
+                       (get methods m)
 
-                       parameters (some->> (:parameters method)
-                                           (util/merge-parameters parameters))
-                       produces (some->> (:produces method)
-                                         (concat produces)
-                                         (sequence media-type-names)) 
-                       consumes (some->> (:consumes method)
-                                         (concat consumes)
-                                         (sequence media-type-names))]]
+                       parameters (->> (:parameters method)
+                                       (util/merge-parameters parameters))
+                       produces (->> (:produces method)
+                                     (concat produces)
+                                     (sequence media-type-names)) 
+                       consumes (->> (:consumes method)
+                                     (concat consumes)
+                                     (sequence media-type-names))]]
              
              ;; Responses must be added in the static swagger section
              {m (merge
@@ -79,11 +76,10 @@
   ring.swagger.swagger2-schema"} ring-swagger-coercer
   (sc/coercer rss/Swagger {rss/Parameters #(set/rename-keys % {:form :formData})}))
 
-(defn swagger-spec-resource [spec created-at content-type properties]
+(defn swagger-spec-resource [spec created-at content-type]
   (resource
-   {:properties (merge {:last-modified created-at
-                        :version (md5-hash (pr-str spec))}
-                       properties)
+   {:properties {:last-modified created-at
+                 :version (md5-hash (pr-str spec))}
     :produces
     (case content-type
       "application/json" [{:media-type #{"application/json"
@@ -138,7 +134,7 @@
     (let [handler (make-handler ["" this])]
       (handler req))))
 
-(defn swaggered [template routes & [properties]]
+(defn swaggered [template routes]
   (let [spec (-> (create-spec template routes) ring-swagger-coercer rs/swagger-json)]
     (map->Swaggered
      {:spec spec
@@ -146,4 +142,4 @@
       :spec-handlers
       (into {}
             (for [ct ["application/edn" "application/json" "text/html"]]
-              [ct (yada (swagger-spec-resource spec (to-date (now)) ct properties))]))})))
+              [ct (yada (swagger-spec-resource spec (to-date (now)) ct))]))})))
