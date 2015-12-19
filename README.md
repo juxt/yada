@@ -19,11 +19,17 @@ Incomplete documentation for 1.0.x is available [here](dev/resources/user-manual
 
 ## Installation
 
-For the latest 'beta' release, add the following dependency to your
+Add the following dependency to your
 `project.clj` file
 
 ```clojure
-[yada "1.0.0-20150903.093751-9"]
+[yada "1.0.0"]
+```
+
+For the latest 'alpha' release, use the following dependency instead
+
+```clojure
+[yada "1.1.0-20151219.153900-1"]
 ```
 
 For the previous 0.4.3 'alpha' release, which is now deprecated, use the following and run the documentation offline (details below).
