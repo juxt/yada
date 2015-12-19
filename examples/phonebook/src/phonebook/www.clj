@@ -17,9 +17,12 @@
 
 (defn new-index-resource [db *routes]
   (resource
-   {:produces [{:media-type
+   {:access-control {:allow-origin "*"}
+
+    :produces [{:media-type
                 #{"text/html" "application/edn;q=0.9" "application/json;q=0.8"}
                 :charset "UTF-8"}]
+    
     :methods
     {:get {:parameters {:query {(s/optional-key :q) String}}
            :handler (fn [ctx]

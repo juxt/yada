@@ -153,11 +153,13 @@ convenience of terse, expressive short-hand descriptions."}
   {(s/optional-key :last-modified) s/Inst
    (s/optional-key :version) s/Any
    (s/optional-key :exists?) s/Bool
-   (s/optional-key :access-control) {(s/optional-key :allow-origin) String
-                                     (s/optional-key :expose-headers) String
-                                     (s/optional-key :allow-headers) String}
    NamespacedKeyword s/Any})
 
+;; Not sure about this design, see how it evolves. It's a bit weird
+;; piggy-backing produces, access-control, etc. on resource
+;; properties. Either something is a resource property or it
+;; isn't. Let's see how it evolves. An alternative design is to allow
+;; Properties to return a Context to override.
 (s/defschema PropertiesResult
   (merge StaticProperties
          Produces))
@@ -221,10 +223,17 @@ convenience of terse, expressive short-hand descriptions."}
           HandlerFunction as-fn}
          RepresentationSeqMappings))
 
+(s/defschema AccessControl
+  {(s/optional-key :access-control)
+   {(s/optional-key :allow-origin) String
+    (s/optional-key :expose-headers) String
+    (s/optional-key :allow-headers) String}})
+
 (def Resource
   (merge {(s/optional-key :collection?) Boolean
           ;;(s/optional-key :exists?) Boolean
           (s/optional-key :id) s/Any}
+         AccessControl
          Properties
          ResourceParameters
          Produces
