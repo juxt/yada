@@ -375,7 +375,6 @@
     ctx))
 
 (defn access-control-headers [ctx]
-  (infof "Properties: %s" (:properties ctx))
   (let [access-control (get-in ctx [:properties :access-control]) 
         ;;interpreted-allow-origin (when allow-origin (service/allow-origin allow-origin ctx))
         expose-headers (get-in ctx [:access-control :expose-headers])
