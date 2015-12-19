@@ -22,7 +22,9 @@ Incomplete documentation for 1.0.x is available [here](dev/resources/user-manual
 For the latest 'beta' release, add the following dependency to your
 `project.clj` file
 
-[![Clojars Project](http://clojars.org/yada/latest-version.svg)](http://clojars.org/yada)
+```clojure
+[yada "1.0.0-20150903.093751-9"]
+```
 
 For the previous 0.4.3 'alpha' release, which is now deprecated, use the following and run the documentation offline (details below).
 
