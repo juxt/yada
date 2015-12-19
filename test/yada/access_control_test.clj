@@ -4,7 +4,6 @@
   (:require
    [clojure.test :refer :all]
    [yada.test.util :refer (to-string)]
-   [juxt.iota :refer [given]]
    [yada.yada :refer [yada]]
    [yada.protocols :as p]
    [ring.mock.request :refer [request header]]))

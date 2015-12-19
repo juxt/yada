@@ -9,7 +9,6 @@
    [clojure.edn :as edn]
    [clojure.test :refer :all]
    [com.stuartsierra.component :refer (system-using system-map)]
-   [juxt.iota :refer (given)]
    [manifold.deferred :as d]
    [modular.test :refer (with-system-fixture *system*)]
    [ring.mock.request :as mock]
@@ -31,11 +30,11 @@
 (deftest api-test
   (let [handler (make-handler (routes (:api *system*)))]
     (testing "swagger.json"
-      (let [response @(handler (mock/request :get "/api/swagger.json"))]
+      (let [response @(handler (mock/request :get "/api/swagger.json"))
+            headers (:headers response)]
 
-        (given response
-          :status := 200
-          :headers :> {"content-type" "application/json"})
+        (is (= 200 (:status response)))
+        (is (= "application/json" (get headers "content-type")))
 
         #_(given (some-> response :body (bs/convert String) json/decode)
           identity :!= nil

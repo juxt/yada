@@ -4,7 +4,6 @@
   (:require
    [clojure.test :refer :all]
    [clojure.string :as str]
-   [juxt.iota :refer (given)]
    [ring.mock.request :refer (request)]
    [schema.test :as st]
    [yada.charset :as charset]
@@ -13,30 +12,26 @@
    [yada.yada :as yada :refer [yada]]))
 
 (st/deftest vary-test
-  (given
-    (vary
-     (representation-seq (coerce-representations [{:media-type #{"text/plain" "text/html"}}])))
-    identity := #{:media-type})
+  (is (= #{:media-type}
+         (vary
+          (representation-seq (coerce-representations [{:media-type #{"text/plain" "text/html"}}])))))
 
-  (given
-    (vary
-     (representation-seq (coerce-representations [{:charset #{"UTF-8" "Latin-1"}}])))
-    identity := #{:charset})
 
-  (given
-    (vary
-     (representation-seq (coerce-representations [{:media-type #{"text/plain" "text/html"}
-                                                   :charset #{"UTF-8" "Latin-1"}}])))
-    identity := #{:media-type :charset}))
+  (is (= #{:charset} (vary
+                      (representation-seq (coerce-representations [{:charset #{"UTF-8" "Latin-1"}}])))))
+
+  (is (= #{:media-type :charset} (vary
+                                  (representation-seq (coerce-representations [{:media-type #{"text/plain" "text/html"}
+                                                                                :charset #{"UTF-8" "Latin-1"}}])))))
+)
 
 (st/deftest vary-header-test []
   (let [resource "Hello World!"
         handler (yada (merge (yada/as-resource resource)
                              {:produces #{"text/plain" "text/html"}}))
         request (request :head "/")
-        response @(handler request)]
-    (given response
-      :status := 200
-      [:headers "vary"] :? some?
-      [:headers "vary" parse-csv set] := #{"accept"}
-      )))
+        response @(handler request)
+        headers (:headers response)]
+    (is (= 200 (:status response)))
+    (is (some? (get headers "vary")))
+    (is (= #{"accept"} (set (parse-csv (get headers "vary")))))))

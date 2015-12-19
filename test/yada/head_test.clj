@@ -4,7 +4,6 @@
   (:require
    [clojure.java.io :as io]
    [clojure.test :refer :all]
-   [juxt.iota :refer (given)]
    [ring.mock.request :refer [request]]
    [yada.yada :as yada :refer [yada]]))
 
@@ -14,9 +13,13 @@
                              {:produces {:media-type "text/plain"
                                          :charset "UTF-8"}}))
         request (request :head "/")
-        response @(handler request)]
-    (given response
-      :status := 200
-      [:headers "content-type"] := "text/plain;charset=utf-8"
-      [:headers "content-length"] :? nil? ; see rfc7231.html#section-3.3
-      :body :? nil?)))
+        response @(handler request)
+        headers (:headers response)]
+
+    (is (= 200 (:status response) ))
+    (is (= "text/plain;charset=utf-8" (get headers "content-type")))
+    
+    (is (nil? (get headers "content-length"))) ; see rfc7231.html#section-3.3
+
+    (is (nil? (:body response)))))
+

@@ -7,7 +7,6 @@
    [bidi.bidi :as bidi :refer (Matched compile-route succeed)]
    [bidi.ring :refer (make-handler Ring)]
    [byte-streams :as bs]
-   [juxt.iota :refer (given)]
    [ring.mock.request :refer (request)]
    [ring.util.codec :as codec]
    yada.bidi
@@ -32,10 +31,9 @@
   (let [h (-> (make-api) make-handler)
         response @(h (request :get "/api/status"))]
     (testing "status"
-      (given response
-        :status := 200
-        :headers :> {"content-length" (count (.getBytes "API working!" "UTF-8"))}
-        [:body #(bs/convert % String)] := "API working!"))))
+      (is (= 200 (:status response)))
+      (is (= (count (.getBytes "API working!" "UTF-8")) (get-in response [:headers "content-length"])))
+      (is (= "API working!" (bs/to-string (:body response)))))))
 
 #_(deftest secure-route
   (let [h (-> (make-api) make-handler)]

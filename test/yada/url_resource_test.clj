@@ -1,14 +1,14 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.url-resource-test
-  (:require [yada.resources.url-resource :refer :all]
-            [clojure.test :refer :all]
-            [clojure.java.io :as io]
-            [juxt.iota :refer [given]]
-            [ring.mock.request :as mock]
-            [yada.core :refer [yada]]
-            )
-  (:import [java.io BufferedInputStream]))
+  (:require
+   [yada.resources.url-resource :refer :all]
+   [clojure.test :refer :all]
+   [clojure.java.io :as io]
+   [ring.mock.request :as mock]
+   [yada.core :refer [yada]])
+  (:import
+   [java.io BufferedInputStream]))
 
 ;; Test a single Java resource. Note that this isn't a particularly useful
 ;; resource, because it contains no knowledge of when it was modified,
@@ -18,14 +18,12 @@
 
 (deftest resource-test
   (let [resource (io/resource "static/css/fonts.css")
-        handler (yada resource)
-        response @(handler (mock/request :get "/"))]
-    (given response
-      identity :? some?
-      :status := 200
-      [:headers "content-type"] := "text/css;charset=utf-8"
-      ;; TODO: This is wrong, I think we MUST have a content-length
-      ;; with every response payload, or use transfer encoding.
-      [:headers "content-length"] :? nil?
-      :body :instanceof BufferedInputStream
-      )))
+        handler (yada resource)]
+    
+    (let [response @(handler (mock/request :get "/"))]
+      (is (some? response))
+      (is (= 200 (:status response)))
+      (is (not (nil? [:headers "content-type"])))
+      (is (= "text/css;charset=utf-8" (get-in response [:headers "content-type"])))
+      (is (not (nil? [:headers "content-length"])))
+      (is (instance? BufferedInputStream (:body response))))))

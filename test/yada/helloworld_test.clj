@@ -6,7 +6,6 @@
    [clojure.test :refer :all]
    [cheshire.core :as json]
    [byte-streams :as bs]
-   [juxt.iota :refer (given)]
    [ring.mock.request :refer [request]]
    [ring.util.time :refer (parse-date format-date)]
    [yada.dev.hello :as hello]
@@ -30,17 +29,18 @@
    (remove nil?) vec))
 
 (deftest string-test
-  (let [resource (hello/hello)]
-    (given @(resource (request :get "/"))
-      :status := 200
-      [:headers keys set] := #{"last-modified" "content-type" "content-length" "vary" "etag"}
-      [:headers validate-headers?] := []
-      [:headers "content-type"] := "text/plain;charset=utf-8"
-      [:headers "content-length"] := 13
-      [:headers "vary" parse-csv set] := #{"accept-charset"}
-      [:headers "etag"] := "-648266692"
-      [:body to-string] := "Hello World!\n"
-      )))
+  (let [resource (hello/hello)
+        response @(resource (request :get "/"))
+        headers (:headers response)]
+    (is (= 200 (:status response)))
+    (is (= #{"last-modified" "content-type" "content-length" "vary" "etag"} (set (keys headers))))
+    (is (= [] (validate-headers? headers)))
+    (is (= "text/plain;charset=utf-8" (get headers "content-type")))
+    ;; TODO: See github issue regarding ints and strings
+    (is (= 13 (get headers "content-length")))
+    (is (= #{"accept-charset"} (set (parse-csv (get headers "vary")))))
+    (is (= "-648266692" (get headers "etag")))
+    (is (= "Hello World!\n" (to-string (:body response))))))
 
 (deftest swagger-intro-test
   (let [resource (hello/hello-swagger)
@@ -75,47 +75,49 @@
                        (merge-with merge (request :get "/" )
                                    {:headers {"if-modified-since"
                                               (format-date (-> last-modified .toInstant (.plusSeconds 1) Date/from))}}))]
-        (given response :status := 304))
+        (is (= 304 (:status response))))
 
       (let [response @(resource
                          (merge-with merge (request :get "/" )
                                      {:headers {"if-modified-since"
                                                 (format-date (-> last-modified .toInstant (.minusSeconds 1) Date/from))}}))]
-          (given response :status := 200))
+        (is (= 200 (:status response))))
 
       (is etag)
 
       (let [response @(resource
                          (merge-with merge (request :get "/" )
                                      {:headers {"if-none-match" etag}}))]
-          (given response :status := 304)))))
-
+        (is (= 304 (:status response)))))))
 
 (deftest put-not-allowed-test
-  (let [resource (hello/hello)]
-    (given @(resource (request :put "/"))
-      :status := 405
-      [:headers keys set] :> #{"allow"}
-      [:headers validate-headers?] := []
-      [:headers "allow" parse-csv set] := #{"OPTIONS" "GET" "HEAD"})))
+  (let [resource (hello/hello)
+        response @(resource (request :put "/"))
+        headers (:headers response)]
+    (is (= 405 (:status response)))
+    (is (contains? (set (keys headers)) "allow"))
+    (is (= [] (validate-headers? headers)))
+    (is (= #{"OPTIONS" "GET" "HEAD"} (set (parse-csv (get headers "allow")))))))
 
 (deftest options-test
-  (let [resource (hello/hello)]
-    (given @(resource (request :options "/"))
-      :status := 200
-      [:headers keys set] := #{"allow"}
-      [:headers validate-headers?] := []
-      [:headers "allow" parse-csv set] := #{"OPTIONS" "GET" "HEAD"}
-      :body := nil)))
+  (let [resource (hello/hello)
+        response @(resource (request :options "/"))
+        headers (:headers response)]
+    (is (= 200 (:status response)))
+    (is (=  #{"allow"} (set (keys headers))))
+    (is (= [] (validate-headers? headers)))
+    (is (= #{"OPTIONS" "GET" "HEAD"} (set (parse-csv (get headers "allow")))))
+    (is (nil? (:body response)))))
 
 (deftest atom-options-test
-  (let [resource (hello/hello-atom)]
-    (given @(resource (request :options "/"))
-      :status := 200
-      [:headers keys set] := #{"allow"}
-      [:headers validate-headers?] := []
-      [:headers "allow" parse-csv set] := #{"OPTIONS" "GET" "HEAD" "PUT" "DELETE"}
-      :body := nil)))
+  (let [resource (hello/hello-atom)
+        response @(resource (request :options "/"))
+        headers (:headers response)]
+    (is (= 200 (:status response)))
+    (is (= #{"allow"} (set (keys headers))))
+    (is (= [] (validate-headers? headers)))
+    (is (= #{"OPTIONS" "GET" "HEAD" "PUT" "DELETE"} (set (parse-csv (get headers "allow")))))
+    (is (nil? (:body response)))))
 
 #_(deftest put-test
   (let [resource (hello/hello-atom)]

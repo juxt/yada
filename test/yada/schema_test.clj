@@ -3,7 +3,6 @@
 (ns yada.schema-test
   (:require
    [clojure.test :refer :all :exclude [deftest]]
-   [juxt.iota :refer [given]]
    [yada.media-type :as mt]
    [yada.schema :refer :all]
    [schema.core :as s]
@@ -53,109 +52,107 @@
 (deftest parameters-test
   (let [coercer (sc/coercer ResourceParameters ParametersMappings)]
     (testing "none is not an error"
-      (given (coercer {:parameters {}})
-             identity :? (comp not error?)
-             identity :- ResourceParameters))
+      (let [params (coercer {:parameters {}})]
+        (is (not (error? params)))
+        (is (nil? (s/check ResourceParameters params)))))
     (testing "multiple"
-      (given (coercer {:parameters {:query {:q String}
-                                    :path {:q String}}})
-             identity :? (comp not error?)
-             identity :- ResourceParameters))))
+      (let [params (coercer {:parameters {:query {:q String}
+                                          :path {:q String}}})]
+        (is (not (error? params)))
+        (is (nil? (s/check ResourceParameters params)))))))
 
 (defn invoke-with-ctx [f] (f {}))
 
 (deftest properties-test
   (let [coercer (sc/coercer Properties PropertiesMappings)]
     (testing "static"
-      (given (coercer {:properties {}})
-             identity :? (comp not error?)
-             identity :- Properties
-             :properties :- PropertiesResult
-             ))
+      (let [params (coercer {:properties {}})]
+        (is (not (error? params)))
+        (is (nil? (s/check Properties params)))
+        (is (nil? (s/check PropertiesResult (:properties params))))))
+    
     (testing "dynamic"
-      (given (coercer {:properties (fn [ctx] {})})
-             identity :? (comp not error?)
-             identity :- Properties
-             [:properties invoke-with-ctx] :- PropertiesResult))))
+      (let [params (coercer {:properties (fn [ctx] {})})]
+        (is (not (error? params)))
+        (is (nil? (s/check Properties params)))
+        (is (nil? (s/check PropertiesResult (invoke-with-ctx (:properties params)))))))))
+
 
 (deftest methods-test
   (let [coercer (sc/coercer Methods MethodsMappings)]
     (testing "methods"
 
       (testing "string constant"
-        (given (coercer {:methods {:get {:handler "Hello World!"}}})
-               identity :? (comp not error?)
-               identity :- Methods
-               [:methods :get :handler invoke-with-ctx] := "Hello World!"))
-
+        (let [r (coercer {:methods {:get {:handler "Hello World!"}}})]
+          (is (not (error? r)))
+          (is (nil? (s/check Methods r)))
+          (is (= "Hello World!" (invoke-with-ctx (get-in r [:methods :get :handler]))))))
       
       (testing "implied handler"
-        (given (coercer {:methods {:get (fn [ctx] "Hello World!")}})
-               identity :? (comp not error?)
-               identity :- Methods
-               [:methods :get :handler invoke-with-ctx] := "Hello World!"))
+        (let [r (coercer {:methods {:get (fn [ctx] "Hello World!")}})]
+          (is (not (error? r)))
+          (is (nil? (s/check Methods r)))
+          (is (= "Hello World!") (invoke-with-ctx (get-in r [:methods :get :handler])))))
 
       (testing "nil"
-        (given (coercer {:methods {:get nil}})
-               identity :? (comp not error?)
-               identity :- Methods
-               [:methods :get :handler invoke-with-ctx] := nil))
+        (let [r (coercer {:methods {:get nil}})]
+          (is (not (error? r)))
+          (is (nil? (s/check Methods r)))
+          (is (nil? (invoke-with-ctx (get-in r [:methods :get :handler]))))))
 
       (testing "both"
-        (given (coercer {:methods {:get "Hello World!"}})
-               identity :? (comp not error?)
-               identity :- Methods
-               [:methods :get :handler invoke-with-ctx] := "Hello World!"
-               [:methods :get :produces first :media-type :name] := "text/plain"))
+        (let [r (coercer {:methods {:get "Hello World!"}})]
+          (is (not (error? r)))
+          (is (nil? (s/check Methods r)))
+          (is (= "Hello World!" (invoke-with-ctx (get-in r [:methods :get :handler]))))
+          (is (= "text/plain" (:name (:media-type (first (get-in r [:methods :get :produces]))))))))
 
       (testing "produces inside method"
-        (given (coercer {:methods {:get {:handler "Hello World!"
-                                         :produces "text/plain"}}})
-               identity :? (comp not error?)
-               identity :- Methods
-               [:methods :get :handler invoke-with-ctx] := "Hello World!"
-               ;;[:methods :get] := "foo"
-               ))
+        (let [r (coercer {:methods {:get {:handler "Hello World!"
+                                          :produces "text/plain"}}})]
+          (is (not (error? r)))
+          (is (nil? (s/check Methods r)))
+          (is (= "Hello World!" (invoke-with-ctx (get-in r [:methods :get :handler]))))))
 
       (testing "parameters"
-        (given (coercer {:methods {:get {:parameters {:query {:q String}}
-                                         :handler "Hello World!"}}})
-               identity :? (comp not error?)
-               identity :- Methods)))))
+        (let [r (coercer {:methods {:get {:parameters {:query {:q String}}
+                                          :handler "Hello World!"}}})]
+          (is (not (error? r)))
+          (is (nil? (s/check Methods r))))))))
 
 (deftest resource-test
   (testing "produces works at both levels"
-    (given (resource-coercer {:produces "text/html"
+    (let [r (resource-coercer {:produces "text/html"
                               :methods {:get {:produces "text/html"
-                                              :handler "Hello World!"}}})
-           identity :? (comp not error?)
-           identity :- Resource))
+                                              :handler "Hello World!"}}})]
+      (is (not (error? r)))
+      (is (nil? (s/check Resource r)))))
 
   (testing "consumes works at both levels"
-    (given (resource-coercer {:consumes "multipart/form-data"
+    (let [r (resource-coercer {:consumes "multipart/form-data"
                               :methods {:get {:consumes "multipart/form-data"
-                                              :handler "Hello World!"}}})
-           identity :? (comp not error?)
-           identity :- Resource))
+                                              :handler "Hello World!"}}})]
+      (is (not (error? r)))
+      (is (nil? (s/check Resource r)))))
 
   (testing "top-level-parameters"
-    (given (resource-coercer {:parameters {:path {:id Long}}
-                              :methods {:get "Hello World!"}})
-           identity :? (comp not error?)
-           identity :- Resource))
+    (let [r (resource-coercer {:parameters {:path {:id Long}}
+                               :methods {:get "Hello World!"}})]
+      (is (not (error? r)))
+      (is (nil? (s/check Resource r)))))
 
   (testing "method-level parameters"
-    (given (resource-coercer
+    (let [r (resource-coercer
             {:parameters {:path {:id Long}}
              :methods {:get {:parameters {:query {:q String}}
                              :handler "Hello World!"}
                        :put {:parameters {:body String}
-                             :handler (fn [ctx] nil)}}})
-           identity :? (comp not error?)
-           identity :- Resource))
+                             :handler (fn [ctx] nil)}}})]
+      (is (not (error? r)))
+      (is (nil? (s/check Resource r)))))
 
   (testing "swagger resource"
-    (given (resource-coercer
+    (let [r (resource-coercer
             {:methods
              {:get {:summary "Get user"
                     :description "Get the details of a known user"
@@ -165,21 +162,22 @@
                                 :charset "UTF-8"}]
                     :handler (fn [ctx] "Users")
                     :responses {200 {:description "Known user"}
-                                404 {:description "Unknown user"}}}}})
-           identity :? (comp not error?)
-           identity :- Resource))
+                                404 {:description "Unknown user"}}}}})]
+      (is (not (error? r)))
+      (is (nil? (s/check Resource r)))))
 
   (testing "other keywords are not OK"
-    (given (resource-coercer
+    (let [r (resource-coercer
             {:foo :bar
-             :methods {}})
-           identity :? error?))
-
+             :methods {}})]
+      (is (error? r))))
+  
   (testing "namespaced keywords are OK"
-    (given (resource-coercer
+    (let [r (resource-coercer
             {:ns/foo :bar
-             :methods {}})
-           identity :? (comp not error?)
-           identity :- Resource)))
+             :methods {}})]
+      (is (not (error? r)))
+      (is (nil? (s/check Resource r))))))
+
 
 

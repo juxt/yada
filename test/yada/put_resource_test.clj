@@ -5,7 +5,6 @@
    [clojure.test :refer :all]
    [ring.mock.request :refer [request]]
    [clojure.java.io :as io]
-   [juxt.iota :refer (given)]
    [manifold.stream :as s]
    [yada.test.util :refer [to-string]]
    [yada.yada :refer [yada]]))
@@ -18,38 +17,41 @@
 (deftest put-test
   (testing "string"
     (let [resource (atom "Bradley")
-          handler (yada resource)]
+          handler (yada resource)
+          response @(handler (request :get "/"))
+          headers (:headers response)]
 
-      (given @(handler (request :get "/"))
-        :status := 200
-        :headers :⊃ {"content-length" 7
-                     "content-type" "text/plain;charset=utf-8"}
-        [:body to-string] := "Bradley")
+      (is (= 200 (:status response)))
+      (is (= {"content-length" 7
+              "content-type" "text/plain;charset=utf-8"}
+             (select-keys headers ["content-length" "content-type"])))
+      (is (= "Bradley" (to-string (:body response))))
 
-      (given @(handler (-> (request :put "/" {:value "Chelsea"})))
-        :status := 204
-        [:headers keys set] :⊅ #{"content-type"}
-        [:headers keys set] :⊅ #{"content-length"}
-        :body := nil)
-
+      (let [response @(handler (-> (request :put "/" {:value "Chelsea"})))]
+        (is (= 204 (:status response)))
+        (is (= (contains? (set (keys (:headers response))) "content-type")))
+        (is (= (contains? (set (keys (:headers response))) "content-length")))
+        (is (nil? (:body response))))
+      
       (is (= @resource "Chelsea"))
 
-      (given @(handler (request :get "/"))
-        :status := 200
-        :headers :⊃ {"content-length" 7
-                     "content-type" "text/plain;charset=utf-8"}
-        [:body to-string] := "Chelsea")))
+      (let [response @(handler (request :get "/"))]
+        (is (= 200 (:status response)))
+        (is (= {"content-length" 7
+                "content-type" "text/plain;charset=utf-8"}
+               (select-keys (:headers response) ["content-length" "content-type"])))
+        (is (= "Chelsea" (to-string (:body response)))))))
 
   #_(testing "atom"
-    (let [resource (atom {:name "Frank"})
-          handler (yada resource)
-          request (request :get "/")
-          response @(handler request)]
+      (let [resource (atom {:name "Frank"})
+            handler (yada resource)
+            request (request :get "/")
+            response @(handler request)]
 
-      (given response
-        :status := 200
-        :headers :> {"content-length" 16
-                     "content-type" "application/edn"}
-        :body :? string?)
+        (given response
+               :status := 200
+               :headers :> {"content-length" 16
+                            "content-type" "application/edn"}
+               :body :? string?)
 
-      )))
+        )))

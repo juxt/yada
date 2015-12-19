@@ -3,11 +3,11 @@
 (ns yada.string-resource-test
   (:require
    [clojure.java.io :as io]
+   [clojure.set :as set]
    [clojure.string :as str]
    [clojure.test :refer :all]
    [clj-time.core :as time]
    [clj-time.coerce :refer (to-date)]
-   [juxt.iota :refer [given]]
    [ring.mock.request :refer [request]]
    [ring.util.time :refer (format-date)]
    [yada.yada :as yada :refer [yada]]))
@@ -36,8 +36,7 @@
                         :charset #{"UTF-8"}}}))
           request (request :get "/")
           response @(handler request)]
-      (given response
-             [:headers "content-type"] := "text/plain;charset=utf-8"))
+      (is (= "text/plain;charset=utf-8" (get-in response [:headers "content-type"]))))
 
     ;; TODO: If strings are used, then an explicit charset provided in
     ;; the :produces entry should be honored and used when writing the
@@ -56,11 +55,10 @@
           request (request :get "/")
           response @(handler request)]
 
-      (given response
-        :status := 200
-        :headers :> {"content-length" (count "Hello World!")
-                     "content-type" "text/plain;charset=utf-8"}
-        :body :? (partial instance? java.nio.ByteBuffer))))
+      (is (= 200 (:status response)))
+      (is (= {"content-length" (count "Hello World!")
+              "content-type" "text/plain;charset=utf-8"} (select-keys (:headers response) ["content-length" "content-type"])))
+      (is (instance? java.nio.ByteBuffer (:body response)))))
 
   (testing "if-last-modified"
     ;; We set the time to yesterday, to avoid producing dates in the future
@@ -73,35 +71,23 @@
                         response @(handler request)]
 
                     ;; First request gets a 200
-                    (given response
-                           :status := 200
-                           :headers :> {"content-length" (count "Hello World!")}
-                           :body :? (partial instance? java.nio.ByteBuffer)))
-
+                    (is (= 200 (:status response)))
+                    (is (= {"content-length" (count "Hello World!")} (select-keys (:headers response) ["content-length"]))))
                   
                   (let [request (merge-with merge (request :get "/")
                                             {:headers {"if-modified-since" (format-date (to-date (time/plus (time/now) (time/hours 1))))}})
                         response @(handler request)]
 
-                    (given response
-                           :status := 304)))))
+                    (is (= 304 (:status response)))))))
 
   (testing "safe-by-default"
     (let [resource "Hello World!"
           handler (yada/yada resource)]
 
       (doseq [method [:put :post :delete]]
-        (given @(handler (request method "/"))
-          :status := 405
-          [:headers "allow"] :!? nil?
-          [:headers "allow" parse-allow] := #{"GET" "HEAD" "OPTIONS"}
-          ))))
-
-  #_(testing "wrap-in-atom"
-      (let [resource (atom "Hello World!")
-            handler (yada resource)]
-
-        (given @(handler (request :put "/"))
-          :status := 200
-          ))))
+        (let [response @(handler (request method "/"))
+              allow-header (get-in response [:headers "allow"])]
+          (is (= 405 (:status response)))
+          (is (not (nil? allow-header)))
+          (is (= #{"GET" "HEAD" "OPTIONS"} (parse-allow (get-in response [:headers "allow"])))))))))
 

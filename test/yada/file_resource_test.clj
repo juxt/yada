@@ -17,10 +17,10 @@
    [yada.yada :as yada :refer [yada]]
    [yada.protocols :as p]
    [yada.resources.file-resource :refer :all]
-   [yada.test.util :refer [to-string]]
-   [juxt.iota :refer [given]])
-  (:import [java.io File ByteArrayInputStream]
-           [java.util Date]))
+   [yada.test.util :refer [to-string]])
+  (:import
+   [java.io File ByteArrayInputStream]
+   [java.util Date]))
 
 (def exists? (memfn exists))
 
@@ -38,27 +38,24 @@
         response @(handler request)]
 
     (testing "expectations of set-up"
-      (given resource
-        identity :? exists?
-        (memfn getName) := "test.txt"))
+      (is (exists? resource))
+      (is (= "test.txt" (.getName resource))))
 
     (testing "response"
-      (given response
-        identity :? some?
-        :status := 200
-        [:headers "content-type"] := "text/plain"
-        [:body type] := File
-        [:headers "content-length"] := (.length resource)))
+      (is (some? response))
+      (is (= 200 (:status response)))
+      (is (= "text/plain" (get-in response [:headers "content-type"])))
+      (is (instance? File (:body response)))
+      (is (= (.length resource) (get-in response [:headers "content-length"]))))
 
     (testing "last-modified"
-      (given response
-        [:headers "last-modified" parse-date] := (java.util.Date. (.lastModified resource))
-        [:headers "last-modified" parse-date (memfn getTime)] := (.lastModified resource)))
+      (let [d (get-in response [:headers "last-modified"])]
+        (is (= (java.util.Date. (.lastModified resource)) (parse-date d)))))
 
     (testing "conditional-response"
-      (given @(handler (assoc-in request [:headers "if-modified-since"]
-                                 (format-date (Date. (.lastModified resource)))))
-        :status := 304))))
+      (let [r @(handler (assoc-in request [:headers "if-modified-since"]
+                                  (format-date (Date. (.lastModified resource)))))]
+        (is (= 304 (:status r)))))))
 
 (st/deftest temp-file-test
   (testing "creation of a new file"
@@ -75,45 +72,40 @@
                          {:headers {"x-yada-debug" "true"}}
                          {:body (ByteArrayInputStream. (.getBytes (pr-str newstate)))}))]
           ;; If this resource didn't allow the PUT method, we'd get a 405.
-          (let [handler (yada (update (yada/as-resource f) :methods dissoc :put))]
-            (given @(handler (make-put))
-                   :status := 405))
+          (let [handler (yada (update (yada/as-resource f) :methods dissoc :put))
+                r @(handler (make-put))]
+            (is (= 405 (:status r))))
 
           ;; The resource allows a PUT, the server
           ;; should create the resource with the given content and
           ;; receive a 201.
 
-          (let [handler (yada f)]
-            (given @(handler (make-put))
-                   :status := 201
-                   :body :? nil?))
+          (let [handler (yada f)
+                r @(handler (make-put))]
+            (is (= 201 (:status r)))
+            (is (nil? (:body r))))
 
           (is (= (edn/read-string (slurp f)) newstate)
               "The file content after the PUT was not the same as that
                 in the request")
 
-          (let [handler (yada f)]
-            (given @(handler (request :get "/"))
-                   :status := 200
-                   [:headers "content-type"] := "application/edn"
-                   [:body slurp edn/read-string] := newstate
-                   )
+          (let [handler (yada f)
+                r @(handler (request :get "/"))]
+            (is (= 200 (:status r)))
+            (is (= "application/edn" (get-in r [:headers "content-type"])))
+            (is (= newstate (edn/read-string (slurp (:body r)))))
 
             ;; Update the resource, since it already exists, we get a 204
             ;; TODO Check spec, is this the correct status code?
 
-            (given @(handler (make-put))
-                   :status := 204)
+            (is (= 204 (:status @(handler (make-put)))))
 
             (is (exists? f))
-
-            (given @(handler (request :delete "/"))
-                     :status := 204)
+            (is (= 204 (:status @(handler (request :delete "/")))))
 
             (is (not (exists? f)))
 
-            (given @(handler (request :get "/"))
-                     :status := 404))
+            (is (= 404 (:status @(handler (request :get "/"))))))
 
           (is (not (.exists f)) "File should have been deleted by the DELETE"))))))
 

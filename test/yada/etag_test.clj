@@ -4,7 +4,6 @@
   (:require
    [clojure.test :refer :all]
    [clojure.tools.logging :refer :all]
-   [juxt.iota :refer [given]]
    [ring.mock.request :as mock]
    [yada.resource :refer [resource]]
    [yada.protocols :as p]
@@ -28,11 +27,12 @@
           handler (yada (etag-test-resource v))
           r1 @(handler (mock/request :get "/"))
           r2 @(handler (mock/request :get "/"))]
-      (given [r1 r2]
-        [first :status] := 200
-        [second :status] := 200
-        [first :headers "etag"] :? etag?
-        [second :headers "etag"] :? etag?)
+
+      (is (= 200 (:status r1)))
+      (is (etag? (get-in r1 [:headers "etag"])))
+      (is (= 200 (:status r2)))
+      (is (etag? (get-in r2 [:headers "etag"])))
+      
       ;; ETags are the same in both responses
       (is (= (get-in r1 [:headers "etag"])
              (get-in r2 [:headers "etag"])))))
@@ -43,13 +43,14 @@
           r1 @(handler (mock/request :get "/"))
           r2 @(handler (mock/request :post "/"))
           r3 @(handler (mock/request :get "/"))]
-      (given [r1 r3]
-        [first :status] := 200
-        [second :status] := 200
-        [first :headers "etag"] :? etag?
-        [second :headers "etag"] :? etag?)
-      (given r2
-        :status := 200)
+      
+      (is (= 200 (:status r1)))
+      (is (etag? (get-in r1 [:headers "etag"])))
+      (is (= 200 (:status r3)))
+      (is (etag? (get-in r3 [:headers "etag"])))
+      
+      (is (= 200 (:status r2)))
+      
       ;; ETags are the same in both responses
       (is (not (= (get-in r1 [:headers "etag"])
                   (get-in r3 [:headers "etag"]))))))
@@ -63,18 +64,17 @@
 
       ;; Sad path - POSTing with a stale etag (from r1)
       (let [etag (get-in r1 [:headers "etag"])]
-
-        (given @(handler (-> (mock/request :post "/")
-                             (update-in [:headers] merge {"if-match" etag})))
-          :status := 412)
-
-        (given @(handler (-> (mock/request :post "/")
-                             (update-in [:headers] merge {"if-match" (str "abc, " etag ",123")})))
-          :status := 412))
+        (let [r @(handler (-> (mock/request :post "/")
+                              (update-in [:headers] merge {"if-match" etag})))]
+          (is (= 412 (:status r))))
+        
+        (let [r @(handler (-> (mock/request :post "/")
+                              (update-in [:headers] merge {"if-match" (str "abc, " etag ",123")})))]
+          (is (= 412 (:status r)))))
 
       ;; Happy path - POSTing from a fresh etag (from r2)
       (let [etag (get-in r2 [:headers "etag"])]
         (is (etag? etag))
-        (given @(handler (-> (mock/request :post "/")
-                             (update-in [:headers] merge {"if-match" (str "abc, " etag ",123")})))
-          :status := 200)))))
+        (let [r @(handler (-> (mock/request :post "/")
+                              (update-in [:headers] merge {"if-match" (str "abc, " etag ",123")})))]
+          (is (= 200 (:status r))))))))

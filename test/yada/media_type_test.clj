@@ -3,8 +3,7 @@
 (ns yada.media-type-test
   (:refer-clojure :exclude [type])
   (:require [yada.media-type :refer :all]
-            [clojure.test :refer :all]
-            [juxt.iota :refer (given)]))
+            [clojure.test :refer :all]))
 
 (deftest media-type-test
   (let [result {:name "text/html" :type "text" :subtype "html"
