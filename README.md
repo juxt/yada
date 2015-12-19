@@ -26,13 +26,16 @@ Add the following dependency to your
 [yada "1.0.0"]
 ```
 
-For the latest 'alpha' release, use the following dependency instead
+This 1.0.0 release is the same as the `1.0.0-20150903.093751-9` version, tagged on 2015-09-03. All new development has been taking place on the master branch (currently the 1.1.x series) which has changed the yada API and replaced most of the old protocols with a 'pure' data model. For the latest 'alpha' release in this series, use the following dependency instead :-
 
 ```clojure
 [yada "1.1.0-20151219.153900-1"]
 ```
 
-For the previous 0.4.3 'alpha' release, which is now deprecated, use the following and run the documentation offline (details below).
+Documentation for the 1.1.x series has not been updated from the 1.0
+release. Please refer to the tests and examples for how to use 1.1.x.
+
+For the old 0.4.3 'alpha' release, which is now deprecated, use the following and run the documentation offline (details below).
 
 ```clojure
 [yada "0.4.3"]
