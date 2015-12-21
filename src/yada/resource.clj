@@ -88,9 +88,9 @@
   (as-resource [this] this))
 
 (defn resource [m]
-  (->> m
-       ys/resource-coercer
-       map->Resource))
+  (let [r (ys/resource-coercer m)]
+    (when (su/error? r) (throw (ex-info "Cannot turn map into resource, because it doesn't conform to a resource schema" {:input-map m :error (:error r)})))
+    (map->Resource r)))
 
 (extend-protocol p/ResourceCoercion
   nil
