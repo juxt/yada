@@ -38,6 +38,16 @@
               {:encoding (or (some-> representation :charset charset/charset)
                              charset/default-platform-charset)}))
 
+(defrecord MapBody [map])
+
+(defn as-body
+  "The equivalent of 'quoting' an actual map inside a resource as an
+  actual body. Otherwise maps can be treated as a nested value, as
+  part of the resource itself. This is the case when using the
+  shorthand {:get map} form, rather than {:get {:"
+  [map]
+  (->MapBody map))
+
 (extend-protocol MessageBody
 
   String
@@ -50,6 +60,10 @@
   ;; See  http://mark.koli.ch/remember-kids-an-http-content-length-is-the-number-of-bytes-not-the-number-of-characters
   (content-length [s]
     nil)
+
+  MapBody
+  (to-body [mb representation]
+    (to-body (:map mb) representation))
 
   clojure.lang.APersistentMap
   (to-body [m representation]
