@@ -11,11 +11,11 @@
    [modular.component.co-dependency :refer (co-using)]
    [modular.component.co-dependency.schema :refer [co-dep]]
    [schema.core :as s]
-   yada.bidi
    [yada.dev.config :as config]
    [yada.dev.template :refer [new-template-resource]]
    yada.resources.file-resource
    [yada.dev.hello :as hello]
+   [yada.swagger :as swagger]
    [yada.yada :as yada :refer [yada]])
   (:import [modular.bidi Router]
            [com.stuartsierra.component SystemMap]
@@ -69,7 +69,16 @@
                   [:li
                    [:a {:href (str
                                (config/phonebook-origin config)
-                               (path-for (:server phonebook) :phonebook.api/index))} "Phonebook"] " - to demonstrate custom records implementing standard HTTP methods"]
+                               (path-for (:server phonebook) :phonebook.api/index))} "Phonebook"]
+                   [:a {:href
+                        (format "%s/index.html?url=%s"
+                                (path-for @*router :swagger-ui)
+                                (str (config/docsite-origin config) (path-for @*router ::phonebook-swagger-spec))
+                                
+                                )}
+                    " (Swagger)"]
+                   " - to demonstrate custom records implementing standard HTTP methods"]
+
                   [:li [:a {:href (str
                                    (config/selfie-origin config)
                                    (path-for (:server selfie) :selfie.api/index))} "Selfie"] " - to demonstrate asynchronous processing of large request bodies"]
@@ -119,6 +128,17 @@
 
       ["hello.html" (hello/index *router)]
 
+      ["phonebook-api/swagger.json"
+       (-> (yada
+            (swagger/swagger-spec-resource
+             (swagger/swagger-spec {:info {:title "Phonebook"
+                                           :version "1.0"
+                                           :description "A simple resource example"}
+                                    :host (str (:host config) ":" (config/phonebook-port config))
+                                    :basePath ""}
+                                   (-> phonebook :api :routes))))
+           (tag ::phonebook-swagger-spec))]
+
       ;;Boring specs
       [["spec/rfc" :rfc] (rfc)]]]))
 
@@ -126,3 +146,6 @@
   (-> (map->Docsite opts)
       (using [:phonebook :cors-demo-router :talks-router :console-router :selfie])
       (co-using [:router])))
+
+
+

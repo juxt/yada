@@ -375,7 +375,7 @@
     ctx))
 
 (defn access-control-headers [ctx]
-  (let [access-control (get-in ctx [:properties :access-control]) 
+  (let [access-control (get-in ctx [:handler :access-control]) 
         ;;interpreted-allow-origin (when allow-origin (service/allow-origin allow-origin ctx))
         expose-headers (get-in ctx [:access-control :expose-headers])
         allow-headers (get-in ctx [:access-control :allow-headers])]

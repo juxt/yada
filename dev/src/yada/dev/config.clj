@@ -8,7 +8,8 @@
    ))
 
 (s/defschema ConfigSchema
-  {:prefix s/Str
+  {:scheme (s/enum "http" "https")
+   :host String
    :ports {:docsite UserPort
            :console UserPort
            :cors-demo UserPort
@@ -47,31 +48,43 @@
   (-> config :selfie :port))
 
 (defn docsite-origin [config]
-  (str (:prefix config)
+  (str (:scheme config)
+       "://"
+       (:host config)
        (when-let [port (docsite-port config)]
          (str ":" port))))
 
 (defn cors-demo-origin [config]
-  (str (:prefix config)
+  (str (:scheme config)
+       "://"
+       (:host config)
        (when-let [port (cors-demo-port config)]
          (str ":" port))))
 
 (defn talks-origin [config]
-  (str (:prefix config)
+  (str (:scheme config)
+       "://"
+       (:host config)
        (when-let [port (talks-port config)]
          (str ":" port))))
 
 (defn phonebook-origin [config]
-  (str (:prefix config)
+  (str (:scheme config)
+       "://"
+       (:host config)
        (when-let [port (phonebook-port config)]
          (str ":" port))))
 
 (defn selfie-origin [config]
-  (str (:prefix config)
+  (str (:scheme config)
+       "://"
+       (:host config)
        (when-let [port (selfie-port config)]
          (str ":" port))))
 
 (defn console-origin [config]
-  (str (:prefix config)
+  (str (:scheme config)
+       "://"
+       (:host config)
        (when-let [port (console-port config)]
          (str ":" port))))

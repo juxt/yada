@@ -2,6 +2,8 @@
 
 (ns yada.handler
   (:require
+   [bidi.bidi :as bidi]
+   [bidi.ring :as br]
    [clojure.tools.logging :refer [errorf debugf infof]]
    [manifold.deferred :as d]
    [schema.core :as s]
@@ -74,23 +76,19 @@
 
 (defn- handle-request
   "Handle Ring request"
-  [handler request]
+  [handler request match-context]
   (let [method (:request-method request)
         interceptor-chain (:interceptor-chain handler)
-        options (:options handler)
         id (java.util.UUID/randomUUID)
-        error-handler (or (:error-handler options)
-                          default-error-handler)
-        ctx (merge
-             (make-context)
-             {:id id
-              :method method
-              :method-wrapper (get (:known-methods handler) method)
-              :interceptor-chain interceptor-chain
-              :handler handler
-              :resource (:resource handler) ; convenience
-              :request request
-              :options options})]
+        error-handler default-error-handler
+        ctx (merge (make-context)
+                   {:id id
+                    :method method
+                    :method-wrapper (get (:known-methods handler) method)
+                    :interceptor-chain interceptor-chain
+                    :handler (merge handler match-context)
+                    :resource (:resource handler)  ; convenience
+                    :request request})]
 
     (->
      (apply d/chain ctx interceptor-chain)
@@ -137,7 +135,7 @@
 (defrecord Handler []
   clojure.lang.IFn
   (invoke [this req]
-    (handle-request this req))
+    (handle-request this req (make-context)))
 
   p/ResourceCoercion
   (as-resource [h]
@@ -147,7 +145,31 @@
                   "application/json"
                   "application/edn;pretty=true"
                   "application/json;pretty=true"}
-      :methods {:get (fn [ctx] (into {} h))}})))
+      :methods {:get (fn [ctx] (into {} h))}}))
+
+  bidi/Matched
+  (resolve-handler [this m]
+    ;; If we represent a collection of resources, let's match and retain
+    ;; the remainder which we place into the request as :path-info (see
+    ;; below).
+    (if (:collection? this)
+      (assoc m :handler this)
+      (bidi/succeed this m)))
+
+  (unresolve-handler [this m]
+    (when
+        (or (= this (:handler m))
+            (when-let [id (:id this)] (= id (:handler m))))
+        ""))
+
+  br/Ring
+  (request [this req match-context]
+    (handle-request
+     this
+     (if (:collection? this)
+       (assoc req :path-info (:remainder match-context))
+       req)
+     (merge (make-context) match-context))))
 
 (defn new-handler [m]
   (map->Handler m))

@@ -18,11 +18,13 @@
    [ring.util.response :refer [redirect]]
    [schema.core :as s]
    [schema.coerce :as sc]
+   [yada.body :refer [as-body]]
    [yada.charset :as charset]
    [yada.media-type :as mt]
    [yada.protocols :as p]
    [yada.resource :refer [resource]]
    [yada.core :as yada :refer [yada]]
+   [yada.schema :as ys]
    [yada.util :refer [md5-hash] :as util])
   (:import [clojure.lang PersistentVector Keyword]))
 
@@ -37,10 +39,6 @@
 (def media-type-names
   (comp (map (comp :name :media-type))
         (distinct)))
-
-(sequence media-type-names [{:media-type {:name "text/html"}}
-                            {:media-type {:name "foo"}}
-                            {:media-type {:name "foo"}}])
 
 (defn to-path [route]
   (let [path (->> route :path (map encode) (apply str))
@@ -68,30 +66,40 @@
                  (when (not-empty produces) {:produces produces})
                  (when (not-empty consumes) {:consumes consumes}))}))]))
 
-(defn create-spec [template routes]
-  (merge template
-         {:paths (into {} (map to-path (route-seq routes)))}))
-
 (def ^{:doc "To achieve compatibility with ring-swagger as per
   ring.swagger.swagger2-schema"} ring-swagger-coercer
   (sc/coercer rss/Swagger {rss/Parameters #(set/rename-keys % {:form :formData})}))
 
-(defn swagger-spec-resource [spec created-at content-type]
-  (resource
-   {:properties {:last-modified created-at
-                 :version (md5-hash (pr-str spec))}
-    :produces
-    (case content-type
-      "application/json" [{:media-type #{"application/json"
-                                         "application/json;pretty=true"}
-                           :charset #{"UTF-8" "UTF-16;q=0.9" "UTF-32;q=0.9"}}]
-      "text/html" [{:media-type "text/html"
-                    :charset charset/platform-charsets}]
-      "application/edn" [{:media-type #{"application/edn"
-                                        "application/edn;pretty=true"}
-                          :charset #{"UTF-8"}}])
+(defn swagger-spec [template routes & [content-type]]
+  (-> template
+      (merge {:paths (into {} (map to-path (route-seq routes)))})
+      ring-swagger-coercer rs/swagger-json))
 
-    :methods {:get {:handler (fn [ctx] spec)}}}))
+(defrecord SwaggerSpecResource [spec content-type]
+  p/ResourceCoercion
+  (as-resource [_]
+    (resource
+     {:properties {:last-modified (to-date (now))
+                   :version (md5-hash (pr-str spec))}
+      :produces
+      (case (or content-type "application/json")
+        "application/json" [{:media-type #{"application/json"
+                                           "application/json;pretty=true"}
+                             :charset #{"UTF-8" "UTF-16;q=0.9" "UTF-32;q=0.9"}}]
+        "text/html" [{:media-type "text/html"
+                      :charset charset/platform-charsets}]
+        "application/edn" [{:media-type #{"application/edn"
+                                          "application/edn;pretty=true"}
+                            :charset #{"UTF-8"}}])
+
+      ;; We must wrap the spec, otherwise body would get treated as
+      ;; part of the resource definition.
+      :methods {:get (as-body spec)}})))
+
+(defn swagger-spec-resource [swagger-spec & [content-type]]
+  (->SwaggerSpecResource swagger-spec content-type))
+
+;; Convenience
 
 (defrecord Swaggered [spec routes spec-handlers]
   Matched
@@ -135,11 +143,12 @@
       (handler req))))
 
 (defn swaggered [template routes]
-  (let [spec (-> (create-spec template routes) ring-swagger-coercer rs/swagger-json)]
+  (let [spec (swagger-spec template routes)]
     (map->Swaggered
      {:spec spec
       :routes routes
       :spec-handlers
       (into {}
             (for [ct ["application/edn" "application/json" "text/html"]]
-              [ct (yada (swagger-spec-resource spec (to-date (now)) ct))]))})))
+              [ct (yada (swagger-spec-resource spec ct))]))})))
+

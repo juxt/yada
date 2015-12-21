@@ -1,5 +1,7 @@
-{:prefix #cond {:dev "http://localhost"
-                :prod "http://yada.juxt.pro"}
+{:scheme #cond {:dev "http" :prod "https"}
+
+ :host #cond {:dev "localhost"
+              :prod "yada.juxt.pro"}
 
  :ports {:docsite #cond {:dev 8090 :prod nil}
          :console 8091

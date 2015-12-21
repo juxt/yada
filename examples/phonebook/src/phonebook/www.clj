@@ -17,7 +17,9 @@
 
 (defn new-index-resource [db *routes]
   (resource
-   {:access-control {:allow-origin "*"}
+   {
+    ;; NO! NO! NO!
+    ;;:access-control {:allow-origin "*"}
 
     :produces [{:media-type
                 #{"text/html" "application/edn;q=0.9" "application/json;q=0.8"}

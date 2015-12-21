@@ -4,12 +4,10 @@
   (:require
    [clojure.test :refer :all]
    [clojure.walk :refer (postwalk)]
-   [bidi.bidi :as bidi :refer (Matched compile-route succeed)]
    [bidi.ring :refer (make-handler Ring)]
    [byte-streams :as bs]
    [ring.mock.request :refer (request)]
    [ring.util.codec :as codec]
-   yada.bidi
    [yada.walk :refer (basic-auth)]
    [yada.yada :as yada :refer [yada]]))
 
@@ -27,7 +25,7 @@
                   {"/a" (yada "Secret area A")
                    "/b" (yada "Secret area B")})}])
 
-(deftest status
+#_(deftest status
   (let [h (-> (make-api) make-handler)
         response @(h (request :get "/api/status"))]
     (testing "status"

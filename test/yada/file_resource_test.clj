@@ -13,7 +13,6 @@
    [schema.test :as st]
    [bidi.bidi :as bidi]
    [bidi.ring :as br]
-   yada.bidi
    [yada.yada :as yada :refer [yada]]
    [yada.protocols :as p]
    [yada.resources.file-resource :refer :all]
