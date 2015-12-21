@@ -86,7 +86,7 @@
           [juxt.modular/test "0.1.0"]
           [juxt.modular/template "0.6.3"]
 
-          [org.webjars/swagger-ui "2.1.1"]
+          [org.webjars/swagger-ui "2.1.3"]
           [org.webjars/jquery "2.1.3"]
           [org.webjars/bootstrap "3.3.2"]
           [org.webjars.bower/material-design-lite "1.0.2" :scope "test"]
