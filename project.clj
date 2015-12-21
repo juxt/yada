@@ -44,8 +44,7 @@
          :plugins [[lein-cljsbuild "1.0.6"]
                    ;;[lein-less "1.7.5"]
                    [lein-figwheel "0.3.7" :exclusions [[org.clojure/clojure]
-                                                       [org.codehaus.plexus/plexus-utils]
-                                                       ]]]
+                                                       [org.codehaus.plexus/plexus-utils]]]]
 
          :cljsbuild {:builds
                      {:console {:source-paths ["console/src-cljs"]
@@ -61,7 +60,6 @@
 
           [org.clojure/tools.nrepl "0.2.12"] ; otherwise pedantic check fails
           [org.clojure/tools.logging "0.3.1"]
-          
 
           [ch.qos.logback/logback-classic "1.0.7"
            :exclusions [org.slf4j/slf4j-api]]
