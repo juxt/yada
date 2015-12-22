@@ -19,8 +19,7 @@
         ["/" :entry] (-> (new-entry-resource db *routes)
                          (assoc :id ::entry)
                          yada)}
-       (routes-context {:access-control {:allow-origin "*"}
-                        :foo :bar}))])
+       (routes-context {:access-control {:allow-origin "*"}}))])
 
 (s/defrecord ApiComponent [db routes]
   Lifecycle
