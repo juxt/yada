@@ -35,17 +35,6 @@
                           (when-let [retry-after (service/retry-after res)] {:headers {"retry-after" retry-after}}))))
       ctx)))
 
-(defn exists?
-  "Does this resource exist? Can we tell without calling properties?
-  For example, this is to allow resources to declare they don't
-  actually exist, e.g. the nil resource, by providing static
-  properties. The value of the exists?  entry must be explicitly false
-  not just falsey (nil)."
-  [ctx]
-  (if (false? (get-in ctx [:handler :resource :properties :exists?]))
-    (d/error-deferred (ex-info "" {:status 404}))
-    ctx))
-
 (defn known-method?
   [ctx]
   (if-not (:method-wrapper ctx)
@@ -396,7 +385,6 @@
 
 (def default-interceptor-chain
   [;;available?
-   exists? 
    known-method?
    ;;uri-too-long?
    TRACE

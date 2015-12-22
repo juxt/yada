@@ -94,5 +94,6 @@
 
 (extend-protocol p/ResourceCoercion
   nil
-  (as-resource [_] (resource {:properties {:exists? false}})))
+  (as-resource [_] (resource {:properties {:exists? false}
+                              :methods {:get nil}})))
 
