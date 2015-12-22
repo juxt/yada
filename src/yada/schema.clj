@@ -231,7 +231,6 @@ convenience of terse, expressive short-hand descriptions."}
 
 (def Resource
   (merge {(s/optional-key :path-info?) Boolean
-          ;;(s/optional-key :exists?) Boolean
           (s/optional-key :id) s/Any}
          AccessControl
          Properties
