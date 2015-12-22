@@ -17,6 +17,8 @@
    [yada.protocols :as p]
    [yada.media-type :as mt])
   (:import [java.io File]
+           [java.nio.file Files]
+           [java.nio.file.attribute PosixFileAttributeView PosixFilePermissions]
            [java.util Date TimeZone]
            [java.text SimpleDateFormat]
            [java.nio.charset Charset]))
@@ -94,30 +96,40 @@
              (str (.getName child) \newline)))
 
     "text/html"
-    (with-newline
-      (html
-       [:html
-        [:head
-         [:title (.getName dir)]]
-        [:body
-         [:table {:style "font-family: monospace"}
-          [:thead
-           [:tr
-            [:th "Name"]
-            [:th "Size"]
-            [:th "Last modified"]]]
-          [:tbody
-           (for [child (sort (.listFiles dir))]
+    (let [path (.toPath dir)]
+      (with-newline
+        (html
+         [:html
+          [:head
+           [:title (.getName dir)]
+           [:style "th {font-family: sans-serif} td {font-family: monospace} td, th {border-bottom: 1px solid #aaa; padding: 4px} a {text-decoration: none} td.monospace {font-family: monospace; }"]]
+          
+          [:body
+           [:table {:style "border-spacing: 14px; border: 1px solid black; border-collapse: collapse"}
+            #_[:thead
              [:tr
-              [:td [:a {:href (if (.isDirectory child) (str (.getName child) "/") (.getName child))} (.getName child)]]
-              [:td {:style "align: right"}
-               (if (.isDirectory child) "" (.length child))]
-              [:td (.format
-                    (doto (SimpleDateFormat. "yyyy-MM-dd HH:mm:ss zzz")
-                      (.setTimeZone (TimeZone/getTimeZone "UTC")))
-                    (java.util.Date. (.lastModified child)))]])]]]]))))
-
-
+              [:th "Permissions"]
+              [:th "Owner"]
+              [:th "Size"]
+              [:th "Last modified"]
+              [:th "Name"]]]
+            [:tbody
+             (for [child (sort (.listFiles dir))
+                   :let [path (.toPath child)
+                         attrs (.readAttributes (Files/getFileAttributeView path PosixFileAttributeView (into-array java.nio.file.LinkOption [])))]]
+               [:tr
+                [:td.monospace (str (if (Files/isDirectory path (into-array java.nio.file.LinkOption [])) "d" "-") (PosixFilePermissions/toString (.permissions attrs)))]
+                [:td
+                 (.getName (.owner attrs))
+                 ]
+                [:td.monospace {:style "text-align: right"}
+                 (if (.isDirectory child) "" (.length child))]
+                [:td.monospace [:small (.format
+                                        (doto (SimpleDateFormat. "yyyy-MM-dd HH:mm:ss zzz")
+                                          (.setTimeZone (TimeZone/getTimeZone "UTC")))
+                                        (java.util.Date. (.lastModified child)))]]
+                [:td (let [href (if (.isDirectory child) (str (.getName child) "/") (.getName child))]
+                       [:a {:href href} (.getName child)])]])]]]])))))
 
 (defn dir-properties
   "Return properties of directory"
@@ -195,3 +207,5 @@
       (new-directory-resource f {})
       (new-file-resource f {})
       )))
+
+
