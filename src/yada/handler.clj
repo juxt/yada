@@ -86,7 +86,7 @@
                     :method method
                     :method-wrapper (get (:known-methods handler) method)
                     :interceptor-chain interceptor-chain
-                    :handler (merge handler match-context)
+                    :handler (merge handler (dissoc match-context :handler))
                     :resource (:resource handler)  ; convenience
                     :request request})]
 
