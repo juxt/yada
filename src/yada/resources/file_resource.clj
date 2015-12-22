@@ -141,8 +141,7 @@
   (resource
    {;; This tells the handler to match a route, even if there is some
     ;; remaining path-info.
-    ;; TODO: Rename to 'path-info?' ?
-    :collection? true
+    :path-info? true
 
     :properties
     (fn [ctx]

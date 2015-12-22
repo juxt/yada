@@ -230,7 +230,7 @@ convenience of terse, expressive short-hand descriptions."}
     (s/optional-key :allow-headers) String}})
 
 (def Resource
-  (merge {(s/optional-key :collection?) Boolean
+  (merge {(s/optional-key :path-info?) Boolean
           ;;(s/optional-key :exists?) Boolean
           (s/optional-key :id) s/Any}
          AccessControl

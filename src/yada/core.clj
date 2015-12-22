@@ -435,7 +435,7 @@
          ;; This handler services a collection of resources
          ;; (TODO: this is ambiguous, what do we mean exactly?)
          ;; See yada.resources.file-resource for an example.
-         collection? (:collection? resource)
+         path-info? (:path-info? resource)
 
          known-methods (methods/known-methods)
 
@@ -452,5 +452,5 @@
               :allowed-methods allowed-methods
               :known-methods known-methods
               :interceptor-chain default-interceptor-chain
-              :collection? collection?}
+              :path-info? path-info?}
              resource)))))

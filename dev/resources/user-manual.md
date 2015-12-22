@@ -1328,7 +1328,7 @@ The last modified date of the resource.
 
 The resource version. Used for entity-tag construction.
 
-### `:collection?`
+### `:path-info?`
 
 Whether the resource is actually serving a collection of sub-resources.
 

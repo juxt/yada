@@ -152,7 +152,7 @@
     ;; If we represent a collection of resources, let's match and retain
     ;; the remainder which we place into the request as :path-info (see
     ;; below).
-    (if (:collection? this)
+    (if (:path-info? this)
       (assoc m :handler this)
       (bidi/succeed this m)))
 
@@ -166,7 +166,7 @@
   (request [this req match-context]
     (handle-request
      this
-     (if (:collection? this)
+     (if (:path-info? this)
        (assoc req :path-info (:remainder match-context))
        req)
      (merge (make-context) match-context))))
