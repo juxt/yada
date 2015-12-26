@@ -13,9 +13,10 @@
    [schema.core :as s]
    [yada.charset :as charset]
    [yada.representation :as rep]
-   [yada.resource :refer [Representation RepresentationSets resource]]
+   [yada.resource :refer [resource]]
    [yada.protocols :as p]
-   [yada.media-type :as mt])
+   [yada.media-type :as mt]
+   [yada.schema :refer [Representation]])
   (:import [java.io File]
            [java.nio.file Files]
            [java.nio.file.attribute PosixFileAttributeView PosixFilePermissions]
@@ -44,6 +45,7 @@
   ;; another file, string or other body content.
   (assoc (:response ctx)
          :body (if reader
+                 ;; FIXME: This requires intimate knowledge of the ctx structure
                  (reader file (-> ctx :response :produces))
                  file)))
 
@@ -51,18 +53,18 @@
   [file :- File
    {:keys [reader produces]}
    :- {(s/optional-key :reader) (s/=> s/Any File Representation)
-       (s/optional-key :produces) RepresentationSets}]
+       (s/optional-key :produces) [Representation]}]
 
   (resource
-   {::type :file
+   {:produces (or produces
+                  [{:media-type (or (ext-mime-type (.getName file))
+                                    "application/octet-stream")}])
     :properties (fn [ctx]
                   {
                    ;; A representation can be given as a parameter, or deduced from
                    ;; the filename. The latter is unreliable, as it depends on file
                    ;; suffixes.
-                   :produces (or produces
-                                 [{:media-type (or (ext-mime-type (.getName file))
-                                                   "application/octet-stream")}])
+                   
                    :exists? (.exists file)
                    :last-modified (Date. (.lastModified file))})
 
@@ -136,6 +138,12 @@
   [dir ctx]
   {::file dir})
 
+(defn- maybe-redirect-to-index [dir req index-files]
+  (when-let [index-file (first (filter (set (seq (.list dir))) index-files))]
+    (throw
+     (ex-info "Redirect"
+              {:status 302 :headers {"Location" (str (:uri req) index-file)}}))))
+
 (s/defn new-directory-resource
   [dir :- File
    ;; A map between file suffices and extra args that will be used
@@ -147,58 +155,39 @@
    :- {(s/optional-key :custom-suffices)
        {String                          ; suffix
         {(s/optional-key :reader) (s/=> s/Any File Representation)
-         :produces RepresentationSets}}
+         :produces [Representation]}}
        (s/optional-key :index-files) [String]}]
 
   (resource
-   {;; This tells the handler to match a route, even if there is some
-    ;; remaining path-info.
-    :path-info? true
-
-    :properties
+   {:path-info? true
+    :produces "text/html"
+    :methods {:get (fn [ctx]
+                     (or (maybe-redirect-to-index dir (:request ctx) index-files)
+                         (dir-index dir (-> ctx :response :produces :media-type))))}
+    :subresource
     (fn [ctx]
-      (if-let [path-info (-> ctx :request :path-info)]
-        (let [f (io/file dir path-info)
-              suffix (filename-ext (.getName f))
-              custom-suffix-args (get custom-suffices suffix)]
-          (cond
-            (.isFile f)
-            {:exists? (.exists f)
-             :produces (if custom-suffix-args
-                         (:produces custom-suffix-args)
-                         [{:media-type (or (ext-mime-type (.getName f)) "application/octet-stream")}])
-             :last-modified (Date. (.lastModified f))
-             ::reader (some-> custom-suffix-args :reader)
-             ::file f}
+      (let [f (io/file dir (-> ctx :request :path-info))
+            suffix (filename-ext (.getName f))
+            custom-suffix-args (get custom-suffices suffix)]
+        (cond
+          (.isFile f)
+          (resource
+           {:properties {:exists? (.exists f)
+                         :last-modified (Date. (.lastModified f))}
+            :produces (if custom-suffix-args
+                        (:produces custom-suffix-args)
+                        [{:media-type (or (ext-mime-type (.getName f)) "application/octet-stream")}])
+            :methods
+            {:get (fn [ctx] (respond-with-file ctx f (some-> custom-suffix-args :reader)))}})
 
-            (and (.isDirectory f) (.exists f))
-            (if-let [index-file (first (filter (set (seq (.list f))) index-files))]
-              (throw
-               (ex-info "Redirect"
-                        {:status 302
-                         :headers {"Location" (str (get-in ctx [:request :uri]) index-file)}}))
-              {:exists? true
-               :produces [{:media-type #{"text/html"
-                                         "text/plain;q=0.9"}}]
-               :last-modified (Date. (.lastModified f))
-               ::file f})
+          (and (.isDirectory f) (.exists f))
+          (or
+           (maybe-redirect-to-index f (:request ctx) index-files)
+           (resource {:produces [{:media-type #{"text/html" "text/plain;q=0.9"}}]
+                      :properties {:last-modified (Date. (.lastModified f))}
+                      :methods {:get (fn [ctx] (dir-index f (-> ctx :response :produces :media-type)))}}))
 
-            :otherwise
-            {:exists? false}))
-
-        {:exists? false}))
-
-    :methods
-    {:get
-     {:handler
-      (fn [ctx]
-        (let [f (get-in ctx [:properties ::file])]
-          (assert f)
-          (cond
-            (.isFile f) (respond-with-file ctx f (get-in ctx [:properties ::reader]))
-            (.isDirectory f) (dir-index f
-                                        (-> ctx :response :produces :media-type)))))
-      :produces [{:media-type #{"text/plain"}}]}}}))
+          :otherwise (p/as-resource nil))))}))
 
 (extend-protocol p/ResourceCoercion
   File
@@ -207,5 +196,3 @@
       (new-directory-resource f {})
       (new-file-resource f {})
       )))
-
-

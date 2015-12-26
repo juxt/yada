@@ -15,7 +15,7 @@
    [schema.coerce :as sc]
    [schema.utils :refer [error?]]
    [yada.coerce :as coerce]
-   [yada.handler :refer [new-handler create-response]]
+   [yada.handler :refer [new-handler create-response] :as handler]
    [yada.methods :as methods]
    [yada.media-type :as mt]
    [yada.representation :as rep]
@@ -38,6 +38,7 @@
 
 (defn known-method?
   [ctx]
+  #_(infof "Calling known-method, handler is %s" (with-out-str (pprint (:handler ctx))))
   (if-not (:method-wrapper ctx)
     (d/error-deferred (ex-info "" {:status 501 ::method (:method ctx)}))
     ctx))
@@ -74,8 +75,8 @@
   (let [method (:method ctx)
         request (:request ctx)
 
-        schemas (util/merge-parameters (get-in ctx [:handler :parameters])
-                                       (get-in ctx [:handler :methods method :parameters]))
+        schemas (util/merge-parameters (get-in ctx [:handler :resource :parameters])
+                                       (get-in ctx [:handler :resource :methods method :parameters]))
 
         ;; TODO: Creating coercers on every request is unnecessary and
         ;; expensive, should pre-compute them.
@@ -113,7 +114,7 @@
 
 (defn get-properties
   [ctx]
-  (let [props (get-in ctx [:handler :properties] {})
+  (let [props (get-in ctx [:handler :resource :properties] {})
         props (if (fn? props) (props ctx) props)]
     (d/chain
      props                           ; propsfn can returned a deferred
@@ -144,9 +145,8 @@
       (let [content-type (mt/string->media-type (get-in request [:headers "content-type"]))
             content-length (safe-read-content-length request)
             consumes-mt (set (map (comp :name :media-type)
-                                  (or (get-in ctx [:properties :consumes])
-                                      (concat (get-in ctx [:handler :methods (:method ctx) :consumes])
-                                              (get-in ctx [:handler :consumes])))))]
+                                  (concat (get-in ctx [:handler :resource :methods (:method ctx) :consumes])
+                                          (get-in ctx [:handler :resource :consumes]))))]
 
         (if-not (contains? consumes-mt (:name content-type))
           (d/error-deferred
@@ -202,15 +202,8 @@
   method (which we know) and the status code (which is yet to be
   determined)."
   [ctx]
-  ;; TODO: Need metadata to say whether the :produces property 'replaces'
-  ;; or 'augments' the static produces declaration. Currently only
-  ;; 'replaces' is supported. What does Swagger do?
-  
-  ;; TODO We select the representation
-
-  (let [produces (or (get-in ctx [:properties :produces])
-                     (concat (get-in ctx [:handler :methods (:method ctx) :produces])
-                             (get-in ctx [:handler :produces])))
+  (let [produces (concat (get-in ctx [:handler :resource :methods (:method ctx) :produces])
+                         (get-in ctx [:handler :resource :produces]))
         rep (rep/select-best-representation (:request ctx) produces)]
     (cond-> ctx
       produces (assoc :produces produces)
@@ -267,7 +260,7 @@
             etags (into {}
                         (for [rep (:produces ctx)]
                           [rep (p/to-etag version rep)]))]
-
+        
         (if (empty? (set/intersection matches (set (vals etags))))
           (d/error-deferred
            (ex-info "Precondition failed"
@@ -319,7 +312,7 @@
   (let [resource (:resource ctx)]
     (if (not (methods/safe? (:method-wrapper ctx)))
 
-      (let [propsfn (get-in ctx [:handler :properties] (constantly {}))]
+      (let [propsfn (get-in ctx [:handler :resource :properties] (constantly {}))]
         (d/chain
 
          (propsfn ctx)                 ; propsfn can returned a deferred
@@ -434,24 +427,16 @@
                               :schema ys/Resource})))
 
          ;; This handler services a collection of resources
-         ;; (TODO: this is ambiguous, what do we mean exactly?)
-         ;; See yada.resources.file-resource for an example.
-         path-info? (:path-info? resource)
-
-         known-methods (methods/known-methods)
-
-
-         allowed-methods (let [methods (set (keys (:methods resource)))]
-                           (cond-> methods
-                             (some #{:get} methods) (conj :head)
-                             true (conj :options)))]
+         ;; TODO: Do we really need this in the map?
+         path-info? (:path-info? resource)]
 
      (new-handler
-      (merge {:id (java.util.UUID/randomUUID)
-              :base base
-              :resource resource
-              :allowed-methods allowed-methods
-              :known-methods known-methods
-              :interceptor-chain default-interceptor-chain
-              :path-info? path-info?}
-             resource)))))
+      (merge
+       {:id (get resource :id (java.util.UUID/randomUUID))
+        :base base
+        :resource resource
+        :allowed-methods (handler/allowed-methods resource)
+        :known-methods (methods/known-methods)
+        :interceptor-chain default-interceptor-chain}
+       (when-not (nil? path-info?) {:path-info? path-info?}))
+      ))))

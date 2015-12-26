@@ -149,20 +149,11 @@ convenience of terse, expressive short-hand descriptions."}
 (s/defschema Handler
   {:handler HandlerFunction})
 
-(s/defschema StaticProperties
+(s/defschema PropertiesResult
   {(s/optional-key :last-modified) s/Inst
    (s/optional-key :version) s/Any
    (s/optional-key :exists?) s/Bool
    NamespacedKeyword s/Any})
-
-;; Not sure about this design, see how it evolves. It's a bit weird
-;; piggy-backing produces, access-control, etc. on resource
-;; properties. Either something is a resource property or it
-;; isn't. Let's see how it evolves. An alternative design is to allow
-;; Properties to return a Context to override.
-(s/defschema PropertiesResult
-  (merge StaticProperties
-         Produces))
 
 (s/defschema PropertiesHandlerFunction
   (s/=> PropertiesResult Context))
@@ -170,7 +161,7 @@ convenience of terse, expressive short-hand descriptions."}
 (s/defschema Properties
   {(s/optional-key :properties) (s/conditional
                                  fn? PropertiesHandlerFunction
-                                 (comp not fn?) StaticProperties)})
+                                 (comp not fn?) PropertiesResult)})
 
 (def PropertiesMappings {})
 
@@ -178,10 +169,13 @@ convenience of terse, expressive short-hand descriptions."}
 
 (def properties-result-coercer (sc/coercer PropertiesResult PropertiesResultMappings))
 
-(def MethodDocumentation
+(def CommonDocumentation
   {(s/optional-key :description) String
-   (s/optional-key :summary) String
-   (s/optional-key :responses) {s/Int {:description String}}})
+   (s/optional-key :summary) String})
+
+(s/defschema MethodDocumentation
+  (merge CommonDocumentation
+         {(s/optional-key :responses) {s/Int {:description String}}}))
 
 (s/defschema MethodParameters
   (merge-with
@@ -229,20 +223,45 @@ convenience of terse, expressive short-hand descriptions."}
     (s/optional-key :expose-headers) String
     (s/optional-key :allow-headers) String}})
 
-(def Resource
-  (merge {(s/optional-key :path-info?) Boolean
-          (s/optional-key :id) s/Any}
+(s/defschema ResourceDocumentation
+  CommonDocumentation)
+
+(s/defschema ResourceBase
+  (merge {(s/optional-key :id) s/Any}
+         ResourceDocumentation
          AccessControl
          Properties
          ResourceParameters
          Produces
          Consumes
          Methods
+         ResourceDocumentation
          {NamespacedKeyword s/Any}))
 
-(def ResourceMappings
+(s/defschema Resource
+  (s/constrained
+   (merge ResourceBase
+          {(s/optional-key :path-info?) Boolean
+           (s/optional-key :subresource) (s/=> ResourceBase Context)})
+   (fn [v] (not (and (:subresource v) (not (:path-info? v)))))
+   "If a subresource entry exists then path-info? must be true"))
+
+(s/defschema ResourceMappings
   (merge PropertiesMappings
          RepresentationSeqMappings
          MethodsMappings))
 
 (def resource-coercer (sc/coercer Resource ResourceMappings))
+
+
+;; Handler
+
+(s/defschema HandlerModel
+  {:id s/Any
+   (s/optional-key :base) s/Any
+   :resource s/Any ; TODO: if we fold yada.schema into yada.resource and yada.handler we'll be able to reference Resource
+   (s/optional-key :parent) s/Any ; as TODO above
+   :allowed-methods #{s/Keyword}
+   :known-methods {s/Keyword s/Any}
+   :interceptor-chain [(s/=> Context Context)]
+   (s/optional-key :path-info?) s/Bool})

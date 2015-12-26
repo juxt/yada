@@ -17,6 +17,7 @@
    [yada.dev.template :refer [new-template-resource]]
    [yada.yada :as yada :refer [yada]]
    [yada.media-type :as mt]
+   [yada.schema :as ys]
    [yada.dev.markdown-resource :refer (new-markdown-resource)]
    [yada.resources.file-resource :refer [new-directory-resource]]
    )
@@ -26,41 +27,38 @@
                     config :- config/ConfigSchema]
   RouteProvider
   (routes [component]
-          (try
-            ["" [["/talks/"
-                  (s/with-fn-validation
-                    (yada
-                     (merge
-                      (new-directory-resource
-                       (io/file "talks")
-                       {:custom-suffices
-                        {"md" {:produces [{:media-type #{"text/html" "text/plain;q=0.9"}}]
-                               :reader (fn [f rep]
-                                         (cond
-                                           (= (-> rep :media-type :name) "text/html")
-                                           (str (md-to-html-string (slurp f)) \newline)
-                                           :otherwise f)
-                                         )}
-                         "org" {:produces [{:media-type #{"text/plain"}}]}}
+    (try
+      ["" [["/talks/"
+            (s/with-fn-validation
+              (yada
+               (merge
+                (new-directory-resource
+                 (io/file "talks")
+                 {:custom-suffices
+                  {"md" {:produces (ys/representation-seq-coercer
+                                    [{:media-type #{"text/html" "text/plain;q=0.9"}}])
+                         :reader (fn [f rep]
+                                   (cond
+                                     (= (-> rep :media-type :name) "text/html")
+                                     (str (md-to-html-string (slurp f)) \newline)
+                                     :otherwise f))}
+                   "org" {:produces (ys/representation-seq-coercer
+                                     [{:media-type #{"text/plain"}}])}}
+                  :index-files ["README.md"]})
+                {:id ::index})))]
+           ["/hello" (-> "Hello World!" yada)]
+           ["/hello-meta" (-> "Hello World!" yada yada)]
+           ["/hello-atom-meta" (-> "Hello World!" atom yada yada)]
+           ;; just a joke...
+           ["/hello-meta-meta" (-> "Hello World!" yada yada yada)]
 
-                        :index-files ["README.md"]
-                        })
-                      {:id ::index}
-                      )
-                     ))]
-                 ["/hello" (-> "Hello World!" yada)]
-                 ["/hello-meta" (-> "Hello World!" yada yada)]
-                 ["/hello-atom-meta" (-> "Hello World!" atom yada yada)]
-                 ;; just a joke...
-                 ["/hello-meta-meta" (-> "Hello World!" yada yada yada)]
-
-                 ;; Let's do this properly, and bind a file resource somehow
-                 ["/test.md" (yada (new-markdown-resource "# Heading\nHello"))]
-                 ]]
-            (catch clojure.lang.ExceptionInfo e
-              (errorf e "Error building routes %s" (ex-data e)))
-            (catch Exception e
-              (errorf e "Error building routes %s")))))
+           ;; Let's do this properly, and bind a file resource somehow
+           ["/test.md" (yada (new-markdown-resource "# Heading\nHello"))]
+           ]]
+      (catch clojure.lang.ExceptionInfo e
+        (errorf e "Error building routes %s" (ex-data e)))
+      (catch Exception e
+        (errorf e "Error building routes %s")))))
 
 (defn new-talks [config]
   (-> (map->Talks {:config config})

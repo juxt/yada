@@ -613,7 +613,7 @@
 
          ;; As we're multipart/form-data, let's make use of the expected
          ;; Content-Disposition headers.
-         (let [schemas (get-in ctx [:handler :methods (:method ctx) :parameters])
+         (let [schemas (get-in ctx [:handler :resource :methods (:method ctx) :parameters])
                fields
                (reduce
                 (fn [acc part] (cond-> acc

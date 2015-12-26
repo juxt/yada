@@ -58,11 +58,10 @@
 
 (defmethod process-request-body "application/x-www-form-urlencoded"
   [ctx body-stream media-type & args]
-  
   (let [body-string (bs/to-string body-stream)
         ;; Form and body schemas have to been done at the method level
         ;; - TODO: Build this contraint in yada.schema.
-        schemas (get-in ctx [:handler :methods (:method ctx) :parameters])]
+        schemas (get-in ctx [:handler :resource :methods (:method ctx) :parameters])]
     
     (cond
       ;; In Swagger 2.0 you can't have both form and body
