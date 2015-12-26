@@ -24,10 +24,10 @@
 (def exists? (memfn exists))
 
 #_(deftest legal-name-test
-  (are [x] (not (#'legal-name x))
-    ".." "./foo" "./../home" "./.." "/foo" "a/b")
-  (are [x] (legal-name x)
-    "a" "b.txt" "c..txt"))
+    (are [x] (not (#'legal-name x))
+      ".." "./foo" "./../home" "./.." "/foo" "a/b")
+    (are [x] (legal-name x)
+      "a" "b.txt" "c..txt"))
 
 ;; Test an actual file resource
 (st/deftest file-test
