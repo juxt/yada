@@ -81,7 +81,7 @@
                          :follow-redirects false
                          :headers {"content-type" "application/x-www-form-urlencoded"}
                          :body (codec/form-encode {:firstname "Kath" :surname "Read" :phone "1236"})})]
-    (is (= (:status post-response) 303))
+    (is (= 303 (:status post-response)))
     (let [location (get-in post-response [:headers "location"])]
       (is (re-matches #"/phonebook/\d+" location)))
     (let [headers (set (keys (get post-response :headers)))]
@@ -95,7 +95,7 @@
                              (str prefix location)
                              {:pool test-connection-pool
                               :follow-redirects false})]
-          (is (= (:status get-response) 200)))))))
+          (is (= 200 (:status get-response))))))))
 
 (def boundary "BoundaryZ3oJB7WHOBmOjrEi")
 
