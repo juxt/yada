@@ -4,6 +4,7 @@
   (:require
    [clojure.set :as set]
    [clojure.string :as str]
+   [clojure.pprint :refer [pprint]]
    [clojure.tools.logging :refer :all :exclude [trace]]
    [byte-streams :as bs]
    [manifold.deferred :as d]

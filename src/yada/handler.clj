@@ -8,6 +8,7 @@
    [manifold.deferred :as d]
    [schema.core :as s]
    [yada.body :as body]
+   [clojure.pprint :refer [pprint]]
    [yada.media-type :as mt]
    [yada.charset :as charset]
    [yada.protocols :as p]

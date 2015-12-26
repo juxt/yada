@@ -4,6 +4,7 @@
   (:refer-clojure :exclude [methods get])
   (:require
    [clojure.string :as str]
+   [clojure.pprint :refer [pprint]]
    [clojure.tools.logging :refer :all]
    [manifold.deferred :as d]
    [yada.body :as body]
