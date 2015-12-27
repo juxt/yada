@@ -56,7 +56,7 @@ Clojure:-
 
 ```clojure
 {:properties {…}
- :methods {:get {:handler (fn [ctx] "Hello World!")}
+ :methods {:get {:response (fn [ctx] "Hello World!")}
            :put {…}
            :brew {…}}
  …

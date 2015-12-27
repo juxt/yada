@@ -83,40 +83,40 @@
     (testing "methods"
 
       (testing "string constant"
-        (let [r (coercer {:methods {:get {:handler "Hello World!"}}})]
+        (let [r (coercer {:methods {:get {:response "Hello World!"}}})]
           (is (not (error? r)))
           (is (nil? (s/check Methods r)))
-          (is (= "Hello World!" (invoke-with-ctx (get-in r [:methods :get :handler]))))))
+          (is (= "Hello World!" (invoke-with-ctx (get-in r [:methods :get :response]))))))
       
       (testing "implied handler"
         (let [r (coercer {:methods {:get (fn [ctx] "Hello World!")}})]
           (is (not (error? r)))
           (is (nil? (s/check Methods r)))
-          (is (= "Hello World!") (invoke-with-ctx (get-in r [:methods :get :handler])))))
+          (is (= "Hello World!") (invoke-with-ctx (get-in r [:methods :get :response])))))
 
       (testing "nil"
         (let [r (coercer {:methods {:get nil}})]
           (is (not (error? r)))
           (is (nil? (s/check Methods r)))
-          (is (nil? (invoke-with-ctx (get-in r [:methods :get :handler]))))))
+          (is (nil? (invoke-with-ctx (get-in r [:methods :get :response]))))))
 
       (testing "both"
         (let [r (coercer {:methods {:get "Hello World!"}})]
           (is (not (error? r)))
           (is (nil? (s/check Methods r)))
-          (is (= "Hello World!" (invoke-with-ctx (get-in r [:methods :get :handler]))))
+          (is (= "Hello World!" (invoke-with-ctx (get-in r [:methods :get :response]))))
           (is (= "text/plain" (:name (:media-type (first (get-in r [:methods :get :produces]))))))))
 
       (testing "produces inside method"
-        (let [r (coercer {:methods {:get {:handler "Hello World!"
+        (let [r (coercer {:methods {:get {:response "Hello World!"
                                           :produces "text/plain"}}})]
           (is (not (error? r)))
           (is (nil? (s/check Methods r)))
-          (is (= "Hello World!" (invoke-with-ctx (get-in r [:methods :get :handler]))))))
+          (is (= "Hello World!" (invoke-with-ctx (get-in r [:methods :get :response]))))))
 
       (testing "parameters"
         (let [r (coercer {:methods {:get {:parameters {:query {:q String}}
-                                          :handler "Hello World!"}}})]
+                                          :response "Hello World!"}}})]
           (is (not (error? r)))
           (is (nil? (s/check Methods r))))))))
 
@@ -124,14 +124,14 @@
   (testing "produces works at both levels"
     (let [r (resource-coercer {:produces "text/html"
                               :methods {:get {:produces "text/html"
-                                              :handler "Hello World!"}}})]
+                                              :response "Hello World!"}}})]
       (is (not (error? r)))
       (is (nil? (s/check Resource r)))))
 
   (testing "consumes works at both levels"
     (let [r (resource-coercer {:consumes "multipart/form-data"
                               :methods {:get {:consumes "multipart/form-data"
-                                              :handler "Hello World!"}}})]
+                                              :response "Hello World!"}}})]
       (is (not (error? r)))
       (is (nil? (s/check Resource r)))))
 
@@ -145,9 +145,9 @@
     (let [r (resource-coercer
             {:parameters {:path {:id Long}}
              :methods {:get {:parameters {:query {:q String}}
-                             :handler "Hello World!"}
+                             :response "Hello World!"}
                        :put {:parameters {:body String}
-                             :handler (fn [ctx] nil)}}})]
+                             :response (fn [ctx] nil)}}})]
       (is (not (error? r)))
       (is (nil? (s/check Resource r)))))
 
@@ -160,7 +160,7 @@
                     :produces [{:media-type
                                 #{"application/edn" "application/json;q=0.9" "text/html;q=0.8"}
                                 :charset "UTF-8"}]
-                    :handler (fn [ctx] "Users")
+                    :response (fn [ctx] "Users")
                     :responses {200 {:description "Known user"}
                                 404 {:description "Unknown user"}}}}})]
       (is (not (error? r)))

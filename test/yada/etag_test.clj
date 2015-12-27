@@ -17,8 +17,8 @@
    {:properties (fn [ctx] {:version @v})
     ;; TODO: test with just map, or even just "text/plain"
     :produces [{:media-type "text/plain"}]
-    :methods {:get {:handler (fn [ctx] "foo")}
-              :post {:handler (fn [{:keys [response]}]
+    :methods {:get {:response (fn [ctx] "foo")}
+              :post {:response (fn [{:keys [response]}]
                                 (assoc response :version (swap! v inc)))}}}))
 
 (deftest etag-test

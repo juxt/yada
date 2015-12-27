@@ -21,7 +21,7 @@
 
 
 #_(resource {:methods {:get {:parameters {:query {:q String}}
-                             :handler (fn [ctx] nil)}}})
+                             :response (fn [ctx] nil)}}})
 
 #_(rsw/swagger-json
    (s/validate rsws/Swagger
@@ -36,5 +36,5 @@
                            {rsws/Parameters #(set/rename-keys % {:form :formData})})
 
                           {:parameters {:form {:foo String}}
-                           :handler (fn [ctx] nil)}
+                           :response (fn [ctx] nil)}
                           )}}}))

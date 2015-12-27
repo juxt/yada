@@ -16,8 +16,8 @@
                   {:methods
                    {:post {:parameters {:form {:foo s/Str}}
                            :consumes "application/x-www-form-urlencoded"
-                           :handler (fn [ctx]
-                                      (pr-str (:parameters ctx)))}}}))]
+                           :response (fn [ctx]
+                                       (pr-str (:parameters ctx)))}}}))]
 
     ;; Nil post body
     (let [response @(handler (mock/request :post "/"))]
@@ -39,7 +39,7 @@
                    {:post {:parameters {:query {:foo s/Str}
                                         :form {:bar s/Str}}
                            :consumes "application/x-www-form-urlencoded"
-                           :handler (fn [ctx] (pr-str (:parameters ctx)))}}}))]
+                           :response (fn [ctx] (pr-str (:parameters ctx)))}}}))]
 
     ;; Nil post body
     (let [response @(handler (mock/request :post "/?foo=123"))]

@@ -68,12 +68,12 @@
                    :exists? (.exists file)
                    :last-modified (Date. (.lastModified file))})
 
-    :methods {:get {:handler (fn [ctx]
-                               (respond-with-file ctx file reader))}
-              :put {:handler (fn [ctx]
-                               (bs/transfer (-> ctx :request :body) file))}
+    :methods {:get {:response (fn [ctx]
+                                (respond-with-file ctx file reader))}
+              :put {:response (fn [ctx]
+                                (bs/transfer (-> ctx :request :body) file))}
               
-              :delete {:handler (fn [ctx] (.delete file))}}}))
+              :delete {:response (fn [ctx] (.delete file))}}}))
 
 (defn filename-ext
   "Returns the file extension of a filename or filepath."

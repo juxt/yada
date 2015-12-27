@@ -15,10 +15,10 @@
   (let [handler (yada
                  (resource
                   {:methods {:post
-                             {:handler (fn [ctx]
-                                         (assoc (:response ctx)
-                                                :status 201
-                                                :body "foo"))}}}))
+                             {:response (fn [ctx]
+                                          (assoc (:response ctx)
+                                                 :status 201
+                                                 :body "foo"))}}}))
         response @(handler (mock/request :post "/"))]
 
     (is (= 201 (:status response) ))
@@ -27,9 +27,9 @@
 (deftest dynamic-post-test
   (let [handler (yada
                  (resource
-                  {:methods {:post {:handler (fn [ctx]
-                                               (assoc (:response ctx)
-                                                      :status 201 :body "foo"))}}}))
+                  {:methods {:post {:response (fn [ctx]
+                                                (assoc (:response ctx)
+                                                       :status 201 :body "foo"))}}}))
         response @(handler (mock/request :post "/"))]
 
     (is (= 201 (:status response)))
@@ -39,7 +39,7 @@
   (let [handler
         (yada
          (resource
-          {:methods {:post {:handler (fn [ctx] (assoc (:response ctx)
+          {:methods {:post {:response (fn [ctx] (assoc (:response ctx)
                                                       :status 201 :headers {"set-cookie" ["a" "b"]}))}}}))
         response @(handler (mock/request :post "/"))]
     (is (= 201 (:status response)))

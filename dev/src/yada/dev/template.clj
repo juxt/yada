@@ -47,7 +47,7 @@
           ;; default to this anyway?
           :charset charset/default-platform-charset}]
 
-        :handler
+        :response
         (fn [ctx]
           (let [props (:properties ctx)
                 template @*template]

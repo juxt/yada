@@ -10,7 +10,7 @@
 (defn new-handler [mlt]
   (yada
    (resource {:methods {:get {:produces "text/event-stream"
-                              :handler mlt}}})))
+                              :response mlt}}})))
 
 (defrecord SseExample []
   Lifecycle

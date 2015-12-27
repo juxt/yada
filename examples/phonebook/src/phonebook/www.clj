@@ -24,24 +24,24 @@
     
     :methods
     {:get {:parameters {:query {(s/optional-key :q) String}}
-           :handler (fn [ctx]
-                      (let [q (get-in ctx [:parameters :query :q])
-                            entries (if q
-                                      (db/search-entries db q)
-                                      (db/get-entries db))]
-                        (case (yada/content-type ctx)
-                          "text/html" (html/index-html entries @*routes q)
-                          entries)))}
+           :response (fn [ctx]
+                       (let [q (get-in ctx [:parameters :query :q])
+                             entries (if q
+                                       (db/search-entries db q)
+                                       (db/get-entries db))]
+                         (case (yada/content-type ctx)
+                           "text/html" (html/index-html entries @*routes q)
+                           entries)))}
 
      :post {:parameters {:form {:surname String :firstname String :phone String}}
             :consumes [{:media-type
                         #{"application/x-www-form-urlencoded"}
                         :charset "UTF-8"}]
 
-            :handler (fn [ctx]
-                       (let [id (db/add-entry db (get-in ctx [:parameters :form]))]
-                         (yada/redirect-after-post
-                          ctx (path-for @*routes :phonebook.api/entry :entry id))))}}}))
+            :response (fn [ctx]
+                        (let [id (db/add-entry db (get-in ctx [:parameters :form]))]
+                          (yada/redirect-after-post
+                           ctx (path-for @*routes :phonebook.api/entry :entry id))))}}}))
 
 (defn new-entry-resource [db *routes]
   (resource
@@ -52,7 +52,7 @@
                 :charset "UTF-8"}]
     :methods
     {:get
-     {:handler
+     {:response
       (fn [ctx]
         
         (let [id (get-in ctx [:parameters :path :entry])
@@ -74,7 +74,7 @@
       :consumes
       [{:media-type #{"multipart/form-data"
                       "application/x-www-form-urlencoded"}}]
-      :handler
+      :response
       (fn [ctx]
         (let [entry (get-in ctx [:parameters :path :entry])
               form (get-in ctx [:parameters :form])]
@@ -83,7 +83,7 @@
           (db/update-entry db entry form)))}
 
      :delete
-     {:handler
+     {:response
       (fn [ctx]
         (let [id (get-in ctx [:parameters :path :entry])]
           (db/delete-entry db id)

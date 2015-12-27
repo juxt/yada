@@ -143,11 +143,11 @@ convenience of terse, expressive short-hand descriptions."}
 
 (s/defschema Context {})
 
-(s/defschema HandlerFunction
+(s/defschema ResponseFunction
   (s/=> s/Any Context))
 
-(s/defschema Handler
-  {:handler HandlerFunction})
+(s/defschema Response
+  {:response ResponseFunction})
 
 (s/defschema PropertiesResult
   {(s/optional-key :last-modified) s/Inst
@@ -186,7 +186,7 @@ convenience of terse, expressive short-hand descriptions."}
      (s/optional-key :body) s/Any}}))
 
 (s/defschema Method
-  (merge Handler
+  (merge Response
          MethodParameters
          Produces
          Consumes
@@ -204,17 +204,17 @@ convenience of terse, expressive short-hand descriptions."}
   clojure.lang.APersistentMap
   (as-method-map [m] m)
   String
-  (as-method-map [o] {:handler o
+  (as-method-map [o] {:response o
                       :produces "text/plain"})
   Object
-  (as-method-map [o] {:handler o
+  (as-method-map [o] {:response o
                       :produces "application/octet-stream"})
   nil
-  (as-method-map [o] {:handler nil}))
+  (as-method-map [o] {:response nil}))
 
 (def MethodsMappings
   (merge {Method as-method-map
-          HandlerFunction as-fn}
+          ResponseFunction as-fn}
          RepresentationSeqMappings))
 
 (s/defschema AccessControl

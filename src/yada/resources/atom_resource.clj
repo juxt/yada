@@ -26,20 +26,20 @@
        :methods {:get (merge (get-in val [:methods :get])
                              {:description "Derefrence to get the value of the atom"
                               :summary "Get the atom's value"
-                              :handler (fn [ctx] @*a)})
+                              :response (fn [ctx] @*a)})
                  :put {:description "Reset the atom to the value parameter of the form"
                        :summary "Reset the atom to a given value"
                        :parameters {:form {:value String}}
                        :consumes "application/x-www-form-urlencoded"
-                       :handler (fn [ctx]
-                                  ;; We can't PUT a nil, because nils mean
-                                  ;; no representation and yield 404s on
-                                  ;; GET, hence this when guard
-                                  (when-let [body (get-in ctx [:parameters :form :value])]
-                                    (reset! *a body)))}
+                       :response (fn [ctx]
+                                   ;; We can't PUT a nil, because nils mean
+                                   ;; no representation and yield 404s on
+                                   ;; GET, hence this when guard
+                                   (when-let [body (get-in ctx [:parameters :form :value])]
+                                     (reset! *a body)))}
                  :delete {:description "Reset the atom to nil, such that this resource has no representation"
                           :summary "Reset the atom to nil"
-                          :handler (fn [ctx] (reset! *a nil))}}}))))
+                          :response (fn [ctx] (reset! *a nil))}}}))))
 
 (extend-protocol p/ResourceCoercion
   clojure.lang.Atom

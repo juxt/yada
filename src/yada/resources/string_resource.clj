@@ -24,5 +24,5 @@
            ;; media-type of this string, so we return text/plain.
           :media-type "text/plain"
           :charset charset/platform-charsets}]
-        :handler (fn [ctx] s)}}})))
+        :response (fn [ctx] s)}}})))
 

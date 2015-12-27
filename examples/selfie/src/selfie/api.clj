@@ -16,8 +16,8 @@
   (yada/resource
    {:properties {}
     :methods
-    {:get {:handler (fn [ctx] "Index")}
-     :post {:handler (fn [ctx]
+    {:get {:response (fn [ctx] "Index")}
+     :post {:response (fn [ctx]
                        (throw (ex-info "TODO: body should be accessible somewhere"
                                        {:request (:request ctx)})))}}}))
 

@@ -142,7 +142,7 @@
 
       ;; function normally returns a (possibly deferred) body.
       (fn [x]
-        (if-let [f (get-in ctx [:handler :resource :methods (:method ctx) :handler])]
+        (if-let [f (get-in ctx [:handler :resource :methods (:method ctx) :response])]
           (try
             (f ctx)
             (catch Exception e
@@ -182,7 +182,7 @@
   (safe? [_] false)
   (idempotent? [_] true)
   (request [_ ctx]
-    (let [f (get-in ctx [:handler :resource :methods (:method ctx) :handler]
+    (let [f (get-in ctx [:handler :resource :methods (:method ctx) :response]
                     (constantly (d/error-deferred
                                  (ex-info (format "Resource %s does not provide a handler for :put" (type (:resource ctx)))
                                           {:status 500}))))]
@@ -228,7 +228,7 @@
   (idempotent? [_] false)
   (request [_ ctx]
     (d/chain
-     (when-let [f (get-in ctx [:handler :resource :methods (:method ctx) :handler])]
+     (when-let [f (get-in ctx [:handler :resource :methods (:method ctx) :response])]
        (f ctx))
      (fn [res]
        (interpret-post-result res ctx))
@@ -249,7 +249,7 @@
   (idempotent? [_] true)
   (request [_ ctx]
     (d/chain
-     (if-let [f (get-in ctx [:handler :resource :methods (:method ctx) :handler])]
+     (if-let [f (get-in ctx [:handler :resource :methods (:method ctx) :response])]
        (try
          (f ctx)
          (catch Exception e

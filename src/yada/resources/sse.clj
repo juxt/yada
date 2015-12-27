@@ -17,7 +17,7 @@
     (let [mlt (mult ch)]
       {:produces [{:media-type "text/event-stream"
                    :charset charset/platform-charsets}]
-       :methods {:get {:handler (fn [ctx]
-                                  (let [ch (chan)]
-                                    (tap mlt ch)
-                                    (transform (map (partial format "data: %s\n\n")) (->source ch))))}}})))
+       :methods {:get {:response (fn [ctx]
+                                   (let [ch (chan)]
+                                     (tap mlt ch)
+                                     (transform (map (partial format "data: %s\n\n")) (->source ch))))}}})))

@@ -26,7 +26,7 @@
       {:produces
        [{:media-type #{(ext-mime-type (.getPath url))}
          :charset charset/platform-charsets}]
-       :handler
+       :response
        (fn [ctx]
          (if (= (get-in ctx [:response :representation :media-type :type]) "text")
            (BufferedReader.
