@@ -52,8 +52,8 @@ following and run the documentation offline (details below).
 yada requires the following :-
 
 - a Java JDK/JRE installation, version 8 or above
-- Clojure 1.7.0 (provided)
-- Aleph 0.4.1 or above (provided)
+- Clojure 1.7.0
+- Aleph 0.4.1 or above (provided via a dependency)
 
 ## Status
 
