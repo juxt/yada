@@ -19,7 +19,7 @@
    [clj-time "0.11.0"]
    [hiccup "1.0.5"]
    [json-html "0.3.6"]
-   [manifold "0.1.2-alpha1"]
+   [manifold "0.1.2-alpha2"]
    [metosin/ring-http-response "0.6.5"]
    [metosin/ring-swagger "0.22.1" :exclusions [potemkin]]
    [prismatic/schema "1.0.4"]
@@ -80,7 +80,7 @@
           [aero "0.1.4"]
 
           [juxt.modular/aleph "0.1.3" :exclusions [manifold aleph]]
-          [aleph "0.4.1-beta2"]
+          [aleph "0.4.1-beta3"]
           [juxt.modular/bidi "0.9.2" :exclusions [bidi]]
           [juxt.modular/stencil "0.1.0"]
           [juxt.modular/co-dependency "0.3.0"]
