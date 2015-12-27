@@ -22,7 +22,7 @@
    [manifold "0.1.2-alpha1"]
    [metosin/ring-http-response "0.6.5"]
    [metosin/ring-swagger "0.20.2" :exclusions [potemkin]]
-   [prismatic/schema "1.0.3"]
+   [prismatic/schema "1.0.4"]
    [potemkin "0.4.1" :exclusions [riddley]]
    [ring-basic-authentication "1.0.5"]
    [org.clojure/core.async "0.1.346.0-17112a-alpha"]
