@@ -57,11 +57,16 @@ yada requires the following :-
 
 ## Status
 
-Please note that being a 0.x.y version indicates the provisional status
-of this library, and that features are subject to change.
+Versions 1.0.x are stable and have been used in real projects in
+production. However, being a 1.0.x library, there are missing pieces
+of functionality and some bugs that might affect you, so always test
+yada with your project to ensure you are happy with the quality before
+putting a project live.
 
-For the latest 1.0.x release there are expected to be some bugs. Please
-feel free to raise GitHub issues.
+Eventually the much more comprehensive 1.1.x will supercede 1.0.x and
+be officially supported. However, at this time, the 1.1.x series is
+still in alpha. If you use 1.0.x, please be happy to upgrade to 1.1.x
+when it is out of beta.
 
 ## Running documentation and examples offline
 
