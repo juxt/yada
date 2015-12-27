@@ -77,7 +77,7 @@
           [markdown-clj "0.9.62"]
           [ring-mock "0.1.5"]
 
-          [aero "0.1.4"]
+          [aero "0.1.5"]
 
           [juxt.modular/aleph "0.1.3" :exclusions [manifold aleph]]
           [aleph "0.4.1-beta3"]
