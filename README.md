@@ -34,6 +34,7 @@ the following dependency instead :-
 ```clojure
 [yada "1.1.0-20151227.112809-2"]
 ```
+[![Build Status](https://travis-ci.org/juxt/yada.png)](https://travis-ci.org/juxt/yada)
 
 Documentation for the 1.1.x series is being actively updated from the
 1.0 release, and may be out-of-date in a few places. Please refer to
@@ -45,8 +46,6 @@ following and run the documentation offline (details below).
 ```clojure
 [yada "0.4.3"]
 ```
-
-Latest master status [![Build Status](https://travis-ci.org/juxt/yada.png)](https://travis-ci.org/juxt/yada)
 
 ## Dependencies
 
