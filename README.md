@@ -12,10 +12,10 @@ It has the following features
 * Async foundation based on [manifold](https://github.com/ztellman/manifold)
 * Protocol extensibility
 
-Full documentation for the latest 'beta' release is available at
+Full documentation for the latest stable release is available at
 [http://yada.juxt.pro](http://yada.juxt.pro) and offline (see below).
 
-Incomplete documentation for 1.0.x is available [here](dev/resources/user-manual.md).
+Incomplete documentation for 1.1.x is available [here](dev/resources/user-manual.md).
 
 ## Installation
 
@@ -24,16 +24,23 @@ Add the following dependency to your
 
 [![Clojars Project](http://clojars.org/yada/latest-version.svg)](http://clojars.org/yada)
 
-This 1.0.0 release is the same as the `1.0.0-20150903.093751-9` version, tagged on 2015-09-03. All new development has been taking place on the master branch (currently the 1.1.x series) which has changed the yada API and replaced most of the old protocols with a 'pure' data model. For the latest 'alpha' release in this series, use the following dependency instead :-
+The 1.0.0 release is the same as the `1.0.0-20150903.093751-9`
+version, tagged on 2015-09-03. All new development has been taking
+place on the master branch (currently the 1.1.x series) which has
+changed the yada API and replaced most of the old protocols with a
+'pure' data model. For the latest 'alpha' release in this series, use
+the following dependency instead :-
 
 ```clojure
 [yada "1.1.0-20151227.112809-2"]
 ```
 
-Documentation for the 1.1.x series has not been updated from the 1.0
-release. Please refer to the tests and examples for how to use 1.1.x.
+Documentation for the 1.1.x series is being actively updated from the
+1.0 release, and may be out-of-date in a few places. Please refer to
+the tests and examples for more accurate information.
 
-For the old 0.4.3 'alpha' release, which is now deprecated, use the following and run the documentation offline (details below).
+For the old 0.4.3 'alpha' release, which is now deprecated, use the
+following and run the documentation offline (details below).
 
 ```clojure
 [yada "0.4.3"]
