@@ -19,7 +19,7 @@
     ^{:key "title"} [lo/title "yada console"]
     ^{:key "spacer"} [lo/spacer]
     ^{:key "nav"} [nav/nav
-                   [{:label "Documentation" :href "http://yada.juxt.pro" :key "doc"}
+                   [{:label "Documentation" :href "https://yada.juxt.pro" :key "doc"}
                     {:label "Github" :href "https://github.com/juxt/yada" :key "gh"}
                     {:label "JUXT" :href "https://juxt.pro" :key "jx"}]]]])
 

@@ -13,7 +13,7 @@ It has the following features
 * Protocol extensibility
 
 Full documentation for the latest stable release is available at
-[http://yada.juxt.pro](http://yada.juxt.pro) and offline (see below).
+[https://yada.juxt.pro](https://yada.juxt.pro) and offline (see below).
 
 Incomplete documentation for 1.1.x is available [here](dev/resources/user-manual.md).
 
