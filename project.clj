@@ -79,8 +79,7 @@
 
           [aero "0.1.5"]
 
-          [juxt.modular/aleph "0.1.3" :exclusions [manifold aleph]]
-          [aleph "0.4.1-beta3"]
+          [juxt.modular/aleph "0.1.4"]
           [juxt.modular/bidi "0.9.2" :exclusions [bidi]]
           [juxt.modular/stencil "0.1.0"]
           [juxt.modular/co-dependency "0.3.0"]
