@@ -25,7 +25,7 @@
    [prismatic/schema "1.0.4"]
    [potemkin "0.4.1" :exclusions [riddley]]
    [ring-basic-authentication "1.0.5"]
-   [org.clojure/core.async "0.1.346.0-17112a-alpha"]
+   [org.clojure/core.async "0.2.374"]
    [org.clojure/tools.reader "0.9.1"]
    [org.clojure/tools.trace "0.7.8"]
    [org.clojars.ikoblik/clj-index "0.0.2"]
@@ -52,11 +52,14 @@
                                 :compiler {:output-to "target/cljs/console.js"
                                            :pretty-print true}}}}
 
-         :exclusions [[org.clojure/tools.nrepl]]
+         :exclusions [org.clojure/tools.nrepl
+                      org.clojure/core.cache]
 
          :dependencies
          [[org.clojure/clojure "1.7.0"]
           [org.clojure/clojurescript "1.7.170"]
+
+          [org.clojure/core.cache "0.6.4"]
 
           [org.clojure/tools.nrepl "0.2.12"] ; otherwise pedantic check fails
           [org.clojure/tools.logging "0.3.1"]
