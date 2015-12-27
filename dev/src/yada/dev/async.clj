@@ -2,22 +2,34 @@
 
 (ns yada.dev.async
   (:require
-   [clojure.core.async :refer (go go-loop timeout <! >! chan)]
-   [manifold.stream :refer (->source)]))
+   [bidi.bidi :refer [RouteProvider tag]]
+   [com.stuartsierra.component :refer [Lifecycle]]
+   [clojure.core.async :refer [go go-loop timeout <!! >!! chan close!] :as a]
+   [yada.yada :refer [yada resource]]))
 
-(defn new-handler []
-  (fn [req]
-    {:status 200
-     :headers {"content-type" "text/event-stream"
-               "x-red" "foo"}
-     :body (let [ch (chan 10)]
-             (go-loop []
-               (println "looping")
-               (>! ch "Hello\n")
-               (>! ch "Right\n")
-               (>! ch "Great\n")
-               (<! (timeout 1000))
-               (recur)
-               )
-             (->source ch)
-             )}))
+(defn new-handler [mlt]
+  (yada
+   (resource {:methods {:get {:produces "text/event-stream"
+                              :handler mlt}}})))
+
+(defrecord SseExample []
+  Lifecycle
+  (start [component]
+    (let [ch (chan 10)]
+      (a/thread
+        (when (>!! ch "Hello")
+          (a/<!! (timeout 1000))
+          (recur)))
+      (assoc component :channel ch)))
+  
+  (stop [component]
+    (when-let [ch (:channel component)]
+      (close! ch))
+    component)
+
+  RouteProvider
+  (routes [component]
+    ["/sse" (new-handler (a/mult (:channel component)))]))
+
+(defn new-sse-example []
+  (map->SseExample {}))

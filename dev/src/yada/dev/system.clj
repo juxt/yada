@@ -22,9 +22,9 @@
    [modular.aleph :refer (new-webserver)]
    [modular.component.co-dependency :refer (co-using system-co-using)]
 
-   [yada.dev.async :refer (new-handler)]
    [yada.dev.config :as config]
    [yada.dev.hello :refer (new-hello-world-example)]
+   [yada.dev.async :refer (new-sse-example)]
    [yada.dev.error-example :refer (new-error-example)]
 
    [phonebook.system :refer (new-phonebook)]
@@ -42,6 +42,8 @@
    :user-manual (new-user-manual :prefix (config/docsite-origin config))
 
    :docsite (new-docsite :config config)
+
+   :sse-example (new-sse-example)
 
    ;; TODO: Replace new-web-resources with a yada equivalent
    :jquery (new-web-resources
@@ -137,6 +139,7 @@
 
    :docsite-router [:swagger-ui
                     :hello-world
+                    :sse-example
                     ;;:error-example
                     :user-api
                     :user-manual

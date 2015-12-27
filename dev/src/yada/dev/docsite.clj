@@ -4,13 +4,14 @@
   (:require
    [clojure.java.io :as io]
    [clojure.tools.logging :refer :all]
-   [bidi.bidi :refer (RouteProvider tag)]
+   [bidi.bidi :refer [RouteProvider tag]]
    [com.stuartsierra.component :refer (using)]
    [hiccup.core :refer (html)]
    [modular.bidi :refer (path-for)]
    [modular.component.co-dependency :refer (co-using)]
    [modular.component.co-dependency.schema :refer [co-dep]]
    [schema.core :as s]
+   [yada.dev.async :as async]
    [yada.dev.config :as config]
    [yada.dev.template :refer [new-template-resource]]
    yada.resources.file-resource

@@ -6,6 +6,7 @@
    [clojure.pprint :refer [pprint]]
    [clojure.tools.logging :refer :all]
    [clojure.walk :refer [keywordize-keys]]
+   [clojure.core.async :as a]
    [byte-streams :as bs]
    [cheshire.core :as json]
    [hiccup.core :refer [html h]]
@@ -20,6 +21,7 @@
    [yada.media-type :as mt]
    [yada.util :refer [CRLF]])
   (:import
+   [clojure.core.async Mult]
    [clojure.core.async.impl.channels ManyToManyChannel]
    [java.io File]
    [java.net URL]
@@ -96,6 +98,17 @@
 
   SourceProxy
   (to-body [s _] s)
+  (content-length [_] nil)
+
+  Mult
+  (to-body [mlt representation]
+    (let [ch (a/chan 10)]
+      (a/tap mlt ch)
+      (to-body ch representation)))
+  (content-length [_] nil)
+
+  ManyToManyChannel
+  (to-body [ch representation] (render-seq ch representation))
   (content-length [_] nil)
 
   Object
