@@ -26,8 +26,8 @@
    [potemkin "0.4.2" :exclusions [riddley]]
    [ring-basic-authentication "1.0.5"]
    [org.clojure/core.async "0.2.374"]
-   [org.clojure/tools.reader "0.9.1"]
-   [org.clojure/tools.trace "0.7.8"]
+   [org.clojure/tools.reader "0.10.0"]
+   [org.clojure/tools.trace "0.7.9"]
    [org.clojars.ikoblik/clj-index "0.0.2"]
    [com.cognitect/transit-clj "0.8.285"]]
 
@@ -64,7 +64,7 @@
           [org.clojure/tools.nrepl "0.2.12"] ; otherwise pedantic check fails
           [org.clojure/tools.logging "0.3.1"]
 
-          [ch.qos.logback/logback-classic "1.0.7"
+          [ch.qos.logback/logback-classic "1.1.3"
            :exclusions [org.slf4j/slf4j-api]]
           [org.slf4j/jul-to-slf4j "1.7.13"]
           [org.slf4j/jcl-over-slf4j "1.7.13"]
@@ -74,7 +74,7 @@
           [org.clojure/tools.namespace "0.2.10"]
           [org.clojure/data.zip "0.1.1"]
 
-          [markdown-clj "0.9.62"]
+          [markdown-clj "0.9.84"]
           [ring-mock "0.1.5"]
 
           [aero "0.1.5"]
