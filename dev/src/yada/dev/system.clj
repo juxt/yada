@@ -53,7 +53,7 @@
    :bootstrap (new-web-resources
                :key :bootstrap
                :uri-context "/bootstrap"
-               :resource-prefix "META-INF/resources/webjars/bootstrap/3.3.2")
+               :resource-prefix "META-INF/resources/webjars/bootstrap/3.3.6")
    :web-resources (new-web-resources
                    :uri-context "/static"
                    :resource-prefix "static")
