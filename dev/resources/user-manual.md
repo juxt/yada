@@ -993,7 +993,40 @@ applications.
 
 ## Server Sent Events
 
-[coming soon]
+### Introduction
+
+**Server Sent Events** (SSE) is a part of the HTML5 generation of
+specifications that describes a capability for delivering events,
+asynchronously, from a server to a browser or other user-agent, over a
+long-lived connection.
+
+SSE conceptually similar to _web sockets_. However, a key difference
+is that SSE is layered upon HTTP and thus inherits the protocol's
+support for proxying, authorization, cookies and is integrated with
+Cross-Origin Resource Sharing (CORS).
+
+In contrast, _web sockets_ are raw TCP sockets that share nothing with
+HTTP except for the ability for a user agent to use the HTTP protocol
+to initiate a web socket connection. After that, everything is up to
+agreements between the client and server.
+
+Since yada is designed to support HTTP, it does not provide anything
+extra to support _web sockets_ beyond that which is provided by the
+web server.
+
+### SSE with yada
+
+It's _really_ easy to create Server Sent Event streams with yada. All
+you need to do is return a response that embodies a stream of data.
+
+One such example is a channel, provided by Clojure's core.async
+library.
+
+``` clojure
+{:methods {:get {:produces "text/event-stream"
+                 :response (clojure.core.async/chan)}}}
+```
+
 
 ## Example 4: Chat server
 
