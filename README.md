@@ -40,13 +40,6 @@ Documentation for the 1.1.x series is being actively updated from the
 1.0 release, and may be out-of-date in a few places. Please refer to
 the tests and examples for more accurate information.
 
-For the old 0.4.3 'alpha' release, which is now deprecated, use the
-following and run the documentation offline (details below).
-
-```clojure
-[yada "0.4.3"]
-```
-
 ## Dependencies
 
 yada requires the following :-
