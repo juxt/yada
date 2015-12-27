@@ -21,7 +21,7 @@
    [json-html "0.3.1"]
    [manifold "0.1.2-alpha1"]
    [metosin/ring-http-response "0.6.5"]
-   [metosin/ring-swagger "0.20.2" :exclusions [potemkin]]
+   [metosin/ring-swagger "0.22.1" :exclusions [potemkin]]
    [prismatic/schema "1.0.4"]
    [potemkin "0.4.1" :exclusions [riddley]]
    [ring-basic-authentication "1.0.5"]
