@@ -23,7 +23,7 @@
    [metosin/ring-http-response "0.6.5"]
    [metosin/ring-swagger "0.22.1" :exclusions [potemkin]]
    [prismatic/schema "1.0.4"]
-   [potemkin "0.4.1" :exclusions [riddley]]
+   [potemkin "0.4.2" :exclusions [riddley]]
    [ring-basic-authentication "1.0.5"]
    [org.clojure/core.async "0.2.374"]
    [org.clojure/tools.reader "0.9.1"]
