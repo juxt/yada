@@ -16,7 +16,7 @@
    [byte-streams "0.2.1-alpha2" :exclusions [clj-tuple]]
    [camel-snake-kebab "0.3.2"]
    [cheshire "5.5.0"]
-   [clj-time "0.9.0"]
+   [clj-time "0.11.0"]
    [hiccup "1.0.5"]
    [json-html "0.3.1"]
    [manifold "0.1.2-alpha1"]
