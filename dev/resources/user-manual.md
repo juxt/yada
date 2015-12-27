@@ -68,10 +68,20 @@ models**. One benefit of using Clojure is that it offers a large
 number of ways to be generate, derive and transform maps. This gives
 you the maximum flexibility in how your web resources are developed.
 
+A resource can be created from a map using yada's `resource` function,
+which just validates the given map, coercing any parameters as
+necessary, and wrapping in a record indicating a **resource**.
+
 yada's eponymous function `yada` takes a single parameter (the
-resource model) and returns a **handler**. This is both a _function_
+resource) and returns a **handler**. This is both a _function_
 that can be used to create responses from Ring requests, and a
 _data-model_ that can be further modified (if desired).
+
+``` clojure
+(require '[yada.yada :refer [yada resource]])
+
+(yada (resource {…}))
+```
 
 Finally, yada is built on a fully asynchronous core, bringing
 exceptional performance and scalability to your websites and APIs.
