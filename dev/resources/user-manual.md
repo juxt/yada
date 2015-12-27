@@ -1143,6 +1143,10 @@ This declaration tells yada what parameters we are expecting in the POST method.
 
 [coming soon]
 
+See
+[IBM's Watson Developer Cloud](http://www.ibm.com/smarterplanet/us/en/ibmwatson/developercloud/apis/)
+for a sophistated Swagger example.
+
 ## CORS
 
 [coming soon]
