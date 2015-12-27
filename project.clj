@@ -80,15 +80,15 @@
           [aero "0.1.5"]
 
           [juxt.modular/aleph "0.1.4"]
-          [juxt.modular/bidi "0.9.2" :exclusions [bidi]]
-          [juxt.modular/stencil "0.1.0"]
+          [juxt.modular/bidi "0.9.4" :exclusions [bidi]]
+          [juxt.modular/stencil "0.1.1"]
           [juxt.modular/co-dependency "0.3.0"]
           [juxt.modular/test "0.1.0"]
           [juxt.modular/template "0.6.3"]
 
           [org.webjars/swagger-ui "2.1.3"]
           [org.webjars/jquery "2.1.3"]
-          [org.webjars/bootstrap "3.3.2"]
+          [org.webjars/bootstrap "3.3.6"]
           [org.webjars.bower/material-design-lite "1.0.2" :scope "test"]
 
           [cljsjs/react "0.13.3-1"]
