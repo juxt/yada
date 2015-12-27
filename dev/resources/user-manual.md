@@ -39,8 +39,6 @@ documentation as a contributor!
 
 ## Introduction
 
-### What is yada?
-
 yada is a library that lets you develop and deploy web resources that
 are fully compliant with, and thereby taking full advantage of, HTTP
 specifications.
@@ -81,7 +79,7 @@ exceptional performance and scalability to your websites and APIs.
 With yada, you can build richer, more interoperable and interconnected
 systems, that scale and are _built to last_.
 
-### An introductory example: Hello World!
+## Example 1: Hello World!
 
 Let's introduce yada properly by writing some code. Let's start with
 some state, a string: `Hello World!`. We'll be able to give an
@@ -613,159 +611,6 @@ case, we just have one representation declaration which specifies
 `text/plain` and the charsets available (all those supported on the Java
 platform we are on).
 
-### Creating your own custom resources
-
-### Examples of built-in resources
-
-There are numerous types already built into yada, but you can also add
-your own. You can also add your own custom methods.
-
-#### Files
-
-The `yada.resources.file-resource.FileResource` exposes a single file in the file-system.
-
-The record has a number of fields.
-
-<table class="table">
-<thead>
-<tr>
-<th>Field</th>
-<th>Type</th>
-<th>Required?</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>`file`</td>
-<td>`java.io.File`</td>
-<td>yes</td>
-<td>The file in the file-system</td>
-</tr>
-<tr>
-<td>`reader`</td>
-<td>Map</td>
-<td>no</td>
-<td>A file reader function that takes the file and selected representation, returning the body</td>
-</tr>
-<tr>
-<td>`representations`</td>
-<td>A collection of maps</td>
-<td>no</td>
-<td>The available representation combinations</td>
-</tr>
-</tbody>
-</table>
-
-The purpose of specifying the `reader` field is to apply a
-transformation to a file's content prior to forming the message
-payload.
-
-For instance, you might decide to transform a file of markdown text
-content into HTML. The reader function takes two arguments: the file and
-the selected representation containing the media-type.
-
-```clojure
-(fn [file rep]
-  (if (= (-> rep :media-type :name) "text/html")
-    (-> file slurp markdown->html)
-    ;; Return unprocessed
-    file))
-```
-
-The reader function can return anything that can be normally returned in
-the body payload, including strings, files, maps and sequences.
-
-The `representation` field indicates the types of representation the
-file can support. Unless you are specifying a custom `reader` function,
-there will usually only be one such representation. If this field isn't
-specified, the file suffix is used to guess the available representation
-metadata. For example, a file with a `.png` suffix will be assumed to
-have a media-type of `image/png`.
-
-#### Directories
-
-The `yada.resources.file-resource.DirectoryResource` record exposes a directory in a filesystem as a collection of read-only web resources.
-
-The record has a number of fields.
-
-<table class="table">
-<thead>
-<tr>
-<th>Field</th>
-<th>Type</th>
-<th>Required?</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>`dir`</td>
-<td>`java.io.File`</td>
-<td>yes</td>
-<td>The directory to serve</td>
-</tr>
-<tr>
-<td>`custom-suffices`</td>
-<td>Map</td>
-<td>no</td>
-<td>A map relating file suffices to field values of the corresponding FileResource </td>
-</tr>
-<tr>
-<td>`index-files`</td>
-<td>Vector of Strings</td>
-<td>no</td>
-<td>A vector of strings considered to be suitable to represent the index</td>
-</tr>
-</tbody>
-</table>
-
-A directory resource not only represents the directory on the
-file-system, but each file resource underneath it.
-
-The `custom-suffices` field allows you to specify fields for the
-FileResource records serving files in the directory, on the basis of the
-file suffix.
-
-For example, files ending in `.md` may be served with a FileResource with a reader that can convert the file content to another format, such as `text/html`.
-
-```clojure
-(yada.resources.file-resource/map->DirectoryResource
-  {:dir (clojure.java.io "talks")
-   :custom-suffices {"md" {:representations [{:media-type "text/html"}]
-                           :reader markdown-reader}}})
-```
-
-The `yada.resources.file-resourceDirectoryResource
-
-## Handlers
-
-[coming soon]
-
-## The request context
-
-[coming soon]
-
-## Interceptors
-
-The interceptor chain, established on the creation of a handler, is a vector.
-
-### available?
-### known-method?
-### uri-too-long?
-### TRACE
-### method-allowed?
-### malformed?
-### check-modification-time
-### select-representation
-### if-match
-### if-none-match
-### invoke-method
-### get-new-properties
-### compute-etag
-### access-control-headers
-### create-response
-
 ## Parameters
 
 Many web requests contain parameters, which affect how a resource behaves. Often parameters are specified as part of the URI's query string. But parameters can also be inferred from the URI's path. It's also possible for a request to contain parameters in its headers or body, as we'll see later.
@@ -983,7 +828,7 @@ data-centric approach gives you. When both your routes and resources are
 data, they are amenable to programmatic transformation, making our
 future options virtually limitless.
 
-## Example 1: Phonebook
+## Example 2: Phonebook
 
 We have covered a lot of ground so far. Let's consolidate our knowledge by building a simple application, using all the concepts we've learned so far.
 
@@ -1134,11 +979,13 @@ Clojure. The combination of Clojure and yada significantly reduces the
 amount of code you have to write to create scalable web APIs for your
 applications.
 
+## Example 3: Search engine
+
 ## Server Sent Events
 
 [coming soon]
 
-## Example 2: Chat server
+## Example 4: Chat server
 
 [coming soon]
 
@@ -1146,39 +993,45 @@ applications.
 
 [coming soon]
 
-## Example 3: Selfie
+## Example 5: Selfie uploader
 
 [coming soon]
 
-## Extensions
+## Handlers
 
-yada defines a number of protocols. Existing Clojure types and records
-can be extended with these protocols to adapt them to use with yada.
+[coming soon]
 
-### `yada.protocols.ResourceCoercion`
+## The request context
 
-### `yada.methods.Method`
+[coming soon]
 
-Every HTTP method is implemented as a type which extends the
-yada.methods.Method protocols. This way, new HTTP methods can be added
-to yada. Each type must implement the correct semantics for the
-method, although yada comes with a number of built-in methods for each
-of the most common HTTP methods.
+## Interceptors
 
-Many method types define their own protocols so that resources can also
-help determine the behaviour. For example, the built-in `GetMethod` type
-uses a `Get` protocol to communicate with resources. The exact semantics
-of this additional protocol depend on the HTTP method semantics being
-implemented. In the `Get` example, the resource type is asked to return
-its state, from which the representation for the response is produced.
+The interceptor chain, established on the creation of a handler, is a vector.
 
-### `yada.body.MessageBody`
+### available?
+### known-method?
+### uri-too-long?
+### TRACE
+### method-allowed?
+### malformed?
+### check-modification-time
+### select-representation
+### if-match
+### if-none-match
+### invoke-method
+### get-new-properties
+### compute-etag
+### access-control-headers
+### create-response
 
-Message bodies are formed from data provided by the resource, according
-to the representation being requested (or having been negotiated). This
-removes a lot of the formatting responsibility from the resources, and
-this facility can be extended via this protocol for new message body
-types.
+## Subresources
+
+[coming soon]
+
+## Example 6: File server
+
+[coming soon]
 
 ## Security
 
@@ -1334,13 +1187,171 @@ That said, Liberator is a mature and capable library that is well suited
 to building HTTP services. Many of the differences between Liberator and
 yada are stylistic and therefore subject to personal bias.
 
-## Concluding remarks
 
-In this user-manual we have seen how yada can help create flexible HTTP
-services with a data-oriented syntax, and how the adoption
-of a declarative data format (rather than functional composition) allows
-us to easily extend yada's functionality in various ways.
 
-Asynchronous operation can be exploited wherever required, with
-fine-grained control residing with the user, using futures and promises,
-avoiding the need for deeply-nested code full of callback functions.
+## Reference
+
+### Resource model schema
+
+[coming soon]
+
+### Handler schema
+
+[coming soon]
+
+### Request context schema
+
+[coming soon]
+
+### Protocols
+
+yada defines a number of protocols. Existing Clojure types and records
+can be extended with these protocols to adapt them to use with yada.
+
+### `yada.protocols.ResourceCoercion`
+
+[coming soon]
+
+### `yada.methods.Method`
+
+Every HTTP method is implemented as a type which extends the
+yada.methods.Method protocols. This way, new HTTP methods can be added
+to yada. Each type must implement the correct semantics for the
+method, although yada comes with a number of built-in methods for each
+of the most common HTTP methods.
+
+Many method types define their own protocols so that resources can also
+help determine the behaviour. For example, the built-in `GetMethod` type
+uses a `Get` protocol to communicate with resources. The exact semantics
+of this additional protocol depend on the HTTP method semantics being
+implemented. In the `Get` example, the resource type is asked to return
+its state, from which the representation for the response is produced.
+
+### `yada.body.MessageBody`
+
+Message bodies are formed from data provided by the resource, according
+to the representation being requested (or having been negotiated). This
+removes a lot of the formatting responsibility from the resources, and
+this facility can be extended via this protocol for new message body
+types.
+
+### Built-in types
+
+There are numerous types already built into yada, but you can also add
+your own. You can also add your own custom methods.
+
+#### Files
+
+The `yada.resources.file-resource.FileResource` exposes a single file in the file-system.
+
+The record has a number of fields.
+
+<table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Required?</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>`file`</td>
+<td>`java.io.File`</td>
+<td>yes</td>
+<td>The file in the file-system</td>
+</tr>
+<tr>
+<td>`reader`</td>
+<td>Map</td>
+<td>no</td>
+<td>A file reader function that takes the file and selected representation, returning the body</td>
+</tr>
+<tr>
+<td>`representations`</td>
+<td>A collection of maps</td>
+<td>no</td>
+<td>The available representation combinations</td>
+</tr>
+</tbody>
+</table>
+
+The purpose of specifying the `reader` field is to apply a
+transformation to a file's content prior to forming the message
+payload.
+
+For instance, you might decide to transform a file of markdown text
+content into HTML. The reader function takes two arguments: the file and
+the selected representation containing the media-type.
+
+```clojure
+(fn [file rep]
+  (if (= (-> rep :media-type :name) "text/html")
+    (-> file slurp markdown->html)
+    ;; Return unprocessed
+    file))
+```
+
+The reader function can return anything that can be normally returned in
+the body payload, including strings, files, maps and sequences.
+
+The `representation` field indicates the types of representation the
+file can support. Unless you are specifying a custom `reader` function,
+there will usually only be one such representation. If this field isn't
+specified, the file suffix is used to guess the available representation
+metadata. For example, a file with a `.png` suffix will be assumed to
+have a media-type of `image/png`.
+
+#### Directories
+
+The `yada.resources.file-resource.DirectoryResource` record exposes a directory in a filesystem as a collection of read-only web resources.
+
+The record has a number of fields.
+
+<table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Required?</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>`dir`</td>
+<td>`java.io.File`</td>
+<td>yes</td>
+<td>The directory to serve</td>
+</tr>
+<tr>
+<td>`custom-suffices`</td>
+<td>Map</td>
+<td>no</td>
+<td>A map relating file suffices to field values of the corresponding FileResource </td>
+</tr>
+<tr>
+<td>`index-files`</td>
+<td>Vector of Strings</td>
+<td>no</td>
+<td>A vector of strings considered to be suitable to represent the index</td>
+</tr>
+</tbody>
+</table>
+
+A directory resource not only represents the directory on the
+file-system, but each file resource underneath it.
+
+The `custom-suffices` field allows you to specify fields for the
+FileResource records serving files in the directory, on the basis of the
+file suffix.
+
+For example, files ending in `.md` may be served with a FileResource with a reader that can convert the file content to another format, such as `text/html`.
+
+```clojure
+(yada.resources.file-resource/map->DirectoryResource
+  {:dir (clojure.java.io "talks")
+   :custom-suffices {"md" {:representations [{:media-type "text/html"}]
+                           :reader markdown-reader}}})
+```
