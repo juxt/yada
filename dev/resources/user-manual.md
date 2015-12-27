@@ -187,7 +187,8 @@ yada returns a handler.
 (yada "Hello World!\n")
 ```
 
-You can see the result of this at [http://localhost:8090/hello](http://localhost:8090/hello).
+You can see the result of this at
+[http://localhost:8090/hello](http://localhost:8090/hello).
 
 By combining this handler with a web-server, we can start the service.
 
@@ -208,7 +209,9 @@ offers this).
   {:port 3000})
 ```
 
-Alternatively, you can following along by referencing and experimenting with the code in `dev/src/yada/dev/hello.clj`. See the [installation](#Installation) chapter.
+Alternatively, you can following along by referencing and
+experimenting with the code in `dev/src/yada/dev/hello.clj`. See the
+[installation](#Installation) chapter.
 
 Once we have bound this handler to the path `/hello`, we're able to make
 the following HTTP request :-
@@ -633,6 +636,218 @@ lein run
 
 (`lein` is available from [http://leiningen.org](http://leiningen.org))
 
+## Resources
+
+Different types of resources are added to yada by defining Clojure types
+that satisfy one or more of yada's [protocols](#Protocols). The core request
+handling logic determines whether the resource type satisfies a protocol
+and uses the results of applying these protocol functions in determining
+the response.
+
+Let's delve a little deeper into how the _Hello World!_ example works.
+
+Here is the actual code that tells yada about Java strings. The
+namespace declaration and comments have been removed, but otherwise this
+is all the code that is required to tell yada about Java strings.
+
+```clojure
+(defrecord StringResource [s last-modified]
+
+  p/Properties
+  (properties [_]
+    {:representations
+     [{:media-type "text/plain"
+       :charset charset/platform-charsets}]})
+  (properties [_ ctx]
+    {:last-modified last-modified
+     :version s})
+
+  Get
+  (GET [_ _] s))
+```
+
+Recall the _Hello World!_ example.
+
+```clojure
+(yada "Hello World!")
+```
+
+yada calls `as-resource` on the argument. This declaration causes a
+new instance of the `StringResource` record to be created.
+
+```clojure
+(extend-protocol ResourceCoercion
+  String
+  (as-resource [s]
+  (->StringResource s (to-date (now)))))
+```
+
+The original string (`Hello World!`) and the current date is captured
+and provided to the `StringResource` record. (The only reason for using
+`clj-time` rather than `java.util.Date` is to facilitate testing).
+
+The `StringResource` resource satisfies the `Representations`
+protocol, which means it can specify which types of representation it is
+able to generate. The `representations` function must return a list of
+_representation declarations_, which declare all the possible
+combinations of media-type, charset, encoding and language. In this
+case, we just have one representation declaration which specifies
+`text/plain` and the charsets available (all those supported on the Java
+platform we are on).
+
+### Creating your own custom resources
+
+### Examples of built-in resources
+
+There are numerous types already built into yada, but you can also add
+your own. You can also add your own custom methods.
+
+#### Files
+
+The `yada.resources.file-resource.FileResource` exposes a single file in the file-system.
+
+The record has a number of fields.
+
+<table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Required?</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>`file`</td>
+<td>`java.io.File`</td>
+<td>yes</td>
+<td>The file in the file-system</td>
+</tr>
+<tr>
+<td>`reader`</td>
+<td>Map</td>
+<td>no</td>
+<td>A file reader function that takes the file and selected representation, returning the body</td>
+</tr>
+<tr>
+<td>`representations`</td>
+<td>A collection of maps</td>
+<td>no</td>
+<td>The available representation combinations</td>
+</tr>
+</tbody>
+</table>
+
+The purpose of specifying the `reader` field is to apply a
+transformation to a file's content prior to forming the message
+payload.
+
+For instance, you might decide to transform a file of markdown text
+content into HTML. The reader function takes two arguments: the file and
+the selected representation containing the media-type.
+
+```clojure
+(fn [file rep]
+  (if (= (-> rep :media-type :name) "text/html")
+    (-> file slurp markdown->html)
+    ;; Return unprocessed
+    file))
+```
+
+The reader function can return anything that can be normally returned in
+the body payload, including strings, files, maps and sequences.
+
+The `representation` field indicates the types of representation the
+file can support. Unless you are specifying a custom `reader` function,
+there will usually only be one such representation. If this field isn't
+specified, the file suffix is used to guess the available representation
+metadata. For example, a file with a `.png` suffix will be assumed to
+have a media-type of `image/png`.
+
+#### Directories
+
+The `yada.resources.file-resource.DirectoryResource` record exposes a directory in a filesystem as a collection of read-only web resources.
+
+The record has a number of fields.
+
+<table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Required?</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>`dir`</td>
+<td>`java.io.File`</td>
+<td>yes</td>
+<td>The directory to serve</td>
+</tr>
+<tr>
+<td>`custom-suffices`</td>
+<td>Map</td>
+<td>no</td>
+<td>A map relating file suffices to field values of the corresponding FileResource </td>
+</tr>
+<tr>
+<td>`index-files`</td>
+<td>Vector of Strings</td>
+<td>no</td>
+<td>A vector of strings considered to be suitable to represent the index</td>
+</tr>
+</tbody>
+</table>
+
+A directory resource not only represents the directory on the
+file-system, but each file resource underneath it.
+
+The `custom-suffices` field allows you to specify fields for the
+FileResource records serving files in the directory, on the basis of the
+file suffix.
+
+For example, files ending in `.md` may be served with a FileResource with a reader that can convert the file content to another format, such as `text/html`.
+
+```clojure
+(yada.resources.file-resource/map->DirectoryResource
+  {:dir (clojure.java.io "talks")
+   :custom-suffices {"md" {:representations [{:media-type "text/html"}]
+                           :reader markdown-reader}}})
+```
+
+The `yada.resources.file-resourceDirectoryResource
+
+## Handlers
+
+[coming soon]
+
+## The request context
+
+[coming soon]
+
+## Interceptors
+
+The interceptor chain, established on the creation of a handler, is a vector.
+
+### available?
+### known-method?
+### uri-too-long?
+### TRACE
+### method-allowed?
+### malformed?
+### check-modification-time
+### select-representation
+### if-match
+### if-none-match
+### invoke-method
+### get-new-properties
+### compute-etag
+### access-control-headers
+### create-response
+
 ## Parameters
 
 Many web requests contain parameters, which affect how a resource behaves. Often parameters are specified as part of the URI's query string. But parameters can also be inferred from the URI's path. It's also possible for a request to contain parameters in its headers or body, as we'll see later.
@@ -775,188 +990,6 @@ Content-Length: 9
 The second type of negotiation is termed _reactive negotiation_ where the
 agent chooses from a list of representations provided by the server.
 
-## Resources
-
-Different types of resources are added to yada by defining Clojure types
-that satisfy one or more of yada's [protocols](#Protocols). The core request
-handling logic determines whether the resource type satisfies a protocol
-and uses the results of applying these protocol functions in determining
-the response.
-
-Let's delve a little deeper into how the _Hello World!_ example works.
-
-Here is the actual code that tells yada about Java strings. The
-namespace declaration and comments have been removed, but otherwise this
-is all the code that is required to tell yada about Java strings.
-
-```clojure
-(defrecord StringResource [s last-modified]
-
-  p/Properties
-  (properties [_]
-    {:representations
-     [{:media-type "text/plain"
-       :charset charset/platform-charsets}]})
-  (properties [_ ctx]
-    {:last-modified last-modified
-     :version s})
-
-  Get
-  (GET [_ _] s))
-```
-
-Recall the _Hello World!_ example.
-
-```clojure
-(yada "Hello World!")
-```
-
-yada calls `as-resource` on the argument. This declaration causes a
-new instance of the `StringResource` record to be created.
-
-```clojure
-(extend-protocol ResourceCoercion
-  String
-  (as-resource [s]
-  (->StringResource s (to-date (now)))))
-```
-
-The original string (`Hello World!`) and the current date is captured
-and provided to the `StringResource` record. (The only reason for using
-`clj-time` rather than `java.util.Date` is to facilitate testing).
-
-The `StringResource` resource satisfies the `Representations`
-protocol, which means it can specify which types of representation it is
-able to generate. The `representations` function must return a list of
-_representation declarations_, which declare all the possible
-combinations of media-type, charset, encoding and language. In this
-case, we just have one representation declaration which specifies
-`text/plain` and the charsets available (all those supported on the Java
-platform we are on).
-
-### Custom resources
-
-There are numerous types already built into yada, but you can also add
-your own. You can also add your own custom methods.
-
-#### Files
-
-The `yada.resources.file-resource.FileResource` exposes a single file in the file-system.
-
-The record has a number of fields.
-
-<table class="table">
-<thead>
-<tr>
-<th>Field</th>
-<th>Type</th>
-<th>Required?</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>`file`</td>
-<td>`java.io.File`</td>
-<td>yes</td>
-<td>The file in the file-system</td>
-</tr>
-<tr>
-<td>`reader`</td>
-<td>Map</td>
-<td>no</td>
-<td>A file reader function that takes the file and selected representation, returning the body</td>
-</tr>
-<tr>
-<td>`representations`</td>
-<td>A collection of maps</td>
-<td>no</td>
-<td>The available representation combinations</td>
-</tr>
-</tbody>
-</table>
-
-The purpose of specifying the `reader` field is to apply a
-transformation to a file's content prior to forming the message
-payload.
-
-For instance, you might decide to transform a file of markdown text
-content into HTML. The reader function takes two arguments: the file and
-the selected representation containing the media-type.
-
-```clojure
-(fn [file rep]
-  (if (= (-> rep :media-type :name) "text/html")
-    (-> file slurp markdown->html)
-    ;; Return unprocessed
-    file))
-```
-
-The reader function can return anything that can be normally returned in
-the body payload, including strings, files, maps and sequences.
-
-The `representation` field indicates the types of representation the
-file can support. Unless you are specifying a custom `reader` function,
-there will usually only be one such representation. If this field isn't
-specified, the file suffix is used to guess the available representation
-metadata. For example, a file with a `.png` suffix will be assumed to
-have a media-type of `image/png`.
-
-#### Directories
-
-The `yada.resources.file-resource.DirectoryResource` record exposes a directory in a filesystem as a collection of read-only web resources.
-
-The record has a number of fields.
-
-<table class="table">
-<thead>
-<tr>
-<th>Field</th>
-<th>Type</th>
-<th>Required?</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>`dir`</td>
-<td>`java.io.File`</td>
-<td>yes</td>
-<td>The directory to serve</td>
-</tr>
-<tr>
-<td>`custom-suffices`</td>
-<td>Map</td>
-<td>no</td>
-<td>A map relating file suffices to field values of the corresponding FileResource </td>
-</tr>
-<tr>
-<td>`index-files`</td>
-<td>Vector of Strings</td>
-<td>no</td>
-<td>A vector of strings considered to be suitable to represent the index</td>
-</tr>
-</tbody>
-</table>
-
-A directory resource not only represents the directory on the
-file-system, but each file resource underneath it.
-
-The `custom-suffices` field allows you to specify fields for the
-FileResource records serving files in the directory, on the basis of the
-file suffix.
-
-For example, files ending in `.md` may be served with a FileResource with a reader that can convert the file content to another format, such as `text/html`.
-
-```clojure
-(yada.resources.file-resource/map->DirectoryResource
-  {:dir (clojure.java.io "talks")
-   :custom-suffices {"md" {:representations [{:media-type "text/html"}]
-                           :reader markdown-reader}}})
-```
-
-The `yada.resources.file-resourceDirectoryResource
-
 ## Methods
 
 [coming soon]
@@ -1032,10 +1065,6 @@ data-centric approach gives you. When both your routes and resources are
 data, they are amenable to programmatic transformation, making our
 future options virtually limitless.
 
-## Swagger
-
-[coming soon]
-
 ## Example 1: Phonebook
 
 We have covered a lot of ground so far. Let's consolidate our knowledge by building a simple application, using all the concepts we've learned so far.
@@ -1110,6 +1139,13 @@ This declaration tells yada what parameters we are expecting in the POST method.
 1. Parse the request body.
 1. Help prevent XSS scripting attacks, by ensuring that no unexpected parameters are allowed to pass through. We should still be careful of String parameters though.
 
+## Swagger
+
+[coming soon]
+
+## CORS
+
+[coming soon]
 
 ## Async
 
@@ -1176,112 +1212,36 @@ Clojure. The combination of Clojure and yada significantly reduces the
 amount of code you have to write to create scalable web APIs for your
 applications.
 
-## Options
+## SSE
 
-Options can be given in the option map given as the optional second
-argument to yada's `resource` function.
+[coming soon]
 
-```clojure
-(yada resource {:request-uri-too-long? 8192
-                :last-modified (fn [ctx] (.lastModified file))})
-```
+## Example 2: Chat server
 
-Some options are used to override values that would have otherwise come
-from the resource. In these cases, options always take precedence.
+[coming soon]
 
-### :allowed-methods
+## Handling request bodies
 
-The set of methods that the handler should support.
+[coming soon]
 
-```clojure
-{:allowed-methods #{:get :put}}
-```
+## Example 3: Selfie
 
-The methods `:head` and `:options` are added implicitly, if yada is able
-to support them on the resource. If you don't want this, use
-`:all-allowed-methods`.
+[coming soon]
 
-### :all-allowed-methods (advanced)
-
-Use this is you want to specify exactly which methods are allowed on the resource. This should not be used in conjunction with the :allowed-methods id, but if both are specified, `:all-allowed-methods` will take precedence over `:allowed-methods`.
-
-```clojure
-{:all-allowed-methods #{:get :put :options :trace}} ; no :head
-```
-
-This option is for advanced users only. Usually you should use
-`:allowed-methods` and let yada add additional methods it is able to
-support.
-
-### :authorization
-### :charset
-### :encoding
-### :headers
-### :id
-### :language
-### :last-modified
-### :journal
-### :journal-browser-path
-### :media-type
-### :parameters
-
-Specify, or override, the parameters of a resource. Since parameters often apply to a method's implementation, these are given on a method by method basis. Each entry in the map must be keyed with the method. Each method parameters is itself a map, keyed by the parameter type.
-
-```clojure
-{:parameters {:get {:query {:p String}
-                    :header {"X-Version" Integer}}}}
-```
-
-The example above declares both a _query_ and _header_ parameter. The
-query parameter is called p and is a String. The header
-parameter is the value of the HTTP request's `X-Version` header and is coerced to an integer.
-
-### :representation
-### :representations
-### :request-uri-too-long?
-### :security
-### :service-available?
-### :status
-### :trace
-
-## Protocols
+## Extensions
 
 yada defines a number of protocols. Existing Clojure types and records
 can be extended with these protocols to adapt them to use with yada.
 
 ### `yada.protocols.ResourceCoercion`
 
-Deprecated - any _define-time_ logic should be removed to the
-single-arity form of `properties` (see below).
-
-### `yada.protocols.Properties`
-
-Defines a `properties` function of 2 arites.
-
-```clojure
-(properties [resource])
-(properties [resource ctx])
-```
-
-The first form takes only the resource itself as an argument and is
-called only once by the yada function when it is building the resource
-data.
-
-The second form is called on every request. It takes a second argument, the request context, which contains the Ring request, and resource data, including the properties returned by the single arity call to `properties`.
-
-A resource should return a map from these `properties`
-functions, containing the entries described later. Other entries can be
-returned, as long as the keys are namespaced keywords (non-namespaced
-keywords in this case are reserved by yada).
-
-### `yada.protocols.ETag`
-
-Extend this protocol to override yada's built-in entity-tag generation
-facility.
-
 ### `yada.methods.Method`
 
-Every HTTP method is implemented as a type which extends the yada.methods.Method protocols. This way, new HTTP methods can be added to yada. Each type must implement the correct semantics for the method, although yada comes with a number of built-in methods for each of the most common HTTP methods.
+Every HTTP method is implemented as a type which extends the
+yada.methods.Method protocols. This way, new HTTP methods can be added
+to yada. Each type must implement the correct semantics for the
+method, although yada comes with a number of built-in methods for each
+of the most common HTTP methods.
 
 Many method types define their own protocols so that resources can also
 help determine the behaviour. For example, the built-in `GetMethod` type
@@ -1297,136 +1257,6 @@ to the representation being requested (or having been negotiated). This
 removes a lot of the formatting responsibility from the resources, and
 this facility can be extended via this protocol for new message body
 types.
-
-## Properties
-
-By satisfying the `Properties` protocol, each resource can
-provide data back to yada in the form of a map from
-`properties`. Here is a list of entries the returned map may
-contain.
-
-### `:allowed-methods`
-
-A set of keywords indicating the methods allowed on the resource.
-
-### `:parameters`
-
-A map of parameters, keyed by method and then parameter type.
-
-### `:representations`
-
-A collection of representations. Usually returned from the single-arity
-form, without the context. This is so that the representation set forms
-part of the resources's data model, and can be exploited by
-introspection tools such as Swagger prior to handling requests.
-
-### `:last-modified`
-
-The last modified date of the resource.
-
-### `:version`
-
-The resource version. Used for entity-tag construction.
-
-### `:path-info?`
-
-Whether the resource is actually serving a collection of sub-resources.
-
-## Resource model
-
-Once a resource has been built, it can be treated as a map with the
-following entries.
-
-### `:allowed-methods`
-
-A set of keywords indicating the methods supported by the resource.
-
-### `:authorization`
-
-[todo]
-
-### `:base`
-
-The original uncoerced first argument passed to yada's `resource`
-function (or it's `yada` alias).
-
-### `:id`
-
-A unique identifier for the individual resource. Defaults to a (random) type-4 UUID but may be overridden with the `:id` option.
-
-### `:interceptor-chain`
-
-The sequence of interceptors that will process the request. Mutate this
-if you need to weave in custom functionality.
-
-### `:journal`
-
-The database that will store journal entries (one entry per
-request). Can be nil.
-
-### `:known-methods`
-
-A set of keywords indicating all the methods that are known by
-yada. This includes custom methods that have been added via protocol
-extension. This set is usually a superset of the methods that are
-allowed on the resource, see __:allowed-methods__. If a request
-containing a method that is not known results in a 501 status code.
-
-### `:options`
-
-The resource options, as given to yada's `resource` function (or it's `yada` alias).
-
-### `:parameters`
-
-The resource parameters, as provided by, in order of precedence :-
-
-* the `:parameters` option
-* the `:parameters` entry of the result of the call to the resource's `properties` function.
-
-### `:representations`
-
-The resource representations, as provided by, in order of precedence :-
-
-* the `:representations` option
-* the `:representation` option
-* the `:media-type`, `:charset`, `:encoding` and `:language` option
-* the `:representations` entry of the result of the call to the resource's `properties` function.
-
-### `:resource`
-
-The resource (possibly after coercion by the `as-resource` function of the `ResourceCoercion` protocol.
-
-### `:security`
-
-[todo]
-
-### `:vary`
-
-The set of axes that can vary during proactive content negotiation
-
-```clojure
-{:vary #{:media-type :language}}
-```
-
-## The default interceptor chain
-
-The interceptor chain, established on the creation of a handler, is a vector.
-
-### `available?`
-### `known-method?`
-### `uri-too-long?`
-### `TRACE`
-### `method-allowed?`
-### `malformed?`
-### `check-modification-time`
-### select-representation
-### if-match
-### if-none-match
-### invoke-method
-### get-new-properties
-### compute-etag
-### access-control-headers
-### create-response
 
 ## Comparison guide
 
