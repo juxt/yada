@@ -61,11 +61,11 @@
                [:h2 "Welcome to " [:span.yada "yada"] "!"]
                [:ol
                 [:li [:a {:href (path-for @*router :yada.dev.user-manual/user-manual)} "The " [:span.yada "yada"] " manual"]
-                 " - the single authority on all things " [:span.yada "yada"]]
+                 " — the single authority on all things " [:span.yada "yada"]]
 
-                [:li "Examples - self-contained apps for you to explore"
+                [:li "Examples — self-contained apps for you to explore"
                  [:ul
-                  [:li [:a {:href (path-for @*router :yada.dev.hello/index)} "Hello World!"] " - to introduce " [:span.yada "yada"] " in the proper way"]
+                  [:li [:a {:href (path-for @*router :yada.dev.hello/index)} "Hello World!"] " — to introduce " [:span.yada "yada"] " in the proper way"]
                   
                   [:li
                    [:a {:href (str
@@ -78,14 +78,19 @@
                                 
                                 )}
                     " (Swagger)"]
-                   " - to demonstrate custom records implementing standard HTTP methods"]
+                   " — to demonstrate custom records implementing standard HTTP methods"]
 
                   [:li [:a {:href (str
                                    (config/selfie-origin config)
-                                   (path-for (:server selfie) :selfie.api/index))} "Selfie"] " - to demonstrate asynchronous processing of large request bodies"]
+                                   (path-for (:server selfie) :selfie.api/index))} "Selfie"] " — to demonstrate asynchronous processing of large request bodies"]
                   [:li [:a {:href (str
                                    (config/cors-demo-origin config)
-                                   (path-for cors-demo-router :yada.dev.cors-demo/index))} "CORS demo"] " - to demonstrate CORS support"]]]
+                                   (path-for cors-demo-router :yada.dev.cors-demo/index))} "CORS demo"] " — to demonstrate CORS support"]
+
+                  [:li [:a {:href (path-for @*router :yada.dev.async/sse-demo)} "SSE demo"] " — to demonstrate Server Sent Events"]
+                  ]]
+
+                
 
                 [:li [:a {:href
                           (format "%s/index.html?url=%s/swagger.json"
@@ -93,12 +98,12 @@
                                   (path-for @*router :yada.dev.user-api/user-api)
                                   )}
                       "Swagger UI"]
-                 " - to demonstrate Swagger integration"]
+                 " — to demonstrate Swagger integration"]
 
                 [:li [:a {:href (str
                                  (config/console-origin config)
                                  (path-for console-router :yada.dev.console/index :path ""))}
-                      "The " [:span.yada "yada"] " console"] " - to capture traffic and debug your API (work in progress)"]
+                      "The " [:span.yada "yada"] " console"] " — to capture traffic and debug your API (work in progress)"]
 
 
                 [:li [:a {:href (str

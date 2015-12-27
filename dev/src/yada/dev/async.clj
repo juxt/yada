@@ -29,7 +29,8 @@
 
   RouteProvider
   (routes [component]
-    ["/sse" (new-handler (a/mult (:channel component)))]))
+    ["/sse" (-> (new-handler (a/mult (:channel component)))
+                (tag ::sse-demo))]))
 
 (defn new-sse-example []
   (map->SseExample {}))

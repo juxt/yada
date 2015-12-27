@@ -1027,6 +1027,21 @@ library.
                  :response (clojure.core.async/chan)}}}
 ```
 
+It is, however, highly unusual to want to provide a channel of data to
+a single client. Typically, what is required is that each client gets
+a copy of every message in the channel. This can be achieved easily by
+multiplexing the channel with `clojure.core.async/mult`. By providing
+a core.async Mult as a response body, yada can tap the mult.
+
+``` clojure
+(let [mlt (clojure.core.async/mult channel)]
+  {:methods {:get {:produces "text/event-stream"
+                   :response mlt}}})
+```
+
+Of course, you can `tap` the `mult` yourself in your own logic and
+provide the tapping channel directly to yada, which will 'do the right
+thing' depending on what you provide.
 
 ## Example 4: Chat server
 
