@@ -18,7 +18,7 @@
    [cheshire "5.5.0"]
    [clj-time "0.11.0"]
    [hiccup "1.0.5"]
-   [json-html "0.3.1"]
+   [json-html "0.3.6"]
    [manifold "0.1.2-alpha1"]
    [metosin/ring-http-response "0.6.5"]
    [metosin/ring-swagger "0.22.1" :exclusions [potemkin]]
