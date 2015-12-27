@@ -22,6 +22,10 @@ discussion group. Regardless of your experience, everyone is more than
 welcome to join the list. List members will do their best to answer any
 questions you might have.
 
+### Document conventions
+
+Terms that have specific meaning are introduced in _italics_. yada specific terminology is defined in **bold**.
+
 ### Spot an error?
 
 If you spot a typo, misspelling, grammar problem, confusing text, or
@@ -33,91 +37,24 @@ documentation as a contributor!
 
 [Back to index](/)
 
-## Forward
-
-State is everywhere. The world is moving and we need to keep up. We
-need our computers to help us stay up-to-date with the latest
-information, chats, trends, stock-prices, news and weather updates,
-and other important stuff.
-
-The web is primarily a means to move state around. You have some state
-here, and you want it over there. Or it's over there, but you want it
-over here.
-
-For two decades or more, the pre-dominant model for web programming
-has ignored state, instead requiring developers to work at the level
-of the HTTP protocol itself.
-
-For example, in Java...
-
-```java
-public void handleRequest(HttpServletRequest request,
-                          HttpServletResponse response)
-{
-    response.setStatus(200);
-}
-```
-
-or in Clojure
-
-```clojure
-(fn [request] {:status 200})
-```
-
-This programming model puts the HTTP request and response at centre
-stage. The concept of state is missing entirely - the resource is seen
-merely as an _operation_ (or set of operations) available for remote
-invocation.
-
-For years, the same RPC-centered approach has been copied by web
-frameworks in many languages, old and new (Python, Ruby, Go,
-Clojure...). It has survived because it's so flexible, as many
-low-level programming models are.
-
-But there are significant downsides to this model too. HTTP is a big
-specification, and it's unreasonable to expect developers to have the
-time to implement all the relevant pieces of it. What's more, many
-developers tend to implement much the same code over and over again, for
-each and every 'operation' they write.
-
-A notable variation on this programming model can be found in Erlang's
-WebMachine and Clojure's Liberator. To a degree, these libraries ease
-the burden on the developer by orchestrating the steps required to build
-a response to a web request. However, developers are still required to
-understand the state transition diagram underlying this orchestration if
-they are to successfully exploit these libraries to the maximum
-extent. Fundamentally, the programming model is the same: the developer
-is still writing code with a view to forming a response at the protocol
-level.
-
-While this model has served as well in the past, there are increasingly
-important reasons why we need an upgrade. Rather than mere playthings,
-HTTP-based APIs are becoming critical components in virtually every
-organisation. With supporting infrastructure such as proxies, API
-gateways and monitoring, there has never been a greater need to improve
-compatibility through better conformance with HTTP standards. Yet many
-APIs today at best ignore, and worst violate many parts of the HTTP
-standard. For ephemeral prototypes, this 'fake it' approach to HTTP is
-acceptable. But HTTP is designed for long-lived systems with lifetimes
-measured in decades, that must cross departmental and even
-organisational boundaries, and adapt to ongoing changes in technology.
-
-It's time for a fresh approach. We need our libraries to do more work
-for us. For this to happen, we need to move from the _de-facto_
-'operational' view of web 'services' to a strong _data-oriented_
-approach, focussing on what a web _resource_ is really about: _state_.
-
 ## Introduction
 
 ### What is yada?
 
-yada is a Clojure library that lets you create services that are fully
-compliant with, and thereby taking full advantage of, HTTP
+yada is a library that lets you develop and deploy web resources that
+are fully compliant with, and thereby taking full advantage of, HTTP
 specifications.
 
-Underlying each service is a data description of a web _resource_,
-combining information about the nature of the resource's state, its properties,
-methods and representations with service configuration settings.
+Let's start then by defining a _web resource_. A web resource is
+identified and located by a URI. It responds to requests it receives
+according to the request's method. Usually it produces or consumes
+state.
+
+In yada, resources are defined by a **resource model**, backed by a
+map.
+
+Here is an example of what a **resource model** might look like in
+Clojure:-
 
 ```clojure
 {:properties {…}
@@ -128,58 +65,28 @@ methods and representations with service configuration settings.
 }
 ```
 
-Since the data description is defined as a simple Clojure nested map
-structure, it is straight-forward to author directly, generate or
-derive. And it's also straight-forward to use it as the basis for
-other API description formats. One such format that has become quite
-popular, Swagger 2.0, is provided out-of-the-box.
+You can use Java or any JVM language to create these **resource
+models**. One benefit of using Clojure is that it offers a large
+number of ways to be generate, derive and transform maps. This gives
+you the maximum flexibility in how your web resources are developed.
 
-yada provides an eponymous function that takes a data description for
-a resource and returns a handler that can be used by the Aleph
-asynchronous web server (other web servers may be supported at a
-future date).
+yada's eponymous function `yada` takes a single parameter (the
+resource model) and returns a **handler**. This is both a _function_
+that can be used to create responses from Ring requests, and a
+_data-model_ that can be further modified (if desired).
 
-```clojure
-(yada {:properties {…} :methods {…}})
-```
+Finally, yada is built on a fully asynchronous core, bringing
+exceptional performance and scalability to your websites and APIs.
 
-This approach has a number of advantages. Many things you would expect
-to have to code yourself are taken care of automatically, such as
-request validation, content negotiation, conditional requests, HEAD,
-OPTIONS and TRACE methods, status codes, headers, cache-control,
-security and much more, leaving you time to focus on the functional
-parts of your application and leaving you with a lot less handler code
-to write and maintain.
-
-yada is built on a fully asynchronous core, bringing exceptional
-performance and scalability to your websites and APIs.
-
-However, yada is not a fully-fledged 'batteries-included' web
-'framework'. It does not offer URI routing and link formation, nor
-does it offer views and templating. It does, however, integrate
-seamlessly with its sibling library
-[bidi](https://github.com/juxt/bidi (for URI routing and formation)
-and other routing libraries. It can be integrated with the many
-template libraries available for Clojure and Java, so you can build
-your own web-framework from yada and other libraries.
-
-yada is also agnostic to how you want to build your app. It is
-designed to be as easy to use for simple HTML content as it is for
-APIs, in whatever style you decide is right for you (Swagger
-documented, hypermedia driven, ROCA, jsonapi, real-time, etc).
-
-With yada, yours can contribute to the number of systems which are
-richer, more interoperable and interconnected systems, and which are
-_built to last_.
+With yada, you can build richer, more interoperable and interconnected
+systems, that scale and are _built to last_.
 
 ### An introductory example: Hello World!
 
 Let's introduce yada properly by writing some code. Let's start with
 some state, a string: `Hello World!`. We'll be able to give an
-overview of many of yada's features using this simple example.
-
-We pass the string as a single argument to yada's `yada` function, and
-yada returns a handler.
+overview of many of yada's features using this simple example. For
+brevity, we'll be using Clojure.
 
 ```clojure
 (require '[yada.yada :refer [yada]])
@@ -187,18 +94,29 @@ yada returns a handler.
 (yada "Hello World!\n")
 ```
 
+First we require the `yada` function, which Clojure needs to know
+where it comes from.
+
+We give it our string and the result is a **handler**.
+
+(Just a minute!  We just said that the argument to give to `yada` was
+a **resource model** (a _map_). Well, that's true, but yada has some
+built-in code that transforms the string into a resource-model. Don't
+worry about that for now, we'll discuss it more later).
+
 You can see the result of this at
 [http://localhost:8090/hello](http://localhost:8090/hello).
 
 By combining this handler with a web-server, we can start the service.
 
 Here's how you can start the service using
-[Aleph](https://github.com/ztellman/aleph). (Note that you are free to
-choose any yada -compatible web server, as long as it's Aleph! Joking
-aside, as more web servers support end-to-end asynchronicity with
-back-pressure, all the way up to the application, then yada will
-support those. Currently Aleph is the only web server we know that
-offers this).
+[Aleph](https://github.com/ztellman/aleph).
+
+(Note that you are free to choose any yada -compatible web server, as
+long as it's Aleph! Joking aside, as more web servers support
+end-to-end asynchronicity with back-pressure, all the way up to the
+application, then yada will support those. Currently Aleph is the only
+web server we know that offers this).
 
 ```clojure
 (require '[yada.yada :refer [yada]]
@@ -217,7 +135,7 @@ Once we have bound this handler to the path `/hello`, we're able to make
 the following HTTP request :-
 
 ```nohighlight
-curl -i http://localhost:8090/hello
+curl -i http://localhost:3000/hello
 ```
 
 and receive a response like this :-
@@ -371,7 +289,7 @@ Date: Tue, 21 Jul 2015 20:17:51 GMT
 Content-Length: 0
 ```
 
-### Mutation
+#### Mutation
 
 Let's try to overwrite the string by using a `PUT`.
 
@@ -594,7 +512,7 @@ Content-Length: 14
 There is a lot more to content negotiation than this simple example can
 show. It is covered in depth in subsequent chapters.
 
-### Summary
+#### Summary
 
 This simple example demonstrated how a rich and functional HTTP resource
 was created with a tiny amount of code. And yet, none of the behaviour
@@ -1147,7 +1065,7 @@ See
 [IBM's Watson Developer Cloud](http://www.ibm.com/smarterplanet/us/en/ibmwatson/developercloud/apis/)
 for a sophistated Swagger example.
 
-## CORS
+## Cross-Origin Resource Sharing (CORS)
 
 [coming soon]
 
@@ -1216,7 +1134,7 @@ Clojure. The combination of Clojure and yada significantly reduces the
 amount of code you have to write to create scalable web APIs for your
 applications.
 
-## SSE
+## Server Sent Events
 
 [coming soon]
 
@@ -1261,6 +1179,10 @@ to the representation being requested (or having been negotiated). This
 removes a lot of the formatting responsibility from the resources, and
 this facility can be extended via this protocol for new message body
 types.
+
+## Security
+
+[coming soon]
 
 ## Comparison guide
 
