@@ -88,18 +88,6 @@
   (to-body [b _] b)
   (content-length [b] (.remaining b))
 
-  java.io.BufferedInputStream
-  (to-body [b _] b)
-  (content-length [_] nil)
-
-  java.io.Reader
-  (to-body [r _] r)
-  (content-length [_] nil)
-
-  SourceProxy
-  (to-body [s _] s)
-  (content-length [_] nil)
-
   Mult
   (to-body [mlt representation]
     (let [ch (a/chan 10)]
@@ -111,10 +99,9 @@
   (to-body [ch representation] (render-seq ch representation))
   (content-length [_] nil)
 
+  ;; The default pass-through to the web server
   Object
-  ;; We could implement to-representation here as a pass-through, but it
-  ;; is currently useful to have yada fail on types it doesn't know how to
-  ;; represent.
+  (to-body [s _] s)
   (content-length [_] nil)
 
   nil
