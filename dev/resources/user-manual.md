@@ -564,62 +564,7 @@ lein run
 
 ## Resources
 
-Different types of resources are added to yada by defining Clojure types
-that satisfy one or more of yada's [protocols](#Protocols). The core request
-handling logic determines whether the resource type satisfies a protocol
-and uses the results of applying these protocol functions in determining
-the response.
-
-Let's delve a little deeper into how the _Hello World!_ example works.
-
-Here is the actual code that tells yada about Java strings. The
-namespace declaration and comments have been removed, but otherwise this
-is all the code that is required to tell yada about Java strings.
-
-```clojure
-(defrecord StringResource [s last-modified]
-
-  p/Properties
-  (properties [_]
-    {:representations
-     [{:media-type "text/plain"
-       :charset charset/platform-charsets}]})
-  (properties [_ ctx]
-    {:last-modified last-modified
-     :version s})
-
-  Get
-  (GET [_ _] s))
-```
-
-Recall the _Hello World!_ example.
-
-```clojure
-(yada "Hello World!")
-```
-
-yada calls `as-resource` on the argument. This declaration causes a
-new instance of the `StringResource` record to be created.
-
-```clojure
-(extend-protocol ResourceCoercion
-  String
-  (as-resource [s]
-  (->StringResource s (to-date (now)))))
-```
-
-The original string (`Hello World!`) and the current date is captured
-and provided to the `StringResource` record. (The only reason for using
-`clj-time` rather than `java.util.Date` is to facilitate testing).
-
-The `StringResource` resource satisfies the `Representations`
-protocol, which means it can specify which types of representation it is
-able to generate. The `representations` function must return a list of
-_representation declarations_, which declare all the possible
-combinations of media-type, charset, encoding and language. In this
-case, we just have one representation declaration which specifies
-`text/plain` and the charsets available (all those supported on the Java
-platform we are on).
+[coming soon]
 
 ## Parameters
 
@@ -763,7 +708,19 @@ Content-Length: 9
 The second type of negotiation is termed _reactive negotiation_ where the
 agent chooses from a list of representations provided by the server.
 
+## Properties
+
+[coming soon]
+
 ## Methods
+
+[coming soon]
+
+## Security and Access Control (CORS)
+
+[coming soon]
+
+### Cross-Origin Resource Sharing (CORS)
 
 [coming soon]
 
@@ -919,10 +876,6 @@ This declaration tells yada what parameters we are expecting in the POST method.
 See
 [IBM's Watson Developer Cloud](http://www.ibm.com/smarterplanet/us/en/ibmwatson/developercloud/apis/)
 for a sophistated Swagger example.
-
-## Cross-Origin Resource Sharing (CORS)
-
-[coming soon]
 
 ## Async
 
@@ -1088,10 +1041,6 @@ The interceptor chain, established on the creation of a handler, is a vector.
 [coming soon]
 
 ## Example 6: File server
-
-[coming soon]
-
-## Security
 
 [coming soon]
 
