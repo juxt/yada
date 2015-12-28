@@ -171,7 +171,7 @@
              :request request
              :method method
              :method-wrapper (get (:known-methods handler) method)
-             :handler (merge handler (dissoc match-context :handler))
+             :handler handler
              }))))
 
 (defrecord Handler []
