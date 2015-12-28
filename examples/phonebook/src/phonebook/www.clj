@@ -41,7 +41,9 @@
             :response (fn [ctx]
                         (let [id (db/add-entry db (get-in ctx [:parameters :form]))]
                           (yada/redirect-after-post
-                           ctx (path-for @*routes :phonebook.api/entry :entry id))))}}}))
+                           ctx (path-for @*routes :phonebook.api/entry :entry id))))}}
+
+    :access-control {:allow-origin "*"}}))
 
 (defn new-entry-resource [db *routes]
   (resource

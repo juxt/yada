@@ -358,24 +358,24 @@
     ctx))
 
 (defn access-control-headers [ctx]
-  (let [access-control (get-in ctx [:handler :access-control]) 
+  (let [access-control (get-in ctx [:handler :resource :access-control]) 
         ;;interpreted-allow-origin (when allow-origin (service/allow-origin allow-origin ctx))
         expose-headers (get-in ctx [:access-control :expose-headers])
         allow-headers (get-in ctx [:access-control :allow-headers])]
 
     (cond-> ctx
       (:allow-origin access-control)
-      (assoc-in [:response :headers "access-control-allow-origin"] (:allow-origin access-control))
+      (assoc-in [:response :headers "access-control-allow-origin"] ((:allow-origin access-control) ctx))
 
       (:expose-headers access-control)
       (assoc-in [:response :headers "access-control-expose-headers"]
                 (apply str
-                       (interpose ", " (:expose-headers access-control))))
+                       (interpose ", " ((:expose-headers access-control) ctx))))
 
       (:allow-headers access-control)
       (assoc-in [:response :headers "access-control-allow-headers"]
                 (apply str
-                       (interpose ", " (:allow-headers access-control)))))))
+                       (interpose ", " ((:allow-headers access-control) ctx)))))))
 
 (def default-interceptor-chain
   [;;available?

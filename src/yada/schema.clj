@@ -143,11 +143,11 @@ convenience of terse, expressive short-hand descriptions."}
 
 (s/defschema Context {})
 
-(s/defschema ResponseFunction
+(s/defschema ContextFunction
   (s/=> s/Any Context))
 
 (s/defschema Response
-  {:response ResponseFunction})
+  {:response ContextFunction})
 
 (s/defschema PropertiesResult
   {(s/optional-key :last-modified) s/Inst
@@ -214,14 +214,17 @@ convenience of terse, expressive short-hand descriptions."}
 
 (def MethodsMappings
   (merge {Method as-method-map
-          ResponseFunction as-fn}
+          ContextFunction as-fn}
          RepresentationSeqMappings))
 
 (s/defschema AccessControl
   {(s/optional-key :access-control)
-   {(s/optional-key :allow-origin) String
-    (s/optional-key :expose-headers) String
-    (s/optional-key :allow-headers) String}})
+   {(s/optional-key :allow-origin) ContextFunction
+    (s/optional-key :expose-headers) ContextFunction
+    (s/optional-key :allow-headers) ContextFunction}})
+
+(def AccessControlMappings
+  {ContextFunction as-fn})
 
 (s/defschema ResourceDocumentation
   CommonDocumentation)
@@ -249,12 +252,12 @@ convenience of terse, expressive short-hand descriptions."}
 (s/defschema ResourceMappings
   (merge PropertiesMappings
          RepresentationSeqMappings
-         MethodsMappings))
+         MethodsMappings
+         AccessControlMappings))
 
 (def resource-coercer (sc/coercer Resource ResourceMappings))
 
-
-;; Handler
+;; Handler ---------------------------------------------------------
 
 (s/defschema HandlerModel
   {:id s/Any
