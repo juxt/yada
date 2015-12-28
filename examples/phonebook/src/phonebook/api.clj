@@ -8,7 +8,7 @@
    [com.stuartsierra.component :refer [using Lifecycle]]
    [hiccup.core :refer [html]]
    [schema.core :as s]
-   [phonebook.www :refer [new-index-resource new-entry-resource]]
+   [phonebook.resources :refer [new-index-resource new-entry-resource]]
    [bidi.bidi :refer [routes-context]]
    [yada.yada :as yada :refer [yada]]))
 

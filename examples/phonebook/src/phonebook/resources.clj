@@ -1,6 +1,6 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(ns phonebook.www
+(ns phonebook.resources
   (:require
    [bidi.bidi :refer [path-for]]
    [clojure.tools.logging :refer :all]
