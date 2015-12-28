@@ -542,7 +542,7 @@ following in the file's __:dependencies__ section.
 
 ```clojure
 [yada "1.1.0-SNAPSHOT"]
-[aleph "0.4.1-beta2"]
+[aleph "0.4.1-beta3"]
 ```
 
 If you want to use yada to create a web API, this is all you need to
