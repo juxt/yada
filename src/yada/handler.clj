@@ -84,7 +84,7 @@
       (some #{:get} methods) (conj :head)
       true (conj :options))))
 
-(defn- handle-request-with-context [ctx]
+(defn- handle-request-with-maybe-subresources [ctx]
   (let [resource (-> ctx :handler :resource)
         error-handler default-error-handler]
 
@@ -111,7 +111,7 @@
                   ;; to modify the interceptor-chain?
                   :interceptor-chain (-> ctx :handler :interceptor-chain)})]
           
-            (handle-request-with-context
+            (handle-request-with-maybe-subresources
              (-> ctx
                  (dissoc :base)
                  (assoc :allowed-methods (allowed-methods subresource)
@@ -163,9 +163,8 @@
 (defn- handle-request
   "Handle Ring request"
   [handler request match-context]
-  #_(infof "handle-request: %s" (:uri request))
   (let [method (:request-method request)]
-    (handle-request-with-context
+    (handle-request-with-maybe-subresources
      (merge (make-context)
             {:id (java.util.UUID/randomUUID)
              :request request
