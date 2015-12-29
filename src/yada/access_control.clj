@@ -4,6 +4,7 @@
   (:require
    [byte-streams :as b]
    [manifold.deferred :as d]
+   [clojure.string :as str]
    [clojure.tools.logging :refer :all]
    [clojure.data.codec.base64 :as base64]
    [ring.middleware.basic-authentication :as ba]))
@@ -102,7 +103,7 @@
 
         (:allow-methods access-control)
         (assoc-in [:response :headers "access-control-allow-methods"]
-                  (to-header (call-fn-maybe (:allow-methods access-control) ctx)))
+                  (to-header (map (comp str/upper-case name) (call-fn-maybe (:allow-methods access-control) ctx))))
 
         (:allow-headers access-control)
         (assoc-in [:response :headers "access-control-allow-headers"]
