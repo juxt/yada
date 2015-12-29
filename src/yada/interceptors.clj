@@ -13,6 +13,7 @@
    [ring.swagger.schema :as rs]
    [schema.coerce :as sc]
    [schema.utils :refer [error?]]
+   [yada.body :as body]
    [yada.charset :as charset]
    [yada.coerce :as coerce]
    [yada.media-type :as mt]
@@ -369,45 +370,50 @@
       (assoc-in ctx [:response :etag] etag))
     ctx))
 
-
-
 (defn create-response
   [ctx]
 
   (let [method (:method ctx)
-        body (get-in ctx [:response :body])
+        produces (get-in ctx [:response :produces])
+        body (body/to-body (get-in ctx [:response :body]) produces)
 
         response
         {:status (get-in ctx [:response :status] 200)
-         :headers (merge
-                   (get-in ctx [:response :headers])
-                   ;; TODO: The context and its response
-                   ;; map must be documented so users are
-                   ;; clear what they can change and the
-                   ;; effect of this change.
-                   (when (not= (:method ctx) :options)
-                     (merge {}
-                            (when-let [x (get-in ctx [:response :produces :media-type])]
-                              (when (or (= method :head) body)
-                                (let [y (get-in ctx [:response :produces :charset])]
-                                  (if (and y (= (:type x) "text"))
-                                    {"content-type" (mt/media-type->string (assoc-in x [:parameters "charset"] (charset/charset y)))}
-                                    {"content-type" (mt/media-type->string x)}))))
-                            (when-let [x (get-in ctx [:response :produces :encoding])]
-                              {"content-encoding" x})
-                            (when-let [x (get-in ctx [:response :produces :language])]
-                              {"content-language" x})
-                            (when-let [x (get-in ctx [:response :last-modified])]
-                              {"last-modified" x})
-                            (when-let [x (get-in ctx [:response :vary])]
-                              (when (and (not-empty x) (or (= method :head) body))
-                                {"vary" (rep/to-vary-header x)}))
-                            (when-let [x (get-in ctx [:response :etag])]
-                              {"etag" x})))
-                   (when-let [x (get-in ctx [:response :content-length])]
-                     {"content-length" x}))
+         :headers
+         (merge
+          (get-in ctx [:response :headers])
+          ;; TODO: The context and its response
+          ;; map must be documented so users are
+          ;; clear what they can change and the
+          ;; effect of this change.
+          (when (not= (:method ctx) :options)
+            (merge {}
+                   (when-let [content-length
+                              (let [cl (get-in ctx [:response :content-length])]
+                                (cond
+                                  cl (str cl)
+                                  body (or (body/content-length body) (str 0))
+                                  :otherwise nil))]
+                     {"content-length" content-length})
 
-         ;; TODO :status and :headers should be implemented like this in all cases
-         :body (get-in ctx [:response :body])}]
-    (debugf "Returning response: %s" (dissoc response :body))
+                   (when-let [x (:media-type produces)]
+                     (when (or (= method :head) body)
+                       (let [y (:charset produces)]
+                         (if (and y (= (:type x) "text"))
+                           {"content-type" (mt/media-type->string (assoc-in x [:parameters "charset"] (charset/charset y)))}
+                           {"content-type" (mt/media-type->string x)}))))
+                   (when-let [x (:encoding produces)]
+                     {"content-encoding" x})
+                   (when-let [x (:language produces)]
+                     {"content-language" x})
+                   (when-let [x (get-in ctx [:response :last-modified])]
+                     {"last-modified" x})
+                   (when-let [x (get-in ctx [:response :vary])]
+                     (when (and (not-empty x) (or (= method :head) body))
+                       {"vary" (rep/to-vary-header x)}))
+                   (when-let [x (get-in ctx [:response :etag])]
+                     {"etag" x}))))
+
+         :body body}]
+    (infof "Returning response: %s" (dissoc response :body))
     response))

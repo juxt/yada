@@ -22,13 +22,13 @@
     ;; Nil post body
     (let [response @(handler (mock/request :post "/"))]
       (is (= 200 (:status response)))
-      (is (= {} (edn/read-string (:body response)))))
+      (is (= {} (edn/read-string (bs/to-string (:body response))))))
 
     ;; Form post body
     (let [response @(handler (mock/request :post "/"
                                            {"foo" "bar"}))]
       (is (= 200 (:status response)))
-      (is (= {:form {:foo "bar"}} (edn/read-string (:body response)))))))
+      (is (= {:form {:foo "bar"}} (edn/read-string (bs/to-string (:body response))))))))
 
 ;; Need to test where strings are used rather than keywords
 
@@ -44,11 +44,11 @@
     ;; Nil post body
     (let [response @(handler (mock/request :post "/?foo=123"))]
       (is (= 200 (:status response)))
-      (is (= {:query {:foo "123"}} (edn/read-string (:body response)))))
+      (is (= {:query {:foo "123"}} (edn/read-string (bs/to-string (:body response))))))
 
     ;; Form post body
     (let [response @(handler (mock/request :post "/?foo=123"
                                            {"bar" "456"}))]
       (is (= 200 (:status response)))
       (is (=  {:query {:foo "123"}
-               :form {:bar "456"}} (edn/read-string (:body response)))))))
+               :form {:bar "456"}} (edn/read-string (bs/to-string (:body response))))))))

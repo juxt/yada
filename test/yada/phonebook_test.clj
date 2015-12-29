@@ -187,7 +187,7 @@
            :basic-auth ["tom" "watson"]
            :follow-redirects false})]
     
-    (is (= 204 (:status response)))
+    (is (= 200 (:status response)))
 
     (let [phonebook @(get-in *system* [:phonebook :atom-db :phonebook])]
       (is (not (nil? (get phonebook 1))))

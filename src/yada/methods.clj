@@ -153,16 +153,7 @@
                     {:status 500}))))
 
       (fn [res]
-        (interpret-get-result res ctx))
-
-      (fn [ctx]
-        (let [representation (get-in ctx [:response :produces])]
-          ;; representation could be nil, for example, resource could be a java.io.File
-          (update-in ctx [:response :body] body/to-body representation)))
-
-      (fn [ctx]
-        (let [content-length (body/content-length (get-in ctx [:response :body]))]
-          (cond-> ctx content-length (assoc-in [:response :content-length] content-length)))))
+        (interpret-get-result res ctx)))
 
      (d/catch
          (fn [e]
@@ -294,11 +285,11 @@
            (d/error-deferred e)))
        ;; No handler!
        (d/error-deferred
-        (ex-info (format "Resource %s does not provide a handler for :get" (type (-> ctx :handler :resource)))
+        (ex-info (format "Resource %s does not provide a handler for :delete" (type (-> ctx :handler :resource)))
                  {:status 500})))
      (fn [res]
        ;; TODO: Could we support 202 somehow?
-       (assoc-in ctx [:response :status] 204)))))
+       (interpret-delete-result res ctx)))))
 
 ;; --------------------------------------------------------------------------------
 
