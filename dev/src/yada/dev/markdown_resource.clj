@@ -13,4 +13,4 @@
     (resource
      {:produces [{:media-type #{"text/html"}}]
       :properties {:last-modified (to-date (now)) :version content}
-      :methods {:get {:handler (fn [ctx] content)}}})))
+      :methods {:get {:response (fn [ctx] content)}}})))
