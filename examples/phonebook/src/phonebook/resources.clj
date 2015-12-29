@@ -116,7 +116,6 @@
       (fn [ctx]
         (let [id (get-in ctx [:parameters :path :entry])]
           (db/delete-entry db id)
-          ;; nil body
-          nil))}}
+          (format "Entry %s has been removed" id)))}}
 
     :access-control access-control}))
