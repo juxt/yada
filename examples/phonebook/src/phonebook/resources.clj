@@ -24,7 +24,7 @@
 ;; control definition does.
 
 ;; We must be very careful not to allow a rogue script on another
-;; website to hijack our cookies.
+;; website to hijack our cookies and destroy our phonebook!.
 (def access-control
   {:authentication
    {:realms
