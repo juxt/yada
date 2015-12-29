@@ -197,7 +197,6 @@
                      (ctx/exists? ctx) 204
                      :otherwise 201)))))))
 
-
 ;; --------------------------------------------------------------------------------
 
 (defprotocol PostResult
@@ -216,6 +215,18 @@
   clojure.lang.Fn
   (interpret-post-result [f ctx]
     (interpret-post-result (f ctx) ctx))
+  java.net.URI
+  (interpret-post-result [uri ctx]
+    (let [host (str (name (get-in ctx [:request :scheme])) "://"  (get-in ctx [:request :headers "host"]))
+          origin (get-in ctx [:request :headers "origin"])]
+      (-> ctx
+          (assoc-in [:response :status] (if (= host origin) 303 201))
+          (assoc-in [:response :headers "location"] (str uri)))))
+
+  java.net.URL
+  (interpret-post-result [url ctx]
+    (interpret-post-result (.toURI url) ctx))
+  
   nil
   (interpret-post-result [_ ctx] ctx))
 

@@ -39,6 +39,8 @@
 
    :allow-origin #{"http://localhost:8090"
                    "https://yada.juxt.pro"}
+
+   :allow-methods #{:get :post :put :delete}
    
    :allow-headers ["api_key"]})
 
@@ -66,8 +68,7 @@
 
             :response (fn [ctx]
                         (let [id (db/add-entry db (get-in ctx [:parameters :form]))]
-                          (yada/redirect-after-post
-                           ctx (path-for @*routes :phonebook.api/entry :entry id))))}}
+                          (java.net.URI. nil nil (path-for @*routes :phonebook.api/entry :entry id) nil)))}}
 
     :access-control access-control}))
 
