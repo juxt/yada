@@ -251,6 +251,33 @@
 
 ;; --------------------------------------------------------------------------------
 
+(defprotocol DeleteResult
+  (interpret-delete-result [_ ctx]))
+
+(extend-protocol DeleteResult
+  Response
+  (interpret-delete-result [response ctx]
+    (assoc ctx :response response))
+
+  Boolean
+  (interpret-delete-result [b ctx]
+    (if b (assoc-in ctx [:response :status] 204)
+        (throw (ex-info "Failed to process POST" {}))))
+
+  String
+  (interpret-delete-result [s ctx]
+    (-> ctx
+        (assoc-in [:response :status] 200)
+        (assoc-in [:response :body] s)))
+  
+  clojure.lang.Fn
+  (interpret-delete-result [f ctx]
+    (interpret-delete-result (f ctx) ctx))
+
+  nil
+  (interpret-delete-result [_ ctx]
+    (assoc-in ctx [:response :status] 204)))
+
 (deftype DeleteMethod [])
 
 (extend-protocol Method
