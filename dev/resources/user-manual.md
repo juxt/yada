@@ -10,7 +10,7 @@ This manual corresponds with version 1.1.0-20151228.110457-4
 
 ### Audience
 
-This manual is the authoritative documentation to yada. As such, it is
+This manual is the authoritative documentation to yada and as such, it is
 intended for a wide audience of developers, from beginners to experts.
 
 ### Get involved
@@ -341,7 +341,7 @@ which tells us that `PUT` isn't possible. This makes sense, because we can't mut
 We could, however, wrap the Java string with a Clojure reference which
 could be changed to point at different Java strings.
 
-To demonstrate this, yada contains support for atoms. Let's add a new
+To demonstrate this, let's use a Clojure atom instead, adding the new
 resource with the identifier `http://localhost:8090/hello-atom`.
 
 ```clojure
@@ -568,28 +568,61 @@ lein run
 
 ## Parameters
 
-Many web requests contain parameters, which affect how a resource behaves. Often parameters are specified as part of the URI's query string. But parameters can also be inferred from the URI's path. It's also possible for a request to contain parameters in its headers or body, as we'll see later.
+Web requests can contain parameters that can influence the response
+and yada can capture these. This is especially useful when you are
+writing APIs.
 
-For example, let's imagine we have a fictional URI to access the transactions of a bank account.
+There are different types of parameters, which you can mix-and-match.
+
+- Query parameters (part of the request URI's query-string)
+- Path parameters (embedded in the request URI's path)
+- Request headers
+- Form data
+- Request bodies
+- Cookies
+
+There are numerous benefits to declaring the parameters you use.
+
+- yada will check they exist, and return 400 (Malformed Request) errors on
+requests that don't provide the ones you need for your logic
+- yada will coerce them to the types you want, so you can avoid writing loads of
+type-conversion logic in your code
+- yada and other tools can process your declarations independently of
+  your request-processing code, e.g. to generate API documentation
+
+For example, let's imagine a URI to access the transactions
+of a fictitious bank account.
 
 ```nohighlight
 https://bigbank.com/accounts/1234/transactions?since=tuesday
 ```
 
-There are 2 parameters here. The first, `1234`, is contained in the
-path `/accounts/1234/transactions`. We call this a _path parameter_.
+There could be 2 parameters here. The first, `1234`, is contained in the
+path `/accounts/1234/transactions`. We call this a __path parameter__.
 
-The second, `tuesday`, is embedded in the URI's query string (after
-the `?` symbol). We call this a _query parameter_.
+The second, `tuesday`, is embedded in the URI's query-string (after
+the `?` symbol). We call this a __query parameter__.
 
-yada allows you to declare both these and other types of parameter via the __:parameters__ entry in the resource description.
+You can declare these parameters in the __resource model__.
 
-Parameters must be specified for each method that the resource supports. The reason for this is because parameters can, and often do, differ depending on the method used.
+```clojure
+{:parameters {:path {:entry Long}}
+ :methods {:get {:parameters {:query {:since String}}}
+           :post {:parameters {:body …}}}
+```
 
-For example, below we have a resource description that defines the parameters for requests to a resource representing a bank account. For `GET` requests, there is both a path parameter and query parameter, for `POST` requests there is the same path parameter and a body.
+Parameters can be specified at _resource-level_ or at
+_method-level_. Path parameters are usually declared at the
+resource-level because they form part of the URI that is independent
+of the request's method. In contrast, query parameters usually apply
+to GET requests, so it's common to define this parameter at the
+_method-level_, and it's only visible if the method we declare it with
+matches the request method.
 
-We define parameter types in the style of [Prismatic](https://prismatic.com)'s
-excellent [schema](https://github.com/prismatic/schema) library.
+We declare parameter values using the syntax of
+[Prismatic](https://prismatic.com)'s
+](https://github.com/prismatic/schema) library. This allows us
+to get quite sophisticated in how we define parameters.
 
 ```clojure
 (require [schema.core :refer (defschema)]
@@ -599,44 +632,42 @@ excellent [schema](https://github.com/prismatic/schema) library.
    :description String
    :amount Double}
 
-{:parameters
-  {:get {:path {:account Long}
-         :query {:since String}}
-   :post {:path {:account Long}
-          :body Transaction}}}
+{:parameters {:path {:entry Long}}
+ :methods {:get {:parameters {:query {:since String}}}
+           :post {:parameters {:body Transaction}}}
 ```
-
-But for `POST` requests, there is a body parameter, which defines the entity body that must be sent with the request. This might be used, for example, to post a new transaction to a bank account.
-
-We can declare the parameter in the resource description's __:parameters__ entry. At runtime, these parameters are extracted from a request and  added as the __:parameters__ entry of the _request context_.
 
 ### Capturing multi-value parameters
 
-Occasionally, you may have multiple values associated with a given parameter. Query strings and HTML forms both allow for the same parameter to be specified multiple times.
+Occasionally, you may have multiple values associated with a given
+parameter. Query strings and HTML form data both allow for the same
+parameter to be specified multiple times.
 
 ```
 /search?accno=1234&accno=1235
 ```
 
-To capture all values in a vector, simply declare your parameter type in a vector,
+To capture all values in a vector, declare your parameter type as a
+vector type,
 
 ```clojure
-{:parameters
-  {:get {:query {:accno [Long]}}}}
+{:parameters {:query {:accno [Long]}}}}
 ```
 
-### Benefits to declarative parameter declaration
+### Capturing large request bodies
 
-Declaring your parameters in resource descriptions comes with numerous advantages.
+Sometimes, request bodies are very large or even unlimited. To ensure
+you don't run out of memory receiving this request data, you can
+specify more suitable containers, such as files, database blobs,
+Amazon S3 buckets or your own extensions.
 
-- Parameters are declared with types, which are automatically coerced thereby eliminating error-prone conversion code.
+All data produced and received from yada is handled efficiently and
+asynchronously, ensuring that even with very large data streams your
+service continues to work.
 
-- The parameter value will be automatically coerced to the given type. This eliminates the need to write error-prone code to parse and convert parameters into their desired type.
-
-- Parameters are pre-validated on every request, providing some defence against injection attacks. If the request if found to be invalid, a 400 response is returned.
-
-- Parameter declarations can help to document the API, for example,
-  automatic generation of Swagger specifications.
+```clojure
+{:parameters {:form {:video java.io.File}}}
+```
 
 ## Representations
 
@@ -899,7 +930,7 @@ synchronous programming model and when to use an asynchronous one.
 
 A deferred value is simply a value that may not yet be known. Examples
 include Clojure's futures, delays and promises. Deferred values are
-built into yada. For further details, see Zach Tellman's
+built into yada — for further details, see Zach Tellman's
 [manifold](https://github.com/ztellman/manifold) library.
 
 In almost all cases, it is possible to return a _deferred value_ from
@@ -914,14 +945,16 @@ Some time later the callback function will be called, and its implementation wil
 ![Async](static/img/hello-async.png)
 
 Actually, if we use Aleph or http-kit as our HTTP client the code is
-even simpler, since each return promises from their request functions.
+even simpler, since both libraries return promises from their request
+functions.
 
 ```clojure
-(require '[yada.resource :refer [Get]])
+(require '[yada.yada :refer [resource]]
+         'aleph.http :refer [get])
 
-(defrecord MyResource []
-  Get
-  (GET [_ ctx] (aleph.http/get "http://users.example.org")))
+(resource
+  {:methods
+    {:get (fn [ctx] (get "http://users.example.org"))}})
 ```
 
 In a real-world application, the ability to
@@ -933,14 +966,11 @@ can be significantly improved.
 
 Normally, exploiting asynchronous operations in handling web requests is
 difficult and requires advanced knowledge of asynchronous programming
-techniques. In yada, however, it's easy.
+techniques. In yada, however, it's easy, thanks to manifold.
 
 For a fuller explanation as to why asynchronous programming models are
-beneficial, see the [Ratpack](http://ratpack.io) documentation. Note
-that yada provides all the features of Ratpack, and more, but native to
-Clojure. The combination of Clojure and yada significantly reduces the
-amount of code you have to write to create scalable web APIs for your
-applications.
+beneficial, see the [Ratpack](http://ratpack.io) documentation. (Note
+that yada provides all the features of Ratpack and more).
 
 ## Example 3: Search engine
 
@@ -975,7 +1005,7 @@ you need to do is return a response that embodies a stream of data.
 One such example is a channel, provided by Clojure's core.async
 library.
 
-``` clojure
+```clojure
 {:methods {:get {:produces "text/event-stream"
                  :response (clojure.core.async/chan)}}}
 ```
@@ -986,7 +1016,7 @@ a copy of every message in the channel. This can be achieved easily by
 multiplexing the channel with `clojure.core.async/mult`. By providing
 a core.async Mult as a response body, yada can tap the mult.
 
-``` clojure
+```clojure
 (let [mlt (clojure.core.async/mult channel)]
   {:methods {:get {:produces "text/event-stream"
                    :response mlt}}})
@@ -1165,7 +1195,8 @@ is focussed more towards J2EE servlet containers and uses core.async directly.
 It could be argued that Pedestal is tuned more towards pragmatic
 development of useable APIs, rather than yada's prioritisation on HTTP
 compliance. Both are very much targetted for use in the kinds of
-real-world production systems we build at JUXT.
+real-world production systems we build at JUXT, and we have deployed
+Pedestal successfully in numerous projects.
 
 There are, however, numerous stylistic difference between the two
 libraries which come down to personal choice.
@@ -1222,10 +1253,10 @@ can be extended with these protocols to adapt them to use with yada.
 ### `yada.methods.Method`
 
 Every HTTP method is implemented as a type which extends the
-yada.methods.Method protocols. This way, new HTTP methods can be added
-to yada. Each type must implement the correct semantics for the
-method, although yada comes with a number of built-in methods for each
-of the most common HTTP methods.
+yada.methods.Method protocols. This way, new HTTP methods can be
+added. Each type must implement the correct semantics for the method,
+although yada comes with a number of built-in methods for each of the
+most common HTTP methods.
 
 Many method types define their own protocols so that resources can also
 help determine the behaviour. For example, the built-in `GetMethod` type
