@@ -2,33 +2,33 @@
 
 (ns yada.dev.system
   "Components and their dependency relationships"
-  (:refer-clojure :exclude (read))
+  (:refer-clojure :exclude [read])
   (:require
    [clojure.java.io :as io]
-   [clojure.tools.reader :refer (read)]
+   [clojure.tools.reader :refer [read]]
    [clojure.string :as str]
-   [clojure.tools.reader.reader-types :refer (indexing-push-back-reader)]
-   [com.stuartsierra.component :refer (system-map system-using using)]
+   [clojure.tools.reader.reader-types :refer [indexing-push-back-reader]]
+   [com.stuartsierra.component :refer [system-map system-using using]]
    [modular.component.co-dependency :as co-dependency]
 
-   [modular.bidi :refer (new-router new-web-resources new-archived-web-resources new-redirect)]
-   [yada.dev.docsite :refer (new-docsite)]
-   [yada.dev.console :refer (new-console)]
-   [yada.dev.cors-demo :refer (new-cors-demo)]
-   [yada.dev.talks :refer (new-talks)]
-   [yada.dev.user-manual :refer (new-user-manual)]
-   [yada.dev.database :refer (new-database)]
-   [yada.dev.user-api :refer (new-verbose-user-api)]
-   [modular.aleph :refer (new-webserver)]
-   [modular.component.co-dependency :refer (co-using system-co-using)]
-
+   [modular.bidi :refer [new-router new-web-resources new-archived-web-resources new-redirect]]
+   [yada.dev.docsite :refer [new-docsite]]
+   [yada.dev.console :refer [new-console]]
+   [yada.dev.cors-demo :refer [new-cors-demo]]
+   [yada.dev.talks :refer [new-talks]]
+   [yada.dev.user-manual :refer [new-user-manual]]
+   [yada.dev.database :refer [new-database]]
+   [yada.dev.user-api :refer [new-verbose-user-api]]
+   [modular.aleph :refer [new-webserver]]
+   [modular.component.co-dependency :refer [co-using system-co-using]]
+   [yada.dev.swagger :refer [new-phonebook-swagger-ui-index]]
    [yada.dev.config :as config]
-   [yada.dev.hello :refer (new-hello-world-example)]
-   [yada.dev.async :refer (new-sse-example)]
-   [yada.dev.error-example :refer (new-error-example)]
+   [yada.dev.hello :refer [new-hello-world-example]]
+   [yada.dev.async :refer [new-sse-example]]
+   [yada.dev.error-example :refer [new-error-example]]
 
-   [phonebook.system :refer (new-phonebook)]
-   [selfie.system :refer (new-selfie-app)]))
+   [phonebook.system :refer [new-phonebook]]
+   [selfie.system :refer [new-selfie-app]]))
 
 (defn database-components [system]
   (assoc system :database (new-database)))
@@ -64,6 +64,8 @@
 
 (defn swagger-ui-components [system]
   (assoc system
+         :phonebook-swagger-ui-index
+         (new-phonebook-swagger-ui-index)
          :swagger-ui
          (new-web-resources
           :key :swagger-ui
@@ -137,7 +139,8 @@
    :cors-demo-server {:request-handler :cors-demo-router}
    :talks-server {:request-handler :talks-router}
 
-   :docsite-router [:swagger-ui
+   :docsite-router [:phonebook-swagger-ui-index
+                    :swagger-ui
                     :hello-world
                     :sse-example
                     ;;:error-example

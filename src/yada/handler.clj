@@ -11,6 +11,8 @@
    [clojure.pprint :refer [pprint]]
    [yada.media-type :as mt]
    [yada.charset :as charset]
+   [yada.access-control :as ac]
+   [yada.interceptors :as i]
    [yada.protocols :as p]
    [yada.representation :as rep]
    [yada.response :refer [->Response]]
@@ -37,46 +39,7 @@
       (when data (errorf "ex-data: %s" data)))))
 
 ;; Response
-(defn create-response
-  [ctx]
 
-  (let [method (:method ctx)
-        body (get-in ctx [:response :body])
-
-        response
-        {:status (get-in ctx [:response :status] 200)
-         :headers (merge
-                   (get-in ctx [:response :headers])
-                   ;; TODO: The context and its response
-                   ;; map must be documented so users are
-                   ;; clear what they can change and the
-                   ;; effect of this change.
-                   (when (not= (:method ctx) :options)
-                     (merge {}
-                            (when-let [x (get-in ctx [:response :produces :media-type])]
-                              (when (or (= method :head) body)
-                                (let [y (get-in ctx [:response :produces :charset])]
-                                  (if (and y (= (:type x) "text"))
-                                    {"content-type" (mt/media-type->string (assoc-in x [:parameters "charset"] (charset/charset y)))}
-                                    {"content-type" (mt/media-type->string x)}))))
-                            (when-let [x (get-in ctx [:response :produces :encoding])]
-                              {"content-encoding" x})
-                            (when-let [x (get-in ctx [:response :produces :language])]
-                              {"content-language" x})
-                            (when-let [x (get-in ctx [:response :last-modified])]
-                              {"last-modified" x})
-                            (when-let [x (get-in ctx [:response :vary])]
-                              (when (and (not-empty x) (or (= method :head) body))
-                                {"vary" (rep/to-vary-header x)}))
-                            (when-let [x (get-in ctx [:response :etag])]
-                              {"etag" x})))
-                   (when-let [x (get-in ctx [:response :content-length])]
-                     {"content-length" x}))
-
-         ;; TODO :status and :headers should be implemented like this in all cases
-         :body (get-in ctx [:response :body])}]
-    (debugf "Returning response: %s" (dissoc response :body))
-    response))
 
 (defn allowed-methods [resource]
   (let [methods (set (keys (:methods resource)))]
@@ -149,6 +112,7 @@
 
                    (d/chain
                     (cond-> (make-context)
+                      true (merge (select-keys ctx [:id :request :method :handler]))
                       status (assoc-in [:response :status] status)
                       (:headers data) (assoc-in [:response :headers] (:headers data))
                       (not (:body data)) ((fn [ctx]
@@ -158,20 +122,29 @@
                                                   (assoc-in [:response :headers "content-length"] (body/content-length b))))))
 
                       rep (assoc-in [:response :produces] rep))
-                    create-response)))))))))
+                    ac/access-control-headers
+                    i/create-response)))))))))
 
 (defn- handle-request
   "Handle Ring request"
   [handler request match-context]
-  (let [method (:request-method request)]
+  (let [method (:request-method request)
+        method-wrapper (get (:known-methods handler) method)
+        id (java.util.UUID/randomUUID)]
     (handle-request-with-maybe-subresources
+     ;; TODO: Possibly we should merge the request-specific details
+     ;; with the handler, and remove the explicit distinction between
+     ;; the handler and request.
+
+     ;; TODO: Possibly no real need for the convenient
+     ;; method-wrapper. Perhaps better to use yada.context to access
+     ;; this structure.
      (merge (make-context)
-            {:id (java.util.UUID/randomUUID)
+            {:id id
              :request request
              :method method
-             :method-wrapper (get (:known-methods handler) method)
-             :handler handler
-             }))))
+             :method-wrapper method-wrapper
+             :handler handler}))))
 
 (defrecord Handler []
   clojure.lang.IFn

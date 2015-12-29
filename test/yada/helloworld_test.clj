@@ -19,7 +19,7 @@
   (->>
    (for [[k v] headers]
      (case k
-       "content-length" (when-not (and (number? v) (not (neg? v)) ) "content-length not a non-negative number")
+       "content-length" nil
        "content-type" (when-not (mt/string->media-type v) "mime-type not valid")
        "last-modified" (when-not (instance? Date (parse-date v)) "last-modified not a date")
        "vary" (when-not (pos? (count (parse-csv v))) "vary empty")
@@ -104,7 +104,7 @@
         response @(resource (request :options "/"))
         headers (:headers response)]
     (is (= 200 (:status response)))
-    (is (=  #{"allow"} (set (keys headers))))
+    (is (=  #{"allow" "content-length"} (set (keys headers))))
     (is (= [] (validate-headers? headers)))
     (is (= #{"OPTIONS" "GET" "HEAD"} (set (parse-csv (get headers "allow")))))
     (is (nil? (:body response)))))
@@ -114,7 +114,7 @@
         response @(resource (request :options "/"))
         headers (:headers response)]
     (is (= 200 (:status response)))
-    (is (= #{"allow"} (set (keys headers))))
+    (is (= #{"allow" "content-length"} (set (keys headers))))
     (is (= [] (validate-headers? headers)))
     (is (= #{"OPTIONS" "GET" "HEAD" "PUT" "DELETE"} (set (parse-csv (get headers "allow")))))
     (is (nil? (:body response)))))

@@ -149,7 +149,7 @@
               (d/error-deferred e)))
           ;; No handler!
           (d/error-deferred
-           (ex-info (format "Resource %s does not provide a handler for :get" (type (:resource ctx)))
+           (ex-info (format "Resource %s does not provide a handler for :get" (type (-> ctx :handler :resource)))
                     {:status 500}))))
 
       (fn [res]
@@ -169,7 +169,7 @@
            (if (:status (ex-data e))
              (throw e)
              (throw (ex-info "Error on GET" {:response (:response ctx)
-                                             :resource (type (:resource ctx))
+                                             :resource (type (-> ctx :handler :resource))
                                              :error e}))))))))
 
 ;; --------------------------------------------------------------------------------
@@ -184,7 +184,7 @@
   (request [_ ctx]
     (let [f (get-in ctx [:handler :resource :methods (:method ctx) :response]
                     (constantly (d/error-deferred
-                                 (ex-info (format "Resource %s does not provide a handler for :put" (type (:resource ctx)))
+                                 (ex-info (format "Resource %s does not provide a handler for :put" (type (-> ctx :handler :resource)))
                                           {:status 500}))))]
       (d/chain
        (f ctx)
@@ -256,7 +256,7 @@
            (d/error-deferred e)))
        ;; No handler!
        (d/error-deferred
-        (ex-info (format "Resource %s does not provide a handler for :get" (type (:resource ctx)))
+        (ex-info (format "Resource %s does not provide a handler for :get" (type (-> ctx :handler :resource)))
                  {:status 500})))
      (fn [res]
        ;; TODO: Could we support 202 somehow?
@@ -264,23 +264,17 @@
 
 ;; --------------------------------------------------------------------------------
 
-(defprotocol Options
-  (OPTIONS [_ ctx]))
-
-(defprotocol OptionsResult
-  (interpret-options-result [_ ctx]))
-
-(extend-protocol OptionsResult
-  Response
-  (interpret-options-result [response ctx]
-    (assoc ctx :response response))
-  clojure.lang.Fn
-  (interpret-options-result [f ctx]
-    (interpret-options-result (f ctx) ctx))
-  nil
-  (interpret-options-result [_ ctx] ctx))
-
 (deftype OptionsMethod [])
+
+;; TODO: Vary Origin: http://www.w3.org/TR/cors/#list-of-origins
+;; "Resources that wish to enable themselves to be shared with
+;; multiple Origins but do not respond uniformly with "*" must in
+;; practice generate the Access-Control-Allow-Origin header
+;; dynamically in response to every request they wish to allow. As a
+;; consequence, authors of such resources should send a Vary: Origin
+;; HTTP header or provide other appropriate control directives to
+;; prevent caching of such responses, which may be inaccurate if
+;; re-used across-origins."
 
 (extend-protocol Method
   OptionsMethod
@@ -288,26 +282,10 @@
   (safe? [_] true)
   (idempotent? [_] true)
   (request [_ ctx]
-    (let [ctx (assoc-in ctx [:response :headers "allow"]
-                        (str/join ", " (map (comp (memfn toUpperCase) name) (-> ctx :handler :allowed-methods))))]
-      ;; TODO: Build in explicit support for CORS pre-flight requests
-      (if (satisfies? Options (:resource ctx))
-        (d/chain
-         (OPTIONS (:resource ctx) ctx)
-         (fn [res]
-           (interpret-options-result res ctx)))
-        ctx)
-
-      ;; For example, for a resource supporting CORS
-      #_(link ctx
-          (if-let [origin (service/allow-origin (:resource ctx) ctx)]
-            (update-in ctx [:response :headers]
-                       merge {"access-control-allow-origin"
-                              origin
-                              "access-control-allow-methods"
-                              (apply str
-                                     (interpose ", " ["GET" "POST" "PUT" "DELETE"]))})))
-      )))
+    (-> ctx
+        (assoc-in [:response :headers "allow"]
+                  (str/join ", " (map (comp (memfn toUpperCase) name) (-> ctx :handler :allowed-methods))))
+        (assoc-in [:response :headers "content-length"] (str 0)))))
 
 ;; --------------------------------------------------------------------------------
 

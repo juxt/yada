@@ -15,10 +15,36 @@
    [yada.yada :as yada])
   (:import [manifold.stream.core IEventSource]))
 
+;; A custom scheme (indicated by the absence of a :scheme entry).
+;; You can plugin your own authenticator here, with full access to yada's request context.
+;; This authenticator is just a simple example to allow the Swagger UI to access the phonebook.
+
+;; Access to our phonebook is public, but if we want to modify it we
+;; must have sufficient authorization. This is what this access
+;; control definition does.
+
+;; We must be very careful not to allow a rogue script on another
+;; website to hijack our cookies.
+(def access-control
+  {:authentication
+   {:realms
+    {"phonebook"
+     {:schemes
+      [{:scheme "Basic"
+        :authenticator {["tom" "watson"] "tom@ibm.com"}}
+       {:authenticator
+        (fn [ctx]
+          (cond
+            (= (get-in ctx [:request :headers "api_key"]) "masterkey") "swagger"))}]}}}
+
+   :allow-origin #{"http://localhost:8090"
+                   "https://yada.juxt.pro"}
+   
+   :allow-headers ["api_key"]})
+
 (defn new-index-resource [db *routes]
   (resource
-   {
-    :produces [{:media-type
+   {:produces [{:media-type
                 #{"text/html" "application/edn;q=0.9" "application/json;q=0.8"}
                 :charset "UTF-8"}]
     
@@ -43,7 +69,7 @@
                           (yada/redirect-after-post
                            ctx (path-for @*routes :phonebook.api/entry :entry id))))}}
 
-    :access-control {:allow-origin "*"}}))
+    :access-control access-control}))
 
 (defn new-entry-resource [db *routes]
   (resource
@@ -90,4 +116,6 @@
         (let [id (get-in ctx [:parameters :path :entry])]
           (db/delete-entry db id)
           ;; nil body
-          nil))}}}))
+          nil))}}
+
+    :access-control access-control}))

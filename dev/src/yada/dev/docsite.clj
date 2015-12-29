@@ -72,7 +72,7 @@
                                (config/phonebook-origin config)
                                (path-for (:server phonebook) :phonebook.api/index))} "Phonebook"]
                    [:a {:href
-                        (format "%s/index.html?url=%s"
+                        (format "%s/phonebook-swagger.html?url=%s"
                                 (path-for @*router :swagger-ui)
                                 (str (config/docsite-origin config) (path-for @*router ::phonebook-swagger-spec))
                                 

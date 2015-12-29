@@ -50,6 +50,7 @@
 
 (def request-decorators
   [middleware/decorate-method
+   middleware/decorate-basic-auth
    middleware/decorate-url])
 
 (defn wrap-request
@@ -78,6 +79,7 @@
         post-response @(http/post
                         (str prefix "/phonebook")
                         {:pool test-connection-pool
+                         :basic-auth ["tom" "watson"]
                          :follow-redirects false
                          :headers {"content-type" "application/x-www-form-urlencoded"}
                          :body (codec/form-encode {:firstname "Kath" :surname "Read" :phone "1236"})})]
@@ -94,6 +96,7 @@
         (let [get-response @(http/get
                              (str prefix location)
                              {:pool test-connection-pool
+                              :basic-auth ["tom" "watson"]
                               :follow-redirects false})]
           (is (= 200 (:status get-response))))))))
 
@@ -127,6 +130,7 @@
           "http://localhost:9015/phonebook/2"
           {:pool test-connection-pool
            :follow-redirects false
+           :basic-auth ["tom" "watson"]
            :headers
            {"content-type" (format "multipart/form-data;charset=utf-8;boundary=%s" boundary)
             "content-length" content-length}
@@ -141,6 +145,7 @@
         @(http/put
           "http://localhost:9015/phonebook/2"
           {:pool test-connection-pool
+           :basic-auth ["tom" "watson"]
            :follow-redirects false
            :headers {"content-type" (format "multipart/form-data;charset=utf-8;boundary=%s" boundary)
                      "content-length" content-length}
@@ -163,6 +168,7 @@
       (let [get-response @(http/get
                            "http://localhost:9015/phonebook/2"
                            {:pool test-connection-pool
+                            :basic-auth ["tom" "watson"]
                             :follow-redirects false})]
         (is (= (:status get-response) 200))))))
 
@@ -171,6 +177,7 @@
         @(http/delete
           "http://localhost:9015/phonebook/2"
           {:pool test-connection-pool
+           :basic-auth ["tom" "watson"]
            :follow-redirects false})]
     
     (is (= 204 (:status response)))
@@ -186,6 +193,7 @@
                            {:pool test-connection-pool
                             ;; TODO: Why do we get edn when no accept header? Because no accept header implies */*, and error negotiation means that edn wins.
                             ;;:headers {"accept" "text/html"}
+                            :basic-auth ["tom" "watson"]
                             :follow-redirects false})]
 
         (is (= 404 (:status get-response)))))))

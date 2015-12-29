@@ -161,7 +161,7 @@ convenience of terse, expressive short-hand descriptions."}
 (s/defschema Properties
   {(s/optional-key :properties) (s/conditional
                                  fn? PropertiesHandlerFunction
-                                 (comp not fn?) PropertiesResult)})
+                                 :else PropertiesResult)})
 
 (def PropertiesMappings {})
 
@@ -217,14 +217,49 @@ convenience of terse, expressive short-hand descriptions."}
           ContextFunction as-fn}
          RepresentationSeqMappings))
 
+;; Many HTTP headers are comma separated. We should accept these
+;; verbatim strings in our schema.
+
+(s/defschema Strings [s/Str])
+(s/defschema StringSet #{s/Str})
+(s/defschema Keywords [s/Keyword])
+
+(def HeaderMappings 
+  {StringSet (fn [x]
+               (cond
+                 (string? x) (set (clojure.string/split x #"\s*,\s*"))
+                 :otherwise (set (map str x))))
+   Strings (fn [x]
+             (cond
+               (string? x) (clojure.string/split x #"\s*,\s*")
+               :otherwise (map str x)))
+   Keywords (fn [x]
+              (cond
+                (string? x) (map keyword (clojure.string/split x #"\s*,\s*"))
+                :otherwise (vec x)))})
+
+(s/defschema Cors
+  {(s/optional-key :allow-origin) (s/conditional fn? (s/=> (s/conditional ifn? #{s/Str} :else s/Str) Context) :else StringSet)
+   (s/optional-key :allow-credentials) s/Bool
+   (s/optional-key :expose-headers) (s/conditional fn? ContextFunction :else Strings)
+   (s/optional-key :max-age) (s/conditional fn? ContextFunction :else s/Int)
+   (s/optional-key :allow-methods) (s/conditional fn? ContextFunction :else Keywords)
+   (s/optional-key :allow-headers) (s/conditional fn? ContextFunction :else Strings)})
+
+(def Realm s/Str)
+
 (s/defschema AccessControl
   {(s/optional-key :access-control)
-   {(s/optional-key :allow-origin) ContextFunction
-    (s/optional-key :expose-headers) ContextFunction
-    (s/optional-key :allow-headers) ContextFunction}})
+   ;; TODO: Don't enforce ContextFunction, it hides constants from
+   ;; tools!
+   (merge Cors
+          {(s/optional-key :authentication)
+           {(s/optional-key :realms)
+            {Realm {:schemes [{(s/optional-key :scheme) s/Str
+                               (s/optional-key :authenticator) s/Any}]}}}})})
 
 (def AccessControlMappings
-  {ContextFunction as-fn})
+  (merge HeaderMappings {ContextFunction as-fn}))
 
 (s/defschema ResourceDocumentation
   CommonDocumentation)
