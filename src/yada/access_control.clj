@@ -10,7 +10,7 @@
    [ring.middleware.basic-authentication :as ba]))
 
 (defmulti authenticate-with-scheme
-  ""
+  "Multimethod that allows new schemes to be added."
   (fn [ctx {:keys [scheme]}] scheme))
 
 (defmethod authenticate-with-scheme "Basic"

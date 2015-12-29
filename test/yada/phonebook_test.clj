@@ -76,13 +76,20 @@
 
 (deftest post-test
   (let [prefix "http://localhost:9015"
-        post-response @(http/post
-                        (str prefix "/phonebook")
-                        {:pool test-connection-pool
-                         :basic-auth ["tom" "watson"]
-                         :follow-redirects false
-                         :headers {"content-type" "application/x-www-form-urlencoded"}
-                         :body (codec/form-encode {:firstname "Kath" :surname "Read" :phone "1236"})})]
+        post-response
+        @(http/post
+          (str prefix "/phonebook")
+          {:pool test-connection-pool
+           :basic-auth ["tom" "watson"]
+           :follow-redirects false
+           :headers {"content-type" "application/x-www-form-urlencoded"
+                     "origin" "http://localhost:9015"
+                     ;; Must set the host to be the same origin in
+                     ;; order to get redirects to happen. Redirects
+                     ;; are "disallowed for cross-origin requests that
+                     ;; require preflight."
+                     "host" "localhost:9015"}
+           :body (codec/form-encode {:firstname "Kath" :surname "Read" :phone "1236"})})]
     (is (= 303 (:status post-response)))
     (let [location (get-in post-response [:headers "location"])]
       (is (re-matches #"/phonebook/\d+" location)))
