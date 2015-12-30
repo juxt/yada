@@ -178,29 +178,6 @@
                                    (:request ctx)
                                    (fn [user password] {:user user :password password}))))))
 
-(def realms-xf
-  (comp
-   (filter (comp (partial = :basic) :type))
-   (map :realm)))
-
-#_(defn authorization
-  "Authorization"
-  [ctx]
-  (if-let [res (service/authorize (-> ctx :handler :authorization) ctx)]
-    (if (= res :not-authorized)
-      (d/error-deferred
-       (ex-info ""
-                (merge
-                 {:status 401}
-                 (when-let [basic-realm (first (sequence realms-xf (-> ctx :handler :security)))]
-                   {:headers {"www-authenticate" (format "Basic realm=\"%s\"" basic-realm)}}))))
-
-      (if-let [auth (service/authorization res)]
-        (assoc ctx :authorization auth)
-        ctx))
-
-    (d/error-deferred (ex-info "" {:status 403}))))
-
 (defn select-representation
   "Proactively negotatiate the best representation for the payload
   body of the response. This does not mean that the
@@ -415,5 +392,4 @@
                      {"etag" x}))))
 
          :body body}]
-    (infof "Returning response: %s" (dissoc response :body))
     response))

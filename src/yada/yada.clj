@@ -11,14 +11,15 @@
    yada.resources.string-resource
    yada.resources.url-resource
    yada.resources.sse
+   yada.util
    [potemkin :refer (import-vars)]))
 
 (import-vars
  [yada.core yada]
  [yada.swagger swaggered]
  [yada.resource resource]
- [yada.protocols as-resource])
-
+ [yada.protocols as-resource]
+ [yada.util get-host-origin])
 
 ;; Convenience functions, allowing us to encapsulate the context
 ;; structure.

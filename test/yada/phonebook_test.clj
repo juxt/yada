@@ -84,6 +84,7 @@
            :follow-redirects false
            :headers {"content-type" "application/x-www-form-urlencoded"
                      "origin" "http://localhost:9015"
+                     "accept" "application/edn"
                      ;; Must set the host to be the same origin in
                      ;; order to get redirects to happen. Redirects
                      ;; are "disallowed for cross-origin requests that
@@ -92,20 +93,10 @@
            :body (codec/form-encode {:firstname "Kath" :surname "Read" :phone "1236"})})]
     (is (= 303 (:status post-response)))
     (let [location (get-in post-response [:headers "location"])]
-      (is (re-matches #"/phonebook/\d+" location)))
+        (is (re-matches #"/phonebook/\d+" location)))
     (let [headers (set (keys (get post-response :headers)))]
-      (is (set/superset? headers #{"content-length"}))
-      (is (not (set/superset? headers #{"content-type"}))))
-    
-    (testing "Get what we've posted"
-      (let [location (get-in post-response [:headers "location"])]
-        (is (re-matches #"/phonebook/\d+" location))
-        (let [get-response @(http/get
-                             (str prefix location)
-                             {:pool test-connection-pool
-                              :basic-auth ["tom" "watson"]
-                              :follow-redirects false})]
-          (is (= 200 (:status get-response))))))))
+        (is (set/superset? headers #{"content-length"}))
+        (is (not (set/superset? headers #{"content-type"}))))))
 
 (def boundary "BoundaryZ3oJB7WHOBmOjrEi")
 

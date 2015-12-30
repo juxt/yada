@@ -9,10 +9,14 @@
    [clojure.set :as set]
    [clojure.test :refer :all]
    [clojure.edn :as edn]
+   [clojure.data.codec.base64 :as base64]
    [ring.mock.request :refer [request]]
    [phonebook.util :refer [to-string]]
    [phonebook.db :as db]
    [phonebook.api :refer [api]]))
+
+(defn encode-basic-authorization [user password]
+  (str "Basic " (b/to-string (base64/encode (.getBytes (str user ":" password))))))
 
 (def full-seed {1 {:surname "Sparks"
                    :firstname "Malcolm"
@@ -45,10 +49,12 @@
 (deftest create-entry
   (let [db (db/create-db {})
         h (make-handler (create-api db))
-        req (request :post "/phonebook" {"surname" "Pither" "firstname" "Jon" "phone" "1235"})
+        req (-> (request :post "/phonebook" {"surname" "Pither" "firstname" "Jon" "phone" "1235"})
+                (update :headers assoc
+                        "authorization" (encode-basic-authorization "tom" "watson")))
         response @(h req)]
 
-    (is (= 303 (:status response)))
+    (is (= 201 (:status response)))
     (is (set/superset? (set (keys (:headers response)))
                        #{"location" "content-length"}))
     (is (nil? (:body response)))))
@@ -74,6 +80,6 @@
     (is (= (db/count-entries db) 2))
     (let [req (request :delete "/phonebook/1")
           response @(h req)]
-      (is (= 204 (:status response)))
-      (is (nil? (:body response)))
+      (is (= 200 (:status response)))
+      (is (= "Entry 1 has been removed" (b/to-string (:body response))))
       (is (= (db/count-entries db) 1)))))

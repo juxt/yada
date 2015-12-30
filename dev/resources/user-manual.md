@@ -747,9 +747,65 @@ agent chooses from a list of representations provided by the server.
 
 [coming soon]
 
-## Security and Access Control (CORS)
+## Security
 
-[coming soon]
+As in all other areas, yada aims for 100% compliance with core HTTP
+standards when it comes to security. The relevant documents in this
+case is https://tools.ietf.org/html/rfc7235#section-2.2
+
+Also, since HTTP APIs are increasingly used to facilitate
+transactional integration between systems across the web using a
+browser, it is important that yada fully supports applications that
+want to open up services to other applications, across origins, as
+standardised by CORS: http://www.w3.org/TR/cors/
+
+With security, it is important to understand the concepts, processes
+and standards in some detail. While yada can help with good security
+defaults, no matter how easy it is to use it is still important that
+you are familiar with security concepts, so read this chapter
+carefully.
+
+Security is a broad subject which we break security into the following
+sections.
+
+- Authentication
+- Authorization
+- Cross-Origin Resource Sharing (CORS)
+- Miscellaneous defenses
+
+In yada, authentication and authorization are broken into 2 separate
+stages.
+
+### Authentication
+
+Authentication is the process of establishing the identity of a
+person, with reasonable confidence that the person is not an impostor.
+
+In yada, authentication happens after the request parameters have been
+processed, so you can use them to establish the identity of the
+user. However, authentication happens before the resource's properties
+have been loaded. Thus, if the user is not genuine, we might well save
+a wasted trip to the resource's data-store.
+
+### Authorization
+
+Authorization is the process of allowing a user access to a
+resource. This may require knowledge about the user only (for example,
+in
+[Role-based access control](https://en.wikipedia.org/wiki/Role-based_access_control)). Authorization
+may also depend on properties of the resource identified by the HTTP
+request's URI (as part of an
+[Attribute-based access control](https://en.wikipedia.org/wiki/Attribute-based_access_control)
+authorization scheme).
+
+In either case, we assume that the user has already been
+authenticated, and we are confident that their credentials are
+genuine.
+
+In yada, authorization happens _after_ the resource's properties has
+been loaded, because it may be necessary to check some aspect of the
+resource itself as part of the authorization process.
+
 
 ### Cross-Origin Resource Sharing (CORS)
 

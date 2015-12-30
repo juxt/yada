@@ -10,14 +10,14 @@
 (deftest allow-origin-test
   (testing "No Origin header means no CORS processing at all"
     (let [res (resource {:methods {:get "Hello"}
-                         :access-control {:allow-origin "*"}})
+                         :cors {:allow-origin "*"}})
           handler (yada res)
           resp @(handler (mock/request :get "/"))]
       (is (not (contains? (set (keys (:headers resp))) "access-control-allow-origin")))))
 
   (testing "Wildcard origin"
     (let [res (resource {:methods {:get "Hello"}
-                         :access-control {:allow-origin "*"}})
+                         :cors {:allow-origin "*"}})
           handler (yada res)
           resp @(handler (-> (mock/request :get "/")
                              (update :headers conj ["origin" "http://localhost"])))]
@@ -26,7 +26,7 @@
 
   (testing "Specific origin"
     (let [res (resource {:methods {:get "Hello"}
-                         :access-control {:allow-origin "http://localhost"}})
+                         :cors {:allow-origin "http://localhost"}})
           handler (yada res)
           resp @(handler (-> (mock/request :get "/")
                              (update :headers conj ["origin" "http://localhost"])))]
@@ -35,9 +35,9 @@
 
   (testing "Specific origin with choice"
     (let [res (resource {:methods {:get "Hello"}
-                         :access-control {:allow-origin ["http://localhost"
-                                                         "http://yada.juxt.pro"
-                                                         ]}})
+                         :cors {:allow-origin ["http://localhost"
+                                               "http://yada.juxt.pro"
+                                               ]}})
           handler (yada res)
           resp @(handler (-> (mock/request :get "/")
                              (update :headers conj ["origin" "http://localhost"])))]
@@ -46,9 +46,9 @@
 
   (testing "Specific origin falling outside choice"
     (let [res (resource {:methods {:get "Hello"}
-                         :access-control {:allow-origin ["http://localhost"
-                                                         "http://yada.juxt.pro"
-                                                         ]}})
+                         :cors {:allow-origin ["http://localhost"
+                                               "http://yada.juxt.pro"
+                                               ]}})
           handler (yada res)
           resp @(handler (-> (mock/request :get "/")
                              ;; HT to @bbatsov

@@ -141,3 +141,12 @@
    (select-keys resource-params [:body])
    (select-keys method-params [:body])))
 
+;; Request helpers
+
+(defn get-host-origin [req]
+  (str (name (:scheme req)) "://"  (get-in req [:headers "host"])))
+
+(defn same-origin? [req]
+  (let [host (get-host-origin req)
+        origin (get-in req [:headers "origin"])]
+    (= host origin)))

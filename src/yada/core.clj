@@ -3,12 +3,14 @@
 (ns yada.core
   (:require
    [schema.utils :refer [error?]]
-   [yada.access-control :as ac]
+   [yada.security :as sec]
    [yada.handler :refer [new-handler] :as handler]
    [yada.interceptors :as i]
    [yada.methods :as methods]
    [yada.protocols :as p]
    [yada.schema :as ys]))
+
+;; TODO: Move these final remnants to yada.handler and finally delete this ns!
 
 (def default-interceptor-chain
   [i/available?
@@ -17,10 +19,10 @@
    i/TRACE
    i/method-allowed?
    i/parse-parameters
-   ac/authenticate
+   sec/authenticate
    i/get-properties
+   sec/authorize
    i/process-request-body
-;;   authorization
    i/check-modification-time
    i/select-representation
    ;; if-match and if-none-match computes the etag of the selected
@@ -32,7 +34,7 @@
    i/invoke-method
    i/get-new-properties
    i/compute-etag
-   ac/access-control-headers
+   sec/access-control-headers
    i/create-response])
 
 (defn yada

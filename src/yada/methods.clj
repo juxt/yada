@@ -10,6 +10,7 @@
    [yada.body :as body]
    [yada.context :as ctx]
    [yada.protocols :as p]
+   [yada.util :as util]
    yada.response)
   (:import
    [yada.response Response]
@@ -208,11 +209,11 @@
     (interpret-post-result (f ctx) ctx))
   java.net.URI
   (interpret-post-result [uri ctx]
-    (let [host (str (name (get-in ctx [:request :scheme])) "://"  (get-in ctx [:request :headers "host"]))
-          origin (get-in ctx [:request :headers "origin"])]
-      (-> ctx
-          (assoc-in [:response :status] (if (= host origin) 303 201))
-          (assoc-in [:response :headers "location"] (str uri)))))
+    (-> ctx
+        (assoc-in [:response :status]
+                  (if (util/same-origin? (:request ctx)) 303 201))
+        (assoc-in [:response :headers "location"]
+                  (str uri))))
 
   java.net.URL
   (interpret-post-result [url ctx]

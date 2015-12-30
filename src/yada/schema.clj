@@ -185,11 +185,20 @@ convenience of terse, expressive short-hand descriptions."}
     {(s/optional-key :form) s/Any
      (s/optional-key :body) s/Any}}))
 
+(s/defschema Authorization
+  {(s/optional-key :role) #{s/Keyword}})
+
+(def AuthorizationMappings
+  {#{s/Keyword} (fn [x] (cond (coll? x) (set x)
+                              (keyword? x) #{x}
+                            ))})
+
 (s/defschema Method
   (merge Response
          MethodParameters
          Produces
          Consumes
+         Authorization
          MethodDocumentation
          {NamespacedKeyword s/Any}))
 
@@ -215,7 +224,8 @@ convenience of terse, expressive short-hand descriptions."}
 (def MethodsMappings
   (merge {Method as-method-map
           ContextFunction as-fn}
-         RepresentationSeqMappings))
+         RepresentationSeqMappings
+         AuthorizationMappings))
 
 ;; Many HTTP headers are comma separated. We should accept these
 ;; verbatim strings in our schema.
@@ -239,24 +249,22 @@ convenience of terse, expressive short-hand descriptions."}
                 :otherwise (vec x)))})
 
 (s/defschema Cors
-  {(s/optional-key :allow-origin) (s/conditional fn? (s/=> (s/conditional ifn? #{s/Str} :else s/Str) Context) :else StringSet)
-   (s/optional-key :allow-credentials) s/Bool
-   (s/optional-key :expose-headers) (s/conditional fn? ContextFunction :else Strings)
-   (s/optional-key :max-age) (s/conditional fn? ContextFunction :else s/Int)
-   (s/optional-key :allow-methods) (s/conditional fn? ContextFunction :else Keywords)
-   (s/optional-key :allow-headers) (s/conditional fn? ContextFunction :else Strings)})
+  {(s/optional-key :cors)
+   {(s/optional-key :allow-origin) (s/conditional fn? (s/=> (s/conditional ifn? #{s/Str} :else s/Str) Context) :else StringSet)
+    (s/optional-key :allow-credentials) s/Bool
+    (s/optional-key :expose-headers) (s/conditional fn? ContextFunction :else Strings)
+    (s/optional-key :max-age) (s/conditional fn? ContextFunction :else s/Int)
+    (s/optional-key :allow-methods) (s/conditional fn? ContextFunction :else Keywords)
+    (s/optional-key :allow-headers) (s/conditional fn? ContextFunction :else Strings)}})
 
 (def Realm s/Str)
 
 (s/defschema AccessControl
-  {(s/optional-key :access-control)
-   ;; TODO: Don't enforce ContextFunction, it hides constants from
-   ;; tools!
-   (merge Cors
-          {(s/optional-key :authentication)
-           {(s/optional-key :realms)
-            {Realm {:schemes [{(s/optional-key :scheme) s/Str
-                               (s/optional-key :authenticator) s/Any}]}}}})})
+  (merge Cors
+         {(s/optional-key :authentication)
+          {(s/optional-key :realms)
+           {Realm {:schemes [{(s/optional-key :scheme) s/Str
+                              (s/optional-key :authenticator) s/Any}]}}}}))
 
 (def AccessControlMappings
   (merge HeaderMappings {ContextFunction as-fn}))

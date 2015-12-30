@@ -11,7 +11,7 @@
    [clojure.pprint :refer [pprint]]
    [yada.media-type :as mt]
    [yada.charset :as charset]
-   [yada.access-control :as ac]
+   [yada.security :as sec]
    [yada.interceptors :as i]
    [yada.protocols :as p]
    [yada.representation :as rep]
@@ -115,14 +115,16 @@
                       true (merge (select-keys ctx [:id :request :method :handler]))
                       status (assoc-in [:response :status] status)
                       (:headers data) (assoc-in [:response :headers] (:headers data))
-                      (not (:body data)) ((fn [ctx]
-                                            (let [b (body/to-body (body/render-error status e rep ctx) rep)]
-                                              (-> ctx
-                                                  (assoc-in [:response :body] b)
-                                                  (assoc-in [:response :headers "content-length"] (body/content-length b))))))
+
+                      (not (:body data))
+                      ((fn [ctx]
+                         (let [b (body/to-body (body/render-error status e rep ctx) rep)]
+                           (-> ctx
+                               (assoc-in [:response :body] b)
+                               (assoc-in [:response :headers "content-length"] (str (body/content-length b)))))))
 
                       rep (assoc-in [:response :produces] rep))
-                    ac/access-control-headers
+                    sec/access-control-headers
                     i/create-response)))))))))
 
 (defn- handle-request
