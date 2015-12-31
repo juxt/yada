@@ -32,7 +32,7 @@ changed the yada API and replaced most of the old protocols with a
 the following dependency instead :-
 
 ```clojure
-[yada "1.1.0-20151228.110457-4"]
+[yada "1.1.0-20151231.174657-5"]
 ```
 [![Build Status](https://travis-ci.org/juxt/yada.png)](https://travis-ci.org/juxt/yada)
 
