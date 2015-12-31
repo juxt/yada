@@ -1185,25 +1185,31 @@ web server.
 
 ### SSE with yada
 
-It's _really_ easy to create Server Sent Event streams with yada. All
-you need to do is return a response that embodies a stream of data.
+To create Server Sent Event streams with yada, return a stream of data
+from a response.
 
-One such example is a channel, provided by Clojure's core.async
-library.
+For example, a stream of data could be a core.async channel. It is
+important that you set the representation to be `text/event-stream`,
+so that a client recognises this as a Server Sent Event stream and
+keeps the connection open.
 
 ```clojure
+(require '[clojure.core.async :refer [chan]])
+
 {:methods {:get {:produces "text/event-stream"
-                 :response (clojure.core.async/chan)}}}
+                 :response (chan)}}}
 ```
 
 It is, however, highly unusual to want to provide a channel of data to
 a single client. Typically, what is required is that each client gets
 a copy of every message in the channel. This can be achieved easily by
-multiplexing the channel with `clojure.core.async/mult`. By providing
-a core.async Mult as a response body, yada can tap the mult.
+multiplexing the channel with `clojure.core.async/mult`, which yada
+will recognise and tap on your behalf.
 
 ```clojure
-(let [mlt (clojure.core.async/mult channel)]
+(require '[clojure.core.async :refer [mult]])
+
+(let [mlt (mult channel)]
   {:methods {:get {:produces "text/event-stream"
                    :response mlt}}})
 ```
