@@ -815,7 +815,44 @@ nothing to do with the actual resource. Thus, if the user is not
 genuine, we might well save a wasted trip to the resource's
 data-store.
 
+Resources may exist inside a _protection space_ determined by one or
+more _realms_. Each resource declares the realm (or realms) it is
+protected by, as part of the __:authentication__ entry of its
+__resource-model__. Each realm determines the _authentication scheme_
+governing how requests are authenticated.
 
+yada supports numerous authentication schemes, include custom ones you
+can provide yourself. Here is an example of a resource which uses Basic
+authentication described in [RFC 2617](https://www.ietf.org/rfc/rfc2617.txt)
+
+```clojure
+{:authentication
+  {:realms
+    {"my-realm"
+     {:schemes
+      [{:scheme "Basic"
+        :authenticator (fn [user password] …}]}}}}
+```
+
+Each scheme has an authenticator, usually a function (depending on the
+scheme). If the authenticator returns truthy, the request is deemed to
+be authentic and the return value is retained in the request
+context. Therefore, the return value should contain user profile
+information and any role(s) that might be used in the later
+authorization stage, in the special :role entry.
+
+```clojure
+(fn [user password]
+  …
+  {:email "bob@acme.com"
+   :role #{:admin}})
+```
+
+If the authenticator returns nil, then this does not mean the request
+is not authorized. It may be that access to the particular resource is
+still possible without authenticated credentials. However, the
+response will contain information about the authentication schemes in
+place, via the WWW-Authenticate header, as per RFC 7235.
 
 ### Authorization
 
@@ -836,6 +873,19 @@ In yada, authorization happens _after_ the resource's properties has
 been loaded, because it may be necessary to check some aspect of the
 resource itself as part of the authorization process.
 
+Any method can be protected by declaring a role or set of roles in its model.
+
+```clojure
+{:methods {:post {:response (fn [ctx] …)
+                  :role :admin}}}
+```
+
+Of course, authentication information is available in the request
+context when a method is invoked, so any method may apply its own
+custom authorization logic as necessary. However, yada encourages
+developers to adopt a declarative approach to resources wherever
+possible, to maximise the integration opportunities with other
+libraries and tools.
 
 ### Cross-Origin Resource Sharing (CORS)
 
