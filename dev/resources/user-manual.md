@@ -78,17 +78,14 @@ resource) and returns a **handler**. This is both a _function_
 that can be used to create responses from Ring requests, and a
 _data-model_ that can be further modified (if desired).
 
-``` clojure
+```clojure
 (require '[yada.yada :refer [yada resource]])
 
 (yada (resource {…}))
 ```
 
-Finally, yada is built on a fully asynchronous core, bringing
-exceptional performance and scalability to your websites and APIs.
-
-With yada, you can build richer, more interoperable and interconnected
-systems, that scale and are _built to last_.
+Finally, yada is built on a fully asynchronous core, bringing high
+performance and scalability to your websites and APIs.
 
 ## Example 1: Hello World!
 
@@ -106,7 +103,7 @@ brevity, we'll be using Clojure.
 First we require the `yada` function, which Clojure needs to know
 where it comes from.
 
-We give it our string and the result is a **handler**.
+We give it our string and it returns a __handler__.
 
 (Just a minute!  We just said that the argument to give to `yada` was
 a **resource model** (a _map_). Well, that's true, but yada has some
@@ -337,7 +334,8 @@ Content-Length: 0
 ```
 
 Both the `PUT` and the `OPTIONS` response contain an __Allow__ header
-which tells us that `PUT` isn't possible. This makes sense, because we can't mutate a Java string.
+which tells us that `PUT` isn't possible. This makes sense, because we
+can't mutate a Java string.
 
 We could, however, wrap the Java string with a Clojure reference which
 could be changed to point at different Java strings.
@@ -397,8 +395,8 @@ is "Hello Dolly!".
 
 But what if someone _did_ manage to `PUT` their change ahead of yours?
 Their version would now be overwritten. That might not be what you
-wanted. To ensure we don't override someone's change, we could have set
-the __If-Match__ header using the __ETag__ value.
+wanted. To ensure we don't override someone's change, we could have
+set the __If-Match__ header using the __ETag__ value.
 
 Let's test this now, using the ETag value we got before we sent our
 `PUT` request.
@@ -408,7 +406,6 @@ curl -i http://localhost:8090/hello -X PUT -H "If-Match: 1462348343" -d "Hello D
 ```
 
 [fill out]
-
 
 Before reverting our code back to the original, without the atom, let's see the Swagger UI again.
 
@@ -435,32 +432,40 @@ Date: Thu, 23 Jul 2015 14:42:26 GMT
 Content-Length: 0
 ```
 
-The response does not have a body, but tells us the headers we would get
-if we were to try a `GET` request.
+The response does not have a body, but tells us the headers we would
+get if we were to try a `GET` request.
 
 For more details about HEAD queries, see [insert reference here].
 
 #### Parameters
 
-Often, a resource's state will not be constant, but depend in some way on the request itself. Let's say we want to pass a parameter to the resource, via a query parameter.
+Often, a resource's state or behavior will depend on parameters in the
+request. Let's say we want to pass a parameter to the resource, via a
+query parameter.
 
-First, let's call name our query parameter `p`. Since the state is
-sensitive to the request, we specify a function rather than a value. The
-function takes a single parameter called the _request context_, denoted
-by the symbol `ctx`.
+To show this, we'll write some real code :-
 
 ```clojure
-(yada
-  (fn [ctx] (format "Hello %s!\n" (get-in ctx [:parameters :p])))
-  {:parameters {:get {:query {:p String}}}})
+(require '[yada.yada :refer [yada resource]])
+
+(defn say-hello [ctx]
+  (str "Hello " (get-in ctx [:parameters :query :p]) "!\n"))
+
+(def hello-parameters-resource
+  (resource
+    {:methods
+      {:get
+        {:parameters {:query {:p String}}
+         :produces "text/plain"
+         :response say-hello}}}))
+
+(def handler (yada hello-parameters-resource))
 ```
 
-Parameters are declared using additional key-value arguments after the first argument. They are declared on a per-method, per-type basis.
+This declares a resource with a GET method, which responds with a
+plain-text message formed from the query parameter.
 
-If the request correctly contains the parameter, it will be available in
-the request context, via the __:parameters__ key.
-
-Let's see this in action
+Let's see this in action: [http://localhost:8090/hello-parameters?p=Ken](http://localhost:8090/hello-parameters?p=Ken)
 
 ```nohighlight
 curl -i http://localhost:8090/hello-parameters?p=Ken
@@ -473,29 +478,40 @@ Connection: Keep-Alive
 Date: Mon, 27 Jul 2015 16:31:59 GMT
 Content-Length: 7
 
-Hi Ken
+Hello Ken!
 ```
 
 As well as query parameters, yada supports path parameters, request
-headers, form parameters and whole request bodies. It can also coerce
-parameters to a range of types. For more details, see
-[insert reference here].
+headers, form data, cookies and request bodies. It can also coerce
+parameters to a range of types. For more details, see the
+[Parameters](#Parameters) chapter.
 
 #### Content negotiation
 
 Let's suppose we wanted to provide our greeting in both (simplified)
-Chinese and English.
+Chinese and English. Again, we can declare these two languages in the
+__resource-model__.
 
 We add an option indicating the language codes of the two languages we
 are going to support. We can then
 
 ```clojure
-(yada
-  (fn [ctx]
-    (case (yada/language ctx)
-      "zh-ch" "你好世界!\n"
-      "en" "Hello World!\n"))
-  :language ["zh-ch" "en"])
+(require '[yada.yada :as yada :refer [yada resource]])
+
+(defn say-hello [ctx]
+  (case (yada/language ctx)
+    "zh-ch" "你好世界!\n"
+    "en" "Hello World!\n"))
+
+(def hello-languages-resource
+  (resource
+    {:methods
+      {:get
+        {:produces {:media-type "text/plain"
+                    :language #{"zh-ch" "en"}}
+         :response say-hello}}}))
+
+(def handler (yada hello-languages-resource))
 ```
 
 Let's test this by providing a request header which indicates a
@@ -559,7 +575,6 @@ You can then 'run' yada on your local machine to provide off-line access the doc
 ```nohighlight
 cd yada
 lein run
-
 ```
 
 (`lein` is available from [http://leiningen.org](http://leiningen.org))
@@ -769,31 +784,23 @@ agent chooses from a list of representations provided by the server.
 ## Security
 
 As in all other areas, yada aims for 100% compliance with core HTTP
-standards when it comes to security. The relevant documents in this
-case is https://tools.ietf.org/html/rfc7235#section-2.2
-
-Also, since HTTP APIs are increasingly used to facilitate
-transactional integration between systems across the web using a
-browser, it is important that yada fully supports applications that
-want to open up services to other applications, across origins, as
-standardised by CORS: http://www.w3.org/TR/cors/
+standards when it comes to security, notably
+[RFC 7235](https://tools.ietf.org/html/rfc7235). Also, since HTTP APIs
+are nowadays used to facilitate transactional integration between
+systems via the user's browser, it is critically important that yada
+fully supports applications that want to open up services to other
+applications, across origins, as standardised by
+[CORS](http://www.w3.org/TR/cors/).
 
 With security, it is important to understand the concepts, processes
-and standards in some detail. While yada can help with good security
-defaults, no matter how easy it is to use it is still important that
-you are familiar with security concepts, so read this chapter
-carefully.
-
-Security is a broad subject which we break security into the following
-sections.
-
-- Authentication
-- Authorization
-- Cross-Origin Resource Sharing (CORS)
-- Miscellaneous defenses
+and standards in detail. While yada can help with good security
+defaults and attempts to make security configuration easier, it is
+still important that you are familiar with security concepts, so read
+this chapter carefully.
 
 In yada, authentication and authorization are broken into 2 separate
-stages.
+stages. We'll deal with these stages in turn, before discussing other
+security features.
 
 ### Authentication
 
@@ -801,10 +808,14 @@ Authentication is the process of establishing the identity of a
 person, with reasonable confidence that the person is not an impostor.
 
 In yada, authentication happens after the request parameters have been
-processed, so you can use them to establish the identity of the
-user. However, authentication happens before the resource's properties
-have been loaded. Thus, if the user is not genuine, we might well save
-a wasted trip to the resource's data-store.
+processed, so if necessary they can be used to establish the identity
+of the user. However, it is important to remember that authentication
+happens before the resource's properties have been loaded, as it has
+nothing to do with the actual resource. Thus, if the user is not
+genuine, we might well save a wasted trip to the resource's
+data-store.
+
+
 
 ### Authorization
 
