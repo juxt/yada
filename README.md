@@ -12,33 +12,18 @@ It has the following features
 * Async foundation based on [manifold](https://github.com/ztellman/manifold)
 * Protocol extensibility
 
-Full documentation for the latest stable release is available at
+Full documentation for the latest beta (1.1.x) release is available at
 [https://yada.juxt.pro](https://yada.juxt.pro) and offline (see below).
-
-Incomplete documentation for 1.1.x is available [here](dev/resources/user-manual.md).
 
 ## Installation
 
 Add the following dependency to your
 `project.clj` file
 
-[![Clojars Project](http://clojars.org/yada/latest-version.svg)](http://clojars.org/yada)
-
-The 1.0.0 release is the same as the `1.0.0-20150903.093751-9`
-version, tagged on 2015-09-03. All new development has been taking
-place on the master branch (currently the 1.1.x series) which has
-changed the yada API and replaced most of the old protocols with a
-'pure' data model. For the latest 'alpha' release in this series, use
-the following dependency instead :-
-
 ```clojure
 [yada "1.1.0-20151231.174657-5"]
 ```
 [![Build Status](https://travis-ci.org/juxt/yada.png)](https://travis-ci.org/juxt/yada)
-
-Documentation for the 1.1.x series is being actively updated from the
-1.0 release, and may be out-of-date in a few places. Please refer to
-the tests and examples for more accurate information.
 
 ## Dependencies
 
@@ -46,20 +31,7 @@ yada requires the following :-
 
 - a Java JDK/JRE installation, version 8 or above
 - Clojure 1.7.0
-- Aleph 0.4.1 or above (provided via a dependency)
-
-## Status
-
-Versions 1.0.x are stable and have been used in real projects in
-production. However, being a 1.0.x library, there are missing pieces
-of functionality and some bugs that might affect you, so always test
-yada with your project to ensure you are happy with the quality before
-putting a project live.
-
-Eventually the much more comprehensive 1.1.x will supercede 1.0.x and
-be officially supported. However, at this time, the 1.1.x series is
-still in alpha. If you use 1.0.x, please be happy to upgrade to 1.1.x
-when it is out of beta.
+- Aleph 0.4.1-beta3 or above (provided via a dependency)
 
 ## Running documentation and examples offline
 
@@ -107,6 +79,7 @@ suggestions.
 * Ernestas Lisauskas
 * Thomas van der Veen
 * Leandro Demartini
+* Craig McCraig of the clan McCraig
 
 ## Copyright & License
 
