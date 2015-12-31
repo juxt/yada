@@ -12,7 +12,9 @@
 
 (defmulti authenticate-with-scheme
   "Multimethod that allows new schemes to be added."
-  (fn [ctx {:keys [scheme]}] scheme))
+  (fn [ctx {:keys [scheme]}]
+    (infof "authenticate-with-scheme: %s" scheme)
+    scheme))
 
 (defmethod authenticate-with-scheme "Basic"
   [ctx {:keys [authenticator]}]
@@ -29,6 +31,7 @@
 ;; authenticate the user from it.
 (defmethod authenticate-with-scheme nil
   [ctx {:keys [authenticator]}]
+  (infof "authenticate with nil scheme, authenticator is %s" authenticator)
   (when authenticator
     (authenticator ctx)))
 
@@ -62,31 +65,34 @@
     ;; Note that a response can have multiple challenges, one for each realm.
     (reduce
      (fn [ctx [realm {:keys [schemes]}]]
-       
-       (if-let [user (some (partial authenticate-with-scheme ctx) schemes)]
-         (-> ctx
-             (assoc-in [:authentication realm] user)
-             (update-in [:authentication :combined-roles]
-                        (fnil set/union #{}) (set (:roles user))))
-         ;; Otherwise, let the client know how they might
-         ;; authenticate in a future request. Note, this is
-         ;; not necessarily a 401, we don't know yet, we'll
-         ;; determine that later in 'authorize'. See RFC 7235
-         ;; section 4.1 - "A server generating a 401
-         ;; (Unauthorized) response MUST send a
-         ;; WWW-Authenticate header field containing at least
-         ;; one challenge.  A server MAY generate a
-         ;; WWW-Authenticate header field in other response
-         ;; messages to indicate that supplying credentials
-         ;; (or different credentials) might affect the
-         ;; response."
-         (update-in ctx [:response :headers "www-authenticate"]
-                    (fnil conj [])
-                    (str/join ", "
-                              (filter some?
-                                      (for [{:keys [scheme]} schemes]
-                                        (when scheme
-                                          (format "%s realm=\"%s\"" scheme realm))))))))
+
+       (infof "authenticating with realm %s" realm)
+       (let [credentials (some (partial authenticate-with-scheme ctx) schemes)]
+         (infof "credentials are %s" credentials)
+         (if credentials
+           (-> ctx
+               (assoc-in [:authentication realm] credentials)
+               (update-in [:authentication :combined-roles]
+                          (fnil set/union #{}) (set (:roles credentials))))
+           ;; Otherwise, let the client know how they might
+           ;; authenticate in a future request. Note, this is
+           ;; not necessarily a 401, we don't know yet, we'll
+           ;; determine that later in 'authorize'. See RFC 7235
+           ;; section 4.1 - "A server generating a 401
+           ;; (Unauthorized) response MUST send a
+           ;; WWW-Authenticate header field containing at least
+           ;; one challenge.  A server MAY generate a
+           ;; WWW-Authenticate header field in other response
+           ;; messages to indicate that supplying credentials
+           ;; (or different credentials) might affect the
+           ;; response."
+           (update-in ctx [:response :headers "www-authenticate"]
+                      (fnil conj [])
+                      (str/join ", "
+                                (filter some?
+                                        (for [{:keys [scheme]} schemes]
+                                          (when scheme
+                                            (format "%s realm=\"%s\"" scheme realm)))))))))
      ctx (get-in ctx [:handler :resource :authentication :realms]))))
 
 (defn authorize

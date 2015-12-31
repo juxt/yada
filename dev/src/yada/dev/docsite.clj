@@ -47,8 +47,6 @@
       ((yada source) req))))
 
 (defn index [{:keys [*router phonebook config]}]
-  (infof "config is %s" config)
-  (infof "phonebook origin is %s" (config/origin config :phonebook))
   (yada
    (->
     (new-template-resource

@@ -48,8 +48,6 @@
       true (conj :options))))
 
 (defn- handle-request-with-maybe-subresources [ctx]
-  (infof "handle-request-with-maybe-subresources")
-
   (let [resource (-> ctx :handler :resource)
         error-handler default-error-handler]
 
@@ -132,6 +130,7 @@
 (defn- handle-request
   "Handle Ring request"
   [handler request match-context]
+  (infof "handle request: %s" (:headers request))
   (let [method (:request-method request)
         method-wrapper (get (:known-methods handler) method)
         id (java.util.UUID/randomUUID)]

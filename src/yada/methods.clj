@@ -266,6 +266,18 @@
   (interpret-delete-result [f ctx]
     (interpret-delete-result (f ctx) ctx))
 
+  clojure.lang.PersistentArrayMap
+  (interpret-delete-result [m ctx]
+    (-> ctx
+        (assoc-in [:response :status] 200)
+        (assoc-in [:response :body] m)))
+
+  clojure.lang.PersistentHashMap
+  (interpret-delete-result [m ctx]
+    (-> ctx
+        (assoc-in [:response :status] 200)
+        (assoc-in [:response :body] m)))
+
   nil
   (interpret-delete-result [_ ctx]
     (assoc-in ctx [:response :status] 204)))

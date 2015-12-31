@@ -39,11 +39,10 @@
        ;; Here's the scheme that let's use process api-keys
        {:authenticator
         (fn [ctx]
-          (let [k (get-in ctx [:request :headers "api_key"])]
+          (let [k (get-in ctx [:request :headers "Api-Key"])]
             (cond
               (= k "masterkey") {:user "swagger" :roles #{:phonebook/write}}
-              (= k "lesserkey") {:user "swagger" :roles #{}}
-              )))}]}}}
+              (= k "lesserkey") {:user "swagger" :roles #{}})))}]}}}
 
    :cors
    {
@@ -56,19 +55,21 @@
     ;; our mutable methods
     :allow-methods (fn [ctx]
                      ;; If same origin, or origin is our swagger ui,
-                     ;; we'll allow all the methods
-                     (when (#{"http://localhost:8090"
-                              "https://yada.juxt.pro"
-                              (yada/get-host-origin (:request ctx))}
-                            (get-in ctx [:request :headers "origin"]))
-                       #{:get :post :put :delete}))
+                     ;; we'll allow the unsafe methods
+                     (if (#{"http://localhost:8090"
+                            "https://yada.juxt.pro"
+                            "http://yada.juxt.pro.local"
+                            (yada/get-host-origin (:request ctx))}
+                          (get-in ctx [:request :headers "origin"]))
+                       #{:get :post :put :delete}
+                       #{:get}))
 
     ;; It's a feature of our restricted write-access policy that we don't need to
     ;; authenticate users from other origins.
     :allow-credentials false
 
     ;; Required for the Swagger key
-    :allow-headers ["api_key"]}
+    :allow-headers ["Api-Key"]}
    })
 
 (defn new-index-resource [db *routes]
@@ -127,9 +128,12 @@
        {:form {:surname String
                :firstname String
                :phone String}}
+
        :consumes
        [{:media-type #{"multipart/form-data"
                        "application/x-www-form-urlencoded"}}]
+
+       :role :phonebook/write
        :response
        (fn [ctx]
          (let [entry (get-in ctx [:parameters :path :entry])
@@ -139,10 +143,16 @@
            (db/update-entry db entry form)))}
 
       :delete
-      {:response
+      {:role :phonebook/write
+       :produces #{"text/plain" "application/json;q=0.9"}
+       :response
        (fn [ctx]
          (let [id (get-in ctx [:parameters :path :entry])]
            (db/delete-entry db id)
-           (format "Entry %s has been removed" id)))}}}
+           (let [msg (format "Entry %s has been removed" id)]
+             (case (get-in ctx [:response :produces :media-type :name])
+               "text/plain" (str msg "\n")
+               ;; We need to support JSON for the Swagger UI
+               "application/json" {:message msg}))))}}}
 
     (merge access-control))))
