@@ -40,6 +40,7 @@
 
   :profiles
   {:dev {:main yada.dev.main
+         :jvm-opts ["-Xmx512m"]
 
          :plugins [[lein-cljsbuild "1.0.6"]
                    ;;[lein-less "1.7.5"]
