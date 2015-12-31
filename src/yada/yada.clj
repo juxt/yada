@@ -31,4 +31,3 @@
 
 (defn language [ctx]
   (get-in ctx [:response :produces :language]))
-

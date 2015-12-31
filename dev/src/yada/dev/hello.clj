@@ -12,7 +12,7 @@
    [yada.dev.config :as config]
    [yada.dev.template :refer [new-template-resource]]
    [yada.swagger :refer [swaggered]]
-   [yada.yada :as yada :refer [yada]]
+   [yada.yada :as yada :refer [yada resource]]
    [bidi.bidi :refer [tag]]
    yada.resources.sse))
 
@@ -35,6 +35,30 @@
                      :description "A String inside a Clojure atom, swaggered"}
               :basePath "/hello-atom-swagger"}
              ["/hello" (hello-atom)]))
+
+(defn say-hello [ctx]
+  (str "Hello " (get-in ctx [:parameters :query :p]) "!\n"))
+
+(defn hello-parameters []
+  (yada
+   (resource
+    {:methods
+     {:get
+      {:parameters {:query {:p String}}
+       :produces "text/plain"
+       :response say-hello}}})))
+
+#_(defn hello-languages []
+  (yada
+   (resource
+    {:methods
+     {:get
+      {:produces [{:media-type "text/plain"
+                   :language #{"zh-ch" "en"}}]
+       :response (fn [ctx]
+                   (case (yada/language ctx)
+                     "zh-ch" "你好世界!\n"
+                     "en" "Hello World!\n"))}}})))
 
 (defn hello-sse [ch]
   (go-loop [t 0]
@@ -111,6 +135,12 @@
             [""
              [["/hello" (tag (hello) ::hello)]
               ["/hello-atom" (tag (hello-atom) ::hello-atom)]
+
+              ;; Parameters
+              ["/hello-parameters" (tag (hello-parameters) ::hello-parameters)]
+
+              ;; Content-negotiation
+;;              ["/hello-languages" (tag (hello-languages) ::hello-languages)]
 
               ;; Swagger
               ["/hello-swagger" (tag (hello-swagger) ::hello-swagger)]
