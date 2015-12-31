@@ -581,7 +581,58 @@ lein run
 
 ## Resources
 
-[coming soon]
+Resources are defined by __resource models__, which are just data.
+
+In Clojure, resource models are usually authored as map literals but
+they can be derived programmatically from other sources.
+
+Resource models are defined by a strict schema, which ensures that
+resource models are properly specified before using them in request
+handlers.
+
+```clojure
+(require '[yada.yada :refer [resource]])
+
+(def my-web-resource
+  (resource
+    {:id …
+     :description …
+     :summary …
+     :parameters {…}
+     :produces {…}
+     :consumes {…}
+     :authentication {…}
+     :cors {…}
+     :properties {…}
+     :methods {…}
+     :custom/other {…}}))
+```
+
+Parts of the canonical resource model structure can be quite
+verbose. To make the job of authoring resource models easier a variety
+of literal short-hand forms are available. Short-forms are
+automatically coerced to their canonical equivalents.
+
+For example
+
+```clojure
+{:produces "text/html"}
+```
+
+is automatically coerced to a canonical form
+
+```clojure
+{:produces [{:media-type "text/html"}]}
+```
+
+There are numerous other short-hands. If in doubt, learn the canonical
+form and use that until you discover the short-hand for it. If you
+make a mistake, the schema validation errors should help you figure
+out what the problem is. (Schema validation and coercion is made
+possible by Prismatic's Schema library).
+
+In yada, the resource model is the central concept. The following
+chapters describe various aspects of the resource-model.
 
 ## Parameters
 
@@ -712,7 +763,9 @@ Content negotiation is an important feature of HTTP, allowing clients
 and servers to agree on how a resource can be represented to best meet
 the availability, compatibility and preferences of both parties. It is
 a key factor in the survival of services over time, since both new and
-legacy formats can be supported concurrently.
+legacy media-types can be supported concurrently. (It is also the
+mechanism by which new versions of media-types can be introduced, even
+media-types that define hypermedia interactions, more on this later.)
 
 ### Proactive negotiation
 
@@ -732,8 +785,9 @@ Let's start with a simple web-page example.
 {:produces "text/html"}
 ```
 
-This is a short-hand for writing.
+This is a short-hand for writing [...]
 
+[missing text here]
 
 ```clojure
 {:produces [{:media-type "text/plain"
@@ -742,14 +796,10 @@ This is a short-hand for writing.
             {:media-type "text/plain"
              :language "zh-ch"
              :charset "Shift_JIS;q=0.9"}]
+             ```
 
-(yada
-  (fn [ctx]
-    (case (get-in ctx [:response :representation :language])
-            "zh-ch" "你好世界!\n"
-            "en" "Hello World!\n"))
-  :representations )
-```
+[ todo - languages ]
+
 
 ```nohighlight
 curl -i http://localhost:8090/hello-languages -H "Accept-Charset: Shift_JIS" -H
@@ -1216,7 +1266,7 @@ The interceptor chain, established on the creation of a handler, is a vector.
 
 ### Resource model schema
 
-[coming soon]
+This is defined in `yada.schema`.
 
 ### Handler schema
 
