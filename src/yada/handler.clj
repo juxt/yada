@@ -130,7 +130,6 @@
 (defn- handle-request
   "Handle Ring request"
   [handler request match-context]
-  (infof "handle request: %s" (:headers request))
   (let [method (:request-method request)
         method-wrapper (get (:known-methods handler) method)
         id (java.util.UUID/randomUUID)]

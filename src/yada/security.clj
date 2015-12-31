@@ -13,7 +13,6 @@
 (defmulti authenticate-with-scheme
   "Multimethod that allows new schemes to be added."
   (fn [ctx {:keys [scheme]}]
-    (infof "authenticate-with-scheme: %s" scheme)
     scheme))
 
 (defmethod authenticate-with-scheme "Basic"
@@ -31,7 +30,6 @@
 ;; authenticate the user from it.
 (defmethod authenticate-with-scheme nil
   [ctx {:keys [authenticator]}]
-  (infof "authenticate with nil scheme, authenticator is %s" authenticator)
   (when authenticator
     (authenticator ctx)))
 
@@ -65,10 +63,7 @@
     ;; Note that a response can have multiple challenges, one for each realm.
     (reduce
      (fn [ctx [realm {:keys [schemes]}]]
-
-       (infof "authenticating with realm %s" realm)
        (let [credentials (some (partial authenticate-with-scheme ctx) schemes)]
-         (infof "credentials are %s" credentials)
          (if credentials
            (-> ctx
                (assoc-in [:authentication realm] credentials)

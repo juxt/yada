@@ -144,15 +144,17 @@
 
       :delete
       {:role :phonebook/write
-       :produces #{"text/plain" "application/json;q=0.9"}
+       :produces "text/plain"
        :response
        (fn [ctx]
          (let [id (get-in ctx [:parameters :path :entry])]
            (db/delete-entry db id)
            (let [msg (format "Entry %s has been removed" id)]
+             (infof "mediatype for delete is %s" (get-in ctx [:response :produces :media-type :name]))
              (case (get-in ctx [:response :produces :media-type :name])
                "text/plain" (str msg "\n")
+               "text/html" (html [:h2 msg])
                ;; We need to support JSON for the Swagger UI
-               "application/json" {:message msg}))))}}}
+               {:message msg}))))}}}
 
     (merge access-control))))

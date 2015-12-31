@@ -65,7 +65,9 @@
     (is (= (db/count-entries db) 2))
     (let [req (->
                (request :put "/phonebook/2" (slurp (io/resource "phonebook/update-data")))
-               (assoc-in [:headers "content-type"] "multipart/form-data; boundary=ABCD"))
+               (update :headers assoc
+                       "content-type" "multipart/form-data; boundary=ABCD"
+                       "authorization" (encode-basic-authorization "tom" "watson")))
           response @(h req)]
 
       (is (= 204 (:status response)))
@@ -78,8 +80,11 @@
   (let [db (db/create-db full-seed)
         h (make-handler (create-api db))]
     (is (= (db/count-entries db) 2))
-    (let [req (request :delete "/phonebook/1")
+    (let [req (-> (request :delete "/phonebook/1")
+                  (update :headers assoc
+                          "accept" "text/plain"
+                          "authorization" (encode-basic-authorization "tom" "watson")))
           response @(h req)]
       (is (= 200 (:status response)))
-      (is (= "Entry 1 has been removed" (b/to-string (:body response))))
+      (is (= "Entry 1 has been removed\n" (b/to-string (:body response))))
       (is (= (db/count-entries db) 1)))))
