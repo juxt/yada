@@ -158,3 +158,25 @@
         ;; TODO: Test a lot more, like content-type
         [:headers "content-language"] := "en"
         [:body to-string] := "Hello World!\n"))))
+
+;; TODO: Fix this horrible issue when resources fail to compile
+
+;; java.lang.IllegalArgumentException: No implementation of method: :resolve-handler of protocol: #'bidi.bidi/Matched found for class: java.lang.Boolean
+;; 	at clojure.core$_cache_protocol_fn.invoke(core_deftype.clj:554)
+;; 	at bidi.bidi$eval10740$fn__10754$G__10729__10761.invoke(bidi.cljc:183)
+;; 	at bidi.bidi$match_pair.invoke(bidi.cljc:193)
+;; 	at bidi.bidi$eval10852$fn__10853$fn__10854.invoke(bidi.cljc:307)
+;; 	at clojure.core$some.invoke(core.clj:2570)
+;; 	at bidi.bidi$eval10852$fn__10853.invoke(bidi.cljc:307)
+;; 	at bidi.bidi$eval10740$fn__10754$G__10729__10761.invoke(bidi.cljc:183)
+;; 	at bidi.bidi$match_pair.invoke(bidi.cljc:193)
+;; 	at bidi.bidi$match_route_STAR_.invoke(bidi.cljc:353)
+;; 	at bidi.ring$make_handler$fn__12583.invoke(ring.clj:36)
+;; 	at clojure.core$some_fn$sp2__6927.invoke(core.clj:7148)
+;; 	at aleph.http.server$handle_request$fn__35246$f__20364__auto____35247.invoke(server.clj:153)
+;; 	at clojure.lang.AFn.run(AFn.java:22)
+;; 	at io.aleph.dirigiste.Executor$Worker$1.run(Executor.java:62)
+;; 	at manifold.executor$thread_factory$reify__20246$f__20247.invoke(executor.clj:36)
+;; 	at clojure.lang.AFn.run(AFn.java:22)
+;; 	at java.lang.Thread.run(Thread.java:745)
+

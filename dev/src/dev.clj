@@ -72,7 +72,7 @@
   (refresh :after 'dev/go))
 
 (defn test-all []
-  (clojure.test/run-all-tests #"yada.*test$"))
+  (clojure.test/run-all-tests #"(yada|phonebook).*test$"))
 
 (defn routes []
   (-> system :docsite-router :routes))

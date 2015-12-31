@@ -1,19 +1,23 @@
-{:scheme #cond {:dev "http" :prod "https"}
+{:proxy? #cond {:dev false
+                :prod true
+                :local true}
 
- :host #cond {:dev "localhost"
-              :prod "yada.juxt.pro"}
+ :docsite {:scheme #cond {:dev "http" :prod "https" :local "http"}
+           :host #cond {:dev "localhost"
+                        :prod "yada.juxt.pro"
+                        :local "yada.juxt.pro.local"}
+           :port 8090}
 
- :ports {:docsite #cond {:dev 8090 :prod 8090}
-         :console 8091
-         :cors-demo 8092
-         :talks 8093}
-
- :phonebook {:port 8099
+ :phonebook {:scheme #cond {:dev "http" :prod "https" :local "http"}
+             :host #cond {:dev "localhost"
+                          :prod "yada-phonebook.juxt.pro"
+                          :local "yada-phonebook.juxt.pro.local"}
+             :port 8099
+             
              :entries {1 {:surname "Sparks"
                           :firstname "Malcolm"
                           :phone "1234"}
                        2 {:surname "Pither"
                           :firstname "Jon"
-                          :phone "1235"}}}
+                          :phone "1235"}}}}
 
- :selfie {:port 8098}}

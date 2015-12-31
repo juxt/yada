@@ -44,10 +44,11 @@
 (defn rfc []
   (fn [req]
     (let [source (io/resource (format "spec/rfc%s.html" (get-in req [:route-params :rfc])))]
-      (infof "source is %s" source)
       ((yada source) req))))
 
-(defn index [{:keys [*router cors-demo-router talks-router console-router phonebook selfie config]}]
+(defn index [{:keys [*router phonebook config]}]
+  (infof "config is %s" config)
+  (infof "phonebook origin is %s" (config/origin config :phonebook))
   (yada
    (->
     (new-template-resource
@@ -69,28 +70,19 @@
                   
                   [:li
                    [:a {:href (str
-                               (config/phonebook-origin config)
+                               (config/origin config :phonebook)
                                (path-for (:server phonebook) :phonebook.api/index))} "Phonebook"]
                    [:a {:href
+                        ;; TODO: use bidi's path-for
                         (format "%s/phonebook-swagger.html?url=%s"
                                 (path-for @*router :swagger-ui)
-                                (str (config/docsite-origin config) (path-for @*router ::phonebook-swagger-spec))
+                                (str (config/origin config :docsite) (path-for @*router ::phonebook-swagger-spec))
                                 
                                 )}
                     " (Swagger)"]
                    " — to demonstrate custom records implementing standard HTTP methods"]
 
-                  [:li [:a {:href (str
-                                   (config/selfie-origin config)
-                                   (path-for (:server selfie) :selfie.api/index))} "Selfie"] " — to demonstrate asynchronous processing of large request bodies"]
-                  [:li [:a {:href (str
-                                   (config/cors-demo-origin config)
-                                   (path-for cors-demo-router :yada.dev.cors-demo/index))} "CORS demo"] " — to demonstrate CORS support"]
-
-                  [:li [:a {:href (path-for @*router :yada.dev.async/sse-demo)} "SSE demo"] " — to demonstrate Server Sent Events"]
-                  ]]
-
-                
+                  [:li [:a {:href (path-for @*router :yada.dev.async/sse-demo)} "SSE demo"] " — to demonstrate Server Sent Events"]]]
 
                 [:li [:a {:href
                           (format "%s/index.html?url=%s/swagger.json"
@@ -100,17 +92,12 @@
                       "Swagger UI"]
                  " — to demonstrate Swagger integration"]
 
-                [:li [:a {:href (str
-                                 (config/console-origin config)
-                                 (path-for console-router :yada.dev.console/index :path ""))}
+                #_[:li [:a {:href (path-for @*router :yada.dev.console/index :path "")}
                       "The " [:span.yada "yada"] " console"] " — to capture traffic and debug your API (work in progress)"]
 
+                [:li [:a {:href (path-for @*router :yada.dev.talks/index)} "Talks"]]
 
-                [:li [:a {:href (str
-                                 (config/talks-origin config)
-                                 (path-for talks-router :yada.dev.talks/index))} "Talks"]]
-
-                [:li "Boring RFCs!"
+                [:li "Relevant standards"
                  [:ul
                   (for [i (sort (keys titles))]
                     [:li [:a {:href (format "/spec/rfc%d" i)}
@@ -121,11 +108,7 @@
     (assoc :id ::index))))
 
 (s/defrecord Docsite [*router :- (co-dep Router)
-                      cors-demo-router :- Router
-                      talks-router :- Router
-                      console-router :- Router
                       phonebook :- SystemMap
-                      selfie :- SystemMap
                       config :- config/ConfigSchema]
   RouteProvider
   (routes [component]
@@ -134,13 +117,16 @@
 
       ["hello.html" (hello/index *router)]
 
+      ["dir/" (yada (io/file "talks"))]
+
       ["phonebook-api/swagger.json"
        (-> (yada
             (swagger/swagger-spec-resource
              (swagger/swagger-spec {:info {:title "Phonebook"
                                            :version "1.0"
                                            :description "A simple resource example"}
-                                    :host (str (:host config) ":" (config/phonebook-port config))
+                                    :host (config/host config :phonebook)
+                                    :schemes [(-> config :phonebook :scheme)]
                                     :basePath ""}
                                    (-> phonebook :api :routes))))
            (tag ::phonebook-swagger-spec))]
@@ -150,7 +136,7 @@
 
 (defn new-docsite [& {:as opts}]
   (-> (map->Docsite opts)
-      (using [:phonebook :cors-demo-router :talks-router :console-router :selfie])
+      (using [:phonebook])
       (co-using [:router])))
 
 

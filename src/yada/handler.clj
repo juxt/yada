@@ -48,6 +48,8 @@
       true (conj :options))))
 
 (defn- handle-request-with-maybe-subresources [ctx]
+  (infof "handle-request-with-maybe-subresources")
+
   (let [resource (-> ctx :handler :resource)
         error-handler default-error-handler]
 
@@ -168,7 +170,7 @@
     ;; If we represent a collection of resources, let's match and retain
     ;; the remainder which we place into the request as :path-info (see
     ;; below).
-    (if (:path-info? this)
+    (if (-> this :resource :path-info?)
       (assoc m :handler this)
       (bidi/succeed this m)))
 
@@ -182,7 +184,7 @@
   (request [this req match-context]
     (handle-request
      this
-     (if (and (:path-info? this)
+     (if (and (-> this :resource :path-info?)
               (not-empty (:remainder match-context)))
          (assoc req :path-info (:remainder match-context))
        req)

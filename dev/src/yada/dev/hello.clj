@@ -48,7 +48,7 @@
        :produces "text/plain"
        :response say-hello}}})))
 
-#_(defn hello-languages []
+(defn hello-languages []
   (yada
    (resource
     {:methods
