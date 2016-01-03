@@ -107,7 +107,8 @@ convenience of terse, expressive short-hand descriptions."}
    #{MediaTypeMap} as-set
    MediaTypeMap as-media-type
    #{CharsetMap} as-set
-   CharsetMap to-charset-map})
+   CharsetMap to-charset-map
+   #{String} as-set})
 
 (def representation-set-coercer
   (sc/coercer [RepresentationSet] RepresentationSetMappings))

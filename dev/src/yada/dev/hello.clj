@@ -140,7 +140,7 @@
               ["/hello-parameters" (tag (hello-parameters) ::hello-parameters)]
 
               ;; Content-negotiation
-;;              ["/hello-languages" (tag (hello-languages) ::hello-languages)]
+              ["/hello-languages" (tag (hello-languages) ::hello-languages)]
 
               ;; Swagger
               ["/hello-swagger" (tag (hello-swagger) ::hello-swagger)]
