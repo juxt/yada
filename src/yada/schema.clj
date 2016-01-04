@@ -258,25 +258,24 @@ convenience of terse, expressive short-hand descriptions."}
     (s/optional-key :allow-methods) (s/conditional fn? ContextFunction :else Keywords)
     (s/optional-key :allow-headers) (s/conditional fn? ContextFunction :else Strings)}})
 
-(def Realm s/Str)
-
-(s/defschema AccessControl
-  (merge Cors
-         {(s/optional-key :authentication)
-          {(s/optional-key :realms)
-           {Realm {:schemes [{(s/optional-key :scheme) s/Str
-                              (s/optional-key :authenticator) s/Any}]}}}}))
-
-(def AccessControlMappings
+(def CorsMappings
   (merge HeaderMappings {ContextFunction as-fn}))
 
-(s/defschema ResourceDocumentation
-  CommonDocumentation)
+(def Realm s/Str)
+
+(s/defschema Authentication
+  {(s/optional-key :authentication)
+   {(s/optional-key :realms)
+    {Realm {:schemes [{(s/optional-key :scheme) s/Str
+                       (s/optional-key :authenticator) s/Any}]}}}})
+
+(s/defschema ResourceDocumentation CommonDocumentation)
 
 (s/defschema ResourceBase
   (merge {(s/optional-key :id) s/Any}
          ResourceDocumentation
-         AccessControl
+         Authentication
+         Cors
          Properties
          ResourceParameters
          Produces
@@ -297,7 +296,7 @@ convenience of terse, expressive short-hand descriptions."}
   (merge PropertiesMappings
          RepresentationSeqMappings
          MethodsMappings
-         AccessControlMappings))
+         CorsMappings))
 
 (def resource-coercer (sc/coercer Resource ResourceMappings))
 
@@ -312,3 +311,5 @@ convenience of terse, expressive short-hand descriptions."}
    :known-methods {s/Keyword s/Any}
    :interceptor-chain [(s/=> Context Context)]
    (s/optional-key :path-info?) s/Bool})
+
+
