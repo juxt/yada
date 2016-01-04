@@ -74,6 +74,10 @@
 (defn test-all []
   (clojure.test/run-all-tests #"(yada|phonebook).*test$"))
 
+(defn reset-and-test []
+  (reset)
+  (time (test-all)))
+
 (defn routes []
   (-> system :docsite-router :routes))
 
