@@ -120,18 +120,37 @@
           (is (not (error? r)))
           (is (nil? (s/check Methods r))))))))
 
+(deftest authentication-test
+  (let [coerce (sc/coercer Authentication
+                           AuthenticationMappings)]
+    (testing "coerce single realm shorthand to canonical form"
+      (is (= {:authentication
+              {:realms {"default" {:schemes [{:scheme "Basic"
+                                              :authenticator identity}]}}}}
+             (coerce {:authentication {:realm "default"
+                                       :schemes [{:scheme "Basic"
+                                                  :authenticator identity}]}}))))
+
+    (testing "coerce single scheme shorthand to canonical form"
+      (is (= {:authentication
+              {:realms {"default" {:schemes [{:scheme "Basic"
+                                              :authenticator identity}]}}}}
+             (coerce {:authentication {:realm "default"
+                                       :scheme "Basic"
+                                       :authenticator identity}}))))))
+
 (deftest resource-test
   (testing "produces works at both levels"
     (let [r (resource-coercer {:produces "text/html"
-                              :methods {:get {:produces "text/html"
-                                              :response "Hello World!"}}})]
+                               :methods {:get {:produces "text/html"
+                                               :response "Hello World!"}}})]
       (is (not (error? r)))
       (is (nil? (s/check Resource r)))))
 
   (testing "consumes works at both levels"
     (let [r (resource-coercer {:consumes "multipart/form-data"
-                              :methods {:get {:consumes "multipart/form-data"
-                                              :response "Hello World!"}}})]
+                               :methods {:get {:consumes "multipart/form-data"
+                                               :response "Hello World!"}}})]
       (is (not (error? r)))
       (is (nil? (s/check Resource r)))))
 
@@ -143,43 +162,47 @@
 
   (testing "method-level parameters"
     (let [r (resource-coercer
-            {:parameters {:path {:id Long}}
-             :methods {:get {:parameters {:query {:q String}}
-                             :response "Hello World!"}
-                       :put {:parameters {:body String}
-                             :response (fn [ctx] nil)}}})]
+             {:parameters {:path {:id Long}}
+              :methods {:get {:parameters {:query {:q String}}
+                              :response "Hello World!"}
+                        :put {:parameters {:body String}
+                              :response (fn [ctx] nil)}}})]
       (is (not (error? r)))
       (is (nil? (s/check Resource r)))))
 
   (testing "swagger resource"
     (let [r (resource-coercer
-            {:methods
-             {:get {:summary "Get user"
-                    :description "Get the details of a known user"
-                    :parameters {:path {:username s/Str}}
-                    :produces [{:media-type
-                                #{"application/edn" "application/json;q=0.9" "text/html;q=0.8"}
-                                :charset "UTF-8"}]
-                    :response (fn [ctx] "Users")
-                    :responses {200 {:description "Known user"}
-                                404 {:description "Unknown user"}}}}})]
+             {:methods
+              {:get {:summary "Get user"
+                     :description "Get the details of a known user"
+                     :parameters {:path {:username s/Str}}
+                     :produces [{:media-type
+                                 #{"application/edn" "application/json;q=0.9" "text/html;q=0.8"}
+                                 :charset "UTF-8"}]
+                     :response (fn [ctx] "Users")
+                     :responses {200 {:description "Known user"}
+                                 404 {:description "Unknown user"}}}}})]
       (is (not (error? r)))
       (is (nil? (s/check Resource r)))))
 
   (testing "other keywords are not OK"
     (let [r (resource-coercer
-            {:foo :bar
-             :methods {}})]
+             {:foo :bar
+              :methods {}})]
       (is (error? r))))
   
   (testing "namespaced keywords are OK"
     (let [r (resource-coercer
-            {:ns/foo :bar
-             :methods {}})]
+             {:ns/foo :bar
+              :methods {}})]
       (is (not (error? r)))
       (is (nil? (s/check Resource r))))))
 
+;; TODO: Test authentication and security
 
+;; Blog about resource coercions as being a 'macro' language for data.
+;; How do we 'default' data?
 
-;; Test 'languages'
+;; TODO: Test charsets, encodings and languages
+;; TODO: Test namespaced keywords at all levels
 

@@ -263,11 +263,37 @@ convenience of terse, expressive short-hand descriptions."}
 
 (def Realm s/Str)
 
+(def AuthScheme {(s/optional-key :scheme) s/Str
+                 (s/optional-key :authenticator) s/Any})
+
+(s/defschema Schemes
+  {:schemes [AuthScheme]})
+
+(def SingleSchemeMapping
+  {Schemes
+   (fn [x]
+     (if (:authenticator x)
+       {:schemes [x]}
+       x))})
+
+(s/defschema Realms
+  {(s/optional-key :realms)
+   {Realm (merge Schemes)}})
+
+(def SingleRealmMapping
+  {Realms
+   (fn [x]
+     (if-let [realm (:realm x)]
+       {:realms {realm (dissoc x :realm)}}
+       x))})
+
 (s/defschema Authentication
   {(s/optional-key :authentication)
-   {(s/optional-key :realms)
-    {Realm {:schemes [{(s/optional-key :scheme) s/Str
-                       (s/optional-key :authenticator) s/Any}]}}}})
+   Realms})
+
+(def AuthenticationMappings
+  (merge SingleSchemeMapping
+         SingleRealmMapping))
 
 (s/defschema ResourceDocumentation CommonDocumentation)
 
