@@ -34,7 +34,7 @@
         :authenticator {["tom" "watson"] {:email "tom@ibm.com"
                                           :roles #{:phonebook/write}}
                         ["malcolm" "changeme"] {:email "malcolm@juxt.pro"
-                                                :role #{}}}}
+                                                :roles #{}}}}
 
        ;; Here's the scheme that let's use process api-keys
        {:authenticator
