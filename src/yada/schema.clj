@@ -186,13 +186,18 @@ convenience of terse, expressive short-hand descriptions."}
     {(s/optional-key :form) s/Any
      (s/optional-key :body) s/Any}}))
 
+(def Realm s/Str)
+
+(s/defschema Restriction
+  {:realm Realm
+   (s/optional-key :role) s/Keyword})
+
 (s/defschema Authorization
-  {(s/optional-key :role) #{s/Keyword}})
+  {(s/optional-key :restrict) [Restriction]})
 
 (def AuthorizationMappings
-  {#{s/Keyword} (fn [x] (cond (coll? x) (set x)
-                              (keyword? x) #{x}
-                            ))})
+  {[Restriction] (fn [x] (cond (map? x) (vector x)
+                               :otherwise x))})
 
 (s/defschema Method
   (merge Response
@@ -260,8 +265,6 @@ convenience of terse, expressive short-hand descriptions."}
 
 (def CorsMappings
   (merge HeaderMappings {ContextFunction as-fn}))
-
-(def Realm s/Str)
 
 (def AuthScheme {(s/optional-key :scheme) s/Str
                  (s/optional-key :authenticator) s/Any})

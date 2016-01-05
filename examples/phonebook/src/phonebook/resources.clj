@@ -69,8 +69,7 @@
     :allow-credentials false
 
     ;; Required for the Swagger key
-    :allow-headers ["Api-Key"]}
-   })
+    :allow-headers ["Api-Key"]}})
 
 (defn new-index-resource [db *routes]
   (resource
@@ -95,7 +94,7 @@
              :response (fn [ctx]
                          (let [id (db/add-entry db (get-in ctx [:parameters :form]))]
                            (java.net.URI. nil nil (path-for @*routes :phonebook.api/entry :entry id) nil)))
-             :role :phonebook/write
+             :restrict {:realm "phonebook" :role :phonebook/write}
              }}}
     (merge access-control))))
 
@@ -133,7 +132,8 @@
        [{:media-type #{"multipart/form-data"
                        "application/x-www-form-urlencoded"}}]
 
-       :role :phonebook/write
+       :restrict {:realm "phonebook" :role :phonebook/write} 
+       
        :response
        (fn [ctx]
          (let [entry (get-in ctx [:parameters :path :entry])
@@ -143,8 +143,8 @@
            (db/update-entry db entry form)))}
 
       :delete
-      {:role :phonebook/write
-       :produces "text/plain"
+      {:produces "text/plain"
+       :restrict {:realm "phonebook" :role :phonebook/write} 
        :response
        (fn [ctx]
          (let [id (get-in ctx [:parameters :path :entry])]

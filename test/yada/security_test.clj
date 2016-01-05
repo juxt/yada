@@ -63,7 +63,7 @@
       ;; We have successfully authenticated in realm R1
       (is (= {"R1" {:user "george"
                     :roles #{:pig}}
-              :combined-roles #{:pig}}
+              :combined-roles #{{:realm "R1" :role :pig}}}
              (:authentication result)))
 
       ;; But not in realm R2, so we tell the user-agent how to do so

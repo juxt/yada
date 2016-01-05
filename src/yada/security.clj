@@ -41,16 +41,6 @@
   (warnf "No installed support for the following scheme: %s" scheme)
   nil)
 
-(defn not-authorized [realm schemes]
-  ;; Otherwise, if no authorization header, send a
-  ;; www-authenticate header back.
-  (d/error-deferred
-   (ex-info "" {:status 401
-                :headers {"www-authenticate"
-                          (apply str (interpose ", "
-                                                (for [{:keys [scheme]} schemes]
-                                                  (format "%s realm=\"%s\"" scheme realm))))}})))
-
 (defn authenticate [ctx]
   ;; If [:access-control :allow-origin] exists at all, don't block an OPTIONS pre-flight request
   (if (and (= (:method ctx) :options)
@@ -64,30 +54,19 @@
     (reduce
      (fn [ctx [realm {:keys [schemes]}]]
        (let [credentials (some (partial authenticate-with-scheme ctx) schemes)]
-         (if credentials
-           (-> ctx
-               (assoc-in [:authentication realm] credentials)
-               (update-in [:authentication :combined-roles]
-                          (fnil set/union #{}) (set (:roles credentials))))
-           ;; Otherwise, let the client know how they might
-           ;; authenticate in a future request. Note, this is
-           ;; not necessarily a 401, we don't know yet, we'll
-           ;; determine that later in 'authorize'. See RFC 7235
-           ;; section 4.1 - "A server generating a 401
-           ;; (Unauthorized) response MUST send a
-           ;; WWW-Authenticate header field containing at least
-           ;; one challenge.  A server MAY generate a
-           ;; WWW-Authenticate header field in other response
-           ;; messages to indicate that supplying credentials
-           ;; (or different credentials) might affect the
-           ;; response."
-           (update-in ctx [:response :headers "www-authenticate"]
-                      (fnil conj [])
-                      (str/join ", "
-                                (filter some?
-                                        (for [{:keys [scheme]} schemes]
-                                          (when scheme
-                                            (format "%s realm=\"%s\"" scheme realm)))))))))
+         (cond-> ctx
+           credentials (assoc-in [:authentication realm] credentials)
+           credentials (update-in [:authentication :combined-roles]
+                                  (fnil set/union #{})
+                                  (set (for [role (:roles credentials)]
+                                         {:realm realm :role role})))
+           (not credentials) (update-in [:response :headers "www-authenticate"]
+                                        (fnil conj [])
+                                        (str/join ", "
+                                                  (filter some?
+                                                          (for [{:keys [scheme]} schemes]
+                                                            (when scheme
+                                                              (format "%s realm=\"%s\"" scheme realm)))))))))
      ctx (get-in ctx [:handler :resource :authentication :realms]))))
 
 (defn authorize
@@ -98,15 +77,22 @@
   so (RBAC), and the resource's properties (attributes) have been
   loaded to make ABAC schemes also possible."
   [ctx]
-  (if-let [required-roles (some-> ctx :handler :resource :methods (get (:method ctx)) :role)]
-    (if (not-empty (set/intersection required-roles (get-in ctx [:authentication :combined-roles])))
-      ctx
-      (d/error-deferred
-       (ex-info "Failed authorization check" {:status 401
-                                              ;; But let
-                                              :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])})))
-    ;; Otherwise, pass through
-    ctx))
+
+  ;; For each realm that our roles are defined in.
+  
+  (let [required-roles (some-> ctx :handler :resource :methods (get (:method ctx)) :restrict)]
+    (if required-roles
+      (let [assigned-roles (get-in ctx [:authentication :combined-roles])
+            accessing-roles (set/intersection (set required-roles) assigned-roles)]
+        (if (not-empty accessing-roles) ; disjunction
+          ctx ;; allow, perhaps log the accessing-roles in the context the 
+          (d/error-deferred
+           (ex-info "Failed authorization check"
+                    {:status 401
+                     ;; But allow WWW-Authenticate header in error
+                     :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])}))))
+      ;; Otherwise, pass through
+      ctx)))
 
 (defn call-fn-maybe [x ctx]
   (when x

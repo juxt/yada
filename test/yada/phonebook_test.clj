@@ -136,7 +136,8 @@
             "content-length" content-length}
            :body formdata})]
     (is (= 400 (:status response)))
-    (is (re-seq #"Multipart not properly terminated" (-> response :body b/to-string)))))
+    (is (re-seq #"Multipart not properly terminated" (-> response :body b/to-string)))
+    ))
 
 (deftest put-test
   (let [formdata (encode-multipart-formdata {:firstname "Jon" :surname "Pither" :phone "321"})
