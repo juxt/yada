@@ -64,8 +64,8 @@ $ lein test
 
 ## Acknowledgments
 
-Thanks to the following people for inspiration, contributions, feedback and
-suggestions.
+Thanks to the following people for inspiration, contributions,
+feedback and suggestions.
 
 * Malcolm Sparks
 * Martin Trojer
@@ -80,6 +80,14 @@ suggestions.
 * Thomas van der Veen
 * Leandro Demartini
 * Craig McCraig of the clan McCraig
+
+Also, see the dependency list. In particular, yada would certainly not
+exist without the considerable efforts of those behind the following
+libraries.
+
+* Manifold & Aleph - Zach Tellman
+* Prismatic Schema - Jason Wolfe (and others)
+* Ring-swagger - Tommi Riemann (and others)
 
 ## Copyright & License
 
