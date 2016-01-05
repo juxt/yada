@@ -45,15 +45,15 @@
    CharsetSchemaSet as-set
    StringSet as-set})
 
-
 ;; --
+
 (defrecord Resource []
   p/ResourceCoercion
   (as-resource [this] this))
 
 (defn resource [model]
   (let [r (ys/resource-coercer model)]
-    (when (su/error? r) (throw (ex-info "Cannot turn resource-model into resource, because it doesn't conform to a resource schema" {:resource-model model :error (:error r)})))
+    (when (su/error? r) (throw (ex-info "Cannot turn resource-model into resource, because it doesn't conform to a resource-model schema" {:resource-model model :error (:error r)})))
     (map->Resource r)))
 
 (extend-protocol p/ResourceCoercion
