@@ -10,9 +10,7 @@
    [yada.yada :refer [yada]]))
 
 (defn add-headers [request m]
-  (merge-with merge
-              request
-              {:headers m}))
+  (merge-with merge request {:headers m}))
 
 (deftest put-test
   (testing "string"
