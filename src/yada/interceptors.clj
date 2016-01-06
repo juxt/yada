@@ -168,16 +168,6 @@
       ;; else
       ctx)))
 
-#_(defn authentication
-  "Authentication"
-  [ctx]
-  (cond-> ctx
-    (not-empty (filter (comp (partial = :basic) :type) (-> ctx :handler :security)))
-    (assoc :authentication
-           (:basic-authentication (ring.middleware.basic-authentication/basic-authentication-request
-                                   (:request ctx)
-                                   (fn [user password] {:user user :password password}))))))
-
 (defn select-representation
   "Proactively negotatiate the best representation for the payload
   body of the response. This does not mean that the
