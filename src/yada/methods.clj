@@ -175,9 +175,9 @@
   (idempotent? [_] true)
   (request [_ ctx]
     (let [f (get-in ctx [:resource :methods (:method ctx) :response]
-                    (constantly (d/error-deferred
-                                 (ex-info (format "Resource %s does not provide a handler for :put" (type (:resource ctx)))
-                                          {:status 500}))))]
+                    (fn [_] (d/error-deferred
+                             (ex-info (format "Resource %s does not provide a handler for :put" (type (:resource ctx)))
+                                     {:status 500}))))]
       (d/chain
        (f ctx)
        (fn [res]
