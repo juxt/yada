@@ -44,7 +44,7 @@
 (defn authenticate [ctx]
   ;; If [:access-control :allow-origin] exists at all, don't block an OPTIONS pre-flight request
   (if (and (= (:method ctx) :options)
-           (some-> ctx :handler :resource :cors :allow-origin))
+           (some-> ctx :resource :cors :allow-origin))
     ;; Let through without authentication, CORS OPTIONS is
     ;; incompatible with authorization, since it is forbidden to send
     ;; credentials in a pre-flight request.
@@ -67,7 +67,7 @@
                                                           (for [{:keys [scheme]} schemes]
                                                             (when scheme
                                                               (format "%s realm=\"%s\"" scheme realm)))))))))
-     ctx (get-in ctx [:handler :resource :authentication :realms]))))
+     ctx (get-in ctx [:resource :authentication :realms]))))
 
 (defn authorize
   "Given an authenticated user in the context, and the resource
@@ -80,7 +80,7 @@
 
   ;; For each realm that our roles are defined in.
   
-  (let [required-roles (some-> ctx :handler :resource :methods (get (:method ctx)) :restrict)]
+  (let [required-roles (some-> ctx :resource :methods (get (:method ctx)) :restrict)]
     (if required-roles
       (let [assigned-roles (get-in ctx [:authentication :combined-roles])
             accessing-roles (set/intersection (set required-roles) assigned-roles)]
@@ -105,7 +105,7 @@
 
 (defn access-control-headers [ctx]
   (if-let [origin (get-in ctx [:request :headers "origin"])]
-    (let [cors (get-in ctx [:handler :resource :cors])
+    (let [cors (get-in ctx [:resource :cors])
           ;; We can only report one origin, so let's work that out
           allow-origin (let [s (call-fn-maybe (:allow-origin cors) ctx)]
                          (cond

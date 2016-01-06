@@ -22,42 +22,40 @@
     (is (=
          ["S1 realm=\"R1\", S2 realm=\"R1\""
           "S1 realm=\"R2\", S2 realm=\"R2\""]
-         (-> {:handler
-              {:resource
-               {:authentication
-                {:realms
-                 {"R1" {:schemes
-                        [{:scheme "S1"
-                          :authenticator (constantly false)}
-                         {:scheme "S2"
-                          :authenticator (constantly false)}
-                         ]}
-                  "R2" {:schemes
-                        [{:scheme "S1"
-                          :authenticator (constantly false)}
-                         {:scheme "S2"
-                          :authenticator (constantly false)}]}}}}}}
+         (-> {:resource
+              {:authentication
+               {:realms
+                {"R1" {:schemes
+                       [{:scheme "S1"
+                         :authenticator (constantly false)}
+                        {:scheme "S2"
+                         :authenticator (constantly false)}
+                        ]}
+                 "R2" {:schemes
+                       [{:scheme "S1"
+                         :authenticator (constantly false)}
+                        {:scheme "S2"
+                         :authenticator (constantly false)}]}}}}}
 
              authenticate
              (get-in [:response :headers "www-authenticate"])))))
 
   (testing "Across multiple realms and schemes, with some prior authentication in one of the realms"
-    (let [ctx {:handler
-               {:resource
-                {:authentication
-                 {:realms
-                  {"R1" {:schemes
-                         [{:scheme "S1"
-                           :authenticated false}
-                          {:scheme "S2"
-                           :authenticated {:user "george"
-                                           :roles #{:pig}}}
-                          ]}
-                   "R2" {:schemes
-                         [{:scheme "S1"
-                           :authenticated false}
-                          {:scheme "S2"
-                           :authenticated false}]}}}}}}
+    (let [ctx {:resource
+               {:authentication
+                {:realms
+                 {"R1" {:schemes
+                        [{:scheme "S1"
+                          :authenticated false}
+                         {:scheme "S2"
+                          :authenticated {:user "george"
+                                          :roles #{:pig}}}
+                         ]}
+                  "R2" {:schemes
+                        [{:scheme "S1"
+                          :authenticated false}
+                         {:scheme "S2"
+                          :authenticated false}]}}}}}
           result (authenticate ctx)]
       
       ;; We have successfully authenticated in realm R1

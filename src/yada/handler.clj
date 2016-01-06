@@ -48,7 +48,7 @@
       true (conj :options))))
 
 (defn- handle-request-with-maybe-subresources [ctx]
-  (let [resource (-> ctx :handler :resource)
+  (let [resource (:resource ctx)
         error-handler default-error-handler]
 
     (if
@@ -69,20 +69,19 @@
                   :parent resource
                   :resource subresource
                   :allowed-methods (allowed-methods subresource)
-                  :known-methods (-> ctx :handler :known-methods)
+                  :known-methods (:known-methods ctx)
                   ;; TODO: Could/should subresources, which are dynamic, be able
                   ;; to modify the interceptor-chain?
                   :interceptor-chain (-> ctx :handler :interceptor-chain)})]
           
             (handle-request-with-maybe-subresources
              (-> ctx
-                 (dissoc :base)
-                 (assoc :allowed-methods (allowed-methods subresource)
-                        :handler handler)))))
+                 (merge handler)
+                 (dissoc :base)))))
 
         ;; Normal resources
         (->
-         (apply d/chain ctx (-> ctx :handler :interceptor-chain))
+         (apply d/chain ctx (:interceptor-chain ctx))
 
          (d/catch
              clojure.lang.ExceptionInfo
@@ -111,8 +110,8 @@
                    ;; TODO: Custom error handlers
 
                    (d/chain
-                    (cond-> (make-context)
-                      true (merge (select-keys ctx [:id :request :method :handler]))
+                    (cond-> ctx
+                      ;; true (merge (select-keys ctx [:id :request :method]))
                       status (assoc-in [:response :status] status)
                       (:headers data) (assoc-in [:response :headers] (:headers data))
 
@@ -142,11 +141,11 @@
      ;; method-wrapper. Perhaps better to use yada.context to access
      ;; this structure.
      (merge (make-context)
-            {:id id
+            handler
+            {:request-id id
              :request request
              :method method
-             :method-wrapper method-wrapper
-             :handler handler}))))
+             :method-wrapper method-wrapper}))))
 
 (defrecord Handler []
   clojure.lang.IFn

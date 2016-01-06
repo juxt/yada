@@ -143,14 +143,14 @@
 
       ;; function normally returns a (possibly deferred) body.
       (fn [x]
-        (if-let [f (get-in ctx [:handler :resource :methods (:method ctx) :response])]
+        (if-let [f (get-in ctx [:resource :methods (:method ctx) :response])]
           (try
             (f ctx)
             (catch Exception e
               (d/error-deferred e)))
           ;; No handler!
           (d/error-deferred
-           (ex-info (format "Resource %s does not provide a handler for :get" (type (-> ctx :handler :resource)))
+           (ex-info (format "Resource %s does not provide a handler for :get" (type (:resource ctx)))
                     {:status 500}))))
 
       (fn [res]
@@ -161,7 +161,7 @@
            (if (:status (ex-data e))
              (throw e)
              (throw (ex-info "Error on GET" {:response (:response ctx)
-                                             :resource (type (-> ctx :handler :resource))
+                                             :resource (type (:resource ctx))
                                              :error e}))))))))
 
 ;; --------------------------------------------------------------------------------
@@ -174,9 +174,9 @@
   (safe? [_] false)
   (idempotent? [_] true)
   (request [_ ctx]
-    (let [f (get-in ctx [:handler :resource :methods (:method ctx) :response]
+    (let [f (get-in ctx [:resource :methods (:method ctx) :response]
                     (constantly (d/error-deferred
-                                 (ex-info (format "Resource %s does not provide a handler for :put" (type (-> ctx :handler :resource)))
+                                 (ex-info (format "Resource %s does not provide a handler for :put" (type (:resource ctx)))
                                           {:status 500}))))]
       (d/chain
        (f ctx)
@@ -231,7 +231,7 @@
   (idempotent? [_] false)
   (request [_ ctx]
     (d/chain
-     (when-let [f (get-in ctx [:handler :resource :methods (:method ctx) :response])]
+     (when-let [f (get-in ctx [:resource :methods (:method ctx) :response])]
        (f ctx))
      (fn [res]
        (interpret-post-result res ctx))
@@ -291,14 +291,14 @@
   (idempotent? [_] true)
   (request [_ ctx]
     (d/chain
-     (if-let [f (get-in ctx [:handler :resource :methods (:method ctx) :response])]
+     (if-let [f (get-in ctx [:resource :methods (:method ctx) :response])]
        (try
          (f ctx)
          (catch Exception e
            (d/error-deferred e)))
        ;; No handler!
        (d/error-deferred
-        (ex-info (format "Resource %s does not provide a handler for :delete" (type (-> ctx :handler :resource)))
+        (ex-info (format "Resource %s does not provide a handler for :delete" (type (:resource ctx)))
                  {:status 500})))
      (fn [res]
        ;; TODO: Could we support 202 somehow?
@@ -326,7 +326,7 @@
   (request [_ ctx]
     (-> ctx
         (assoc-in [:response :headers "allow"]
-                  (str/join ", " (map (comp (memfn toUpperCase) name) (-> ctx :handler :allowed-methods))))
+                  (str/join ", " (map (comp (memfn toUpperCase) name) (:allowed-methods ctx))))
         (assoc-in [:response :headers "content-length"] (str 0)))))
 
 ;; --------------------------------------------------------------------------------

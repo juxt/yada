@@ -61,14 +61,14 @@
   "Is method allowed on this resource?"
   [ctx]
   (assert ctx "method-allowed?, ctx is nil!")
-  (if-not (contains? (-> ctx :handler :allowed-methods) (:method ctx))
+  (if-not (contains? (:allowed-methods ctx) (:method ctx))
     (d/error-deferred
      (ex-info "Method Not Allowed"
               {:status 405
                :headers {"allow"
                          (str/join ", "
                                    (map (comp (memfn toUpperCase) name)
-                                        (-> ctx :handler :allowed-methods)))}}))
+                                        (:allowed-methods ctx)))}}))
     ctx))
 
 (defn parse-parameters
@@ -79,8 +79,8 @@
   (let [method (:method ctx)
         request (:request ctx)
 
-        schemas (util/merge-parameters (get-in ctx [:handler :resource :parameters])
-                                       (get-in ctx [:handler :resource :methods method :parameters]))
+        schemas (util/merge-parameters (get-in ctx [:resource :parameters])
+                                       (get-in ctx [:resource :methods method :parameters]))
 
         ;; TODO: Creating coercers on every request is unnecessary and
         ;; expensive, should pre-compute them.
@@ -118,7 +118,7 @@
 
 (defn get-properties
   [ctx]
-  (let [props (get-in ctx [:handler :resource :properties] {})
+  (let [props (get-in ctx [:resource :properties] {})
         props (if (fn? props) (props ctx) props)]
     (d/chain
      props                           ; propsfn can returned a deferred
@@ -151,8 +151,8 @@
       (let [content-type (mt/string->media-type (get-in request [:headers "content-type"]))
             content-length (safe-read-content-length request)
             consumes-mt (set (map (comp :name :media-type)
-                                  (concat (get-in ctx [:handler :resource :methods (:method ctx) :consumes])
-                                          (get-in ctx [:handler :resource :consumes]))))]
+                                  (concat (get-in ctx [:resource :methods (:method ctx) :consumes])
+                                          (get-in ctx [:resource :consumes]))))]
 
         (if-not (contains? consumes-mt (:name content-type))
           (d/error-deferred
@@ -176,8 +176,8 @@
   determined)."
   [ctx]
   (assert ctx "select-representation, ctx is nil!")
-  (let [produces (concat (get-in ctx [:handler :resource :methods (:method ctx) :produces])
-                         (get-in ctx [:handler :resource :produces]))
+  (let [produces (concat (get-in ctx [:resource :methods (:method ctx) :produces])
+                         (get-in ctx [:resource :produces]))
         rep (rep/select-best-representation (:request ctx) produces)]
     (cond-> ctx
       produces (assoc :produces produces)
@@ -292,7 +292,7 @@
   (let [resource (:resource ctx)]
     (if (not (methods/safe? (:method-wrapper ctx)))
 
-      (let [propsfn (get-in ctx [:handler :resource :properties] (constantly {}))]
+      (let [propsfn (get-in ctx [:resource :properties] (constantly {}))]
         (d/chain
 
          (propsfn ctx)                 ; propsfn can returned a deferred

@@ -585,7 +585,7 @@
         request-buffer-size CHUNK-SIZE ; as Aleph default, TODO: derive this
         window-size (* 4 request-buffer-size)
         ;; TODO: No options now, create alternative way of changing the part consumer
-        part-consumer (get-in ctx [:handler :options :part-consumer] (->DefaultPartConsumer))]
+        part-consumer (get-in ctx [:options :part-consumer] (->DefaultPartConsumer))]
     (cond
       (not boundary) (throw (ex-info "No boundary parameter in multipart" {:status 400}))
       :otherwise
@@ -614,7 +614,7 @@
 
          ;; As we're multipart/form-data, let's make use of the expected
          ;; Content-Disposition headers.
-         (let [schemas (get-in ctx [:handler :resource :methods (:method ctx) :parameters])
+         (let [schemas (get-in ctx [:resource :methods (:method ctx) :parameters])
                fields
                (reduce
                 (fn [acc part] (cond-> acc

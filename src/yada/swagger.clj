@@ -42,7 +42,7 @@
 
 (defn to-path [route]
   (let [path (->> route :path (map encode) (apply str))
-        {:keys [methods parameters produces consumes]} (-> route :handler :resource)]
+        {:keys [methods parameters produces consumes]} (:resource route)]
     [path
      (into {}
            (for [m (keys methods)
