@@ -584,6 +584,7 @@
         boundary (get-in content-type [:parameters "boundary"])
         request-buffer-size CHUNK-SIZE ; as Aleph default, TODO: derive this
         window-size (* 4 request-buffer-size)
+        ;; TODO: No options now, create alternative way of changing the part consumer
         part-consumer (get-in ctx [:handler :options :part-consumer] (->DefaultPartConsumer))]
     (cond
       (not boundary) (throw (ex-info "No boundary parameter in multipart" {:status 400}))
