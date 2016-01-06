@@ -49,10 +49,8 @@ identified and located by a URI. It responds to requests it receives
 according to the request's method. Usually it produces or consumes
 state.
 
-In yada, resources are defined by a **resource model**, backed by a
-map.
-
-Here's an example of how a particular **resource model** might be
+In yada, resources are defined by a __resource model__, backed by a
+map. Here's an example of how a particular __resource model__ might be
 written in Clojure:-
 
 ```clojure
@@ -64,17 +62,18 @@ written in Clojure:-
 }
 ```
 
-You can use Java or any JVM language to create these **resource
-models**. One benefit of using Clojure is that it offers a large
-number of ways to be generate, derive and transform maps. This gives
-you the maximum flexibility in how your web resources are developed.
+You can use Java or any JVM language to create these
+__resource models__. One benefit of using Clojure is that it offers a
+large number of ways to be generate, derive and transform maps. This
+gives you the maximum flexibility in how your web resources are
+developed.
 
 A resource can be created from a map using yada's `resource` function,
 which just validates the given map, coercing any parameters as
 necessary, and wrapping in a record indicating a **resource**.
 
 yada's eponymous function `yada` takes a single parameter (the
-resource) and returns a **handler**. This is both a _function_
+resource) and returns a __handler__. This is both a _function_
 that can be used to create responses from Ring requests, and a
 _data-model_ that can be further modified (if desired).
 
@@ -549,8 +548,8 @@ includes support for many other basic types (atoms, Clojure collections,
 files, directories, Java resources…).
 
 But the real power of yada comes when you define your own resource
-types, as we shall discover in subsequent chapters. But first, let's see
-how to install and integrate yada in your web app.
+models and types, as we shall discover in subsequent chapters. But
+first, let's see how to install and integrate yada in your web app.
 
 ## Installation
 
@@ -581,14 +580,25 @@ lein run
 
 ## Resources
 
-Resources are defined by __resource models__, which are just data.
+Resources are defined by __resource models__, which are just data, and
+yada's defining feature.
 
-In Clojure, resource models are usually authored as map literals but
-they can be derived programmatically from other sources.
+Resource models should be defined ahead-of-time wherever possible,
+before the server starts listening for HTTP requests. Doing so will
+expose the resource model to tooling. However, you are free to create
+them dynamically on every request if necessary.
 
-Resource models are defined by a strict schema, which ensures that
-resource models are properly specified before using them in request
-handlers.
+Once complete, resource models are used to create request handlers,
+which serve HTTP requests targeting the resource.
+
+### Writing resource models
+
+In Clojure, resource models are usually defined as map literals, but
+naturally they can be derived programmatically from other sources.
+
+Internally, resource models are defined by a strict schema, which
+ensures that they are properly specified before they can be turned
+into request handlers.
 
 ```clojure
 (require '[yada.yada :refer [resource]])
@@ -608,31 +618,70 @@ handlers.
      :custom/other {…}}))
 ```
 
+To create a resource from a map, call the `yada.resource` function
+with the map as the single argument. Since the `yada.resource`
+function checks the map conforms to the resource-model schema, it is
+recommended to build your map fully _before_ calling the
+`yada.resource` function, rather than building the resource and then
+modifying it further. The latter is possible, but you may risk
+creating a model that is no longer valid.
+
+#### Data abbreviations
+
 Parts of the canonical resource model structure can be quite
 verbose. To make the job of authoring resource models easier a variety
 of literal short-hand forms are available. Short-forms are
-automatically coerced to their canonical equivalents.
+automatically coerced to their canonical equivalents, prior to
+building the request handler.
 
-For example
+For example :-
 
 ```clojure
 {:produces "text/html"}
 ```
 
-is automatically coerced to a canonical form
+is automatically coerced to this _canonical_ form :-
 
 ```clojure
 {:produces [{:media-type "text/html"}]}
 ```
 
-There are numerous other short-hands. If in doubt, learn the canonical
-form and use that until you discover the short-hand for it. If you
-make a mistake, the schema validation errors should help you figure
-out what the problem is. (Schema validation and coercion is made
-possible by Prismatic's Schema library).
+#### Common examples
 
-In yada, the resource model is the central concept. The following
-chapters describe various aspects of the resource-model.
+There are numerous other short-hands. If in doubt, learn the canonical
+form and use that until you discover the short-hand for it. You can
+experiment with the `yada.resource` function ahead of time in the
+REPL. If you do something that isn't possible, the schema validation
+errors should help you figure out why.
+
+[insert table of common coercions here]
+
+### Resource types
+
+A __resource type__ is a Clojure types or record that can be
+automatically coerced into a __resource model__. These types satisfy
+the `yada.protocols.ResourceCoercion` protocol, and any existing type
+or record may be extended to do so, using Clojure's `extend-protocol`
+macro.
+
+```clojure
+(extend-protocol datomic.api.Database
+  yada.protocols.ResourceCoercion
+  (as-resource
+    (resource
+      {:properties
+        {:last-modified …}
+       :methods
+        {:get …}}})))
+```
+
+The `as-resource` function must return a resource (by calling
+`yada.resource`, not just a map).
+
+### Summary
+
+The resource model is yada's central concept. The following chapters
+describe the various aspects of the resource-model in more detail.
 
 ## Parameters
 
@@ -649,12 +698,14 @@ There are different types of parameters, which you can mix-and-match.
 - Request bodies
 - Cookies
 
-There are numerous benefits to declaring the parameters you use.
+There are many benefits to declaring the parameters in the resource
+model.
 
-- yada will check they exist, and return 400 (Malformed Request) errors on
-requests that don't provide the ones you need for your logic
-- yada will coerce them to the types you want, so you can avoid writing loads of
-type-conversion logic in your code
+- yada will check they exist, and return 400 (Malformed Request)
+  errors on requests that don't provide the ones you need for your
+  logic
+- yada will coerce them to the types you want, so you can avoid
+  writing loads of type-conversion logic in your code
 - yada and other tools can process your declarations independently of
   your request-processing code, e.g. to generate API documentation
 
