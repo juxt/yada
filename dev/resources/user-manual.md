@@ -42,7 +42,7 @@ documentation as a contributor!
 
 yada is a library that lets you develop and deploy web resources that
 are fully compliant with, and thereby taking full advantage of, HTTP
-specifications.
+standards.
 
 Let's start then by defining a _web resource_. A web resource is
 identified and located by a URI. It responds to requests it receives
@@ -874,15 +874,112 @@ Content-Length: 9
 The second type of negotiation is termed _reactive negotiation_ where the
 agent chooses from a list of representations provided by the server.
 
+(Currently, yada does not yet support reactive negotiation but it is
+definitely on the road-map.)
+
 ## Properties
 
 [coming soon]
 
 ## Methods
 
+Methods are defined in the __methods__ entry of a resource's
+__resource-model__.
+
+Only methods that are known to yada can appear in a resource's
+definition. Each method corresponds to a type that extends the
+`yada.methods.Method` protocol. This design also makes it possible to
+add new methods to yada, as required.
+
+The responsibility of each method type is to encode the semantics of
+the corresponding method as it is defined in HTTP standards, such as
+responding with the correct HTTP status codes (most other web
+frameworks delegate this responsibility to developers).
+
+Some methods can be implemented entirely by yada itself (HEAD,
+OPTIONS, TRACE etc.). Most methods, however, delegate to some function
+or functions declared in the method's declaration in the
+__resource-model__.
+
+### GET
+
+Specify a function in __:response__ that will be called during the GET
+method processing.
+
+If the resource exists, the single-arity function will be called with the request
+context as its only argument.
+
+It should return the response's body, which should satisfy
+`yada.body.MessageBody` determining how exactly the response's body
+will be returned.
+
+### PUT
+
 [coming soon]
 
+### POST
+
+[coming soon]
+
+### DELETE
+
+[coming soon]
+
+### HEAD
+
+[coming soon]
+
+### OPTIONS
+
+[coming soon]
+
+### TRACE
+
+[coming soon]
+
+### PATCH
+
+[coming soon]
+
+### Custom methods
+
+Custom methods can be added by defining new types that extend the
+`yada.methods.Method` protocol.
+
+### BREW
+
+BREW is an example of a custom method you might want to create,
+especially if you are building a networked coffee maker compliant with
+RFC.
+
+```clojure
+(require '[yada.methods Method])
+
+(deftype BrewMethod [])
+
+(extend-protocol Method
+  BrewMethod
+  (keyword-binding [_] :brew)
+  (safe? [_] false)
+  (idempotent? [_] false)
+  (request [this ctx] …))
+```
+
 ## Security
+
+In yada, resources are self-contained and are individually protected
+from unauthorized access. We agree with the HTTP standards authors
+when we consider security to be integral to the definition of the
+resource itself, and not an extra to be bolted on afterwards, or
+integrated into the location process by which a request's URI is used
+to determine which resource to dispatch to.
+
+This needs to be emphasized because the majority of other 'web
+frameworks' build security into the routing mechanism. While this may
+be convenient at first, it brings in additional complexity and tightly
+couples the URI to security concerns. HTTP considers the URI's path to
+be opaque, and it should not influence the semantics of the resource
+it identifies.
 
 As in all other areas, yada aims for 100% compliance with core HTTP
 standards when it comes to security, notably
@@ -994,7 +1091,8 @@ libraries and tools.
 
 ## Routing
 
-Since the `yada` function returns a Ring-compatible handler, it is compatible with any Clojure URI router.
+Since the `yada` function returns a Ring-compatible handler, it is
+compatible with any Clojure URI router.
 
 However, yada is designed to work seamlessly with its sister library
 [bidi](https://github.com/juxt/bidi), and unless you have a preference
