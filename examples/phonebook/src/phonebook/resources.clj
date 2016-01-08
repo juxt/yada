@@ -32,9 +32,9 @@
      {:schemes
       [{:scheme "Basic"
         :authenticate {["tom" "watson"] {:email "tom@ibm.com"
-                                          :roles #{:phonebook/write}}
-                        ["malcolm" "changeme"] {:email "malcolm@juxt.pro"
-                                                :roles #{}}}}
+                                         :roles #{:phonebook/write}}
+                       ["malcolm" "changeme"] {:email "malcolm@juxt.pro"
+                                               :roles #{}}}}
 
        ;; Here's the scheme that let's use process api-keys
        {:authenticate
