@@ -932,7 +932,7 @@ authentication described in [RFC 2617](https://www.ietf.org/rfc/rfc2617.txt)
     {"my-realm"
      {:schemes
       [{:scheme "Basic"
-        :authenticator (fn [user password] …}]}}}}
+        :authenticate (fn [user password] …}]}}}}
 ```
 
 Each scheme has an authenticator, usually a function (depending on the

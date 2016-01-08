@@ -27,15 +27,15 @@
                {:realms
                 {"R1" {:schemes
                        [{:scheme "S1"
-                         :authenticator (constantly false)}
+                         :authenticate (constantly false)}
                         {:scheme "S2"
-                         :authenticator (constantly false)}
+                         :authenticate (constantly false)}
                         ]}
                  "R2" {:schemes
                        [{:scheme "S1"
-                         :authenticator (constantly false)}
+                         :authenticate (constantly false)}
                         {:scheme "S2"
-                         :authenticator (constantly false)}]}}}}}
+                         :authenticate (constantly false)}]}}}}}
 
              authenticate
              (get-in [:response :headers "www-authenticate"])))))
@@ -68,5 +68,15 @@
       (is (= ["S1 realm=\"R2\", S2 realm=\"R2\""]
              (get-in result [:response :headers "www-authenticate"]))))))
 
+;; TODO: Authorization test
 
+;; TODO: Investigate roles inheritance
 
+;; Roles: Use [:and ...] for conjunctions, [:or ...] for disjunctions
+
+;; Each realm can be a hierarchy
+
+(derive ::a ::b)
+(derive ::b ::c)
+
+(isa? ::a ::c)

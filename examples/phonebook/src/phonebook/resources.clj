@@ -31,13 +31,13 @@
     {"phonebook"
      {:schemes
       [{:scheme "Basic"
-        :authenticator {["tom" "watson"] {:email "tom@ibm.com"
+        :authenticate {["tom" "watson"] {:email "tom@ibm.com"
                                           :roles #{:phonebook/write}}
                         ["malcolm" "changeme"] {:email "malcolm@juxt.pro"
                                                 :roles #{}}}}
 
        ;; Here's the scheme that let's use process api-keys
-       {:authenticator
+       {:authenticate
         (fn [ctx]
           (let [k (get-in ctx [:request :headers "Api-Key"])]
             (cond

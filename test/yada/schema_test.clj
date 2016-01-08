@@ -126,18 +126,18 @@
     (testing "coerce single realm shorthand to canonical form"
       (is (= {:authentication
               {:realms {"default" {:schemes [{:scheme "Basic"
-                                              :authenticator identity}]}}}}
+                                              :authenticate identity}]}}}}
              (coerce {:authentication {:realm "default"
                                        :schemes [{:scheme "Basic"
-                                                  :authenticator identity}]}}))))
+                                                  :authenticate identity}]}}))))
 
     (testing "coerce single scheme shorthand to canonical form"
       (is (= {:authentication
               {:realms {"default" {:schemes [{:scheme "Basic"
-                                              :authenticator identity}]}}}}
+                                              :authenticate identity}]}}}}
              (coerce {:authentication {:realm "default"
                                        :scheme "Basic"
-                                       :authenticator identity}}))))))
+                                       :authenticate identity}}))))))
 
 (deftest resource-test
   (testing "produces works at both levels"
@@ -199,6 +199,7 @@
       (is (nil? (s/check Resource r))))))
 
 ;; TODO: Test authentication and security
+;; TODO: Write a failing test of 'restrict'
 
 ;; Blog about resource coercions as being a 'macro' language for data.
 ;; How do we 'default' data?

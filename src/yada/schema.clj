@@ -267,7 +267,7 @@ convenience of terse, expressive short-hand descriptions."}
   (merge HeaderMappings {ContextFunction as-fn}))
 
 (def AuthScheme {(s/optional-key :scheme) s/Str
-                 (s/optional-key :authenticator) s/Any})
+                 (s/optional-key :authenticate) s/Any})
 
 (s/defschema Schemes
   {:schemes [AuthScheme]})
@@ -275,7 +275,7 @@ convenience of terse, expressive short-hand descriptions."}
 (def SingleSchemeMapping
   {Schemes
    (fn [x]
-     (if (:authenticator x)
+     (if (:authenticate x)
        {:schemes [x]}
        x))})
 

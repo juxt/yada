@@ -16,22 +16,22 @@
     scheme))
 
 (defmethod authenticate-with-scheme "Basic"
-  [ctx {:keys [authenticator]}]
+  [ctx {:keys [authenticate]}]
   (:basic-authentication
    (ba/basic-authentication-request
     (:request ctx)
     (fn [user password]
-      (authenticator [user password])))))
+      (authenticate [user password])))))
 
 ;; A nil scheme is simply one that does not use any of the built-in
 ;; algorithms for IANA registered auth-schemes at
-;; http://www.iana.org/assignments/http-authschemes. The authenticator
-;; must therefore take the full context and do all the work to
+;; http://www.iana.org/assignments/http-authschemes. The authenticate
+;; entry must therefore take the full context and do all the work to
 ;; authenticate the user from it.
 (defmethod authenticate-with-scheme nil
-  [ctx {:keys [authenticator]}]
-  (when authenticator
-    (authenticator ctx)))
+  [ctx {:keys [authenticate]}]
+  (when authenticate
+    (authenticate ctx)))
 
 (defmethod authenticate-with-scheme :default
   [ctx {:keys [scheme]}]
