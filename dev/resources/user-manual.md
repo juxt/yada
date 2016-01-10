@@ -40,18 +40,26 @@ documentation as a contributor!
 
 ## Introduction
 
-yada is a library that lets you develop and deploy web resources that
-are fully compliant with, and thereby taking full advantage of, HTTP
-standards.
+yada is a library that lets you create stateful entities on the
+web. These stateful entities are called _web resources_ and each one
+is identified by a unique __URI__. With yada you can create web
+resources that are fully compliant with, and thereby take full
+advantage of, HTTP standards.
 
-Let's start then by defining a _web resource_. A web resource is
-identified and located by a URI. It responds to requests it receives
-according to the request's method. Usually it produces or consumes
-state.
+But yada is __not__ a full 'web application framework' because it is
+not concerned with how your application stores or computes state, it
+is solely concerned with exchanging that state with other agents on
+the web, over HTTP. To build a full application serving web-clients
+you would need to add some application logic, somewhere to store your
+data and a way to access it.
 
-In yada, resources are defined by a __resource model__, backed by a
-map. Here's an example of how a particular __resource model__ might be
-written in Clojure:-
+### Resources
+
+In yada, resources are defined by a __resource model__, which can be
+authored in a declarative syntax or generated programmatically.
+
+Here's an example of the declarative syntax of a typical __resource
+model__ in Clojure:-
 
 ```clojure
 {:properties {…}
@@ -62,20 +70,17 @@ written in Clojure:-
 }
 ```
 
-You can use Java or any JVM language to create these
-__resource models__. One benefit of using Clojure is that it offers a
-large number of ways to be generate, derive and transform maps. This
-gives you the maximum flexibility in how your web resources are
-developed.
+You can also use Java or any JVM language to create these __resource-models__.
 
-A resource can be created from a map using yada's `resource` function,
-which just validates the given map, coercing any parameters as
-necessary, and wrapping in a record indicating a **resource**.
+In Clojure, you can create a __resource__ from a __resource-model__
+with yada's `resource` function. This resource is a Clojure record (a
+Java object) that wraps the raw __resource-model__, having validated
+against a comprehensive schema first.
+
+### Handlers
 
 yada's eponymous function `yada` takes a single parameter (the
-resource) and returns a __handler__. This is both a _function_
-that can be used to create responses from Ring requests, and a
-_data-model_ that can be further modified (if desired).
+resource) and returns a __handler__.
 
 ```clojure
 (require '[yada.yada :refer [yada resource]])
@@ -83,8 +88,36 @@ _data-model_ that can be further modified (if desired).
 (yada (resource {…}))
 ```
 
-Finally, yada is built on a fully asynchronous core, bringing high
-performance and scalability to your websites and APIs.
+A handler can be called like a function, with a single argument
+representing an HTTP __request__. It returns a value representing the
+corresponding HTTP response. (If you are familiar with Ring, this is
+the Ring handler, but not one you have to write yourself!)
+
+When given the HTTP __request__, the handler first creates a
+__request-context__ and populates it with various values, such as the
+request and the __resource-model__ that corresponds to the request's
+URI.
+
+The handler then threads the __request-context__ through a chain of
+functions, called the __interceptor-chain__. This 'chain' is just a
+list of functions specified in the __resource-model__ that has been
+carefully crafted to generate a response that complies fully with HTTP
+standards. However, as with anything in the resource-model, you can
+choose to modify it to your exact requirements if necessary.
+
+As an aside, the functions making up the interceptor-chain are not
+necessarily executed in a single thread but rather an asynchronous
+event-driven implementation enabled by a third-party library called
+manifold.
+
+To use yada to create real responses to real HTTP requests, you need
+to add yada to a web-server, such as Aleph or Immutant. The web server
+takes care of the networking and messages of HTTP (RFC 7230), while
+yada focuses on the semantics and content (starting with RFC 7231). To
+write real applications, you also need a router that understands URIs,
+and yada has some features that are enabled when used with bidi,
+although there is nothing to stop you using yada with other routing
+libraries.
 
 ## Example 1: Hello World!
 
@@ -559,7 +592,9 @@ following in the file's __:dependencies__ section.
 
 ```clojure
 [yada "1.1.0-SNAPSHOT"]
+
 [aleph "0.4.1-beta3"]
+[bidi "1.25.0"]
 ```
 
 If you want to use yada to create a web API, this is all you need to
@@ -788,98 +823,42 @@ service continues to work.
 {:parameters {:form {:video java.io.File}}}
 ```
 
-## Representations
-
-Resources have state, but when this state needs to be transferred from
-one host to another, we use one of a number of formats to represent
-it. We call these formats _representations_.
-
-A given resource may have a large number of actual or possible
-representations.
-
-Representation may differ in a number of respects, including :-
-
-- the media-type ('file format').
-- if textual, the character set used to encode it into octets
-- the (human) language used (if textual)
-- whether and how the content is compressed
-
-Whenever a user-agent requests the state from a resource, a particular
-representation is chosen, either by the server (proactive) or client
-(reactive). The process of choosing which representation is the most
-suitable is known as
-[_content negotiation_](/spec/rfc7231#section-3.4).
-
-Content negotiation is an important feature of HTTP, allowing clients
-and servers to agree on how a resource can be represented to best meet
-the availability, compatibility and preferences of both parties. It is
-a key factor in the survival of services over time, since both new and
-legacy media-types can be supported concurrently. (It is also the
-mechanism by which new versions of media-types can be introduced, even
-media-types that define hypermedia interactions, more on this later.)
-
-### Proactive negotiation
-
-There are 2 types of content negotiation. The first is termed
-_proactive negotiation_ where the server determines the type of
-representation from requirements sent in the request headers. These
-are the headers beginning with `Accept`.
-
-For any resource, the available representations that can be produced
-by a resource, and those that it consumers, are declared in the
-__resource model__. Every resource that allows a GET method should
-declare at least one representation that it is able to produce.
-
-Let's start with a simple web-page example.
-
-```clojure
-{:produces "text/html"}
-```
-
-This is a short-hand for writing [...]
-
-[missing text here]
-
-```clojure
-{:produces [{:media-type "text/plain"
-             :language #{"en" "zh-ch"}
-             :charset "UTF-8"}
-            {:media-type "text/plain"
-             :language "zh-ch"
-             :charset "Shift_JIS;q=0.9"}]
-             ```
-
-[ todo - languages ]
-
-
-```nohighlight
-curl -i http://localhost:8090/hello-languages -H "Accept-Charset: Shift_JIS" -H
-"Accept: text/plain" -H "Accept-Language: zh-CH"
-```
-
-```http
-HTTP/1.1 200 OK
-Content-Type: text/plain;charset=shift_jis
-Vary: accept-charset, accept-language, accept
-Server: Aleph/0.4.0
-Connection: Keep-Alive
-Date: Mon, 27 Jul 2015 18:38:01 GMT
-Content-Length: 9
-
-?�D���E!
-```
-
-### Reactive negotiation
-
-The second type of negotiation is termed _reactive negotiation_ where the
-agent chooses from a list of representations provided by the server.
-
-(Currently, yada does not yet support reactive negotiation but it is
-definitely on the road-map.)
-
 ## Properties
 
-[coming soon]
+Properties tell us about the current state of a resource, such as
+whether the resource exists, or when the resource was last
+modified. Properties allow us to determine whether the user agent's
+cache of a resource's state is up-to-date.
+
+Sometimes all a resource's properties are constant and can be known
+when the resource is defined. More likely the resource's properties
+have to be determined by some logic, and often this logic involves
+I/O.
+
+Also, if the resource has declared parameters, it can be that
+resource's properties depend in some way on these parameters. For
+example, the properties of account A may well be different from the
+properties of account B.
+
+A resource's properties may also depend on who is making the
+request. Your bank account details should only exist if you're the one
+accessing them. If I tried to access your bank account details, you'd
+want the service to behave differently.
+
+For this reason, a resource's __properties__ declaration in the
+__resource-model__ points to a single-arity function that is called by
+yada after the request's parameters have been parsed and the
+credentials of a caller have been established.
+
+In many cases, it will be necessary to query a database, internal
+web-service or equivalent operation involving IO.
+
+If you use a __properties__ function, anything you return will be
+placed in the __:properties__ entry of the __request-context__. Since
+the request-context is available when the full response body is
+created, you may choose to return the entire state of the resource, in
+addition to its properties. This may be sensible if it helps avoid a
+second trip to the database.
 
 ## Methods
 
@@ -964,6 +943,105 @@ RFC.
   (idempotent? [_] false)
   (request [this ctx] …))
 ```
+
+## Representations
+
+Resources have state, but when this state needs to be transferred from
+one host to another, we use one of a number of formats to represent
+it. We call these formats _representations_.
+
+A given resource may have a large number of actual or possible
+representations.
+
+Representation may differ in a number of respects, including :-
+
+- the media-type ('file format').
+- if textual, the character set used to encode it into octets
+- the (human) language used (if textual)
+- whether and how the content is compressed
+
+Whenever a user-agent requests the state from a resource, a particular
+representation is chosen, either by the server (proactive) or client
+(reactive). The process of choosing which representation is the most
+suitable is known as
+[_content negotiation_](/spec/rfc7231#section-3.4).
+
+### Producing content
+
+Content negotiation is an important feature of HTTP, allowing clients
+and servers to agree on how a resource can be represented to best meet
+the availability, compatibility and preferences of both parties. It is
+a key factor in the survival of services over time, since both new and
+legacy media-types can be supported concurrently. (It is also the
+mechanism by which new versions of media-types can be introduced, even
+media-types that define hypermedia interactions, more on this later.)
+
+#### Proactive negotiation
+
+There are 2 types of content negotiation. The first is termed
+_proactive negotiation_ where the server determines the type of
+representation from requirements sent in the request headers. These
+are the headers beginning with `Accept`.
+
+For any resource, the available representations that can be produced
+by a resource, and those that it consumers, are declared in the
+__resource model__. Every resource that allows a GET method should
+declare at least one representation that it is able to produce.
+
+Let's start with a simple web-page example.
+
+```clojure
+{:produces "text/html"}
+```
+
+This is a short-hand for writing [...]
+
+[missing text here]
+
+```clojure
+{:produces [{:media-type "text/plain"
+             :language #{"en" "zh-ch"}
+             :charset "UTF-8"}
+            {:media-type "text/plain"
+             :language "zh-ch"
+             :charset "Shift_JIS;q=0.9"}]
+             ```
+
+[ todo - languages ]
+
+
+```nohighlight
+curl -i http://localhost:8090/hello-languages -H "Accept-Charset: Shift_JIS" -H
+"Accept: text/plain" -H "Accept-Language: zh-CH"
+```
+
+```http
+HTTP/1.1 200 OK
+Content-Type: text/plain;charset=shift_jis
+Vary: accept-charset, accept-language, accept
+Server: Aleph/0.4.0
+Connection: Keep-Alive
+Date: Mon, 27 Jul 2015 18:38:01 GMT
+Content-Length: 9
+
+?�D���E!
+```
+
+#### Reactive negotiation
+
+The second type of negotiation is termed _reactive negotiation_ where the
+agent chooses from a list of representations provided by the server.
+
+(Currently, yada does not yet support reactive negotiation but it is
+definitely on the road-map.)
+
+#### The Vary response header
+
+[coming soon]
+
+### Consuming content
+
+[coming soon]
 
 ## Security
 
