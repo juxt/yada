@@ -8,7 +8,6 @@
    [clojure.string :as str]
    [clojure.tools.logging :refer :all]
    [clojure.data.codec.base64 :as base64]
-   [ring.middleware.basic-authentication :as ba]
    [yada.authorization :refer [allowed?]]))
 
 (defmulti authenticate-with-scheme
@@ -18,11 +17,14 @@
 
 (defmethod authenticate-with-scheme "Basic"
   [ctx {:keys [authenticate]}]
-  (:basic-authentication
-   (ba/basic-authentication-request
-    (:request ctx)
-    (fn [user password]
-      (authenticate [user password])))))
+
+  (let [auth (get-in ctx [:request :headers "authorization"])
+        cred (and auth (apply str (map char (base64/decode (.getBytes (last (re-find #"^Basic (.*)$" auth)))))))]
+    (when cred
+      (let [[user password] (str/split (str cred) #":" 2)]
+        (or
+         (authenticate [user password])
+         {})))))
 
 ;; A nil scheme is simply one that does not use any of the built-in
 ;; algorithms for IANA registered auth-schemes at
@@ -42,19 +44,28 @@
   (warnf "No installed support for the following scheme: %s" scheme)
   nil)
 
-(defn authenticate [ctx]
-  ;; If [:access-control :allow-origin] exists at all, don't block an OPTIONS pre-flight request
-  (if (and (= (:method ctx) :options)
-           (some-> ctx :resource :access-control :allow-origin))
-    ;; Let through without authentication, CORS OPTIONS is
-    ;; incompatible with authorization, since it is forbidden to send
-    ;; credentials in a pre-flight request.
-    ctx
+(defn cors-preflight?
+  "Is the method OPTIONS and does the resource accept requests from
+  other origins?"
+  [ctx]
+  (and (= (:method ctx) :options)
+       (some-> ctx :resource :access-control :allow-origin)))
 
+(defmacro when-not-cors-preflight [ctx & body]
+  `(if (cors-preflight? ~ctx)
+     ~ctx
+     ~@body))
+
+;; We need to distinguish between authentication credentials being
+;; supplied and valid, supplied and invalid, not supplied.
+
+(defn authenticate [ctx]
+  (when-not-cors-preflight ctx
     ;; Note that a response can have multiple challenges, one for each realm.
     (reduce
      (fn [ctx [realm {:keys [authentication-schemes]}]]
        (let [credentials (some (partial authenticate-with-scheme ctx) authentication-schemes)]
+         (infof "credentials for realm %s, schemes %s are %s" realm authentication-schemes credentials)
          (cond-> ctx
            credentials (assoc-in [:authentication realm] credentials)
            (not credentials) (update-in [:response :headers "www-authenticate"]
@@ -74,24 +85,26 @@
   so (RBAC), and the resource's properties (attributes) have been
   loaded to make ABAC schemes also possible."
   [ctx]
-  (reduce
-   (fn [ctx [realm spec]]
-     (let [credentials (get-in ctx [:authentication :realms])
-           expr (get-in spec [:authorized-methods (:method ctx)])]
-       (if (allowed? expr ctx realm)
-         ctx
-         (if credentials
-           (d/error-deferred
-            (ex-info "Forbidden"
-                     {:status 403   ; or 404 to keep the resource hidden
-                      ;; But allow WWW-Authenticate header in error
-                      :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])}))
-           (d/error-deferred
-            (ex-info "No authorization provided"
-                     {:status 401   ; or 404 to keep the resource hidden
-                      ;; But allow WWW-Authenticate header in error
-                      :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])}))))))
-   ctx (get-in ctx [:resource :access-control :realms])))
+  (when-not-cors-preflight ctx
+    (reduce
+     (fn [ctx [realm spec]]
+       (let [credentials (get-in ctx [:authentication realm])
+             expr (get-in spec [:authorized-methods (:method ctx)])]
+         (infof "authorize: credentials %s expr %s" credentials expr)
+         (if (allowed? expr ctx realm)
+           ctx
+           (if credentials
+             (d/error-deferred
+              (ex-info "Forbidden"
+                       {:status 403   ; or 404 to keep the resource hidden
+                        ;; But allow WWW-Authenticate header in error
+                        :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])}))
+             (d/error-deferred
+              (ex-info "No authorization provided"
+                       {:status 401   ; or 404 to keep the resource hidden
+                        ;; But allow WWW-Authenticate header in error
+                        :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])}))))))
+     ctx (get-in ctx [:resource :access-control :realms]))))
 
 (defn call-fn-maybe [x ctx]
   (when x

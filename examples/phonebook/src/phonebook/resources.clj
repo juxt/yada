@@ -22,9 +22,10 @@
      {:authentication-schemes
       [{:scheme "Basic"
         :authenticate {["tom" "watson"] {:email "tom@ibm.com"
-                                         :roles #{:phonebook/write}}
+                                         :roles #{:phonebook/write
+                                                  :phonebook/delete}}
                        ["malcolm" "changeme"] {:email "malcolm@juxt.pro"
-                                               :roles #{}}}}
+                                               :roles #{:phonebook/write}}}}
 
        ;; A custom scheme (indicated by the absence of a :scheme entry) that lets us process api-keys.
        ;; You can plugin your own authenticator here, with full access to yada's request context.
@@ -33,14 +34,16 @@
         (fn [ctx]
           (let [k (get-in ctx [:request :headers "Api-Key"])]
             (cond
-              (= k "masterkey") {:user "swagger" :roles #{:phonebook/write}}
-              (= k "lesserkey") {:user "swagger" :roles #{}})))}]
+              (= k "masterkey") {:user "swagger-master" :roles #{:phonebook/write
+                                                                 :phonebook/delete}}
+              (= k "lesserkey") {:user "swagger-lesser" :roles #{:phonebook/write}}
+              k {})))}]
 
       :authorized-methods
       {:get true
        :post :phonebook/write
        :put :phonebook/write
-       :delete :phonebook/write
+       :delete :phonebook/delete
        ;; TODO: Write a thing where we can have multiple keys
        ;; TODO: Maybe coerce it!
        ;; #{:post :put :delete} :phonebook/write

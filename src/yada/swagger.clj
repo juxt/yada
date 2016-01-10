@@ -42,7 +42,7 @@
 
 (defn to-path [route]
   (let [path (->> route :path (map encode) (apply str))
-        {:keys [methods parameters produces consumes]} (:resource route)]
+        {:keys [methods parameters produces consumes]} (get-in route [:handler :resource])]
     [path
      (into {}
            (for [m (keys methods)
@@ -71,6 +71,9 @@
   (sc/coercer rss/Swagger {rss/Parameters #(set/rename-keys % {:form :formData})}))
 
 (defn swagger-spec [template routes & [content-type]]
+  (infof "template is %s" template)
+  (when (= "Phonebook" (get-in template [:info :title]))
+    (infof "swagger spec, routes are %s" (pr-str (route-seq routes))))
   (-> template
       (merge {:paths (into {} (map to-path (route-seq routes)))})
       ring-swagger-coercer rs/swagger-json))
