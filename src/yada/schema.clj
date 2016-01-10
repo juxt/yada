@@ -10,6 +10,8 @@ convenience of terse, expressive short-hand descriptions."}
     yada.schema
   (:require
    [clojure.walk :refer [postwalk]]
+   [clojure.tools.logging :refer :all]
+   [yada.boolean :as b :refer [boolean?]]
    [yada.media-type :as mt]
    [schema.core :as s]
    [schema.coerce :as sc]
@@ -228,10 +230,11 @@ convenience of terse, expressive short-hand descriptions."}
   (as-method-map [o] {:response nil}))
 
 (def MethodsMappings
-  (merge {Method as-method-map
-          ContextFunction as-fn}
-         RepresentationSeqMappings
-         AuthorizationMappings))
+  (merge
+   {Method as-method-map
+    ContextFunction as-fn}
+   RepresentationSeqMappings
+   AuthorizationMappings))
 
 ;; Many HTTP headers are comma separated. We should accept these
 ;; verbatim strings in our schema.
@@ -239,6 +242,58 @@ convenience of terse, expressive short-hand descriptions."}
 (s/defschema Strings [s/Str])
 (s/defschema StringSet #{s/Str})
 (s/defschema Keywords [s/Keyword])
+
+(def AuthScheme
+  {(s/optional-key :scheme) s/Str
+   (s/optional-key :authenticate) s/Any})
+
+(s/defschema AuthSchemes
+  {:authentication-schemes [AuthScheme]})
+
+(s/defschema AuthorizedMethods
+  {(s/optional-key :authorized-methods)
+   {s/Keyword b/BooleanExpression}})
+
+(s/defschema Realms
+  {(s/optional-key :realms)
+   {Realm (merge AuthSchemes AuthorizedMethods)}})
+
+(s/defschema Cors
+  {(s/optional-key :allow-origin) (s/conditional fn? (s/=> (s/conditional ifn? #{s/Str} :else s/Str) Context) :else StringSet)
+   (s/optional-key :allow-credentials) s/Bool
+   (s/optional-key :expose-headers) (s/conditional fn? ContextFunction :else Strings)
+   (s/optional-key :max-age) (s/conditional fn? ContextFunction :else s/Int)
+   (s/optional-key :allow-methods) (s/conditional fn? ContextFunction :else Keywords)
+   (s/optional-key :allow-headers) (s/conditional fn? ContextFunction :else Strings)})
+
+(s/defschema AccessControl
+  {(s/optional-key :access-control) (merge Realms Cors)})
+
+;; Here is some very tricky code, caused by the necessity to compose a
+;; couple of these 'data macros'. The realm shorthand has to allow the
+;; scheme short-hand to 'carry over', which makes it difficult to find
+;; an approach that preserves schema integrity while decoupling the
+;; data macros from each other. For an explanation of data macros, see
+;; https://blog.juxt.pro/posts/data-macros.html
+
+(def SingleRealmMapping
+  {(merge Realms Cors)
+   (fn [x]
+     (if-let [realm (:realm x)]
+       (-> x
+           (merge {:realms {realm (dissoc x :realm)}})
+           (dissoc :realm :scheme :authenticate :authentication-schemes))
+       x))})
+
+(def SingleSchemeMapping
+  {(merge AuthSchemes AuthorizedMethods)
+   (fn [x]
+     (if (:authenticate x)
+       (cond-> x
+         true (merge {:authentication-schemes [(select-keys x [:scheme :authenticate])]})
+         true (select-keys [:authentication-schemes])
+         (:authorized-methods x) (merge {:authorized-methods (:authorized-methods x)}))
+       x))})
 
 (def HeaderMappings 
   {StringSet (fn [x]
@@ -254,57 +309,18 @@ convenience of terse, expressive short-hand descriptions."}
                 (string? x) (map keyword (clojure.string/split x #"\s*,\s*"))
                 :otherwise (vec x)))})
 
-(s/defschema Cors
-  {(s/optional-key :cors)
-   {(s/optional-key :allow-origin) (s/conditional fn? (s/=> (s/conditional ifn? #{s/Str} :else s/Str) Context) :else StringSet)
-    (s/optional-key :allow-credentials) s/Bool
-    (s/optional-key :expose-headers) (s/conditional fn? ContextFunction :else Strings)
-    (s/optional-key :max-age) (s/conditional fn? ContextFunction :else s/Int)
-    (s/optional-key :allow-methods) (s/conditional fn? ContextFunction :else Keywords)
-    (s/optional-key :allow-headers) (s/conditional fn? ContextFunction :else Strings)}})
-
-(def CorsMappings
-  (merge HeaderMappings {ContextFunction as-fn}))
-
-(def AuthScheme {(s/optional-key :scheme) s/Str
-                 (s/optional-key :authenticate) s/Any})
-
-(s/defschema Schemes
-  {:schemes [AuthScheme]})
-
-(def SingleSchemeMapping
-  {Schemes
-   (fn [x]
-     (if (:authenticate x)
-       {:schemes [x]}
-       x))})
-
-(s/defschema Realms
-  {(s/optional-key :realms)
-   {Realm (merge Schemes)}})
-
-(def SingleRealmMapping
-  {Realms
-   (fn [x]
-     (if-let [realm (:realm x)]
-       {:realms {realm (dissoc x :realm)}}
-       x))})
-
-(s/defschema Authentication
-  {(s/optional-key :authentication)
-   Realms})
-
-(def AuthenticationMappings
-  (merge SingleSchemeMapping
-         SingleRealmMapping))
+(def AccessControlMappings
+  (merge SingleRealmMapping
+         SingleSchemeMapping
+         HeaderMappings
+         {ContextFunction as-fn}))
 
 (s/defschema ResourceDocumentation CommonDocumentation)
 
 (s/defschema ResourceBase
   (merge {(s/optional-key :id) s/Any}
          ResourceDocumentation
-         Authentication
-         Cors
+         AccessControl
          Properties
          ResourceParameters
          Produces
@@ -325,7 +341,7 @@ convenience of terse, expressive short-hand descriptions."}
   (merge PropertiesMappings
          RepresentationSeqMappings
          MethodsMappings
-         CorsMappings))
+         AccessControlMappings))
 
 (def resource-coercer (sc/coercer Resource ResourceMappings))
 

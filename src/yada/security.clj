@@ -8,7 +8,8 @@
    [clojure.string :as str]
    [clojure.tools.logging :refer :all]
    [clojure.data.codec.base64 :as base64]
-   [ring.middleware.basic-authentication :as ba]))
+   [ring.middleware.basic-authentication :as ba]
+   [yada.authorization :refer [allowed?]]))
 
 (defmulti authenticate-with-scheme
   "Multimethod that allows new schemes to be added."
@@ -44,7 +45,7 @@
 (defn authenticate [ctx]
   ;; If [:access-control :allow-origin] exists at all, don't block an OPTIONS pre-flight request
   (if (and (= (:method ctx) :options)
-           (some-> ctx :resource :cors :allow-origin))
+           (some-> ctx :resource :access-control :allow-origin))
     ;; Let through without authentication, CORS OPTIONS is
     ;; incompatible with authorization, since it is forbidden to send
     ;; credentials in a pre-flight request.
@@ -52,22 +53,18 @@
 
     ;; Note that a response can have multiple challenges, one for each realm.
     (reduce
-     (fn [ctx [realm {:keys [schemes]}]]
-       (let [credentials (some (partial authenticate-with-scheme ctx) schemes)]
+     (fn [ctx [realm {:keys [authentication-schemes]}]]
+       (let [credentials (some (partial authenticate-with-scheme ctx) authentication-schemes)]
          (cond-> ctx
            credentials (assoc-in [:authentication realm] credentials)
-           credentials (update-in [:authentication :combined-roles]
-                                  (fnil set/union #{})
-                                  (set (for [role (:roles credentials)]
-                                         {:realm realm :role role})))
            (not credentials) (update-in [:response :headers "www-authenticate"]
                                         (fnil conj [])
                                         (str/join ", "
                                                   (filter some?
-                                                          (for [{:keys [scheme]} schemes]
+                                                          (for [{:keys [scheme]} authentication-schemes]
                                                             (when scheme
                                                               (format "%s realm=\"%s\"" scheme realm)))))))))
-     ctx (get-in ctx [:resource :authentication :realms]))))
+     ctx (get-in ctx [:resource :access-control :realms]))))
 
 (defn authorize
   "Given an authenticated user in the context, and the resource
@@ -77,22 +74,24 @@
   so (RBAC), and the resource's properties (attributes) have been
   loaded to make ABAC schemes also possible."
   [ctx]
-
-  ;; For each realm that our roles are defined in.
-  
-  (let [required-roles (some-> ctx :resource :methods (get (:method ctx)) :restrict)]
-    (if required-roles
-      (let [assigned-roles (get-in ctx [:authentication :combined-roles])
-            accessing-roles (set/intersection (set required-roles) assigned-roles)]
-        (if (not-empty accessing-roles) ; disjunction
-          ctx ;; allow, perhaps log the accessing-roles in the context the 
-          (d/error-deferred
-           (ex-info "Failed authorization check"
-                    {:status 401
-                     ;; But allow WWW-Authenticate header in error
-                     :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])}))))
-      ;; Otherwise, pass through
-      ctx)))
+  (reduce
+   (fn [ctx [realm spec]]
+     (let [credentials (get-in ctx [:authentication :realms])
+           expr (get-in spec [:authorized-methods (:method ctx)])]
+       (if (allowed? expr ctx realm)
+         ctx
+         (if credentials
+           (d/error-deferred
+            (ex-info "Failed authorization check"
+                     {:status 401   ; or 404 to keep the resource hidden
+                      ;; But allow WWW-Authenticate header in error
+                      :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])}))
+           (d/error-deferred
+            (ex-info "Failed authorization check"
+                     {:status 403   ; or 404 to keep the resource hidden
+                      ;; But allow WWW-Authenticate header in error
+                      :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])}))))))
+   ctx (get-in ctx [:resource :access-control :realms])))
 
 (defn call-fn-maybe [x ctx]
   (when x
@@ -105,9 +104,9 @@
 
 (defn access-control-headers [ctx]
   (if-let [origin (get-in ctx [:request :headers "origin"])]
-    (let [cors (get-in ctx [:resource :cors])
+    (let [access-control (get-in ctx [:resource :access-control])
           ;; We can only report one origin, so let's work that out
-          allow-origin (let [s (call-fn-maybe (:allow-origin cors) ctx)]
+          allow-origin (let [s (call-fn-maybe (:allow-origin access-control) ctx)]
                          (cond
                            (= s "*") "*"
                            (string? s) s
@@ -119,25 +118,25 @@
         allow-origin
         (assoc-in [:response :headers "access-control-allow-origin"] allow-origin)
 
-        (:allow-credentials cors)
+        (:allow-credentials access-control)
         (assoc-in [:response :headers "access-control-allow-credentials"]
-                  (to-header (:allow-credentials cors)))
+                  (to-header (:allow-credentials access-control)))
 
-        (:expose-headers cors)
+        (:expose-headers access-control)
         (assoc-in [:response :headers "access-control-expose-headers"]
-                  (to-header (call-fn-maybe (:expose-headers cors) ctx)))
+                  (to-header (call-fn-maybe (:expose-headers access-control) ctx)))
 
-        (:max-age cors)
+        (:max-age access-control)
         (assoc-in [:response :headers "access-control-max-age"]
-                  (to-header (call-fn-maybe (:max-age cors) ctx)))
+                  (to-header (call-fn-maybe (:max-age access-control) ctx)))
 
-        (:allow-methods cors)
+        (:allow-methods access-control)
         (assoc-in [:response :headers "access-control-allow-methods"]
-                  (to-header (map (comp str/upper-case name) (call-fn-maybe (:allow-methods cors) ctx))))
+                  (to-header (map (comp str/upper-case name) (call-fn-maybe (:allow-methods access-control) ctx))))
 
-        (:allow-headers cors)
+        (:allow-headers access-control)
         (assoc-in [:response :headers "access-control-allow-headers"]
-                  (to-header (call-fn-maybe (:allow-headers cors) ctx)))))
+                  (to-header (call-fn-maybe (:allow-headers access-control) ctx)))))
 
     ;; Otherwise
     ctx))

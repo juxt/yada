@@ -15,37 +15,44 @@
    [yada.yada :as yada])
   (:import [manifold.stream.core IEventSource]))
 
-;; A custom scheme (indicated by the absence of a :scheme entry).
-;; You can plugin your own authenticator here, with full access to yada's request context.
-;; This authenticator is just a simple example to allow the Swagger UI to access the phonebook.
-
-;; Access to our phonebook is public, but if we want to modify it we
-;; must have sufficient authorization. This is what this access
-;; control definition does.
-
-;; We must be very careful not to allow a rogue script on another
-;; website to hijack our cookies and destroy our phonebook!.
 (def access-control
-  {:authentication
+  {:access-control
    {:realms
     {"phonebook"
-     {:schemes
+     {:authentication-schemes
       [{:scheme "Basic"
         :authenticate {["tom" "watson"] {:email "tom@ibm.com"
                                          :roles #{:phonebook/write}}
                        ["malcolm" "changeme"] {:email "malcolm@juxt.pro"
                                                :roles #{}}}}
 
-       ;; Here's the scheme that let's use process api-keys
+       ;; A custom scheme (indicated by the absence of a :scheme entry) that lets us process api-keys.
+       ;; You can plugin your own authenticator here, with full access to yada's request context.
+       ;; This authenticator is just a simple example to allow the Swagger UI to access the phonebook.
        {:authenticate
         (fn [ctx]
           (let [k (get-in ctx [:request :headers "Api-Key"])]
             (cond
               (= k "masterkey") {:user "swagger" :roles #{:phonebook/write}}
-              (= k "lesserkey") {:user "swagger" :roles #{}})))}]}}}
+              (= k "lesserkey") {:user "swagger" :roles #{}})))}]
 
-   :cors
-   {
+      :authorized-methods
+      {:get true
+       :post :phonebook/write
+       :put :phonebook/write
+       :delete :phonebook/write
+       ;; TODO: Write a thing where we can have multiple keys
+       ;; TODO: Maybe coerce it!
+       ;; #{:post :put :delete} :phonebook/write
+       }}}
+
+    ;; Access to our phonebook is public, but if we want to modify it we
+    ;; must have sufficient authorization. This is what this access
+    ;; control definition does.
+
+    ;; We must be very careful not to allow a rogue script on another
+    ;; website to hijack our cookies and destroy our phonebook!.
+
     ;; We want to allow read-access to our phonebook generally
     ;; available to foreign applications (those originating from
     ;; different hosts).
@@ -69,7 +76,8 @@
     :allow-credentials false
 
     ;; Required for the Swagger key
-    :allow-headers ["Api-Key"]}})
+    :allow-headers ["Api-Key"]
+    }})
 
 (defn new-index-resource [db *routes]
   (resource
@@ -93,9 +101,10 @@
                          :charset "UTF-8"}]
              :response (fn [ctx]
                          (let [id (db/add-entry db (get-in ctx [:parameters :form]))]
-                           (java.net.URI. nil nil (path-for @*routes :phonebook.api/entry :entry id) nil)))
-             :restrict {:realm "phonebook" :role :phonebook/write}
-             }}}
+                           (java.net.URI. nil nil (path-for @*routes :phonebook.api/entry :entry id) nil)))}}
+
+     }
+
     (merge access-control))))
 
 (defn new-entry-resource [db *routes]
@@ -106,6 +115,7 @@
                                "application/edn;q=0.9"
                                "application/json;q=0.8"}
                  :charset "UTF-8"}]
+     
      :methods
      {:get
       {:response
@@ -132,8 +142,6 @@
        [{:media-type #{"multipart/form-data"
                        "application/x-www-form-urlencoded"}}]
 
-       :restrict {:realm "phonebook" :role :phonebook/write} 
-       
        :response
        (fn [ctx]
          (let [entry (get-in ctx [:parameters :path :entry])
@@ -144,7 +152,6 @@
 
       :delete
       {:produces "text/plain"
-       :restrict {:realm "phonebook" :role :phonebook/write} 
        :response
        (fn [ctx]
          (let [id (get-in ctx [:parameters :path :entry])]
@@ -154,6 +161,8 @@
                "text/plain" (str msg "\n")
                "text/html" (html [:h2 msg])
                ;; We need to support JSON for the Swagger UI
-               {:message msg}))))}}}
+               {:message msg}))))}}
+
+     }
 
     (merge access-control))))
