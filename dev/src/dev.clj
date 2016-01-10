@@ -21,7 +21,7 @@
   "Create a development system"
   []
   (s/with-fn-validation
-    (-> (config :local)
+    (-> (config :dev)
         (new-system-map)
         (component/system-using (new-dependency-map))
         (co-dependency/system-co-using (new-co-dependency-map)))))
