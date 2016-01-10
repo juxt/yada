@@ -82,13 +82,13 @@
          ctx
          (if credentials
            (d/error-deferred
-            (ex-info "Failed authorization check"
-                     {:status 401   ; or 404 to keep the resource hidden
+            (ex-info "Forbidden"
+                     {:status 403   ; or 404 to keep the resource hidden
                       ;; But allow WWW-Authenticate header in error
                       :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])}))
            (d/error-deferred
-            (ex-info "Failed authorization check"
-                     {:status 403   ; or 404 to keep the resource hidden
+            (ex-info "No authorization provided"
+                     {:status 401   ; or 404 to keep the resource hidden
                       ;; But allow WWW-Authenticate header in error
                       :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])}))))))
    ctx (get-in ctx [:resource :access-control :realms])))
