@@ -46,7 +46,8 @@
 
 (defn cors-preflight?
   "Is the method OPTIONS and does the resource accept requests from
-  other origins?"
+  other origins? This is important because we can't block pre-flight
+  requests– the CORS spec. doesn't allow us to."
   [ctx]
   (and (= (:method ctx) :options)
        (some-> ctx :resource :access-control :allow-origin)))
@@ -56,14 +57,38 @@
      ~ctx
      ~@body))
 
-;; We need to distinguish between authentication credentials being
-;; supplied and valid, supplied and invalid, not supplied.
-
 (defn authenticate [ctx]
   (when-not-cors-preflight ctx
     ;; Note that a response can have multiple challenges, one for each realm.
     (reduce
      (fn [ctx [realm {:keys [authentication-schemes]}]]
+       ;; Currently we take the credentials of the first scheme that
+       ;; returns them.  We also encourage scheme provides to return
+       ;; truthy (e.g. {}) if the credentials have been specified (the
+       ;; correct request header or cookie has been used) but are
+       ;; invalid. This is to distinguish between (i) authentication
+       ;; credentials being supplied and valid, (ii) supplied and
+       ;; invalid, (iii) not supplied.
+       ;;
+       ;; The upshot of this is that invalid basic auth creds are
+       ;; accepted (on the first attempt), so if the user makes a
+       ;; mistake typing them in, no re-attempts are allowed. It is
+       ;; hard for yada to provide re-attempts to a human, because it
+       ;; is designed to support other types of user-agent, where
+       ;; re-attempt counting would not be desirable.
+       ;;
+       ;; The compromise is that basic auth has a single attempt and
+       ;; we must find some better way of allowing humans to 'log out'
+       ;; of basic auth via browser JS. If re-attempts are desirable,
+       ;; then it is recommended to use a more sophisticated auth
+       ;; scheme rather than Basic, which is really only for quick
+       ;; prototypes and examples. I think this is a valid overall
+       ;; compromise between the various trade-offs here.
+
+       ;; In the future we may have a better design that can support
+       ;; conjunctions and disjunctions across auth-schemes, in much
+       ;; the same way we do for the built-in role-based
+       ;; authorization.
        (let [credentials (some (partial authenticate-with-scheme ctx) authentication-schemes)]
          (infof "credentials for realm %s, schemes %s are %s" realm authentication-schemes credentials)
          (cond-> ctx
