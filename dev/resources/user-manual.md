@@ -46,20 +46,30 @@ is identified by a unique __URI__. With yada you can create web
 resources that are fully compliant with, and thereby take full
 advantage of, HTTP standards.
 
-But yada is __not__ a full 'web application framework' because it is
+yada strives to be a complete implementation of all of HTTP, which is
+a very rare thing indeed. Therefore, it can be used to serve static
+content, generate web pages and expose web APIs.
+
+But yada is _not_ a 'web application framework' because it is
 not concerned with how your application stores or computes state, it
 is solely concerned with exchanging that state with other agents on
-the web, over HTTP. To build a full application serving web-clients
-you would need to add some application logic, somewhere to store your
-data and a way to access it.
+the web, over HTTP.
+
+To build a full application serving web-clients you would need to add
+some application logic, somewhere to store your application's state
+and a way to retrieve it. Probably, you'll also need a templating
+library if you want to generate complex HTML, because yada doesn't
+care about that either.
+
+yada is implemented in the Clojure programming language and runs on the JVM.
 
 ### Resources
 
-In yada, resources are defined by a __resource model__, which can be
+In yada, resources are defined by a __resource-model__, which can be
 authored in a declarative syntax or generated programmatically.
 
-Here's an example of the declarative syntax of a typical __resource
-model__ in Clojure:-
+Here's an example of the declarative syntax of a typical
+__resource-model__ in Clojure:
 
 ```clojure
 {:properties {…}
@@ -119,6 +129,20 @@ and yada has some features that are enabled when used with bidi,
 although there is nothing to stop you using yada with other routing
 libraries.
 
+### Why?
+
+But why might you want to use yada rather than implement your own Ring
+handler in Clojure?
+
+We took a normal Ring handler, injected it with a mix of radioactive
+isotopes stolen from the
+[same secret Soviet atomic research project as ØMQ](http://zguide.zeromq.org/page:all)
+and bombarded it with near-identical 1950-era cosmic rays, while
+injecting into it a potent cocktail of powerful steroids. As a result,
+yada's handlers are much more than your average Ring handler, and the
+next chapter should give you a glimpse of what such a handler is
+capable of.
+
 ## Example 1: Hello World!
 
 Let's introduce yada properly by writing some code. Let's start with
@@ -138,9 +162,9 @@ where it comes from.
 We give it our string and it returns a __handler__.
 
 (Just a minute!  We just said that the argument to give to `yada` was
-a **resource model** (a _map_). Well, that's true, but yada has some
-built-in code that transforms the string into a resource-model. Don't
-worry about that for now, we'll discuss it more later).
+a __resource__. Well, that's true, but yada has some built-in code
+that implicitly coerces the string into a resource. Don't worry about
+that for now, we'll discuss it more later).
 
 You can see the result of this at
 [http://localhost:8090/hello](http://localhost:8090/hello).
@@ -149,12 +173,6 @@ By combining this handler with a web-server, we can start the service.
 
 Here's how you can start the service using
 [Aleph](https://github.com/ztellman/aleph).
-
-(Note that you are free to choose any yada -compatible web server, as
-long as it's Aleph! Joking aside, as more web servers support
-end-to-end asynchronicity with back-pressure, all the way up to the
-application, then yada will support those. Currently Aleph is the only
-web server we know that offers this).
 
 ```clojure
 (require '[yada.yada :refer [yada]]
@@ -165,18 +183,20 @@ web server we know that offers this).
   {:port 3000})
 ```
 
-Alternatively, you can following along by referencing and
-experimenting with the code in `dev/src/yada/dev/hello.clj`. See the
-[installation](#Installation) chapter.
+(Note that you are free to choose any yada -compatible web server, as
+long as it's Aleph! Joking aside, as more web servers support
+end-to-end asynchronicity with back-pressure, all the way up to the
+application, then yada will support those. Currently Aleph is the only
+web server we know that offers this).
 
 Once we have bound this handler to the path `/hello`, we're able to make
-the following HTTP request :-
+the following HTTP request:
 
 ```nohighlight
 curl -i http://localhost:3000/hello
 ```
 
-and receive a response like this :-
+and receive a response like this:
 
 ```http
 HTTP/1.1 200 OK
@@ -475,7 +495,7 @@ Often, a resource's state or behavior will depend on parameters in the
 request. Let's say we want to pass a parameter to the resource, via a
 query parameter.
 
-To show this, we'll write some real code :-
+To show this, we'll write some real code:
 
 ```clojure
 (require '[yada.yada :refer [yada resource]])
@@ -567,7 +587,7 @@ Content-Length: 14
 你好世界!
 ```
 
-There is a lot more to content negotiation than this simple example can
+There's a lot more to content negotiation than this simple example can
 show. It is covered in depth in subsequent chapters.
 
 #### Summary
@@ -669,13 +689,13 @@ of literal short-hand forms are available. Short-forms are
 automatically coerced to their canonical equivalents, prior to
 building the request handler.
 
-For example :-
+For example:
 
 ```clojure
 {:produces "text/html"}
 ```
 
-is automatically coerced to this _canonical_ form :-
+is automatically coerced to this _canonical_ form:
 
 ```clojure
 {:produces [{:media-type "text/html"}]}
@@ -953,7 +973,7 @@ it. We call these formats _representations_.
 A given resource may have a large number of actual or possible
 representations.
 
-Representation may differ in a number of respects, including :-
+Representation may differ in a number of respects, including:
 
 - the media-type ('file format').
 - if textual, the character set used to encode it into octets
@@ -1243,7 +1263,7 @@ future options virtually limitless.
 
 We have covered a lot of ground so far. Let's consolidate our knowledge by building a simple application, using all the concepts we've learned so far.
 
-We'll build a simple phonebook application. Here is a the brief :-
+We'll build a simple phonebook application. Here is a the brief:
 
 ### Phonebook requirements
 
