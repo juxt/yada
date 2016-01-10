@@ -34,9 +34,10 @@
         (fn [ctx]
           (let [k (get-in ctx [:request :headers "Api-Key"])]
             (cond
-              (= k "masterkey") {:user "swagger-master" :roles #{:phonebook/write
-                                                                 :phonebook/delete}}
-              (= k "lesserkey") {:user "swagger-lesser" :roles #{:phonebook/write}}
+              (= k "masterkey") {:user "swagger-master"
+                                 :roles #{:phonebook/write :phonebook/delete}}
+              (= k "lesserkey") {:user "swagger-lesser"
+                                 :roles #{:phonebook/write}}
               k {})))}]
 
       :authorized-methods
