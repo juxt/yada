@@ -1065,19 +1065,30 @@ definitely on the road-map.)
 
 ## Security
 
+With security, it is important to understand the concepts, processes
+and standards in detail. While yada can help with good security
+defaults and attempts to make security configuration easier, it is
+still important that you are familiar with security concepts, so read
+this chapter carefully.
+
+### Security is part of the resource, not the route
+
 In yada, resources are self-contained and are individually protected
 from unauthorized access. We agree with the HTTP standards authors
 when we consider security to be integral to the definition of the
-resource itself, and not an extra to be bolted on afterwards, or
-integrated into the location process by which a request's URI is used
-to determine which resource to dispatch to.
+resource itself, and not an extra to be bolted on afterwards. Nor
+should it be complected with routing. The process of looking up a
+resource from a URI is independent of how that resource should behave.
 
-This needs to be emphasized because the majority of other 'web
-frameworks' build security into the routing mechanism. While this may
-be convenient at first, it brings in additional complexity and tightly
-couples the URI to security concerns. HTTP considers the URI's path to
-be opaque, and it should not influence the semantics of the resource
-it identifies.
+This needs to be emphasized because other web frameworks and libraries
+couple security to the router. While this may be convenient at first,
+it brings in additional complexity and tightly couples the URI to
+security concerns. HTTP considers the URI's path to be opaque, and it
+should be decoupled from the semantics of the resource it identifies.
+
+Building security into each resource yields other benefits, such as
+making it easier to test the resource as a unit in isolation of other
+resources and the router.
 
 As in all other areas, yada aims for 100% compliance with core HTTP
 standards when it comes to security, notably
@@ -1087,16 +1098,6 @@ systems via the user's browser, it is critically important that yada
 fully supports applications that want to open up services to other
 applications, across origins, as standardised by
 [CORS](http://www.w3.org/TR/cors/).
-
-With security, it is important to understand the concepts, processes
-and standards in detail. While yada can help with good security
-defaults and attempts to make security configuration easier, it is
-still important that you are familiar with security concepts, so read
-this chapter carefully.
-
-In yada, authentication and authorization are broken into 2 separate
-stages. We'll deal with these stages in turn, before discussing other
-security features.
 
 ### Authentication
 
@@ -1118,16 +1119,18 @@ __resource-model__. Each realm determines the _authentication scheme_
 governing how requests are authenticated.
 
 yada supports numerous authentication schemes, include custom ones you
-can provide yourself. Here is an example of a resource which uses Basic
-authentication described in [RFC 2617](https://www.ietf.org/rfc/rfc2617.txt)
+can provide yourself.
+
+#### Basic Authentication
+
+Here is an example of a resource which uses Basic authentication
+described in [RFC 2617](https://www.ietf.org/rfc/rfc2617.txt)
 
 ```clojure
-{:authentication
-  {:realms
-    {"my-realm"
-     {:schemes
-      [{:scheme "Basic"
-        :authenticate (fn [user password] …}]}}}}
+{:access-control
+  {:realm "accounts"
+   :scheme "Basic"
+   :authenticate (fn [user password] …}}
 ```
 
 Each scheme has an authenticator, usually a function (depending on the
