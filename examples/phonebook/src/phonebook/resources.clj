@@ -17,38 +17,37 @@
 
 (def access-control
   {:access-control
-   {:realms
-    {"phonebook"
-     {:authentication-schemes
-      [{:scheme "Basic"
-        :authenticate {["tom" "watson"] {:email "tom@ibm.com"
-                                         :roles #{:phonebook/write
-                                                  :phonebook/delete}}
-                       ["malcolm" "changeme"] {:email "malcolm@juxt.pro"
-                                               :roles #{:phonebook/write}}}}
+   {:realm "phonebook"
+    :authentication-schemes
+    [{:scheme "Basic"
+      :authenticate {["tom" "watson"] {:email "tom@ibm.com"
+                                       :roles #{:phonebook/write
+                                                :phonebook/delete}}
+                     ["malcolm" "changeme"] {:email "malcolm@juxt.pro"
+                                             :roles #{:phonebook/write}}}}
 
-       ;; A custom scheme (indicated by the absence of a :scheme entry) that lets us process api-keys.
-       ;; You can plugin your own authenticator here, with full access to yada's request context.
-       ;; This authenticator is just a simple example to allow the Swagger UI to access the phonebook.
-       {:authenticate
-        (fn [ctx]
-          (let [k (get-in ctx [:request :headers "Api-Key"])]
-            (cond
-              (= k "masterkey") {:user "swagger-master"
-                                 :roles #{:phonebook/write :phonebook/delete}}
-              (= k "lesserkey") {:user "swagger-lesser"
-                                 :roles #{:phonebook/write}}
-              k {})))}]
+     ;; A custom scheme (indicated by the absence of a :scheme entry) that lets us process api-keys.
+     ;; You can plugin your own authenticator here, with full access to yada's request context.
+     ;; This authenticator is just a simple example to allow the Swagger UI to access the phonebook.
+     {:authenticate
+      (fn [ctx]
+        (let [k (get-in ctx [:request :headers "Api-Key"])]
+          (cond
+            (= k "masterkey") {:user "swagger-master"
+                               :roles #{:phonebook/write :phonebook/delete}}
+            (= k "lesserkey") {:user "swagger-lesser"
+                               :roles #{:phonebook/write}}
+            k {})))}]
 
-      :authorized-methods
-      {:get true
-       :post :phonebook/write
-       :put :phonebook/write
-       :delete :phonebook/delete
-       ;; TODO: Write a thing where we can have multiple keys
-       ;; TODO: Maybe coerce it!
-       ;; #{:post :put :delete} :phonebook/write
-       }}}
+    :authorized-methods
+    {:get true
+     :post :phonebook/write
+     :put :phonebook/write
+     :delete :phonebook/delete
+     ;; TODO: Write a thing where we can have multiple keys
+     ;; TODO: Maybe coerce it!
+     ;; #{:post :put :delete} :phonebook/write
+     }
 
     ;; Access to our phonebook is public, but if we want to modify it we
     ;; must have sufficient authorization. This is what this access
@@ -109,7 +108,10 @@
 
      }
 
-    (merge access-control))))
+    (merge access-control)
+    )))
+
+(new-index-resource nil nil)
 
 (defn new-entry-resource [db *routes]
   (resource

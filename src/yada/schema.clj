@@ -281,8 +281,8 @@ convenience of terse, expressive short-hand descriptions."}
    (fn [x]
      (if-let [realm (:realm x)]
        (-> x
-           (merge {:realms {realm (dissoc x :realm)}})
-           (dissoc :realm :scheme :authenticate :authentication-schemes))
+           (merge {:realms {realm (select-keys x [:scheme :authenticate :authentication-schemes :authorized-methods])}})
+           (dissoc :realm :scheme :authenticate :authentication-schemes :authorized-methods))
        x))})
 
 (def SingleSchemeMapping

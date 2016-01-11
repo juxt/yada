@@ -120,19 +120,31 @@
           (is (not (error? r)))
           (is (nil? (s/check Methods r))))))))
 
-;; Attempt to fix this again, it's a big win
 (deftest authentication-test
   (let [coerce (sc/coercer AccessControl AccessControlMappings)]
     (testing "coerce single realm shorthand to canonical form"
-      #_(is (= {:access-control
+      (is (= {:access-control
               {:realms {"default" {:authentication-schemes [{:scheme "Basic"
-                                                             :authenticate identity}]}}}}
+                                                             :authenticate identity}]
+                                   :authorized-methods {}}}
+               :allow-origin #{"*"}}}
              (coerce
               {:access-control {:realm "default"
                                 :authentication-schemes [{:scheme "Basic"
-                                                          :authenticate identity}]}}))))
+                                                          :authenticate identity}]
+                                :authorized-methods {}
+                                :allow-origin "*"}}))))
 
     (testing "coerce single scheme shorthand to canonical form"
+      (is (= {:access-control
+              {:realms {"default" {:authentication-schemes [{:scheme "Basic"
+                                                             :authenticate identity}]}}}}
+             (coerce
+              {:access-control {:realms {"default"
+                                         {:scheme "Basic"
+                                          :authenticate identity}}}}))))
+
+    (testing "both shorthand composed"
       (is (= {:access-control
               {:realms {"default" {:authentication-schemes [{:scheme "Basic"
                                                              :authenticate identity}]}}}}
