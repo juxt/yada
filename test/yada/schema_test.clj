@@ -126,13 +126,13 @@
       (is (= {:access-control
               {:realms {"default" {:authentication-schemes [{:scheme "Basic"
                                                              :verify identity}]
-                                   :authorized-methods {}}}
+                                   :methods {}}}
                :allow-origin #{"*"}}}
              (coerce
               {:access-control {:realm "default"
                                 :authentication-schemes [{:scheme "Basic"
                                                           :verify identity}]
-                                :authorized-methods {}
+                                :methods {}
                                 :allow-origin "*"}}))))
 
     (testing "coerce single scheme shorthand to canonical form"

@@ -39,7 +39,7 @@
                                :roles #{:phonebook/write}}
             k {})))}]
 
-    :authorized-methods
+    :methods
     {:get true
      :post :phonebook/write
      :put :phonebook/write

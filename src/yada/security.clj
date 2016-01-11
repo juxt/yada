@@ -113,8 +113,8 @@
      (fn [ctx [realm spec]]
        (let [credentials (get-in ctx [:authentication realm])
              ]
-         (if-let [methods (:authorized-methods spec)]
-           (let [expr (get-in spec [:authorized-methods (:method ctx)])]
+         (if-let [methods (:methods spec)]
+           (let [expr (get-in spec [:methods (:method ctx)])]
              (if (allowed? expr ctx realm)
                ctx ; allow
                ;; Reject

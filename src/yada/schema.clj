@@ -251,7 +251,7 @@ convenience of terse, expressive short-hand descriptions."}
   {:authentication-schemes [AuthScheme]})
 
 (s/defschema AuthorizedMethods
-  {(s/optional-key :authorized-methods)
+  {(s/optional-key :methods)
    {s/Keyword b/BooleanExpression}})
 
 (s/defschema Realms
@@ -281,8 +281,8 @@ convenience of terse, expressive short-hand descriptions."}
    (fn [x]
      (if-let [realm (:realm x)]
        (-> x
-           (merge {:realms {realm (select-keys x [:scheme :verify :authentication-schemes :authorized-methods])}})
-           (dissoc :realm :scheme :verify :authentication-schemes :authorized-methods))
+           (merge {:realms {realm (select-keys x [:scheme :verify :authentication-schemes :methods])}})
+           (dissoc :realm :scheme :verify :authentication-schemes :methods))
        x))})
 
 (def SingleSchemeMapping
@@ -292,7 +292,7 @@ convenience of terse, expressive short-hand descriptions."}
        (cond-> x
          true (merge {:authentication-schemes [(select-keys x [:scheme :verify])]})
          true (select-keys [:authentication-schemes])
-         (:authorized-methods x) (merge {:authorized-methods (:authorized-methods x)}))
+         (:methods x) (merge {:methods (:methods x)}))
        x))})
 
 (def HeaderMappings 

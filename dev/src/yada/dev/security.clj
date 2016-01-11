@@ -30,7 +30,7 @@
                                        {:user "scott"}
                                        ;; Keep trying
                                        nil))
-                           :authorized-methods {:get true}}})))]
+                           :methods {:get true}}})))]
 
       
 
