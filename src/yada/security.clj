@@ -22,9 +22,7 @@
         cred (and auth (apply str (map char (base64/decode (.getBytes (last (re-find #"^Basic (.*)$" auth)))))))]
     (when cred
       (let [[user password] (str/split (str cred) #":" 2)]
-        (or
-         (verify [user password])
-         {})))))
+        (verify [user password])))))
 
 ;; A nil scheme is simply one that does not use any of the built-in
 ;; algorithms for IANA registered auth-schemes at
@@ -114,21 +112,25 @@
     (reduce
      (fn [ctx [realm spec]]
        (let [credentials (get-in ctx [:authentication realm])
-             expr (get-in spec [:authorized-methods (:method ctx)])]
-         (infof "authorize: credentials %s expr %s" credentials expr)
-         (if (allowed? expr ctx realm)
-           ctx
-           (if credentials
-             (d/error-deferred
-              (ex-info "Forbidden"
-                       {:status 403   ; or 404 to keep the resource hidden
-                        ;; But allow WWW-Authenticate header in error
-                        :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])}))
-             (d/error-deferred
-              (ex-info "No authorization provided"
-                       {:status 401   ; or 404 to keep the resource hidden
-                        ;; But allow WWW-Authenticate header in error
-                        :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])}))))))
+             ]
+         (if-let [methods (:authorized-methods spec)]
+           (let [expr (get-in spec [:authorized-methods (:method ctx)])]
+             (if (allowed? expr ctx realm)
+               ctx ; allow
+               ;; Reject
+               (if credentials
+                 (d/error-deferred
+                  (ex-info "Forbidden"
+                           {:status 403   ; or 404 to keep the resource hidden
+                            ;; But allow WWW-Authenticate header in error
+                            :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])}))
+                 (d/error-deferred
+                  (ex-info "No authorization provided"
+                           {:status 401   ; or 404 to keep the resource hidden
+                            ;; But allow WWW-Authenticate header in error
+                            :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])})))))
+           ctx ; no method restrictions in place
+           )))
      ctx (get-in ctx [:resource :access-control :realms]))))
 
 (defn call-fn-maybe [x ctx]

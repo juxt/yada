@@ -22,6 +22,7 @@
    [yada.dev.swagger :refer [new-phonebook-swagger-ui-index]]
    [yada.dev.config :as config]
    [yada.dev.hello :refer [new-hello-world-example]]
+   [yada.dev.security :refer [new-security-examples]]
    [yada.dev.async :refer [new-sse-example]]
    [yada.dev.error-example :refer [new-error-example]]
 
@@ -40,6 +41,7 @@
 
    ::docsite (new-docsite :config config)
 
+   ::security-examples (new-security-examples config)
    ::sse-example (new-sse-example)
 
    ;; TODO: Replace new-web-resources with a yada equivalent
@@ -115,6 +117,7 @@
                      ::swagger-ui
                      ::hello-world
                      ::sse-example
+                     ::security-examples
                      ::user-api
                      ::user-manual
                      ::docsite
