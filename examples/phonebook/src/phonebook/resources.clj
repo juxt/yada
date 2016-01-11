@@ -20,16 +20,16 @@
    {:realm "phonebook"
     :authentication-schemes
     [{:scheme "Basic"
-      :authenticate {["tom" "watson"] {:email "tom@ibm.com"
-                                       :roles #{:phonebook/write
-                                                :phonebook/delete}}
-                     ["malcolm" "changeme"] {:email "malcolm@juxt.pro"
-                                             :roles #{:phonebook/write}}}}
+      :verify {["tom" "watson"] {:email "tom@ibm.com"
+                                 :roles #{:phonebook/write
+                                          :phonebook/delete}}
+               ["malcolm" "changeme"] {:email "malcolm@juxt.pro"
+                                       :roles #{:phonebook/write}}}}
 
      ;; A custom scheme (indicated by the absence of a :scheme entry) that lets us process api-keys.
-     ;; You can plugin your own authenticator here, with full access to yada's request context.
-     ;; This authenticator is just a simple example to allow the Swagger UI to access the phonebook.
-     {:authenticate
+     ;; You can plugin your own verifier here, with full access to yada's request context.
+     ;; This verifier is just a simple example to allow the Swagger UI to access the phonebook.
+     {:verify
       (fn [ctx]
         (let [k (get-in ctx [:request :headers "Api-Key"])]
           (cond

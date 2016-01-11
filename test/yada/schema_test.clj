@@ -125,32 +125,32 @@
     (testing "coerce single realm shorthand to canonical form"
       (is (= {:access-control
               {:realms {"default" {:authentication-schemes [{:scheme "Basic"
-                                                             :authenticate identity}]
+                                                             :verify identity}]
                                    :authorized-methods {}}}
                :allow-origin #{"*"}}}
              (coerce
               {:access-control {:realm "default"
                                 :authentication-schemes [{:scheme "Basic"
-                                                          :authenticate identity}]
+                                                          :verify identity}]
                                 :authorized-methods {}
                                 :allow-origin "*"}}))))
 
     (testing "coerce single scheme shorthand to canonical form"
       (is (= {:access-control
               {:realms {"default" {:authentication-schemes [{:scheme "Basic"
-                                                             :authenticate identity}]}}}}
+                                                             :verify identity}]}}}}
              (coerce
               {:access-control {:realms {"default"
                                          {:scheme "Basic"
-                                          :authenticate identity}}}}))))
+                                          :verify identity}}}}))))
 
     (testing "both shorthand composed"
       (is (= {:access-control
               {:realms {"default" {:authentication-schemes [{:scheme "Basic"
-                                                             :authenticate identity}]}}}}
+                                                             :verify identity}]}}}}
              (coerce {:access-control {:realm "default"
                                        :scheme "Basic"
-                                       :authenticate identity}}))))))
+                                       :verify identity}}))))))
 
 (deftest resource-test
   (testing "produces works at both levels"

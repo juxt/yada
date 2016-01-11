@@ -245,7 +245,7 @@ convenience of terse, expressive short-hand descriptions."}
 
 (def AuthScheme
   {(s/optional-key :scheme) s/Str
-   (s/optional-key :authenticate) s/Any})
+   (s/optional-key :verify) s/Any})
 
 (s/defschema AuthSchemes
   {:authentication-schemes [AuthScheme]})
@@ -281,16 +281,16 @@ convenience of terse, expressive short-hand descriptions."}
    (fn [x]
      (if-let [realm (:realm x)]
        (-> x
-           (merge {:realms {realm (select-keys x [:scheme :authenticate :authentication-schemes :authorized-methods])}})
-           (dissoc :realm :scheme :authenticate :authentication-schemes :authorized-methods))
+           (merge {:realms {realm (select-keys x [:scheme :verify :authentication-schemes :authorized-methods])}})
+           (dissoc :realm :scheme :verify :authentication-schemes :authorized-methods))
        x))})
 
 (def SingleSchemeMapping
   {(merge AuthSchemes AuthorizedMethods)
    (fn [x]
-     (if (:authenticate x)
+     (if (:verify x)
        (cond-> x
-         true (merge {:authentication-schemes [(select-keys x [:scheme :authenticate])]})
+         true (merge {:authentication-schemes [(select-keys x [:scheme :verify])]})
          true (select-keys [:authentication-schemes])
          (:authorized-methods x) (merge {:authorized-methods (:authorized-methods x)}))
        x))})

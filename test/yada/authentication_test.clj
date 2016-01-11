@@ -7,15 +7,15 @@
    [ring.mock.request :refer [request header]]
    [yada.schema :as ys]
    [schema.core :as s]
-   [yada.security :refer [authenticate authenticate-with-scheme]]))
+   [yada.security :refer [verify verify-with-scheme]]))
 
 ;; We create some fictitious schemes, just for testing
 
-(defmethod authenticate-with-scheme "S1"
+(defmethod verify-with-scheme "S1"
   [ctx {:keys [authenticated]}]
   authenticated)
 
-(defmethod authenticate-with-scheme "S2"
+(defmethod verify-with-scheme "S2"
   [ctx {:keys [authenticated]}]
   authenticated)
 
@@ -32,17 +32,17 @@
                {:realms
                 {"R1" {:authentication-schemes
                        [{:scheme "S1"
-                         :authenticate (constantly false)}
+                         :verify (constantly false)}
                         {:scheme "S2"
-                         :authenticate (constantly false)}
+                         :verify (constantly false)}
                         ]}
                  "R2" {:authentication-schemes
                        [{:scheme "S1"
-                         :authenticate (constantly false)}
+                         :verify (constantly false)}
                         {:scheme "S2"
-                         :authenticate (constantly false)}]}}}}}
+                         :verify (constantly false)}]}}}}}
              validate-ctx
-             authenticate
+             verify
              (get-in [:response :headers "www-authenticate"])))))
 
   (testing "Across multiple realms and schemes, with some prior authentication in one of the realms"
@@ -61,9 +61,9 @@
                           :authenticated false}
                          {:scheme "S2"
                           :authenticated false}]}}}}}
-          result (authenticate ctx)]
+          result (verify ctx)]
       
-      ;; We have successfully authenticated in realm R1
+      ;; We have successfully verified in realm R1
       (is (= {"R1" {:user "george"
                     :roles #{:pig}}}
              (:authentication result)))

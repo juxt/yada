@@ -10,33 +10,33 @@
    [clojure.data.codec.base64 :as base64]
    [yada.authorization :refer [allowed?]]))
 
-(defmulti authenticate-with-scheme
+(defmulti verify-with-scheme
   "Multimethod that allows new schemes to be added."
   (fn [ctx {:keys [scheme]}]
     scheme))
 
-(defmethod authenticate-with-scheme "Basic"
-  [ctx {:keys [authenticate]}]
+(defmethod verify-with-scheme "Basic"
+  [ctx {:keys [verify]}]
 
   (let [auth (get-in ctx [:request :headers "authorization"])
         cred (and auth (apply str (map char (base64/decode (.getBytes (last (re-find #"^Basic (.*)$" auth)))))))]
     (when cred
       (let [[user password] (str/split (str cred) #":" 2)]
         (or
-         (authenticate [user password])
+         (verify [user password])
          {})))))
 
 ;; A nil scheme is simply one that does not use any of the built-in
 ;; algorithms for IANA registered auth-schemes at
-;; http://www.iana.org/assignments/http-authschemes. The authenticate
+;; http://www.iana.org/assignments/http-authschemes. The verify
 ;; entry must therefore take the full context and do all the work to
-;; authenticate the user from it.
-(defmethod authenticate-with-scheme nil
-  [ctx {:keys [authenticate]}]
-  (when authenticate
-    (authenticate ctx)))
+;; verify the user from it.
+(defmethod verify-with-scheme nil
+  [ctx {:keys [verify]}]
+  (when verify
+    (verify ctx)))
 
-(defmethod authenticate-with-scheme :default
+(defmethod verify-with-scheme :default
   [ctx {:keys [scheme]}]
   ;; Scheme is not recognised by this server, we must return nil (to
   ;; move to the next scheme). This is technically a server issue but
@@ -57,7 +57,7 @@
      ~ctx
      ~@body))
 
-(defn authenticate [ctx]
+(defn verify [ctx]
   (when-not-cors-preflight ctx
     ;; Note that a response can have multiple challenges, one for each realm.
     (reduce
@@ -89,7 +89,7 @@
        ;; conjunctions and disjunctions across auth-schemes, in much
        ;; the same way we do for the built-in role-based
        ;; authorization.
-       (let [credentials (some (partial authenticate-with-scheme ctx) authentication-schemes)]
+       (let [credentials (some (partial verify-with-scheme ctx) authentication-schemes)]
          (infof "credentials for realm %s, schemes %s are %s" realm authentication-schemes credentials)
          (cond-> ctx
            credentials (assoc-in [:authentication realm] credentials)
@@ -103,12 +103,12 @@
      ctx (get-in ctx [:resource :access-control :realms]))))
 
 (defn authorize
-  "Given an authenticated user in the context, and the resource
-  properties in :properites, check that the user is authorized to do
-  what they are about to do. At this point the user is already
-  authenticated and roles determined, if it is possible to do
-  so (RBAC), and the resource's properties (attributes) have been
-  loaded to make ABAC schemes also possible."
+  "Given a verified user in the context, and the resource properties
+  in :properites, check that the user is authorized to do what they
+  are about to do. At this point the user is already verified and
+  roles determined, if it is possible to do so (RBAC), and the
+  resource's properties (attributes) have been loaded to make ABAC
+  schemes also possible."
   [ctx]
   (when-not-cors-preflight ctx
     (reduce
