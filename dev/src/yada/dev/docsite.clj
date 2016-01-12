@@ -27,6 +27,7 @@
    2183 "Communicating Presentation Information in Internet Messages: The Content-Disposition Header Field"
    2616 "Hypertext Transfer Protocol -- HTTP/1.1"
    5322 "Internet Message Format"
+   6265 "HTTP State Management Mechanism"
    7230 "Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing"
    7231 "Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content"
    7232 "Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests"
