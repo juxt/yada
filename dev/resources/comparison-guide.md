@@ -1,3 +1,11 @@
+## Intro
+
+In general, yada is
+
+yada is a modern stack, targeting the common cases used on the web today: websites and REST APIs. Neither is privileged over the other.
+
+With regard to REST APIs, many other stacks (Django, Rails, PHP, etc.) started out to solve the problem of building websites. They have evolved to provide support for the creation of APIs, but not without accumulating incidental complexity.
+
 ## Comparison guide
 
 It is often easier to understand a technology in relation to

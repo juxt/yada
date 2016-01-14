@@ -111,11 +111,14 @@
   (when-not-cors-preflight ctx
     (reduce
      (fn [ctx [realm spec]]
-       (let [credentials (get-in ctx [:authentication realm])
-             ]
+       (let [credentials (get-in ctx [:authentication realm])]
          (if-let [methods (:methods spec)]
-           (let [expr (get-in spec [:methods (:method ctx)])]
-             (if (allowed? expr ctx realm)
+           (let [pred (get-in spec [:methods (:method ctx)])]
+             (infof "realm is %s" realm)
+             (infof "creds is %s" (get-in ctx [:authentication realm]))
+             (infof "pred is %s" pred)
+             (infof "allowed is %s" (allowed? pred ctx realm))
+             (if (allowed? pred ctx realm)
                ctx ; allow
                ;; Reject
                (if credentials

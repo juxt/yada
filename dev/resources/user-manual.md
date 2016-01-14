@@ -1121,7 +1121,21 @@ governing how requests are authenticated.
 yada supports numerous authentication schemes, include custom ones you
 can provide yourself.
 
-#### Basic Authentication
+Each scheme has a verifier, depending on the scheme this is usually a
+function. The verifier is used to check that the credentials in the
+request are authentic.
+
+If credentials are found and verified as authentic, the verifier
+should return a non-nil (truthy) result containing the credentials
+that have been established, such as the username, email address and
+user's roles.
+
+If no credentials are found, the verifier should return nil.
+
+If no credentials are found by any of the schemes, a 401 response is
+returned containing a WWW-Authenticate header.
+
+#### Basic authentication
 
 Here is an example of a resource which uses Basic authentication
 described in [RFC 2617](https://www.ietf.org/rfc/rfc2617.txt)
@@ -1130,28 +1144,92 @@ described in [RFC 2617](https://www.ietf.org/rfc/rfc2617.txt)
 {:access-control
   {:realm "accounts"
    :scheme "Basic"
-   :authenticate (fn [user password] …}}
+   :verify (fn [[user password]] …}}
 ```
 
-Each scheme has an authenticator, usually a function (depending on the
-scheme). If the authenticator returns truthy, the request is deemed to
-be authentic and the return value is retained in the request
-context. Therefore, the return value should contain user profile
-information and any role(s) that might be used in the later
-authorization stage, in the special :role entry.
+There are 3 entries here. The first specifies the _realm_, which is
+mandatory in Basic Authentication because the browser needs it to tell
+the user.
+
+The second declares we are using Basic authentication.
+
+The last entry is the verify function. In Basic Authentication, the
+verify function takes a single argument which is a vector of two
+entries: the username and password.
+
+If the user/password pair correctly identifies an authentic user, your
+function should return credentials.
 
 ```clojure
-(fn [user password]
+(fn [[user password]]
   …
   {:email "bob@acme.com"
    :role #{:admin}})
 ```
 
-If the authenticator returns nil, then this does not mean the request
-is not authorized. It may be that access to the particular resource is
-still possible without authenticated credentials. However, the
-response will contain information about the authentication schemes in
-place, via the WWW-Authenticate header, as per RFC 7235.
+If the password is wrong, you may choose to return either an empty map
+or nil. If you return an empty map (a truthy value) and the resource
+requires credentials that aren't in the map, a 403 Forbidden response
+will be returned. However, if you return nil, this will be treated as
+no credentials being sent and a 401 Unauthorized response will be
+returned.
+
+From a UX perspective there is a difference. If the user-agent is a
+browser, returning nil will mean that the password dialog will
+reappear for every failed login attempt. If you return truthy, it will
+show the 403 Forbidden response.
+
+You may choose to limit the number of times a failed 'login' attempt
+is tolerated by setting a cookie or other means.
+
+#### Digest authentication
+
+[coming soon]
+
+#### Cookie authentication
+
+Basic Authentication has a number of perceived and real weaknesses,
+including the 'log out' problem and the lack of control that a website
+has over the fields presented to a human.  Therefore, the vast
+majority of websites prefer to use a custom login form generated in
+HTML.
+
+In yada, a login 'form' is a resource that lets you exchange one set
+of credentials for another. The set of credentials you give, via a
+form, is verified and if they correspond to a valid user, you get a
+cookie that certifies you've already been authenticated. It is this
+certification that will be checked on every request.
+
+But first, we need to construct this resource that will verify form
+data and, if valid, return a cookie.
+
+A good method to use is POST, since web browsers support that and it
+avoids passwords appearing in URIs.
+
+From reasons of cohesion, it's right that the same resource that knows
+which fields are relevant gets to reveal this information on a GET
+request. If the content-type is HTML, this can look just like a login
+form.
+
+
+
+We now protect resources by declaring an authentication scheme that
+verifies the request's cookie.
+
+```clojure
+{:access-control
+  {:realm "accounts"
+   :cookie "Token"
+   :verify (fn [ctx] …}}
+```
+
+#### Bearer authentication (OAuth2)
+
+[coming soon]
+
+#### Multifactor authentication
+
+[coming soon]
 
 ### Authorization
 
@@ -1175,9 +1253,21 @@ resource itself as part of the authorization process.
 Any method can be protected by declaring a role or set of roles in its model.
 
 ```clojure
-{:methods {:post {:response (fn [ctx] …)
-                  :role :admin}}}
+{:methods {:post :accounts/create-transaction}}
 ```
+
+If multiple roles are involved, they can be composed inside vectors
+using simple predicate logic.
+
+```clojure
+{:methods {:post [:or [:and :accounts/user
+                            :accounts/create-transaction]
+                      :superuser}}
+```
+
+Only the simple boolean 'operators' of `:and`, `:or` and `:not` are
+allowed in this authorization scheme. This keeps the role definitions
+declarative and easy to extract and process by other tooling.
 
 Of course, authentication information is available in the request
 context when a method is invoked, so any method may apply its own
@@ -1185,6 +1275,10 @@ custom authorization logic as necessary. However, yada encourages
 developers to adopt a declarative approach to resources wherever
 possible, to maximise the integration opportunities with other
 libraries and tools.
+
+### Realms
+
+yada supports multiple realms.
 
 ### Cross-Origin Resource Sharing (CORS)
 

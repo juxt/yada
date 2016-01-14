@@ -16,6 +16,7 @@
    [yada.body :as body]
    [yada.charset :as charset]
    [yada.coerce :as coerce]
+   [yada.cookies :as cookies]
    [yada.media-type :as mt]
    [yada.methods :as methods]
    [yada.multipart]
@@ -71,12 +72,18 @@
                                         (:allowed-methods ctx)))}}))
     ctx))
 
+(defn capture-cookies [ctx]
+  (if-let [cookies (cookies/parse-cookies (:request ctx))]
+    (assoc ctx :cookies cookies)
+    ctx))
+
 (defn parse-parameters
-  "Parse request and coerce parameters."
+  "Parse request and coerce parameters. Capture cookies."
   [ctx]
   (assert ctx "parse-parameters, ctx is nil!")
 
-  (let [method (:method ctx)
+  (let [ctx (capture-cookies ctx)
+        method (:method ctx)
         request (:request ctx)
 
         schemas (util/merge-parameters (get-in ctx [:resource :parameters])
@@ -162,7 +169,10 @@
                      :consumes consumes-mt
                      :content-type content-type}))
           (if (and content-length (pos? content-length))
-            (rb/process-request-body ctx (stream/map bs/to-byte-array (bs/to-byte-buffers (:body request))) (:name content-type))
+            (rb/process-request-body
+             ctx
+             (stream/map bs/to-byte-array (bs/to-byte-buffers (:body request)))
+             (:name content-type))
             ctx)))
 
       ;; else
@@ -362,6 +372,16 @@
                                   body (or (body/content-length body) (str 0))
                                   :otherwise nil))]
                      {"content-length" content-length})
+
+                   (when-let [cookies (get-in ctx [:response :cookies])]
+                     (let [cookies (cookies/cookies-coercer cookies)]
+                       (if (error? cookies)
+                         (warnf "Error coercing cookies: %s" (:error cookies))
+                         (let [set-cookies (cookies/encode-cookies cookies)]
+                           (infof "Setting cookies: %s" set-cookies)
+                           {"set-cookie" set-cookies})
+                         )
+                       ))
 
                    (when-let [x (:media-type produces)]
                      (when (or (= method :head) body)

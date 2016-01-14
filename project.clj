@@ -84,6 +84,8 @@
 
           [aero "0.1.5"]
 
+          [buddy/buddy-sign "0.9.0"]
+
           [juxt.modular/aleph "0.1.4"]
           [juxt.modular/bidi "0.9.4" :exclusions [bidi]]
           [juxt.modular/stencil "0.1.1"]
