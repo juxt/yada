@@ -17,6 +17,7 @@
    [camel-snake-kebab "0.3.2"]
    [cheshire "5.5.0"]
    [clj-time "0.11.0"]
+
    [hiccup "1.0.5"]
    [json-html "0.3.6"]
    [manifold "0.1.2-alpha2"]
@@ -24,11 +25,16 @@
    [metosin/ring-swagger "0.22.1" :exclusions [potemkin]]
    [prismatic/schema "1.0.4"]
    [potemkin "0.4.2" :exclusions [riddley]]
+   
    [org.clojure/core.async "0.2.374"]
    [org.clojure/data.codec "0.1.0"]
    [org.clojure/tools.reader "0.10.0"]
    [org.clojure/tools.trace "0.7.9"]
    [org.clojars.ikoblik/clj-index "0.0.2"]
+
+   ;; TODO: Find out where this is being excluded, Schema needs it?
+   [org.clojure/core.cache "0.6.4"]
+
    [com.cognitect/transit-clj "0.8.285"]]
 
   :pedantic? :abort
