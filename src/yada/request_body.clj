@@ -4,12 +4,15 @@
   (:require
    [byte-streams :as bs]
    [clojure.tools.logging :refer :all]
+   [clojure.edn :as edn]
+   [cheshire.core :as json]
    [manifold.deferred :as d]
    [manifold.stream :as s]
    [ring.swagger.coerce :as rsc]
    [ring.swagger.schema :as rs]
    [ring.util.request :as req]
    [ring.util.codec :as codec]
+   [cognitect.transit :as transit]
    [schema.coerce :as sc]
    [schema.utils :refer [error?]]
    [yada.coerce :as coerce]
@@ -97,3 +100,36 @@
         ;; TODO: Only if body parameter, and now coerce too!
         (assoc-in [:parameters :body] body-string)
         (assoc-in [:body] body-string))))
+
+
+(defmethod process-request-body "application/edn"
+  [ctx body-stream media-type & args]
+  (let [body-edn (edn/read-string (bs/to-string body-stream))]
+    (-> ctx
+        ;; TODO: Only if body parameter, and now coerce too!
+        (assoc-in [:parameters :body] body-edn)
+        (assoc-in [:body] body-edn))))
+
+(defmethod process-request-body "application/json"
+  [ctx body-stream media-type & args]
+  (let [body-json (json/decode (bs/to-string body-stream) keyword)]
+    (-> ctx
+        ;; TODO: Only if body parameter, and now coerce too!
+        (assoc-in [:parameters :body] body-json)
+        (assoc-in [:body] body-json))))
+
+(defmethod process-request-body "application/transit+json"
+  [ctx body-stream media-type & args]
+  (let [body-json (transit/read (transit/reader (bs/to-input-stream body-stream) :json))]
+    (-> ctx
+        ;; TODO: Only if body parameter, and now coerce too!
+        (assoc-in [:parameters :body] body-json)
+        (assoc-in [:body] body-json))))
+
+(defmethod process-request-body "application/transit+msgpack"
+  [ctx body-stream media-type & args]
+  (let [body-json (transit/read (transit/reader (bs/to-input-stream body-stream) :msgpack))]
+    (-> ctx
+        ;; TODO: Only if body parameter, and now coerce too!
+        (assoc-in [:parameters :body] body-json)
+        (assoc-in [:body] body-json))))

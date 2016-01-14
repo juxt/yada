@@ -1,34 +1,21 @@
 (ns yada.transit-json-test
   (:require [clojure.test :refer :all]
             [schema.core :as s]
-            [yada.body :as sut]))
-
-(s/defschema TestSchema
-  {:a s/Str
-   :b s/Keyword
-   :c [s/Int]})
+            [byte-streams :as bs]
+            [yada.body :as sut]
+            [yada.test.util :refer [is-coercing-correctly?]]))
 
 (def ^:private test-map {:a "Hello" :b :foo :c [4 5 6]})
 
-(defmacro is-coercing-correctly?
-  ([expected value content-type schema]
-   `(is (= ~expected
-           (sut/coerce-request-body ~value ~content-type ~schema))))
-  ([expected value content-type]
-   `(is (= ~expected
-           (sut/coerce-request-body ~value ~content-type)))))
-
-#_(deftest reading-transit-json-from-body
+(deftest reading-transit-json-from-body
   (let [content-type "application/transit+json"
         json "[\"^ \",\"~:a\",\"Hello\",\"~:b\",\"~:foo\",\"~:c\",[4,5,6]]"
         json-verbose "{\"~:a\":\"Hello\",\"~:b\":\"~:foo\",\"~:c\":[4,5,6]}"]
     (testing (str "coercing " content-type)
       (is-coercing-correctly? test-map json content-type)
-      (is-coercing-correctly? test-map json content-type TestSchema)
-      (is-coercing-correctly? test-map json-verbose content-type)
-      (is-coercing-correctly? test-map json-verbose content-type TestSchema))))
+      (is-coercing-correctly? test-map json-verbose content-type))))
 
-#_(deftest rendering-to-transit-json
+(deftest rendering-to-transit-json
   (let [basic {:media-type {:name       "application/transit+json"
                             :parameters {"pretty" false}}}
         pretty (assoc-in basic [:media-type :parameters "pretty"] true)
@@ -39,15 +26,15 @@
 
     (testing "render-map"
       (is (= map-json
-             (sut/render-map test-map basic)))
+             (bs/to-string (sut/render-map test-map basic))))
 
       (is (= map-json-verbose
-             (sut/render-map test-map pretty))))
+             (bs/to-string (sut/render-map test-map pretty)))))
 
     (testing "render-seq"
       (is (= "[4,5,6]"
-             (sut/render-seq [4 5 6] basic)
-             (sut/render-seq [4 5 6] pretty))))
+             (bs/to-string (sut/render-seq [4 5 6] basic))
+             (bs/to-string (sut/render-seq [4 5 6] pretty)))))
 
     (testing "render-error"
       (is (= {:status  503
