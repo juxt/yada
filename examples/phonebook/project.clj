@@ -5,7 +5,7 @@
   :license {:name "The MIT License"
             :url "http://opensource.org/licenses/MIT"}
 
-  :dependencies [[aero "0.1.4"]
+  :dependencies [[aero "0.1.4" :exclusions [prismatic/schema]]
                  [aleph "0.4.1-beta2" :exclusions [org.clojure/clojure byte-streams]]
                  [com.stuartsierra/component "0.3.1"]
                  [hiccup "1.0.5" :exclusions [org.clojure/clojure]]
