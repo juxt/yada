@@ -1289,9 +1289,10 @@ yada supports multiple realms.
 Since the `yada` function returns a Ring-compatible handler, it is
 compatible with any Clojure URI router.
 
-However, yada is designed to work seamlessly with its sister library
-[bidi](https://github.com/juxt/bidi), and unless you have a preference
-otherwise, bidi is recommended.
+However, yada is designed to work especially well with its sister
+library [bidi](https://github.com/juxt/bidi), and unless you have a
+strong reason to use an alternative routing library, you should stay
+with the default.
 
 While yada is concerned with semantics of how a resource responds to
 requests, bidi is concerned with the identification of these
@@ -1309,52 +1310,80 @@ systems that it is no longer satisfactory to rely on ad-hoc means of
 constructing these URIs, they must be generated from the same tree of
 data that defines the API route structure.
 
-### A quick introduction to bidi
+### Declaring your website or API as a bidi/yada tree
 
-[coming soon]
+A bidi routing model is a hierarchical pattern-matching tree. The tree
+is made up of pairs, which tie a pattern to a (resource) handler (or a
+further group of pairs, recursively).
 
-### Adding policies
+Both bidi's route models and and yada's resource models are recursive
+data structures and can be composed together.
 
-Since we are using a data-structure for your routes, we can walk the tree to
-find yada resources which, as data, can be augmented according to any
-policies we may have for a particular sub-tree of routes.
+The end result might be a large and deeply nested tree, but one that
+can be manipulated, stored, serialized, distributed and otherwise
+processed as a single dataset.
 
-Let's demonstrate this with an example. Here is a data structure
-compatible with the bidi routing library.
+```
+(require [yada.yada :refer [resource]])
 
-```clojure
-(require '[yada.walk :refer [basic-auth]])
+["/shop/"
+ [
+  ["electronics.html"
+    (resource
+      {:methods
+        {:get
+          {:response
+            (fn [ctx] (hiccup/html …))}}})]
 
-["/api"
-   {"/status" (yada "API working!")
-    "/hello" (fn [req] {:body "hello"})
-    "/protected" (basic-auth
-                  "Protected" (fn [ctx]
-                                (or
-                                 (when-let [auth (:authentication ctx)]
-                                   (= ((juxt :user :password) auth)
-                                      ["alice" "password"]))
-                                 :not-authorized))
-                  {"/a" (yada "Secret area A")
-                   "/b" (yada "Secret area B")})}]
+
+]
+
 ```
 
-The 2 routes, `/api/protected/a` and `/api/protected/b` are wrapped with
-`basic-auth`. This function simply walks the tree and augments each yada
-resource it finds with some additional handler options, effectively
-securing both with HTTP Basic Authentication.
+A yada handler (created by yada's `yada` function) and a yada resource
+(created by yada's `resource` constructor function) extends bidi's
+`Matched` protocol are both able to participant in the pattern
+matching of an incoming request's URI.
 
-If we examine the source code in the `yada.walk` namespace we see that
-there is no clever trickery involved, merely a `clojure.walk/postwalk`
-of the data structure below it to update the resource leaves with the
-given security policy.
+For a more thorough introduction to bidi, see
+[https://github.com/juxt/bidi/README.md](https://github.com/juxt/bidi/README.md).
 
-It is easy to envisage a number of useful functions that could be
-written to transform a sub-tree of routes in this way to provide many
-kinds of additional functionality. This is the advantage that choosing a
-data-centric approach gives you. When both your routes and resources are
-data, they are amenable to programmatic transformation, making our
-future options virtually limitless.
+### Declaring policies across multiple resources
+
+Many web frameworks allow you to set a particular behavioral policy
+(such as security) across a set of resources by specifying it within
+the routing mechanism.
+
+In our view, this is wrong, for many reasons. A URI is purely a
+identifier for a resource. A resource's identifier might change, but
+such a change should not cause the resource to bahave differently.
+
+In the phraseology offered by Rich Hickey in his famous Simple Not
+Easy talk, we should not _complect_ a resource's identification with
+its operation. Neither should we _complect_ a protection space with a
+URI 'space'. Doing so reduces adds an unnecessary constraint to the
+already difficult problem of naming things (URIs) which adding an
+unnecessary constraint to the ring-facing of resources into protection
+spaces. For this reason, yada and bidi are kept apart as separate
+libraries.
+
+Some web frameworks can be excused for offering a pragmatic way
+of reducing duplication in specification, but this really ought not to
+be necessary for Clojure programmers which have powerful alternatives.
+
+What are these alternatives? How can we avoid typing the same
+declarations over and over in every resource?
+
+One option is to create a function that can augment a set of base
+resource models with policies. That function can then be mapped over a
+number of resources.
+
+A variation of this option is to use Clojure's built-in tree-walking
+functions such as `clojure.walk/postwalk`. If you specify your entire
+API has a single bidi/yada tree it is easy to specify each policy as a
+transformation from one version of the tree to another. What's more,
+you will be able to check, debug and automate testing on the end
+result prior to handling actual requests.
 
 ## Example 2: Phonebook
 
@@ -1603,6 +1632,53 @@ The interceptor chain, established on the creation of a handler, is a vector.
 ### create-response
 
 ## Subresources
+
+Usually, it is better to declare as much as possible about a resource
+prior to directing requests to it. If you do this, your resources will
+expose more information and there will be more opportunities to
+utilize this information in serendipitous ways.
+
+But sometimes it just isn't possible to determine everything about a
+resource prior to the request.
+
+A classic example is serving a directory of files. Each file might be
+a separate resource, identified by a unique URI and have different
+possible representations. Unless the directory is immutable, it isn't
+possible to predcit the number and nature of the files contained in a
+directory at the time of a request.
+
+For this reason, yada supports the notion of __subresources__. Any
+__resource__ can declare that it manages sub-resources by declaring a
+__:subresource___ entry in its __resource-model__. The value of a
+subresource is a single-arity function, taking the
+__request-context__, that returns a new __resource__, from which a
+temporary handler is constructed to serve just the incoming request.
+
+Subresources are recursive. The resource that is returned from a
+__subresource__ function can itself declare that it provides its own
+subresources, _ad infinitum_.
+
+### Path info
+
+When routing, it is common for resources that provide subresources to
+match a set of URIs all starting with a common prefix, and extract the
+rest of the path from the request's `:path-info` entry. This is
+achieved by declaring a __:path-info?__ entry in the
+__resource-model__ set to true.
+
+```clojure
+(resource
+  {:path-info? true
+   :subresource
+   (fn [ctx]
+     (let [path-info (get-in ctx [:request :path-info])]
+       (resource {…})))})
+```
+
+(For a good example of subresources, readers are encouraged to examine
+the code for `yada.resources.file-resource` to see how yada serves the
+contents of directories.)
+
 
 [coming soon]
 
