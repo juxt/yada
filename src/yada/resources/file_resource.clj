@@ -162,12 +162,10 @@
    {:path-info? true
     :produces "text/html"
     :methods {:get (fn [ctx]
-                     (infof "here!")
                      (or (maybe-redirect-to-index dir (:request ctx) index-files)
                          (dir-index dir (-> ctx :response :produces :media-type))))}
     :subresource
     (fn [ctx]
-      (infof "subresource")
       (let [f (io/file dir (-> ctx :request :path-info))
             suffix (filename-ext (.getName f))
             custom-suffix-args (get custom-suffices suffix)]
