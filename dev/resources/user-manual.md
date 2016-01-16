@@ -1607,13 +1607,14 @@ thing' depending on what you provide.
 
 [coming soon]
 
-## The request context
+## The Request Context
 
 [coming soon]
 
 ## Interceptors
 
-The interceptor chain, established on the creation of a handler, is a vector.
+The interceptor chain, established on the creation of a resource. A
+resource's interceptor chain can be modified from the defaults.
 
 ### available?
 ### known-method?
@@ -1636,25 +1637,27 @@ The interceptor chain, established on the creation of a handler, is a vector.
 Usually, it is better to declare as much as possible about a resource
 prior to directing requests to it. If you do this, your resources will
 expose more information and there will be more opportunities to
-utilize this information in serendipitous ways.
+utilize this information in various ways (perhaps serendipitous
+ones). But sometimes it just isn't possible to know everything about a
+resource, up front, prior to the request.
 
-But sometimes it just isn't possible to determine everything about a
-resource prior to the request.
+A classic example is serving a changing directory of files. Each file
+might be a separate resource, identified by a unique URI and have
+different possible representations. Unless the directory's contents
+are immutable, you should only determine the number and nature of
+files contained therein upon the arrival of a request. For this
+reason, yada has __sub-resources__. Sub-resources are resources that
+are created just-in-time when a request arrives.
 
-A classic example is serving a directory of files. Each file might be
-a separate resource, identified by a unique URI and have different
-possible representations. Unless the directory is immutable, it isn't
-possible to predcit the number and nature of the files contained in a
-directory at the time of a request.
+### Declaring sub-resources
 
-For this reason, yada supports the notion of __sub-resources__. Any
-__resource__ can declare that it manages sub-resources by declaring a
-__:sub-resource___ entry in its __resource-model__. The value of a
-sub-resource is a single-arity function, taking the
+Any __resource__ can declare that it manages sub-resources by
+declaring a __:sub-resource___ entry in its __resource-model__. The
+value of a sub-resource is a single-arity function, taking the
 __request-context__, that returns a new __resource__, from which a
 temporary handler is constructed to serve just the incoming request.
 
-Sub-Resources are recursive. The resource that is returned from a
+Sub-resources are recursive. A __resource__ that is returned from a
 __sub-resource__ function can itself declare that it provides its own
 sub-resources, _ad-infinitum_.
 
@@ -1678,9 +1681,6 @@ __resource-model__ set to true.
 (For a good example of sub-resources, readers are encouraged to examine
 the code for `yada.resources.file-resource` to see how yada serves the
 contents of directories.)
-
-
-[coming soon]
 
 ## Example 6: File server
 
