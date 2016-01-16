@@ -2,6 +2,7 @@
 
 (ns yada.schema-test
   (:require
+   [clojure.java.io :as io]
    [clojure.test :refer :all :exclude [deftest]]
    [yada.media-type :as mt]
    [yada.schema :refer :all]
@@ -220,6 +221,24 @@
 ;; TODO: Test charsets, encodings and languages
 ;; TODO: Test namespaced keywords at all levels
 
+(def user-guide-example-store-resources
+  [{:summary "A list of the products we sell"
+     :methods
+     {:get
+      {:response (io/file "index.html")
+       :produces "text/html"}}}
+   {:summary "Our visitor's shopping cart"
+    :methods
+    {:get
+     {:response (fn [ctx] nil)
+      :produces #{"text/html" "application/json"}}
+     :post
+     {:response (fn [ctx] nil)
+      :produces #{"text/html" "application/json"}}}}])
+
+(deftest user-manual-test
+  (doseq [res user-guide-example-store-resources :let [r (resource-coercer res)]]
+    (is (not (error? r)))))
 
 
 

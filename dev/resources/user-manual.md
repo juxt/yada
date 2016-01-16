@@ -1324,20 +1324,33 @@ can be manipulated, stored, serialized, distributed and otherwise
 processed as a single dataset.
 
 ```
-(require [yada.yada :refer [resource]])
+(require
+  [yada.yada :refer [resource]]
+  [hiccup.core :refer [html]]
+  [clojure.java.io :refer [file])
 
-["/shop/"
- [
-  ["electronics.html"
-    (resource
-      {:methods
-        {:get
-          {:response
-            (fn [ctx] (hiccup/html …))}}})]
-
-
-]
-
+;; Our store's API
+["/store/"
+ [ ; Vector containing our store's routes (bidi)
+  ["index.html"
+   (resource ; (everything under this is now yada)
+    {:summary "A list of the products we sell"
+     :methods
+     {:get
+      {:response (file "index.html")
+       :produces "text/html"}}})]
+  ["cart"
+   (resource
+    {:summary "Our visitor's shopping cart"
+    :methods
+    {:get
+     {:response (fn [ctx] …)
+      :produces #{"text/html" "application/json"}}
+     :post
+     {:response (fn [ctx] …)
+      :produces #{"text/html" "application/json"}}}}]
+  …
+ ]]
 ```
 
 A yada handler (created by yada's `yada` function) and a yada resource
