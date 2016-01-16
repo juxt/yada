@@ -900,7 +900,39 @@ OPTIONS, TRACE etc.). Most methods, however, delegate to some function
 or functions declared in the method's declaration in the
 __resource-model__.
 
-### GET
+### Explicit responses
+
+Note that most methods coerce the response you return and determine
+the status code and any headers on you behalf.
+
+However, sometimes you need _complete control_ over the response. In
+these cases, you should modify the response in the request context and
+return that, in which case yada will see that you want to be explicit
+and get out of your way.
+
+```clojure
+(fn [ctx]
+ (let [response (:response ctx)]
+  ;; return a response, explicitly associating
+  ;; (or updating) the status, headers or body.
+  (update-in response […] …)
+ ))
+```
+
+### Method semantics, by method
+
+Each HTTP method has defined semantics. Often these semantics are
+defined in the HTTP standards, other RFCs or, in the case of custom
+methods, by you.
+
+These semantics are important because they allow other web agents,
+such as browsers and proxies, to inter-operate with your site.
+
+Below is an explanation of the semantics for every method yada
+currently supports and the your responsibilities should you choose to
+provide the method for a resource.
+
+#### GET
 
 Specify a function in __:response__ that will be called during the GET
 method processing.
@@ -912,31 +944,31 @@ It should return the response's body, which should satisfy
 `yada.body.MessageBody` determining how exactly the response's body
 will be returned.
 
-### PUT
+#### PUT
 
 [coming soon]
 
-### POST
+#### POST
 
 [coming soon]
 
-### DELETE
+#### DELETE
 
 [coming soon]
 
-### HEAD
+#### HEAD
 
 [coming soon]
 
-### OPTIONS
+#### OPTIONS
 
 [coming soon]
 
-### TRACE
+#### TRACE
 
 [coming soon]
 
-### PATCH
+#### PATCH
 
 [coming soon]
 
@@ -945,7 +977,7 @@ will be returned.
 Custom methods can be added by defining new types that extend the
 `yada.methods.Method` protocol.
 
-### BREW
+#### BREW
 
 BREW is an example of a custom method you might want to create,
 especially if you are building a networked coffee maker compliant with
