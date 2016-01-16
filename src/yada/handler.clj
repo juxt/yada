@@ -54,25 +54,25 @@
         error-handler default-error-handler]
 
     (if
-        ;; If the resource provies subresources, call its subresource
+        ;; If the resource provies sub-resources, call its sub-resource
         ;; function.  However, if the resource declares it requires
         ;; path-info, only call this if path-info exists, otherwise
         ;; call the parent resource as normal.
-        (and (:subresource resource)
+        (and (:sub-resource resource)
              (or (:path-info (:request ctx))
                  (not (:path-info? resource))))
 
-        (let [subresourcefn (:subresource resource)]
+        (let [subresourcefn (:sub-resource resource)]
           ;; Subresource
-          (let [subresource (subresourcefn ctx)
+          (let [sub-resource (subresourcefn ctx)
                 handler
                 (new-handler
                  {:id (get resource :id (java.util.UUID/randomUUID))
                   :parent resource
-                  :resource subresource
-                  :allowed-methods (allowed-methods subresource)
+                  :resource sub-resource
+                  :allowed-methods (allowed-methods sub-resource)
                   :known-methods (:known-methods ctx)
-                  ;; TODO: Could/should subresources, which are dynamic, be able
+                  ;; TODO: Could/should sub-resources, which are dynamic, be able
                   ;; to modify the interceptor-chain?
                   :interceptor-chain (-> ctx :interceptor-chain)})]
           

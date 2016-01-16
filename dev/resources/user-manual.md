@@ -1631,7 +1631,7 @@ The interceptor chain, established on the creation of a handler, is a vector.
 ### access-control-headers
 ### create-response
 
-## Subresources
+## Sub-resources
 
 Usually, it is better to declare as much as possible about a resource
 prior to directing requests to it. If you do this, your resources will
@@ -1647,20 +1647,20 @@ possible representations. Unless the directory is immutable, it isn't
 possible to predcit the number and nature of the files contained in a
 directory at the time of a request.
 
-For this reason, yada supports the notion of __subresources__. Any
+For this reason, yada supports the notion of __sub-resources__. Any
 __resource__ can declare that it manages sub-resources by declaring a
-__:subresource___ entry in its __resource-model__. The value of a
-subresource is a single-arity function, taking the
+__:sub-resource___ entry in its __resource-model__. The value of a
+sub-resource is a single-arity function, taking the
 __request-context__, that returns a new __resource__, from which a
 temporary handler is constructed to serve just the incoming request.
 
-Subresources are recursive. The resource that is returned from a
-__subresource__ function can itself declare that it provides its own
-subresources, _ad infinitum_.
+Sub-Resources are recursive. The resource that is returned from a
+__sub-resource__ function can itself declare that it provides its own
+sub-resources, _ad-infinitum_.
 
 ### Path info
 
-When routing, it is common for resources that provide subresources to
+When routing, it is common for resources that provide sub-resources to
 match a set of URIs all starting with a common prefix, and extract the
 rest of the path from the request's `:path-info` entry. This is
 achieved by declaring a __:path-info?__ entry in the
@@ -1669,13 +1669,13 @@ __resource-model__ set to true.
 ```clojure
 (resource
   {:path-info? true
-   :subresource
+   :sub-resource
    (fn [ctx]
      (let [path-info (get-in ctx [:request :path-info])]
        (resource {…})))})
 ```
 
-(For a good example of subresources, readers are encouraged to examine
+(For a good example of sub-resources, readers are encouraged to examine
 the code for `yada.resources.file-resource` to see how yada serves the
 contents of directories.)
 

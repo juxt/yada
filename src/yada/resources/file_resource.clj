@@ -164,7 +164,7 @@
     :methods {:get (fn [ctx]
                      (or (maybe-redirect-to-index dir (:request ctx) index-files)
                          (dir-index dir (-> ctx :response :produces :media-type))))}
-    :subresource
+    :sub-resource
     (fn [ctx]
       (let [f (io/file dir (-> ctx :request :path-info))
             suffix (filename-ext (.getName f))

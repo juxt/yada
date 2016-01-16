@@ -333,9 +333,9 @@ convenience of terse, expressive short-hand descriptions."}
   (s/constrained
    (merge ResourceBase
           {(s/optional-key :path-info?) Boolean
-           (s/optional-key :subresource) (s/=> ResourceBase Context)})
-   (fn [v] (not (and (:subresource v) (not (:path-info? v)))))
-   "If a subresource entry exists then path-info? must be true"))
+           (s/optional-key :sub-resource) (s/=> ResourceBase Context)})
+   (fn [v] (not (and (:sub-resource v) (not (:path-info? v)))))
+   "If a sub-resource entry exists then path-info? must be true"))
 
 (s/defschema ResourceMappings
   (merge PropertiesMappings
