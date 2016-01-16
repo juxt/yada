@@ -871,7 +871,7 @@ yada after the request's parameters have been parsed and the
 credentials of a caller have been established.
 
 In many cases, it will be necessary to query a database, internal
-web-service or equivalent operation involving IO.
+web-service or equivalent operation involving I/O.
 
 If you use a __properties__ function, anything you return will be
 placed in the __:properties__ entry of the __request-context__. Since
@@ -1472,7 +1472,7 @@ for a sophistated Swagger example.
 Under normal circumstances, with Clojure running on a JVM, each request can be processed by a separate thread.
 
 However, sometimes the production of the response body involves making requests
-to data-sources and other activities which may be _I/O-bound_. This means the thread handling the request has to block, waiting on the data to arrive from the IO system.
+to data-sources and other activities which may be _I/O-bound_. This means the thread handling the request has to block, waiting on the data to arrive from the I/O system.
 
 For heavily loaded or high-throughput web APIs, this is an inefficient
 use of resources. Today, this problem is addressed by asynchronous I/O
