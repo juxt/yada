@@ -14,11 +14,10 @@
 
 (defn api [db *routes]
   ["/phonebook"
-   [["" (yada (-> (new-index-resource db *routes)
-                  (assoc :id ::index)))]
+   [["" (-> (new-index-resource db *routes)
+            (assoc :id ::index))]
     [["/" :entry] (-> (new-entry-resource db *routes)
-                      (assoc :id ::entry)
-                      yada)]]])
+                      (assoc :id ::entry))]]])
 
 (s/defrecord ApiComponent [db routes]
   Lifecycle

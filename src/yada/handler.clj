@@ -14,10 +14,12 @@
    [yada.security :as sec]
    [yada.interceptors :as i]
    [yada.protocols :as p]
+   [yada.methods :as methods]
    [yada.representation :as rep]
    [yada.response :refer [->Response]]
    [yada.resource :as resource]
-   [yada.schema :refer [resource-coercer] :as ys]))
+   [yada.schema :refer [resource-coercer] :as ys])
+  (:import [yada.resource Resource]))
 
 (declare new-handler)
 
@@ -190,3 +192,63 @@
 (s/defn new-handler [model :- ys/HandlerModel]
   (map->Handler model))
 
+
+(def default-interceptor-chain
+  [i/available?
+   i/known-method?
+   i/uri-too-long?
+   i/TRACE
+   i/method-allowed?
+   i/parse-parameters
+   sec/verify ; step 1
+   i/get-properties ; step 2
+   sec/authorize ; steps 3,4 and 5
+   i/process-request-body
+   i/check-modification-time
+   i/select-representation
+   ;; if-match and if-none-match computes the etag of the selected
+   ;; representations, so needs to be run after select-representation
+   ;; - TODO: Specify dependencies as metadata so we can validate any
+   ;; given interceptor chain
+   i/if-match
+   i/if-none-match
+   i/invoke-method
+   i/get-new-properties
+   i/compute-etag
+   sec/access-control-headers
+   i/create-response])
+
+;; We also want resources to be able to be used in bidi routes without
+;; having to create yada handlers. This isn't really necessary but a
+;; useful convenience to reduce verbosity.
+
+(extend-type Resource
+  bidi/Matched
+  (resolve-handler [resource m]
+    (if (:path-info? resource)
+      (assoc m :handler resource)
+      (bidi/succeed resource m)))
+
+  (unresolve-handler [resource m]
+    (when
+        (or (= resource (:handler m))
+            (when-let [id (:id resource)] (= id (:handler m))))
+        ""))
+
+  br/Ring
+  (request [resource req match-context]
+    (handle-request
+     (new-handler
+      (merge
+       {:id (get resource :id (java.util.UUID/randomUUID))
+        :resource resource
+        :allowed-methods (allowed-methods resource)
+        :known-methods (methods/known-methods)
+        ;; TODO: interceptor chain should be defined in the resource itself
+        :interceptor-chain default-interceptor-chain}))
+
+     (if (and (:path-info? resource)
+              (not-empty (:remainder match-context)))
+       (assoc req :path-info (:remainder match-context))
+       req)
+     (merge (make-context) match-context))))

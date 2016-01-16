@@ -4,38 +4,13 @@
   (:require
    [schema.utils :refer [error?]]
    [yada.security :as sec]
-   [yada.handler :refer [new-handler] :as handler]
+   [yada.handler :refer [new-handler default-interceptor-chain] :as handler]
    [yada.interceptors :as i]
    [yada.methods :as methods]
    [yada.protocols :as p]
    [yada.schema :as ys]))
 
 ;; TODO: Move these final remnants to yada.handler and finally delete this ns!
-
-(def default-interceptor-chain
-  [i/available?
-   i/known-method?
-   i/uri-too-long?
-   i/TRACE
-   i/method-allowed?
-   i/parse-parameters
-   sec/verify ; step 1
-   i/get-properties ; step 2
-   sec/authorize ; steps 3,4 and 5
-   i/process-request-body
-   i/check-modification-time
-   i/select-representation
-   ;; if-match and if-none-match computes the etag of the selected
-   ;; representations, so needs to be run after select-representation
-   ;; - TODO: Specify dependencies as metadata so we can validate any
-   ;; given interceptor chain
-   i/if-match
-   i/if-none-match
-   i/invoke-method
-   i/get-new-properties
-   i/compute-etag
-   sec/access-control-headers
-   i/create-response])
 
 (defn yada
   "Create a Ring handler"
