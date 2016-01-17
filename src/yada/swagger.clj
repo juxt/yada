@@ -18,12 +18,12 @@
    [ring.util.response :refer [redirect]]
    [schema.core :as s]
    [schema.coerce :as sc]
+   [yada.handler :refer [handler]]
    [yada.body :refer [as-body]]
    [yada.charset :as charset]
    [yada.media-type :as mt]
    [yada.protocols :as p]
    [yada.resource :refer [resource]]
-   [yada.core :as yada :refer [yada]]
    [yada.schema :as ys]
    [yada.util :refer [md5-hash] :as util])
   (:import [clojure.lang PersistentVector Keyword]))
@@ -153,5 +153,5 @@
       :spec-handlers
       (into {}
             (for [ct ["application/edn" "application/json" "text/html"]]
-              [ct (yada (swagger-spec-resource spec ct))]))})))
+              [ct (handler (swagger-spec-resource spec ct))]))})))
 

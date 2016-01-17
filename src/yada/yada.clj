@@ -3,7 +3,6 @@
 (ns yada.yada
   (:refer-clojure :exclude [partial])
   (:require
-   yada.core
    yada.swagger
    yada.resources.atom-resource
    yada.resources.collection-resource
@@ -15,7 +14,7 @@
    [potemkin :refer (import-vars)]))
 
 (import-vars
- [yada.core yada]
+ [yada.handler handler yada]
  [yada.swagger swaggered]
  [yada.resource resource]
  [yada.protocols as-resource]

@@ -2,8 +2,7 @@
 
 (ns yada.test
   (:require
-   [clojure.test :refer :all]
-   [yada.core :as yada]))
+   [clojure.test :refer :all]))
 
 (defn pummel
   "verb: strike repeatedly with the fists"

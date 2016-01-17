@@ -2,7 +2,6 @@
 
 (ns yada.walk
   (:require
-   [yada.core :refer [yada]]
    [clojure.walk :refer [postwalk]])
   (:import [yada.handler Handler]))
 
