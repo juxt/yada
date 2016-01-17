@@ -88,7 +88,6 @@
        ;; the same way we do for the built-in role-based
        ;; authorization.
        (let [credentials (some (partial verify-with-scheme ctx) authentication-schemes)]
-         (infof "credentials for realm %s, schemes %s are %s" realm authentication-schemes credentials)
          (cond-> ctx
            credentials (assoc-in [:authentication realm] credentials)
            (not credentials) (update-in [:response :headers "www-authenticate"]
@@ -114,10 +113,6 @@
        (let [credentials (get-in ctx [:authentication realm])]
          (if-let [methods (:methods spec)]
            (let [pred (get-in spec [:methods (:method ctx)])]
-             (infof "realm is %s" realm)
-             (infof "creds is %s" (get-in ctx [:authentication realm]))
-             (infof "pred is %s" pred)
-             (infof "allowed is %s" (allowed? pred ctx realm))
              (if (allowed? pred ctx realm)
                ctx ; allow
                ;; Reject

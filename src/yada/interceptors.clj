@@ -378,7 +378,6 @@
                        (if (error? cookies)
                          (warnf "Error coercing cookies: %s" (:error cookies))
                          (let [set-cookies (cookies/encode-cookies cookies)]
-                           (infof "Setting cookies: %s" set-cookies)
                            {"set-cookie" set-cookies})
                          )
                        ))

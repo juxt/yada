@@ -71,9 +71,6 @@
   (sc/coercer rss/Swagger {rss/Parameters #(set/rename-keys % {:form :formData})}))
 
 (defn swagger-spec [template routes & [content-type]]
-  (infof "template is %s" template)
-  (when (= "Phonebook" (get-in template [:info :title]))
-    (infof "swagger spec, routes are %s" (pr-str (route-seq routes))))
   (-> template
       (merge {:paths (into {} (map to-path (route-seq routes)))})
       ring-swagger-coercer rs/swagger-json))

@@ -19,6 +19,5 @@
   [expected value content-type]
   `(let [expected# ~expected
          res# (process-request-body {} ~value ~content-type)]
-     (is (= {:parameters {:body expected#}
-             :body expected#}
+     (is (= {:body expected#}
             res#))))

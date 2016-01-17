@@ -16,7 +16,8 @@
    [schema.coerce :as sc]
    [schema.utils :refer [error?]]
    [yada.coerce :as coerce]
-   [yada.media-type :as mt]))
+   [yada.media-type :as mt]
+   [yada.util :as util]))
 
 (def application_octet-stream
   (mt/string->media-type "application/octet-stream"))
@@ -101,35 +102,40 @@
         (assoc-in [:parameters :body] body-string)
         (assoc-in [:body] body-string))))
 
+(defn assoc-body-if-valid [ctx schema body]
+  (let [params ((sc/coercer schema {}) body)]
+    (if-not (error? params)
+      (assoc-in ctx [:parameters :body] params)
+      (throw (ex-info "Malformed body" {:status 400})))))
 
 (defmethod process-request-body "application/edn"
   [ctx body-stream media-type & args]
-  (let [body-edn (edn/read-string (bs/to-string body-stream))]
-    (-> ctx
-        ;; TODO: Only if body parameter, and now coerce too!
-        (assoc-in [:parameters :body] body-edn)
-        (assoc-in [:body] body-edn))))
+  (let [body (edn/read-string (bs/to-string body-stream))
+        schema (get-in ctx [:resource :methods (:method ctx) :parameters :body])]
+    (cond-> ctx
+      true (assoc-in [:body] body)
+      schema (assoc-body-if-valid schema body))))
 
 (defmethod process-request-body "application/json"
   [ctx body-stream media-type & args]
-  (let [body-json (json/decode (bs/to-string body-stream) keyword)]
-    (-> ctx
-        ;; TODO: Only if body parameter, and now coerce too!
-        (assoc-in [:parameters :body] body-json)
-        (assoc-in [:body] body-json))))
+  (let [body (json/decode (bs/to-string body-stream) keyword)
+        schema (get-in ctx [:resource :methods (:method ctx) :parameters :body])]
+    (cond-> ctx
+      true (assoc-in [:body] body)
+      schema (assoc-body-if-valid schema body))))
 
 (defmethod process-request-body "application/transit+json"
   [ctx body-stream media-type & args]
-  (let [body-json (transit/read (transit/reader (bs/to-input-stream body-stream) :json))]
-    (-> ctx
-        ;; TODO: Only if body parameter, and now coerce too!
-        (assoc-in [:parameters :body] body-json)
-        (assoc-in [:body] body-json))))
+  (let [body (transit/read (transit/reader (bs/to-input-stream body-stream) :json))
+        schema (get-in ctx [:resource :methods (:method ctx) :parameters :body])]
+    (cond-> ctx
+      true (assoc-in [:body] body)
+      schema (assoc-body-if-valid schema body))))
 
 (defmethod process-request-body "application/transit+msgpack"
   [ctx body-stream media-type & args]
-  (let [body-json (transit/read (transit/reader (bs/to-input-stream body-stream) :msgpack))]
-    (-> ctx
-        ;; TODO: Only if body parameter, and now coerce too!
-        (assoc-in [:parameters :body] body-json)
-        (assoc-in [:body] body-json))))
+  (let [body (transit/read (transit/reader (bs/to-input-stream body-stream) :msgpack))
+        schema (get-in ctx [:resource :methods (:method ctx) :parameters :body])]
+    (cond-> ctx
+      true (assoc-in [:body] body)
+      schema (assoc-body-if-valid schema body))))
