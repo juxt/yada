@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Clojure and RESTful Web Services</title>
+<meta name="author" content="(Thomas van der Veen)"/>
+<link rel="stylesheet" href="static/css/reveal.css"/>
+<link rel="stylesheet" href="static/css/theme/base.css" id="theme"/>
+<link rel="stylesheet" href="static/css/extra.css"/>
+<!-- If the query includes 'print-pdf', include the PDF print sheet -->
+<script>
+    if( window.location.search.match( /print-pdf/gi ) ) {
+        var link = document.createElement( 'link' );
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = 'static/css/print/pdf.css';
+        document.getElementsByTagName( 'head' )[0].appendChild( link );
+    }
+</script>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+<section id="sec-title-slide">
+<h1>Clojure and RESTful Web Services</h1>
+<h2>Thomas van der Veen</h2>
+<h2><a href="mailto:@thomasvdv007">@thomasvdv007</a></h2>
+<h2></h2>
+</section>
+
+<section>
+<section id="slide-orgheadline1">
+<h2 id="orgheadline1">Acceptance Criteria</h2>
+<ul>
+<li>List all entries in the phone book</li>
+<li>Create a new entry in the phone book</li>
+<li>Remove an existing entry from the phone book</li>
+<li>Update an existing entry in the phone book</li>
+<li>Search for entries by surname</li>
+<li>An entry has the following
+<ul>
+<li>Surname</li>
+<li>First name</li>
+<li>Address (optional)</li>
+
+</ul></li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline2">
+<h2 id="orgheadline2">CRUD</h2>
+<p>
+Create: POST
+</p>
+
+<p>
+Read: GET
+</p>
+
+<p>
+Update: PUT
+</p>
+
+<p>
+Delete: DELETE
+</p>
+
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline3">
+<h2 id="orgheadline3">Validating input using Prismatic Schema</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure">(def schema
+  {:first-name s/Str
+   :surname s/Str
+   :phone-number s/Str
+   (s/optional-key :address)
+   {:place s/Str
+    :country s/Str}})
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline4">
+<h2 id="orgheadline4">Our main data-structure</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure">(def phonebook
+  (atom
+   {:db
+    {"80a8ea00-…"
+     {:first-name "Thomas"
+      :surname "van der Veen"
+      :phone-number "0783312345"
+      :address {:street "High Street"
+                :postcode "SO21 1QQ"}}
+     "38d77ce0-…"
+     {:first-name "Malcolm"
+      :surname "Sparks"
+      :phone-number "07123456"}}
+
+    :last-added "38d77ce0-…"}))
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline5">
+<h2 id="orgheadline5">Compojure Routes</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure">(defroutes app-routes
+  (GET "/v1/phonebook" [] (get-phonebook))
+  (POST "/v1/phonebook" {body :body}
+        (add-user (slurp body)))
+  (PUT "/v1/phonebook/:id"
+       {body :body params :params}
+       (update-user (:id params)
+                    (slurp body)))
+  (DELETE "/v1/phonebook/:id" [id]
+          (delete-user id))
+  (GET "/v1/phonebook/search"
+       {params :params}
+       (search-users params))
+  (route/not-found "Not Found"))
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline6">
+<h2 id="orgheadline6">Adding a new entry</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure">(defn atom-user-add [db data]
+  (let [new-uuid (.toString (UUID/randomUUID))
+        new-db (assoc-in db [:db new-uuid] data)]
+    (assoc-in new-db [:last-added] new-uuid)))
+
+(defn add-user [data]
+  (let [parsed-data (edn/read-string data)]
+    (if-let [error (s/check schema parsed-data)]
+      {:status 400
+       :body (str "malformd request:\n" error)}
+      (do
+        (let [{id :last-added}
+              (swap! phonebook-db atom-user-add parsed-data)]
+          {:status 201 :body (pr-str id)})))))
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline7">
+<h2 id="orgheadline7">Getting the entries</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure">(defn get-phonebook []
+  (let [data (pr-str (:db @phonebook-db))]
+    (-&gt; (r/response data)
+        (r/content-type
+         "application/edn"))))
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline8">
+<h2 id="orgheadline8">Updating an entry</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure">(defn update-user [id data]
+  (let [parsed-data (edn/read-string data)]
+    (if (contains? (:db @phonebook-db) id)
+      (do
+        (if-let [error (s/check schema parsed-data)]
+          {:status 400
+           :body (str "malformed request\n" error)}
+          (do
+            (swap! phonebook-db assoc-in [:db id]
+                   parsed-data)
+            {:status 200})))
+      {:status 404 :body (str id " does not exist\n")})))
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline9">
+<h2 id="orgheadline9">Deleting an entry</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure">(defn delete-user [id]
+  (if (contains? (:db @phonebook-db) id)
+    (do (swap! phonebook-db update-in
+               [:db] dissoc id)
+        {:status 200})
+    {:status 404 :body
+     (str id " does not exist\n")}))
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline10">
+<h2 id="orgheadline10">Searching for an entry</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure">(defn search-users [params]
+  (let [surname (:surname params)
+        filtered (into {}
+                       (filter
+                        #(= surname (:surname (second %)))
+                        (:db @phonebook-db)))]
+    (-&gt; (r/response (pr-str filtered))
+        (r/content-type "application/edn"))))
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline11">
+<h2 id="orgheadline11">References</h2>
+<ul>
+<li><a href="https://github.com/thomas-shares/phonebook">https://github.com/thomas-shares/phonebook</a></li>
+
+</ul>
+</section>
+</section>
+</div>
+</div>
+<script src="static/lib/js/head.min.js"></script>
+<script src="static/js/reveal.js"></script>
+
+<script>
+// Full list of configuration options available here:
+// https://github.com/hakimel/reveal.js#configuration
+Reveal.initialize({
+
+controls: false,
+progress: true,
+history: true,
+center: true,
+slideNumber: true,
+rollingLinks: false,
+keyboard: true,
+previewLinks: true,
+overview: true,
+margin: 0.00,
+minScale: 1.00,
+maxScale: 1.40,
+
+theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+transition: Reveal.getQueryHash().transition || 'fade', // default/cube/page/concave/zoom/linear/fade/none
+transitionSpeed: 'fast',
+multiplex: {
+    secret: '', // null if client
+    id: '', // id, obtained from socket.io server
+    url: '' // Location of socket.io server
+},
+
+// Optional libraries used to extend on reveal.js
+dependencies: [
+ { src: 'static/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+ { src: 'static/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+ { src: 'static/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+ { src: 'static/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }]
+});
+</script>
+</body>
+</html>

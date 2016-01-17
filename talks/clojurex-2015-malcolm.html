@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Clojure/REST (pt. 2)</title>
+<meta name="author" content="(Malcolm Sparks)"/>
+<link rel="stylesheet" href="static/css/reveal.css"/>
+<link rel="stylesheet" href="static/css/theme/juxt.css" id="theme"/>
+<link rel="stylesheet" href="static/css/extra.css"/>
+<!-- If the query includes 'print-pdf', include the PDF print sheet -->
+<script>
+    if( window.location.search.match( /print-pdf/gi ) ) {
+        var link = document.createElement( 'link' );
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = 'static/css/print/pdf.css';
+        document.getElementsByTagName( 'head' )[0].appendChild( link );
+    }
+</script>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+<section id="sec-title-slide">
+<h1>Clojure/REST (pt. 2)</h1>
+<h2>Malcolm Sparks</h2>
+<h2><a href="mailto:@malcolmsparks">@malcolmsparks</a></h2>
+<h2></h2>
+</section>
+
+<section>
+<section id="slide-orgheadline8">
+<h2 id="orgheadline8">Let's review</h2>
+<div class="outline-text-2" id="text-orgheadline8">
+</div></section>
+<section id="slide-orgheadline1">
+<h3 id="orgheadline1">The good points</h3>
+<ul>
+<li>Simple &amp; easy</li>
+<li>Idiomatic</li>
+<li>Good as an example</li>
+<li>Exercises many parts of REST</li>
+<li>Stateful, resource-based</li>
+
+</ul>
+</section>
+<section id="slide-orgheadline2">
+<h3 id="orgheadline2">No content negotiation</h3>
+<ul>
+<li>Only produces HTML (in UTF-8)</li>
+<li>Only speaks English</li>
+<li>No support for compression (e.g. gzip)</li>
+<li>No machine-readable API</li>
+
+</ul>
+</section>
+<section id="slide-orgheadline3">
+<h3 id="orgheadline3">Inefficient</h3>
+<ul>
+<li>No cache-control headers</li>
+<li>Doesn't support If-Modified-Since (dates)</li>
+<li>Doesn't support If-Not-Match (etags)
+<ul>
+<li>Responsive UIs need fast server responses</li>
+<li>om.next</li>
+<li>What about your upstream systems?</li>
+
+</ul></li>
+
+</ul>
+
+<div class="org-src-container">
+
+<pre><code class="picture">                       /------- Other system 1
+om.next               /
+Browser &lt;--------- Server -------- Other system 2
+                      \
+                       \------ Other system 3
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline4">
+<h3 id="orgheadline4">Vulnerable to attack</h3>
+<ul>
+<li>No security headers</li>
+<li>Ad-hoc parameter validation</li>
+
+</ul>
+</section>
+<section id="slide-orgheadline5">
+<h3 id="orgheadline5">No service metadata</h3>
+<ul>
+<li>No data about what the service does (e.g. Swagger, RAML)</li>
+<li>No HEAD, OPTIONS or TRACE methods</li>
+
+</ul>
+</section>
+<section id="slide-orgheadline6">
+<h3 id="orgheadline6">Blocking I/O</h3>
+<ul>
+<li>Unlike Play, Ratpack, Vert.x, Dropwizard, etc.</li>
+
+</ul>
+</section>
+<section id="slide-orgheadline7">
+<h3 id="orgheadline7">Ad-hoc</h3>
+<ul>
+<li>'Hand-crafted'</li>
+<li>Hypermedia links are hand-coded</li>
+<li>Services can't be (easily) stamped-out</li>
+<li>Consequences?
+<ul>
+<li>Lots of similar yet inconsistent (and buggy) code</li>
+<li>Business logic coupled to infrastructure</li>
+<li>'YAGNI' mentality to REST</li>
+
+</ul></li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-orgheadline12">
+<h2 id="orgheadline12">What are our options?</h2>
+<ul>
+<li class="fragment appear">Functional model
+<ul>
+<li>Function composition (Ring middleware)</li>
+
+</ul></li>
+<li class="fragment appear">Execution model
+<ul>
+<li>Liberator</li>
+
+</ul></li>
+<li class="fragment appear">Resource model
+<ul>
+<li>Define resource using a Clojure map</li>
+
+</ul></li>
+
+</ul>
+</section>
+<section id="slide-orgheadline9" data-background="#fff" class="juxt_hide-heading">
+<h3 id="orgheadline9">yada</h3>
+<span style="font-family: yada; font-size: 4em">yada</span>
+
+</section>
+<section id="slide-orgheadline10" class="bigity">
+<h3 id="orgheadline10">API</h3>
+<div class="org-src-container">
+
+<pre class="fragment (appear)"><code class="clojure">(def handler (yada data))
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline11">
+<h3 id="orgheadline11">features</h3>
+<ul>
+<li>Parameter validation (and coercion)</li>
+<li>Automatic full HTTP compliance
+<ul>
+<li>correct HTTP method semantics, response codes</li>
+<li>content negotiation, allow, vary</li>
+<li>conditional requests, entity tags</li>
+<li>custom methods/media-types</li>
+<li>security headers, CORS</li>
+<li>range-requests, transfer-encoding, multipart</li>
+
+</ul></li>
+<li>Automatic Swagger spec. generation</li>
+<li>Async 'on demand'
+<ul>
+<li>database trips, SSE, streaming downloads/uploads</li>
+
+</ul></li>
+
+</ul>
+
+
+
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline15" class="bigity">
+<h2 id="orgheadline15">The phonebook index</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure">{:description "Phonebook index"
+ :properties {…}
+ :methods {:get {…}
+           :post {…}}
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline13">
+<h3 id="orgheadline13">GET</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">{:get
+ {:parameters {:query {(s/optional-key :q) String}}
+
+  :produces [{:media-type #{"text/html" "application/json;q=0.9"}
+              :charset "UTF-8"}]
+
+  :handler
+  (fn [ctx]
+    (let [q (get-in ctx [:parameters :query :q])
+          entries (if q
+                    (db/search-entries db q)
+                    (db/get-entries db))]
+      (case (get-in ctx [:response :representation :media-type :name])
+        "text/html" (html/index-html entries @*routes q)
+        entries)))}}
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline14">
+<h3 id="orgheadline14">POST</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">{:post
+ {:parameters
+  {:form {:surname String :firstname String :phone [String]}}
+
+  :consumes
+  [{:media-type "application/x-www-form-urlencoded"
+    :charset "UTF-8"}]
+
+  :handler
+  (fn [ctx]
+    (let [id (db/add-entry db (get-in ctx [:parameters :form]))]
+      (-&gt; (:response ctx)
+          (assoc :status 303)
+          (update :headers merge
+            {"location"
+             (bidi/path-for @*routes ::entry :entry id)}))))}}
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline21">
+<h2 id="orgheadline21">The phonebook entry</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure">{:description "Phonebook entry"
+ :parameters {:path {:entry Long}}
+ :properties (fn [ctx] {:last-modified …
+                        :version …})
+ :produces {:media-type #{"text/html"
+                          "application/json;q=0.8"}
+            :charset "UTF-8"}
+ :methods {:get {…}
+           :put {…}
+           :delete {…}}}
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline16">
+<h3 id="orgheadline16">Phonebook entry GET</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">{:get
+ {:handler
+  (fn [ctx]
+    (when-let [entry (db/get-entry db
+                       (get-in ctx [:parameters :path :entry]))]
+      (case (get-in ctx [:response :representation :media-type :name])
+        "text/html" (html/entry-html entry)
+        entry)))}}
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline17">
+<h3 id="orgheadline17">Phonebook entry DELETE</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">{:delete
+ {:handler
+  (fn [ctx]
+    (let [id (get-in ctx [:parameters :path :entry])]
+      (db/delete-entry db id)))}}
+</code></pre>
+</div>
+
+
+
+</section>
+<section id="slide-orgheadline18">
+<h3 id="orgheadline18">Phonebook entry PUT</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">[:button {:onclick (format "phonebook.update('%s')" entry)} "Update"]
+</code></pre>
+</div>
+
+<div class="org-src-container">
+
+<pre><code class="javascript">update: function(url) {
+    x = new XMLHttpRequest()
+    x.open("PUT", url)
+    // FormData is built-in, sends multipart/form-data
+    x.send(new FormData(document.getElementById("entry")))
+}
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline19">
+<h3 id="orgheadline19">Phonebook entry PUT (pt. 2)</h3>
+<div class="org-src-container">
+
+<pre><code class="clojure">{:put
+ {:consumes [{:media-type #{"multipart/form-data"}}]
+
+  :parameters
+  {:form {:surname String
+          :firstname String
+          :phone [String]
+          :photo java.io.File}}
+
+  :handler
+  (fn [ctx]
+    (let [entry (get-in ctx [:parameters :path :entry])
+          form (get-in ctx [:parameters :form])]
+      (db/update-entry db entry form)))}}
+</code></pre>
+</div>
+
+</section>
+<section id="slide-orgheadline20">
+<h3 id="orgheadline20">References</h3>
+<ul>
+<li><a href="https://github.com/juxt/yada">https://github.com/juxt/yada</a></li>
+
+</ul>
+</section>
+</section>
+</div>
+</div>
+<script src="static/lib/js/head.min.js"></script>
+<script src="static/js/reveal.js"></script>
+
+<script>
+// Full list of configuration options available here:
+// https://github.com/hakimel/reveal.js#configuration
+Reveal.initialize({
+
+controls: false,
+progress: true,
+history: true,
+center: true,
+slideNumber: true,
+rollingLinks: false,
+keyboard: true,
+previewLinks: true,
+overview: true,
+margin: 0.00,
+minScale: 1.00,
+maxScale: 1.40,
+
+theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+transition: Reveal.getQueryHash().transition || 'fade', // default/cube/page/concave/zoom/linear/fade/none
+transitionSpeed: 'fast',
+multiplex: {
+    secret: '', // null if client
+    id: '', // id, obtained from socket.io server
+    url: '' // Location of socket.io server
+},
+
+// Optional libraries used to extend on reveal.js
+dependencies: [
+ { src: 'static/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+ { src: 'static/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+ { src: 'static/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+ { src: 'static/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }]
+});
+</script>
+</body>
+</html>
