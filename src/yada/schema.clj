@@ -326,6 +326,8 @@ convenience of terse, expressive short-hand descriptions."}
          Produces
          Consumes
          Methods
+         {(s/optional-key :interceptor-chain) [s/Any]}
+         Responses
          ResourceDocumentation
          {NamespacedKeyword s/Any}))
 
