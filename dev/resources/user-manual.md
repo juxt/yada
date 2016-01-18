@@ -2,7 +2,7 @@
 
 Welcome to the yada manual!
 
-This manual corresponds with version 1.1.0-20160117.205509-8
+This manual corresponds with version 1.1.0-20160118.002458-9
 
 ### Table of Contents
 
