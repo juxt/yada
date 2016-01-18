@@ -224,8 +224,8 @@ convenience of terse, expressive short-hand descriptions."}
   (as-method-map [o] {:response o
                       :produces "text/plain"})
   Object
-  (as-method-map [o] {:response o
-                      :produces "application/octet-stream"})
+  (as-method-map [o] {:response o})
+  
   nil
   (as-method-map [o] {:response nil}))
 
