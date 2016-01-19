@@ -132,14 +132,11 @@
       (ctx/exists? ctx)
 
       (fn [exists?]
-        (infof "exists? %s" exists?)
-        (Thread/dumpStack)
         (if exists?
           (-> ctx :response :produces)
           (d/error-deferred (ex-info "" {:status 404}))))
 
       (fn [representation]
-        (infof "here, rep is %s" representation)
         (if representation
           :ok
           (d/error-deferred (ex-info "" {:status 406}))))
