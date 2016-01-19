@@ -19,13 +19,14 @@
    [yada.representation :as rep]
    [yada.response :refer [->Response]]
    [yada.resource :as resource]
-   [yada.schema :refer [resource-coercer] :as ys])
+   [yada.schema :refer [resource-coercer] :as ys]
+   [yada.util :refer [get*]])
   (:import [yada.resource Resource]))
 
 (declare new-handler)
 
 (defn make-context []
-  {:response (->Response)})
+  {:response (assoc (->Response) :headers {})})
 
 (defn error-data
   [e]
@@ -43,12 +44,38 @@
 
 ;; Response
 
-
 (defn allowed-methods [resource]
   (let [methods (set (keys (:methods resource)))]
     (cond-> methods
       (some #{:get} methods) (conj :head)
       true (conj :options))))
+
+(def error-representations
+  (rep/representation-seq
+   (rep/coerce-representations
+    ;; Possibly in future it will be possible
+    ;; to support more media-types to render
+    ;; errors, including image and video
+    ;; formats.
+    [{:media-type #{"application/json"
+                    "application/json;pretty=true;q=0.96"
+                    "text/plain;q=0.9"
+                    "text/html;q=0.8"
+                    "application/edn;q=0.6"
+                    "application/edn;pretty=true;q=0.5"}
+      :charset charset/platform-charsets}])))
+
+(defn standard-error [ctx status e rep]
+  (let [errbody (body/to-body (body/render-error status e rep ctx) rep)]
+    (assoc-in ctx [:response :body] errbody)))
+
+(defn custom-error [ctx response rep]
+  (let [err (response ctx)
+        ctx (methods/interpret-get-result err ctx)]
+    (update-in ctx [:response :body] body/to-body rep)))
+
+(defn set-content-length [ctx]
+  (assoc-in ctx [:response :headers "content-length"] (str (body/content-length (get-in ctx [:response :body])))))
 
 (defn- handle-request-with-maybe-subresources [ctx]
   (let [resource (:resource ctx)
@@ -91,43 +118,38 @@
              (fn [e]
                (error-handler e)
                (let [data (error-data e)]
-                 (let [status (or (:status data) 500)
-                       rep (rep/select-best-representation
-                            (:request ctx)
-                            ;; TODO: Don't do this! coerce!!
-                            (rep/representation-seq
-                             (rep/coerce-representations
-                              ;; Possibly in future it will be possible
-                              ;; to support more media-types to render
-                              ;; errors, including image and video
-                              ;; formats.
+                 (let [status (or (:status data) 500)]
 
-                              [{:media-type #{"application/json"
-                                              "application/json;pretty=true;q=0.96"
-                                              "text/plain;q=0.9"
-                                              "text/html;q=0.8"
-                                              "application/edn;q=0.6"
-                                              "application/edn;pretty=true;q=0.5"}
-                                :charset charset/platform-charsets}])))]
+                   (let [custom-response (get* (:responses resource) status)
+                         rep (rep/select-best-representation
+                              (:request ctx)
+                              (if custom-response
+                                (or (:produces custom-response) "text/plain")
+                                error-representations)
+                              )]
 
-                   ;; TODO: Custom error handlers
+                     (d/chain
+                      (cond-> ctx
+                        e (assoc :error e)
+                        ;; true (merge (select-keys ctx [:id :request :method]))
+                        status (assoc-in [:response :status] status)
+                        (:headers data) (assoc-in [:response :headers] (:headers data))
 
-                   (d/chain
-                    (cond-> ctx
-                      ;; true (merge (select-keys ctx [:id :request :method]))
-                      status (assoc-in [:response :status] status)
-                      (:headers data) (assoc-in [:response :headers] (:headers data))
+                        rep (assoc-in [:response :produces] rep)
 
-                      (not (:body data))
-                      ((fn [ctx]
-                         (let [b (body/to-body (body/render-error status e rep ctx) rep)]
-                           (-> ctx
-                               (assoc-in [:response :body] b)
-                               (assoc-in [:response :headers "content-length"] (str (body/content-length b)))))))
+                        (:body data)
+                        (assoc [:response :body] (:body data))
+                        
+                        (and (not (:body data)) (not (:response custom-response)))
+                        (standard-error status e rep)
 
-                      rep (assoc-in [:response :produces] rep))
-                    sec/access-control-headers
-                    i/create-response)))))))))
+                        (and (not (:body data)) (:response custom-response))
+                        (custom-error (:response custom-response) rep)
+
+                        true set-content-length)
+                      
+                      sec/access-control-headers
+                      i/create-response))))))))))
 
 (defn- handle-request
   "Handle Ring request"

@@ -17,7 +17,7 @@
    yada.resources.file-resource
    [yada.dev.hello :as hello]
    [yada.swagger :as swagger]
-   [yada.yada :as yada :refer [yada]])
+   [yada.yada :as yada :refer [yada resource]])
   (:import [modular.bidi Router]
            [com.stuartsierra.component SystemMap]
            [modular.component.co_dependency CoDependencySystemMap]))
@@ -117,6 +117,27 @@
       ["hello.html" (hello/index *router)]
 
       ["dir/" (yada (io/file "talks"))]
+
+      ["404" (resource
+              {:properties {:exists? false}
+               :methods {:get nil}
+               :responses {404 {:description "Not found"
+                                :produces #{"text/html" "text/plain;q=0.9"}
+                                :response (let [msg "Oh dear I couldn't find that"]
+                                            (fn [ctx]
+                                              (case (get-in ctx [:response :produces :media-type :name])
+                                                "text/html" (html [:h2 msg])
+                                                (str msg \newline))))}}})]
+
+      ["406" (resource
+              {:methods {:get {:response (fn [ctx] (throw (ex-info "" {:status 400})))
+                               :produces #{"text/html"}}}
+               :responses {#{406} {:description "Redirect on 406"
+                                   :produces #{"text/html" "text/plain;q=0.9"}
+                                   :response (fn [ctx]
+                                               (-> (:response ctx) 
+                                                   (assoc :status 304)
+                                                   (update :headers conj ["Location" "/foo"])))}}})]
 
       ["phonebook-api/swagger.json"
        (-> (yada

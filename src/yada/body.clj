@@ -107,7 +107,7 @@
 
   nil
   (to-body [_ _] nil)
-  (content-length [_] nil))
+  (content-length [_] 0))
 
 ;; text/html
 

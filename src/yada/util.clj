@@ -150,3 +150,14 @@
   (let [host (get-host-origin req)
         origin (get-in req [:headers "origin"])]
     (= host origin)))
+
+;; Get from maps that allow for key 'sets' and wildcards
+
+(defn get*
+  "Like get, but keys can be sets and the wildcard '*'"
+  [m k]
+  (or (get m k)
+      (some (fn [[k* v]]
+              (when (and (set? k*) (contains? k* k)) v ))
+            m)
+      (get m *)))

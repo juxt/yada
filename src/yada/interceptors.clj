@@ -188,7 +188,9 @@
   (assert ctx "select-representation, ctx is nil!")
   (let [produces (concat (get-in ctx [:resource :methods (:method ctx) :produces])
                          (get-in ctx [:resource :produces]))
-        rep (rep/select-best-representation (:request ctx) produces)]
+        _ (infof "produces is %s" (pr-str produces))
+        rep (rep/select-best-representation (:request ctx) produces)
+        _ (infof "rep is %s" rep)]
     (cond-> ctx
       produces (assoc :produces produces)
       produces (assoc-in [:response :vary] (rep/vary produces))

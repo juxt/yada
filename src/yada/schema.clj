@@ -236,6 +236,19 @@ convenience of terse, expressive short-hand descriptions."}
    RepresentationSeqMappings
    AuthorizationMappings))
 
+;; Responses
+
+(s/defschema Statii (s/conditional integer? s/Int set? #{s/Int}))
+
+(s/defschema Responses
+  {(s/optional-key :responses) 
+   {Statii (merge
+            {(s/optional-key :description) s/Str}
+            Produces
+            Response
+            )}})
+
+
 ;; Many HTTP headers are comma separated. We should accept these
 ;; verbatim strings in our schema.
 
@@ -326,6 +339,7 @@ convenience of terse, expressive short-hand descriptions."}
          Produces
          Consumes
          Methods
+         Responses
          {(s/optional-key :interceptor-chain) [s/Any]}
          ResourceDocumentation
          {NamespacedKeyword s/Any}))
