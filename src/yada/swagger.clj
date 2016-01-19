@@ -26,7 +26,9 @@
    [yada.resource :refer [resource]]
    [yada.schema :as ys]
    [yada.util :refer [md5-hash] :as util])
-  (:import [clojure.lang PersistentVector Keyword]))
+  (:import [clojure.lang PersistentVector Keyword]
+           [yada.handler Handler]
+           [yada.resource Resource]))
 
 (defprotocol SwaggerPath
   (encode [_] "Format route as a swagger path"))
@@ -40,9 +42,20 @@
   (comp (map (comp :name :media-type))
         (distinct)))
 
+;; We can use resources as handlers directly, or wrap in handlers. We
+;; must be careful to be able to work with both.
+(defprotocol HandlerToResource
+  (handler->resource [_] "Return a resource from a handler"))
+
+(extend-protocol HandlerToResource
+  Handler
+  (handler->resource [h] (:resource h))
+  Resource
+  (handler->resource [r] r))
+
 (defn to-path [route]
   (let [path (->> route :path (map encode) (apply str))
-        {:keys [methods parameters produces consumes]} (get-in route [:handler :resource])]
+        {:keys [methods parameters produces consumes]} (handler->resource (:handler route))]
     [path
      (into {}
            (for [m (keys methods)
