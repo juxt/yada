@@ -16,7 +16,6 @@
    [yada.dev.talks :refer [new-talks]]
    [yada.dev.user-manual :refer [new-user-manual]]
    [yada.dev.database :refer [new-database]]
-   [yada.dev.user-api :refer [new-verbose-user-api]]
    [modular.aleph :refer [new-webserver]]
    [modular.component.co-dependency :refer [co-using system-co-using]]
    [yada.dev.swagger :refer [new-phonebook-swagger-ui-index]]
@@ -30,9 +29,6 @@
 
 (defn database-components [system]
   (assoc system ::database (new-database)))
-
-(defn api-components [system]
-  (assoc system ::user-api (new-verbose-user-api)))
 
 (defn docsite-components [system config]
   (assoc
@@ -99,7 +95,6 @@
     (apply concat
       (-> {}
           (database-components)
-          (api-components)
           (docsite-components config)
           (swagger-ui-components)
           (http-server-components config)
@@ -118,7 +113,6 @@
                      ::hello-world
                      ::sse-example
                      ::security-examples
-                     ::user-api
                      ::user-manual
                      ::docsite
                      ::talks

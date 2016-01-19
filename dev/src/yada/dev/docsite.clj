@@ -83,14 +83,6 @@
 
                   [:li [:a {:href (path-for @*router :yada.dev.async/sse-demo)} "SSE demo"] " — to demonstrate Server Sent Events"]]]
 
-                [:li [:a {:href
-                          (format "%s/index.html?url=%s/swagger.json"
-                                  (path-for @*router :swagger-ui)
-                                  (path-for @*router :yada.dev.user-api/user-api)
-                                  )}
-                      "Swagger UI"]
-                 " — to demonstrate Swagger integration"]
-
                 #_[:li [:a {:href (path-for @*router :yada.dev.console/index :path "")}
                       "The " [:span.yada "yada"] " console"] " — to capture traffic and debug your API (work in progress)"]
 
