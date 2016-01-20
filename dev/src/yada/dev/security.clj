@@ -99,7 +99,7 @@
                     :verify (fn [[user password]]
                               (when (= [user password] ["scott" "tiger"])
                                 {:user "scott"}))
-                    :methods {:get true}}})))]
+                    :roles/methods {:get true}}})))]
         ["/cookie"
          {"/login.html"
           (login-form
@@ -112,7 +112,8 @@
              {:realm "accounts"
               :scheme "Custom"
               :verify identity
-              :methods {:get :user}}
+              :roles/methods {:get :user}
+              }
              :methods {:get "SECRET!"}}))}]]]
       (catch Throwable e
         (errorf e "Getting exception on security example routes")
@@ -121,5 +122,4 @@
 
 (defn new-security-examples [config]
   (map->SecurityExamples {}))
-
 

@@ -39,7 +39,7 @@
                                :roles #{:phonebook/write}}
             k {})))}]
 
-    :methods
+    :roles/methods
     {:get true
      :post :phonebook/write
      :put :phonebook/write
@@ -85,7 +85,8 @@
 (defn new-index-resource [db *routes]
   (resource
    (->
-    {:produces [{:media-type
+    {:description "Phonebook entries"
+     :produces [{:media-type
                  #{"text/html" "application/edn;q=0.9" "application/json;q=0.8"}
                  :charset "UTF-8"}]
      :methods
@@ -111,12 +112,11 @@
     (merge access-control)
     )))
 
-(new-index-resource nil nil)
-
 (defn new-entry-resource [db *routes]
   (resource
    (->
-    {:parameters {:path {:entry Long}}
+    {:description "Phonebook entry"
+     :parameters {:path {:entry Long}}
      :produces [{:media-type #{"text/html"
                                "application/edn;q=0.9"
                                "application/json;q=0.8"}

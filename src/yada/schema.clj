@@ -24,6 +24,9 @@ convenience of terse, expressive short-hand descriptions."}
 (s/defschema NamespacedKeyword
   (s/constrained s/Keyword namespace))
 
+(s/defschema NamespacedEntries
+  {NamespacedKeyword s/Any})
+
 (defprotocol SetCoercion
   (as-set [_] ""))
 
@@ -153,10 +156,10 @@ convenience of terse, expressive short-hand descriptions."}
   {:response ContextFunction})
 
 (s/defschema PropertiesResult
-  {(s/optional-key :last-modified) s/Inst
-   (s/optional-key :version) s/Any
-   (s/optional-key :exists?) s/Bool
-   NamespacedKeyword s/Any})
+  (merge {(s/optional-key :last-modified) s/Inst
+          (s/optional-key :version) s/Any
+          (s/optional-key :exists?) s/Bool}
+         NamespacedEntries))
 
 (s/defschema PropertiesHandlerFunction
   (s/=> PropertiesResult Context))
@@ -208,7 +211,7 @@ convenience of terse, expressive short-hand descriptions."}
          Consumes
          Authorization
          MethodDocumentation
-         {NamespacedKeyword s/Any}))
+         NamespacedEntries))
 
 (s/defschema Methods
   {(s/optional-key :methods) ; nil, for example, has no methods.
@@ -263,13 +266,9 @@ convenience of terse, expressive short-hand descriptions."}
 (s/defschema AuthSchemes
   {:authentication-schemes [AuthScheme]})
 
-(s/defschema AuthorizedMethods
-  {(s/optional-key :methods)
-   {s/Keyword b/BooleanExpression}})
-
 (s/defschema Realms
   {(s/optional-key :realms)
-   {Realm (merge AuthSchemes AuthorizedMethods)}})
+   {Realm (merge AuthSchemes NamespacedEntries)}})
 
 (s/defschema Cors
   {(s/optional-key :allow-origin) (s/conditional fn? (s/=> (s/conditional ifn? #{s/Str} :else s/Str) Context) :else StringSet)
@@ -280,7 +279,7 @@ convenience of terse, expressive short-hand descriptions."}
    (s/optional-key :allow-headers) (s/conditional fn? ContextFunction :else Strings)})
 
 (s/defschema AccessControl
-  {(s/optional-key :access-control) (merge Realms Cors)})
+  {(s/optional-key :access-control) (merge Realms Cors NamespacedEntries)})
 
 ;; Here is some very tricky code, caused by the necessity to compose a
 ;; couple of these 'data macros'. The realm shorthand has to allow the
@@ -290,16 +289,16 @@ convenience of terse, expressive short-hand descriptions."}
 ;; https://blog.juxt.pro/posts/data-macros.html
 
 (def SingleRealmMapping
-  {(merge Realms Cors)
+  {(merge Realms Cors NamespacedEntries)
    (fn [x]
      (if-let [realm (:realm x)]
        (-> x
-           (merge {:realms {realm (select-keys x [:scheme :verify :authentication-schemes :methods])}})
+           (merge {:realms {realm (select-keys x [:scheme :verify :authentication-schemes])}})
            (dissoc :realm :scheme :verify :authentication-schemes :methods))
        x))})
 
 (def SingleSchemeMapping
-  {(merge AuthSchemes AuthorizedMethods)
+  {(merge AuthSchemes NamespacedEntries)
    (fn [x]
      (if (:verify x)
        (cond-> x
@@ -342,7 +341,7 @@ convenience of terse, expressive short-hand descriptions."}
          Responses
          {(s/optional-key :interceptor-chain) [s/Any]}
          ResourceDocumentation
-         {NamespacedKeyword s/Any}))
+         NamespacedEntries))
 
 (s/defschema Resource
   (s/constrained
