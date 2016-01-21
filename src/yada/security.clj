@@ -8,7 +8,7 @@
    [clojure.string :as str]
    [clojure.tools.logging :refer :all]
    [clojure.data.codec.base64 :as base64]
-   [yada.authorization :refer [allowed?]]))
+   [yada.authorization :as authorization]))
 
 (defmulti verify-with-scheme
   "Multimethod that allows new schemes to be added."
@@ -109,26 +109,11 @@
   [ctx]
   (when-not-cors-preflight ctx
     (reduce
-     (fn [ctx [realm spec]]
-       (let [credentials (get-in ctx [:authentication realm])]
-         (if-let [methods (:methods spec)]
-           (let [pred (get-in spec [:methods (:method ctx)])]
-             (if (allowed? pred ctx realm)
-               ctx ; allow
-               ;; Reject
-               (if credentials
-                 (d/error-deferred
-                  (ex-info "Forbidden"
-                           {:status 403   ; or 404 to keep the resource hidden
-                            ;; But allow WWW-Authenticate header in error
-                            :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])}))
-                 (d/error-deferred
-                  (ex-info "No authorization provided"
-                           {:status 401   ; or 404 to keep the resource hidden
-                            ;; But allow WWW-Authenticate header in error
-                            :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])})))))
-           ctx ; no method restrictions in place
-           )))
+     (fn [ctx [realm realm-val]]
+       (infof "authorize 1, realm-val is %s" realm-val)
+       (if-let [authorization (:authorization realm-val)]
+         (authorization/validate ctx (get-in ctx [:authentication realm]) authorization)
+         ctx))
      ctx (get-in ctx [:resource :access-control :realms]))))
 
 (defn call-fn-maybe [x ctx]
@@ -178,3 +163,4 @@
 
     ;; Otherwise
     ctx))
+
