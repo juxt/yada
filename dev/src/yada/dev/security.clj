@@ -67,8 +67,7 @@
                                      :http-only true}]
                          (assoc (:response ctx)
                                 ;; TODO: Schema check context
-                                :cookies {"client" cookie}
-                                :headers {"set-cookie" (str "yadacookie=" jwt)}
+                                :cookies {"session" cookie}
                                 :body (format "Thanks %s!" (get-in ctx [:parameters :form :user]))))
                        (format "Login failed"))))
        :consumes "application/x-www-form-urlencoded"

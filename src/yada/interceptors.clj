@@ -349,7 +349,6 @@
 
 (defn create-response
   [ctx]
-
   (let [method (:method ctx)
         produces (get-in ctx [:response :produces])
         body (body/to-body (get-in ctx [:response :body]) produces)
@@ -378,9 +377,7 @@
                        (if (error? cookies)
                          (warnf "Error coercing cookies: %s" (:error cookies))
                          (let [set-cookies (cookies/encode-cookies cookies)]
-                           {"set-cookie" set-cookies})
-                         )
-                       ))
+                           {"set-cookie" set-cookies}))))
 
                    (when-let [x (:media-type produces)]
                      (when (or (= method :head) body)
