@@ -59,7 +59,7 @@
                             ["scott" "tiger"])
                        (let [expires (time/plus (time/now) (time/minutes 15))
                              jwt (jws/sign {:user "scott"
-                                            :roles #{:user}
+                                            :roles ["accounts/view"]
                                             :exp expires}
                                            "secret")
                              cookie {:value jwt
@@ -77,7 +77,7 @@
   [ctx {:keys [verify]}]
   ;; TODO: Badly need cookie support
   (let [auth (some->
-              (get-in ctx [:cookies "client"])
+              (get-in ctx [:cookies "session"])
               (jws/unsign "secret"))]
     (infof "auth is %s" auth)
     auth
@@ -91,14 +91,16 @@
        [["/basic"
          (yada
           (resource
-           (merge (into {} (as-resource "hello"))
+           (merge (into {} (as-resource "SECRET!"))
                   {:access-control
                    {:realm "accounts"
                     :scheme "Basic"
                     :verify (fn [[user password]]
                               (when (= [user password] ["scott" "tiger"])
-                                {:user "scott"}))
-                    :roles/methods {:get true}}})))]
+                                {:user "scott"
+                                 :roles #{"accounts/view"}}))
+                    :authorization {:methods {:get true}}}})))]
+
         ["/cookie"
          {"/login.html"
           (login-form
@@ -111,8 +113,10 @@
              {:realm "accounts"
               :scheme "Custom"
               :verify identity
-              :roles/methods {:get :user}
-              }
+              :authorization {:methods {:get [:and
+                                              "accounts/view"
+                                              "accounts/view"]}}}
+             
              :methods {:get "SECRET!"}}))}]]]
       (catch Throwable e
         (errorf e "Getting exception on security example routes")
