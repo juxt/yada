@@ -271,9 +271,12 @@ convenience of terse, expressive short-hand descriptions."}
 (s/defschema Authorization
   {(s/optional-key :authorization) s/Any})
 
+(s/defschema RealmValue
+  (merge AuthSchemes Authorization NamespacedEntries))
+
 (s/defschema Realms
   {(s/optional-key :realms)
-   {Realm (merge AuthSchemes Authorization NamespacedEntries)}})
+   {Realm RealmValue}})
 
 (s/defschema Cors
   {(s/optional-key :allow-origin) (s/conditional fn? (s/=> (s/conditional ifn? #{s/Str} :else s/Str) Context) :else StringSet)
@@ -283,18 +286,25 @@ convenience of terse, expressive short-hand descriptions."}
    (s/optional-key :allow-methods) (s/conditional fn? ContextFunction :else Keywords)
    (s/optional-key :allow-headers) (s/conditional fn? ContextFunction :else Strings)})
 
-(s/defschema AccessControl
-  {(s/optional-key :access-control) (merge Realms Cors NamespacedEntries)})
+(s/defschema AccessControlValue
+  (merge Realms Cors NamespacedEntries))
 
-;; Here is some very tricky code, caused by the necessity to compose a
-;; couple of these 'data macros'. The realm shorthand has to allow the
-;; scheme short-hand to 'carry over', which makes it difficult to find
-;; an approach that preserves schema integrity while decoupling the
-;; data macros from each other. For an explanation of data macros, see
+(s/defschema AccessControl
+  {(s/optional-key :access-control) AccessControlValue})
+
+;; Here is some tricky code, caused by the necessity to compose the
+;; 'data macros'. The realm short-hand has to rewrite the data, which
+;; may include the scheme in short or long form, which makes it
+;; difficult to find an approach that preserves schema integrity while
+;; decoupling the data macros from each other. The consequence is that
+;; these mappings have some intimate knowledge of each other's
+;; structure, but the trade-off of more difficult maintenance is
+;; deemed worth it for the value to the user of being able to use
+;; short-hands. For an explanation of data macros, see
 ;; https://blog.juxt.pro/posts/data-macros.html
 
 (def SingleRealmMapping
-  {(merge Realms Cors NamespacedEntries)
+  {AccessControlValue
    (fn [x]
      (if-let [realm (:realm x)]
        (-> x
@@ -306,7 +316,7 @@ convenience of terse, expressive short-hand descriptions."}
        x))})
 
 (def SingleSchemeMapping
-  {(merge AuthSchemes Authorization NamespacedEntries)
+  {RealmValue
    (fn [x]
      (if (:verify x)
        (-> x
@@ -380,12 +390,3 @@ convenience of terse, expressive short-hand descriptions."}
    :known-methods {s/Keyword s/Any}
    :interceptor-chain [(s/=> Context Context)]
    (s/optional-key :path-info?) s/Bool})
-
-
-(def r (resource-coercer
-     {:access-control {:realm "default"
-                       :scheme "Basic"
-                       :verify identity
-                       :authorization {:roles/methods {:get :admin}}
-                       :allow-origin "*"}}))
-
