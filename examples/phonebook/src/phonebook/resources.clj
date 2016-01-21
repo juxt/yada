@@ -39,15 +39,16 @@
                                :roles #{:phonebook/write}}
             k {})))}]
 
-    :roles/methods
-    {:get true
-     :post :phonebook/write
-     :put :phonebook/write
-     :delete :phonebook/delete
-     ;; TODO: Write a thing where we can have multiple keys
-     ;; TODO: Maybe coerce it!
-     ;; #{:post :put :delete} :phonebook/write
-     }
+    :authorization
+    {:roles/methods
+     {:get true
+      :post :phonebook/write
+      :put :phonebook/write
+      :delete :phonebook/delete
+      ;; TODO: Write a thing where we can have multiple keys
+      ;; TODO: Maybe coerce it!
+      ;; #{:post :put :delete} :phonebook/write
+      }}
 
     ;; Access to our phonebook is public, but if we want to modify it we
     ;; must have sufficient authorization. This is what this access
@@ -105,12 +106,9 @@
                          :charset "UTF-8"}]
              :response (fn [ctx]
                          (let [id (db/add-entry db (get-in ctx [:parameters :form]))]
-                           (java.net.URI. nil nil (path-for @*routes :phonebook.api/entry :entry id) nil)))}}
-
-     }
-
-    (merge access-control)
-    )))
+                           (java.net.URI. nil nil (path-for @*routes :phonebook.api/entry :entry id) nil)))}}}
+    
+    (merge access-control))))
 
 (defn new-entry-resource [db *routes]
   (resource
@@ -167,8 +165,6 @@
                "text/plain" (str msg "\n")
                "text/html" (html [:h2 msg])
                ;; We need to support JSON for the Swagger UI
-               {:message msg}))))}}
-
-     }
+               {:message msg}))))}}}
 
     (merge access-control))))

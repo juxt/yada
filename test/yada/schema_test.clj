@@ -184,6 +184,21 @@
       (is (not (error? r)))
       (is (nil? (s/check Resource r)))))
 
+  (testing "authorization methods"
+    (let [r (resource-coercer
+             {:access-control
+              {:realm "accounts"
+               :scheme "Custom"
+               :verify identity
+               :authorization {:roles/methods {:get :user}}}
+              :methods {:get "SECRET!"}})]
+
+      (is (= {:authentication-schemes
+              [{:scheme "Custom"
+                :verify identity}]
+              :authorization {:roles/methods {:get :user}}}
+             (get-in r [:access-control :realms "accounts"])))))
+
   (testing "swagger resource"
     (let [r (resource-coercer
              {:methods
@@ -239,6 +254,7 @@
 (deftest user-manual-test
   (doseq [res user-guide-example-store-resources :let [r (resource-coercer res)]]
     (is (not (error? r)))))
+
 
 
 

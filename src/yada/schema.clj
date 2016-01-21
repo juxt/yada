@@ -266,9 +266,14 @@ convenience of terse, expressive short-hand descriptions."}
 (s/defschema AuthSchemes
   {:authentication-schemes [AuthScheme]})
 
+;; Authorization can contain any content because it is up to the
+;; authorization interceptor, which is pluggable.
+(s/defschema Authorization
+  {(s/optional-key :authorization) s/Any})
+
 (s/defschema Realms
   {(s/optional-key :realms)
-   {Realm (merge AuthSchemes NamespacedEntries)}})
+   {Realm (merge AuthSchemes Authorization NamespacedEntries)}})
 
 (s/defschema Cors
   {(s/optional-key :allow-origin) (s/conditional fn? (s/=> (s/conditional ifn? #{s/Str} :else s/Str) Context) :else StringSet)
@@ -293,18 +298,23 @@ convenience of terse, expressive short-hand descriptions."}
    (fn [x]
      (if-let [realm (:realm x)]
        (-> x
-           (merge {:realms {realm (select-keys x [:scheme :verify :authentication-schemes])}})
-           (dissoc :realm :scheme :verify :authentication-schemes :methods))
+           ;; Merge everything we want to KEEP from the realm
+           (merge {:realms {realm (select-keys x [:authentication-schemes :verify :scheme :authorization])}})
+           ;; Remove anything we want to REMOVE from the rest of the
+           ;; access-control definition
+           (dissoc :realm :scheme :verify :authentication-schemes :authorization))
        x))})
 
 (def SingleSchemeMapping
-  {(merge AuthSchemes NamespacedEntries)
+  {(merge AuthSchemes Authorization NamespacedEntries)
    (fn [x]
      (if (:verify x)
-       (cond-> x
-         true (merge {:authentication-schemes [(select-keys x [:scheme :verify])]})
-         true (select-keys [:authentication-schemes])
-         (:methods x) (merge {:methods (:methods x)}))
+       (-> x
+           ;; Merge in a :authentication-schemes entry with a single
+           ;; scheme containing the :scheme and :verify entries
+           (merge {:authentication-schemes [(select-keys x [:scheme :verify])]})
+           ;; Remove the :scheme and :verify keys
+           (dissoc :scheme :verify))
        x))})
 
 (def HeaderMappings 
@@ -371,4 +381,11 @@ convenience of terse, expressive short-hand descriptions."}
    :interceptor-chain [(s/=> Context Context)]
    (s/optional-key :path-info?) s/Bool})
 
+
+(def r (resource-coercer
+     {:access-control {:realm "default"
+                       :scheme "Basic"
+                       :verify identity
+                       :authorization {:roles/methods {:get :admin}}
+                       :allow-origin "*"}}))
 
