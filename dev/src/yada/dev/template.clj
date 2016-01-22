@@ -65,4 +65,5 @@
                                        (delay? model) @model
                                        :otherwise model))
               ;; Returning nil causes a 404
-              )))}}})))
+              )))}}}))
+  )

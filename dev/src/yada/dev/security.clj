@@ -13,6 +13,7 @@
    [modular.bidi :refer (path-for)]
    [modular.component.co-dependency :refer (co-using)]
    [schema.core :as s]
+   [yada.dev.template :refer [new-template-resource]]
    [yada.security :refer [verify-with-scheme]]
    [yada.yada :as yada :refer [yada resource as-resource]]
    [ring.middleware.cookies :refer [cookies-request cookies-response]])
@@ -82,22 +83,48 @@
 
 (defmethod verify-with-scheme "Custom"
   [ctx {:keys [verify]}]
-  ;; TODO: Badly need cookie support
   (let [auth (some->
               (get-in ctx [:cookies "session"])
               (jws/unsign "secret"))]
-    (infof "auth is %s" auth)
-    auth
-    ))
+    auth))
 
 (defn build-routes [*router]
   (try
     ["/security"
-     [["/basic"
+     [
+      ["/index.html"
+       (-> (new-template-resource
+            "templates/page.html"
+            (delay
+             {:homeref (path-for @*router :yada.dev.docsite/index)
+              :content
+              (html
+               [:div.container
+                [:h2 "Security examples"]
+                [:p "The following exmples demonstrate the
+                                    authentication and authorization
+                                    features of yada. See " [:a
+                                    {:href "https://github.com/juxt/yada/blob/master/dev/src/yada/dev/security.clj"} "demo
+                                    code"] " for implementation
+                                    details."]
+                [:ul
+                 [:li [:a {:href (path-for @*router ::basic)} "Basic"]]
+                 [:li [:a {:href (path-for @*router ::login)} "Session"]]
+                 [:li "Bearer (OAuth2) - coming soon"]]
+
+                [:h4 "Login details for all examples"]
+                [:p "Login with username "
+                 [:tt "scott"]
+                 " and password "
+                 [:tt "tiger"]]
+                ])}))
+           (assoc :id ::index))]
+      ["/basic"
        (yada
         (resource
          (merge (into {} (as-resource "SECRET!"))
-                {:access-control
+                {:id ::basic
+                 :access-control
                  {:realm "accounts"
                   :scheme "Basic"
                   :verify (fn [[user password]]
@@ -133,17 +160,20 @@
         (yada
          (resource
           {:id ::secret
+           
+           :methods {:get {:response (fn [ctx]
+                                       (html
+                                        [:h1 "Seek happiness"]
+                                        [:p [:a {:href (path-for @*router ::logout)} "logout"]]))
+                           :produces "text/html"}}
+
            :access-control
            {:scheme "Custom"
             :verify identity
             :authorization {:methods {:get [:and
                                             "accounts/view"
                                             "accounts/view"]}}}
-           :methods {:get {:response (fn [ctx]
-                                       (html
-                                        [:h1 "Seek happiness"]
-                                        [:p [:a {:href (path-for @*router ::logout)} "logout"]]))
-                           :produces "text/html"}}
+
            :responses {401 {:produces "text/html" ;; TODO: If we neglect to put in produces we get an error
                             :response (fn [ctx]
                                         (html

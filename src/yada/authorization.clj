@@ -36,26 +36,22 @@
                      (:algorithm authorization)))
 
 (defmethod validate nil [ctx credentials authorization]
-  (infof "val10")
   (if-let [methods (:methods authorization)]
-    (do
-      (infof "val20, methods are %s" methods)
-      (let [pred (get-in authorization [:methods (:method ctx)])]
-        (infof "val30, pred is %s, creds are %s" pred credentials)
-        (if (allowed? pred ctx (set (:roles credentials)))
-          ctx ; allow
-          ;; Reject
-          (if credentials
-            (d/error-deferred
-             (ex-info "Forbidden"
-                      {:status 403   ; or 404 to keep the resource hidden
-                       ;; But allow WWW-Authenticate header in error
-                       :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])}))
-            (d/error-deferred
-             (ex-info "No authorization provided"
-                      {:status 401   ; or 404 to keep the resource hidden
-                       ;; But allow WWW-Authenticate header in error
-                       :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])}))))))
+    (let [pred (get-in authorization [:methods (:method ctx)])]
+      (if (allowed? pred ctx (set (:roles credentials)))
+        ctx ; allow
+        ;; Reject
+        (if credentials
+          (d/error-deferred
+           (ex-info "Forbidden"
+                    {:status 403   ; or 404 to keep the resource hidden
+                     ;; But allow WWW-Authenticate header in error
+                     :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])}))
+          (d/error-deferred
+           (ex-info "No authorization provided"
+                    {:status 401   ; or 404 to keep the resource hidden
+                     ;; But allow WWW-Authenticate header in error
+                     :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])})))))
     ctx ; no method restrictions in place
     ))
 

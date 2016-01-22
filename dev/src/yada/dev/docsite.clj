@@ -81,7 +81,11 @@
                     " (Swagger)"]
                    " — to demonstrate custom records implementing standard HTTP methods"]
 
-                  [:li [:a {:href (path-for @*router :yada.dev.async/sse-demo)} "SSE demo"] " — to demonstrate Server Sent Events"]]]
+                  [:li [:a {:href (path-for @*router :yada.dev.security/index)} "Security"] " — to demonstrate authentication and authorization features"]
+
+                  [:li [:a {:href (path-for @*router :yada.dev.async/sse-demo)} "SSE demo"] " — to demonstrate Server Sent Events"]
+
+                  ]]
 
                 #_[:li [:a {:href (path-for @*router :yada.dev.console/index :path "")}
                       "The " [:span.yada "yada"] " console"] " — to capture traffic and debug your API (work in progress)"]

@@ -88,7 +88,6 @@
        ;; the same way we do for the built-in role-based
        ;; authorization.
        (let [credentials (some (partial verify-with-scheme ctx) authentication-schemes)]
-         (infof "authn creds: %s" credentials)
          (cond-> ctx
            credentials (assoc-in [:authentication realm] credentials)
            (not credentials) (update-in [:response :headers "www-authenticate"]
@@ -111,10 +110,8 @@
   (when-not-cors-preflight ctx
     (reduce
      (fn [ctx [realm realm-val]]
-       (infof "authorize 1, realm-val is %s" realm-val)
        (if-let [authorization (:authorization realm-val)]
          (let [credentials (get-in ctx [:authentication realm])]
-           (infof "authorize 2, cred are %s" credentials)
            (authorization/validate ctx credentials authorization))
          ctx))
      ctx (get-in ctx [:resource :access-control :realms]))))
