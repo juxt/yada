@@ -128,7 +128,8 @@
   []
   {::docsite {:router ::docsite-router}
    ::talks {:router ::docsite-router}
-   ::user-manual {:router ::docsite-router}})
+   ::user-manual {:router ::docsite-router}
+   ::security-examples {:router ::docsite-router}})
 
 (defn new-production-system
   "Create the production system"

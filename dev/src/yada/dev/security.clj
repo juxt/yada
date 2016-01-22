@@ -2,18 +2,21 @@
 
 (ns yada.dev.security
   (:require
-   [ring.middleware.cookies :refer [cookies-request cookies-response]]
-   [bidi.bidi :refer [RouteProvider]]
+   [bidi.bidi :refer [RouteProvider tag]]
    [buddy.sign.jws :as jws]
    [clj-time.core :as time]
    [clojure.tools.logging :refer :all]
-   [com.stuartsierra.component :refer [Lifecycle]]
+   [com.stuartsierra.component :refer [Lifecycle using]]
+   [modular.component.co-dependency.schema :refer [co-dep]]
    [hiccup.core :refer (html)]
    [modular.bidi :refer (path-for)]
+   [modular.bidi :refer (path-for)]
+   [modular.component.co-dependency :refer (co-using)]
    [schema.core :as s]
-   [yada.yada :as yada :refer [yada resource as-resource]]
    [yada.security :refer [verify-with-scheme]]
-   [bidi.bidi :refer [tag]]))
+   [yada.yada :as yada :refer [yada resource as-resource]]
+   [ring.middleware.cookies :refer [cookies-request cookies-response]])
+  (:import [modular.bidi Router]))
 
 (defn hello []
   (yada "Hello World!\n"))
@@ -38,7 +41,7 @@
 ;; TODO: cookie expiry not seen in Chrome Network/Cookies Expires
 ;; column, investigate!
 
-(defn login-form [fields]
+(defn login [fields *router]
   ;; Here we provide the fields as an argument, once. They serve 2
   ;; purposes: Generating the login form AND declaring the POST
   ;; parameters. This is a good example of cohesion. Instead of
@@ -46,11 +49,12 @@
   ;; between the login form and form processor), we share them.
   (yada
    (resource
-    {:methods
+    {:id ::login
+     :methods
      {:get
       {:produces "text/html"
-       :response (login-form-html fields)
-       }
+       :response (login-form-html fields)}
+      
       :post
       {:parameters (login-form-parameters fields)
        :response (fn [ctx]
@@ -66,24 +70,21 @@
                                      :expires expires
                                      :http-only true}]
                          (assoc (:response ctx)
-                                ;; TODO: Schema check context
                                 :cookies {"session" cookie}
-                                :body (format "Thanks %s!" (get-in ctx [:parameters :form :user]))))
-                       (format "Login failed"))))
-       :consumes "application/x-www-form-urlencoded"
-       :produces "text/plain"}}})))
+                                :body (html
+                                       [:h1 (format "Thanks %s!" (get-in ctx [:parameters :form :user]))]
+                                       [:p [:a {:href (path-for @*router ::secret)} "secret"]]
+                                       [:p [:a {:href (path-for @*router ::logout)} "logout"]]
+                                       )))
+                       (assoc (:response ctx)
+                              ;; It's possible the user was already logged in, in which case we log them out
+                              :cookies {"session" {:value "" :expires 0}}
+                              :body (html [:h1 "Login failed"]
+                                          [:p [:a {:href (path-for @*router ::login)} "try again"]]
+                                          [:p [:a {:href (path-for @*router ::secret)} "secret"]])))))
 
-(defn logout [cookie-name body]
-  (yada
-   (resource
-    {:methods
-     {:get
-      {:produces "text/html"
-       :response (fn [ctx]
-                   (->
-                    (assoc (:response ctx)
-                           :cookies {cookie-name {:value "" :expires 0}}
-                           :body (body ctx))))}}})))
+       :consumes "application/x-www-form-urlencoded"
+       :produces "text/html"}}})))
 
 (defmethod verify-with-scheme "Custom"
   [ctx {:keys [verify]}]
@@ -95,53 +96,70 @@
     auth
     ))
 
-(s/defrecord SecurityExamples []
+(defn build-routes [*router]
+  (try
+    ["/security"
+     [["/basic"
+       (yada
+        (resource
+         (merge (into {} (as-resource "SECRET!"))
+                {:access-control
+                 {:realm "accounts"
+                  :scheme "Basic"
+                  :verify (fn [[user password]]
+                            (when (= [user password] ["scott" "tiger"])
+                              {:user "scott"
+                               :roles #{"accounts/view"}}))
+                  :authorization {:methods {:get true}}}})))]
+
+      ["/cookie"
+
+       {"/login.html"
+        (login
+         [{:label "User" :type :text :name "user"}
+          {:label "Password" :type :password :name "password"}]
+         *router)
+
+        "/logout"
+        (yada
+         (resource
+          {:id ::logout
+           :methods
+           {:get
+            {:produces "text/html"
+             :response (fn [ctx]
+                         (->
+                          (assoc (:response ctx)
+                                 :cookies {"session" {:value "" :expires 0}}
+                                 :body (html
+                                        [:h1 "Logged out"]
+                                        [:p [:a {:href (path-for @*router ::login)} "login"]]))))}}}))
+
+        "/secret.html"
+        (yada
+         (resource
+          {:id ::secret
+           :access-control
+           {:realm "accounts"
+            :scheme "Custom"
+            :verify identity
+            :authorization {:methods {:get [:and
+                                            "accounts/view"
+                                            "accounts/view"]}}}
+           :methods {:get "SECRET!"}}))}]]]
+
+    (catch Throwable e
+      (errorf e "Getting exception on security example routes")
+      ["/security/cookie/secret.html" (yada (str e))]
+      )))
+
+(s/defrecord SecurityExamples [*router :- (co-dep Router)]
   RouteProvider
-  (routes [_]
-    (try
-      ["/security"
-       [["/basic"
-         (yada
-          (resource
-           (merge (into {} (as-resource "SECRET!"))
-                  {:access-control
-                   {:realm "accounts"
-                    :scheme "Basic"
-                    :verify (fn [[user password]]
-                              (when (= [user password] ["scott" "tiger"])
-                                {:user "scott"
-                                 :roles #{"accounts/view"}}))
-                    :authorization {:methods {:get true}}}})))]
-
-        ["/cookie"
-
-         {"/login.html"
-          (login-form
-           [{:label "User" :type :text :name "user"}
-            {:label "Password" :type :password :name "password"}])
-
-          "/secret.html"
-          (yada
-           (resource
-            {:access-control
-             {:realm "accounts"
-              :scheme "Custom"
-              :verify identity
-              :authorization {:methods {:get [:and
-                                              "accounts/view"
-                                              "accounts/view"]}}}
-             :methods {:get "SECRET!"}}))
-
-          "/logout"
-          (logout "session" (fn [ctx]
-                              (format "Logged out")))
-
-          }]]]
-      (catch Throwable e
-        (errorf e "Getting exception on security example routes")
-        ["/security/cookie/secret.html" (yada (str e))]
-        ))))
+  (routes [_] (build-routes *router)))
 
 (defn new-security-examples [config]
-  (map->SecurityExamples {}))
+  (-> 
+   (map->SecurityExamples {})
+   (using [])
+   (co-using [:router])))
 
