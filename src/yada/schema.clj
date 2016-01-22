@@ -264,7 +264,7 @@ convenience of terse, expressive short-hand descriptions."}
    (s/optional-key :verify) s/Any})
 
 (s/defschema AuthSchemes
-  {:authentication-schemes [AuthScheme]})
+  {(s/optional-key :authentication-schemes) [AuthScheme]})
 
 ;; Authorization can contain any content because it is up to the
 ;; authorization interceptor, which is pluggable.
@@ -306,10 +306,11 @@ convenience of terse, expressive short-hand descriptions."}
 (def SingleRealmMapping
   {AccessControlValue
    (fn [x]
-     (if-let [realm (:realm x)]
+     (if-not (:realms x)
        (-> x
            ;; Merge everything we want to KEEP from the realm
-           (merge {:realms {realm (select-keys x [:authentication-schemes :verify :scheme :authorization])}})
+           (merge {:realms {(or (:realm x) "default")
+                            (select-keys x [:authentication-schemes :verify :scheme :authorization])}})
            ;; Remove anything we want to REMOVE from the rest of the
            ;; access-control definition
            (dissoc :realm :scheme :verify :authentication-schemes :authorization))
