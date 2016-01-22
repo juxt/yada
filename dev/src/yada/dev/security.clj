@@ -18,21 +18,6 @@
    [ring.middleware.cookies :refer [cookies-request cookies-response]])
   (:import [modular.bidi Router]))
 
-(defn hello []
-  (yada "Hello World!\n"))
-
-(defn- login-form-html [fields]
-  (html
-   [:div
-    [:style "* {margin:2px;padding:2px}"]
-    [:h1 "Login form"]
-    [:form {:method :post}
-     (for [{:keys [label type name]} fields]
-       [:div
-        [:label {:for name} label]
-        [:input {:type type :name name}]])
-     [:div [:input {:type :submit :name :submit :value "Login"}]]]]))
-
 (defn- login-form-parameters [fields]
   {:form
    (into {:submit String}
@@ -53,7 +38,16 @@
      :methods
      {:get
       {:produces "text/html"
-       :response (login-form-html fields)}
+       :response (html
+                  [:div
+                   [:style "* {margin:2px;padding:2px}"]
+                   [:h1 "Login form"]
+                   [:form {:method :post}
+                    (for [{:keys [label type name]} fields]
+                      [:div
+                       [:label {:for name} label]
+                       [:input {:type type :name name}]])
+                    [:div [:input {:type :submit :name :submit :value "Login"}]]]])}
       
       :post
       {:parameters (login-form-parameters fields)
@@ -72,7 +66,7 @@
                          (assoc (:response ctx)
                                 :cookies {"session" cookie}
                                 :body (html
-                                       [:h1 (format "Thanks %s!" (get-in ctx [:parameters :form :user]))]
+                                       [:h1 (format "Hello %s!" (get-in ctx [:parameters :form :user]))]
                                        [:p [:a {:href (path-for @*router ::secret)} "secret"]]
                                        [:p [:a {:href (path-for @*router ::logout)} "logout"]]
                                        )))
@@ -110,7 +104,7 @@
                             (when (= [user password] ["scott" "tiger"])
                               {:user "scott"
                                :roles #{"accounts/view"}}))
-                  :authorization {:methods {:get true}}}})))]
+                  :authorization {:methods {:get "accounts/view"}}}})))]
 
       ["/cookie"
 
@@ -140,13 +134,22 @@
          (resource
           {:id ::secret
            :access-control
-           {:realm "accounts"
-            :scheme "Custom"
+           {:scheme "Custom"
             :verify identity
             :authorization {:methods {:get [:and
                                             "accounts/view"
                                             "accounts/view"]}}}
-           :methods {:get "SECRET!"}}))}]]]
+           :methods {:get {:response (fn [ctx]
+                                       (html
+                                        [:h1 "Seek happiness"]
+                                        [:p [:a {:href (path-for @*router ::logout)} "logout"]]))
+                           :produces "text/html"}}
+           :responses {401 {:produces "text/html" ;; TODO: If we neglect to put in produces we get an error
+                            :response (fn [ctx]
+                                        (html
+                                         [:h1 "Sorry"]
+                                         [:p "You are not authorized yet"]
+                                         [:p "Please " [:a {:href (path-for @*router ::login)} "login" ]]))}}}))}]]]
 
     (catch Throwable e
       (errorf e "Getting exception on security example routes")
