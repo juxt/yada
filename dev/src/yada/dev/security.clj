@@ -73,6 +73,18 @@
        :consumes "application/x-www-form-urlencoded"
        :produces "text/plain"}}})))
 
+(defn logout [cookie-name body]
+  (yada
+   (resource
+    {:methods
+     {:get
+      {:produces "text/html"
+       :response (fn [ctx]
+                   (->
+                    (assoc (:response ctx)
+                           :cookies {cookie-name {:value "" :expires 0}}
+                           :body (body ctx))))}}})))
+
 (defmethod verify-with-scheme "Custom"
   [ctx {:keys [verify]}]
   ;; TODO: Badly need cookie support
@@ -102,10 +114,12 @@
                     :authorization {:methods {:get true}}}})))]
 
         ["/cookie"
+
          {"/login.html"
           (login-form
            [{:label "User" :type :text :name "user"}
             {:label "Password" :type :password :name "password"}])
+
           "/secret.html"
           (yada
            (resource
@@ -116,8 +130,13 @@
               :authorization {:methods {:get [:and
                                               "accounts/view"
                                               "accounts/view"]}}}
-             
-             :methods {:get "SECRET!"}}))}]]]
+             :methods {:get "SECRET!"}}))
+
+          "/logout"
+          (logout "session" (fn [ctx]
+                              (format "Logged out")))
+
+          }]]]
       (catch Throwable e
         (errorf e "Getting exception on security example routes")
         ["/security/cookie/secret.html" (yada (str e))]

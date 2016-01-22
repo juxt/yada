@@ -108,6 +108,13 @@
 
       ["hello.html" (hello/index *router)]
 
+      ["body.html" (yada
+                    (resource
+                     {:produces "application/json"
+                      :methods
+                      {:get
+                       {:response (fn [_] {:greeting "Hello"})}}}))]
+
       ["dir/" (yada (io/file "talks"))]
 
       ["404" (resource
