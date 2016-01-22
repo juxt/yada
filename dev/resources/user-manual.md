@@ -1072,9 +1072,152 @@ definitely on the road-map.)
 
 [coming soon]
 
+#### Body coercion
+
+Where necessary, and according to the semantics of the HTTP method,
+yada will coerce the result of a method into an entity body of the
+negotiated content type.
+
+For example, consider the following resource-map.
+
+```clojure
+{:produces "application/json"
+ :methods
+ {:get
+  {:response (fn [_] {:greeting "Hello"})}}}
+  ```
+
+On receiving a GET request, yada will automatically convert the map `{:greeting "Hello"}` into the JSON body `{"greeting":"Hello"}`.
+
+However, the key phrase here is _where necessary_. If a string is returned from a method, and the content type is `application/json`, there is some ambiguity between whether the resource developer intends for yada to encode the string into JSON, or whether the string is _already_ JSON encoded. In these ambiguous cases, yada assumes
+the string is JSON encoded already.
+
+Therefore this code would produce an error when the user agent attempts to decode the JSON string.
+
+```clojure
+{:produces "application/json"
+ :methods
+ {:get
+  {:response (fn [_] "This is not JSON")}}}
+```
+
+If you are faced with this situation, you should choose one of the following options:
+
+- Return a map with the JSON string embedded. For example: `{:message
+  "Plain old string"}`.
+
+- Use a JSON encoder such as
+  [`org.clojure/data.json`](https://github.com/clojure/data.json) or
+  [Cheshire](https://github.com/dakrone/cheshire) and encode the
+  string yourself.
+
+
 ### Consuming content
 
 [coming soon]
+
+## Responses
+
+In resource interactions, a request is processed by a method, usually
+resulting in a response. The response contains a status code, headers
+and a body.
+
+yada attempts to set the correct status code and headers according to
+the semantics of both the method and mime-type. It also coerces the
+result of a method into the response body if necessary.
+
+Sometimes, however, the response returned by yada is not what you
+want. There are times that you want more fine-grained control, want to
+provide custom bodies for certain status codes (such as 404 errors),
+or want deviate from the HTTP standards entirely.
+
+### Explicit responses
+
+When you need _complete control_ over the response you should return
+the __request-context__'s response, modified if necessary. In which
+case yada will see that you want to be explicit and get out of your
+way.
+
+```clojure
+(fn [ctx]
+ (let [response (:response ctx)]
+  ;; return a response, explicitly associating
+  ;; (or updating) the status, headers or body.
+  (update-in response […] …)
+ ))
+```
+
+### Declared responses
+
+yada declares the responses that may normally be produced by a
+method. It adds these declarations to the __resource-model__ when
+creating a resource prior to processing.
+
+However, with explicit responses you may generate response codes that
+are unexpected by yada and which could be declared through the
+__resource-model__.
+
+In these cases, you should declare the response codes in the
+__:responses__ entry of the resource's __resource-model__.
+
+```clojure
+{:responses
+ {418 {:description "I'm a teapot"}}}
+```
+
+The keys in the __:responses__ map can be integers, sets of integers,
+or the wildcard: `*`. Only sets are supported, so if you need to
+produce a range of status codes, create a set programmatically:
+
+```clojure
+{(set (concat (range 400 404) (range 405 500))}
+ {:description "All errors besides 404"
+  …
+  }}
+```
+
+Individual status codes take precedence over sets of status codes,
+which take precedence over wildcards. After that, the order in which
+keys are checked is undefined. If you are using sets, avoid declaring
+the same status code in multiple keys.
+
+### Status responses
+
+Usually yada will return the responses produced by methods, and create
+ones for errors that occur along the way.
+
+Often it is useful to be able to control the response body, or even
+the complete response, for responses with certain status codes.
+
+We can specify these controlled responses by specifying a response
+entry in the value corresponding to the status code.
+
+A common example is providing a custom 404 page when a resource cannot
+be found, which may provide the user with details of why the resource
+couldn't be found and perhaps what to do next.
+
+Let's see how this is done:
+
+```clojure
+(require '[yada.yada :as yada])
+
+{:properties {:exists? false}
+
+ :responses
+ {404 {:description "Not found"
+       :produces #{"text/html" "text/plain;q=0.9"}
+       :response (let [msg "Oh dear I couldn't find that"]
+                   (fn [ctx]
+                     (case (yada/content-type ctx)
+                       "text/html" (html [:h2 msg])
+                       (str msg \newline))))}}}
+```
+
+Note that the response definition can include a declaration of the
+representations that the response can produce.
+
+If the response is caused by an error, the actual error is available
+in the context under __:error__.
 
 ## Security
 
@@ -1492,109 +1635,6 @@ This declaration tells yada what parameters we are expecting in the POST method.
 See
 [IBM's Watson Developer Cloud](http://www.ibm.com/smarterplanet/us/en/ibmwatson/developercloud/apis/)
 for a sophistated Swagger example.
-
-## Responses
-
-In resource interactions, a request is processed by a method, usually
-resulting in a response. The response contains a status code, headers
-and a body.
-
-yada attempts to set the correct status code and headers according to
-the semantics of both the method and mime-type. It also coerces the
-result value of a method function into the response body if necessary.
-
-Sometimes, however, the response returned by yada is not what you
-want. There are times that you want more fine-grained control, want to
-provide custom bodies for certain status codes (such as 404 errors),
-or want deviate from the HTTP standards entirely.
-
-### Explicit responses
-
-When you need _complete control_ over the response you should return
-the __request-context__'s response, modified if necessary. In which
-case yada will see that you want to be explicit and get out of your
-way.
-
-```clojure
-(fn [ctx]
- (let [response (:response ctx)]
-  ;; return a response, explicitly associating
-  ;; (or updating) the status, headers or body.
-  (update-in response […] …)
- ))
-```
-
-### Declared responses
-
-yada declares the responses that may normally be produced by a
-method. It adds these declarations to the __resource-model__ when
-creating a resource prior to processing.
-
-However, with explicit responses you may generate response codes that
-are unexpected by yada and which could be declared through the
-__resource-model__.
-
-In these cases, you should declare the response codes in the
-__:responses__ entry of the resource's __resource-model__.
-
-```clojure
-{:responses
- {418 {:description "I'm a teapot"}}}
-```
-
-The keys in the __:responses__ map can be integers, sets of integers,
-or the wildcard: `*`. Only sets are supported, so if you need to
-produce a range of status codes, create a set programmatically:
-
-```clojure
-{(set (concat (range 400 404) (range 405 500))}
- {:description "All errors besides 404"
-  …
-  }}
-```
-
-Individual status codes take precedence over sets of status codes,
-which take precedence over wildcards. After that, the order in which
-keys are checked is undefined. If you are using sets, avoid declaring
-the same status code in multiple keys.
-
-### Status responses
-
-Usually yada will return the responses produced by methods, and create
-ones for errors that occur along the way.
-
-Often it is useful to be able to control the response body, or even
-the complete response, for responses with certain status codes.
-
-We can specify these controlled responses by specifying a response
-entry in the value corresponding to the status code.
-
-A common example is providing a custom 404 page when a resource cannot
-be found, which may provide the user with details of why the resource
-couldn't be found and perhaps what to do next.
-
-Let's see how this is done:
-
-```clojure
-(require '[yada.yada :as yada])
-
-{:properties {:exists? false}
-
- :responses
- {404 {:description "Not found"
-       :produces #{"text/html" "text/plain;q=0.9"}
-       :response (let [msg "Oh dear I couldn't find that"]
-                   (fn [ctx]
-                     (case (yada/content-type ctx)
-                       "text/html" (html [:h2 msg])
-                       (str msg \newline))))}}}
-```
-
-Note that the response definition can include a declaration of the
-representations that the response can produce.
-
-If the response is caused by an error, the actual error is available
-in the context under __:error__.
 
 ## Async
 
