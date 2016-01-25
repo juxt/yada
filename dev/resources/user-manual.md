@@ -1221,6 +1221,10 @@ in the context under __:error__.
 
 ## Security
 
+Built in to the library, yada offers a complete standards-based set of
+security features for today's secure applications and content
+delivery.
+
 With security, it is important to understand the concepts, processes
 and standards in detail. While yada can help with good security
 defaults and attempts to make security configuration easier, it is
