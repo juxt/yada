@@ -273,8 +273,8 @@
         :resource resource
         :allowed-methods (allowed-methods resource)
         :known-methods (methods/known-methods)
-        ;; TODO: interceptor chain should be defined in the resource itself
-        :interceptor-chain default-interceptor-chain})))))
+        :interceptor-chain (or (:interceptor-chain resource)
+                               default-interceptor-chain)})))))
 
 (def yada handler)
 

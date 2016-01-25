@@ -7,7 +7,14 @@
    [yada.yada :as yada :refer [yada]]))
 
 (deftest nil-test
-  (testing "A nil resource should yield a 404"
-    (let [res (yada nil)
-          resp @(res (request :get "/"))]
-      (is (= 404 (:status resp))))))
+  (testing "A nil resource should yield on nil"
+    (doseq [method [:get :post :put]]
+      (let [res (yada nil)]
+        (try
+          @(res (request method "/"))
+          (catch clojure.lang.ExceptionInfo e
+            (is (= {:error {:status 404}} (ex-data e)))))))))
+
+
+
+

@@ -3,6 +3,7 @@
 (ns yada.resource
   (:require
    [clojure.tools.logging :refer :all]
+   [manifold.deferred :as d]
    [schema.core :as s]
    [schema.coerce :as sc]
    [schema.utils :as su]
@@ -58,7 +59,8 @@
 
 (extend-protocol p/ResourceCoercion
   nil
-  (as-resource [_] (resource {:summary "Nil resource"
-                              :properties {:exists? false}
-                              :methods {:get nil}})))
+  (as-resource [_]
+    (resource
+     {:summary "Nil resource"
+      :interceptor-chain [(fn [ctx] (d/error-deferred {:status 404}))]})))
 
