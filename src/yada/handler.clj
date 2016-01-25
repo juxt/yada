@@ -100,9 +100,9 @@
                   :resource sub-resource
                   :allowed-methods (allowed-methods sub-resource)
                   :known-methods (:known-methods ctx)
-                  ;; TODO: Could/should sub-resources, which are dynamic, be able
-                  ;; to modify the interceptor-chain?
-                  :interceptor-chain (-> ctx :interceptor-chain)})]
+                  :interceptor-chain (or
+                                      (:interceptor-chain sub-resource)
+                                      (-> ctx :interceptor-chain))})]
           
             (handle-request-with-maybe-subresources
              (-> ctx

@@ -62,5 +62,6 @@
   (as-resource [_]
     (resource
      {:summary "Nil resource"
-      :interceptor-chain [(fn [ctx] (d/error-deferred {:status 404}))]})))
+      :interceptor-chain [(fn [_]
+                            (throw (ex-info "" {:status 404})))]})))
 
