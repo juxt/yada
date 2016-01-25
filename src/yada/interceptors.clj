@@ -11,6 +11,7 @@
    [ring.middleware.params :refer [assoc-query-params]]
    [ring.swagger.coerce :as rsc]
    [ring.swagger.schema :as rs]
+   [schema.core :as s]
    [schema.coerce :as sc]
    [schema.utils :refer [error?]]
    [yada.body :as body]
@@ -105,9 +106,10 @@
                       (coercer qp))
                     qp))
                     
-         #_:header #_(when-let [schema (get-in parameters [method :header])]
-                       (let [params (-> request :headers)]
-                         (rs/coerce (assoc schema String String) params :query)))}]
+         :header (when-let [schema (:header schemas)]
+                   ;; Allow any other headers
+                   (let [coercer (sc/coercer (merge schema {s/Str s/Str}) {})]
+                     (coercer (:headers request))))}]
 
     (let [errors (filter (comp error? second) parameters)]
       (if (not-empty errors)
