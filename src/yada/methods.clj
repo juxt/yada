@@ -201,9 +201,9 @@
   Boolean
   (interpret-post-result [b ctx]
     (if b ctx (throw (ex-info "Failed to process POST" {}))))
-  String
-  (interpret-post-result [s ctx]
-    (assoc-in ctx [:response :body] s))
+  Object
+  (interpret-post-result [o ctx]
+    (assoc-in ctx [:response :body] o))
   clojure.lang.Fn
   (interpret-post-result [f ctx]
     (interpret-post-result (f ctx) ctx))
