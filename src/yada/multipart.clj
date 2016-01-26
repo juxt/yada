@@ -637,6 +637,6 @@
                (if-not (schema.utils/error? params)
                  (assoc-in ctx [:parameters (if (:form schemas) :form :body)] params)
                  (d/error-deferred (ex-info "Bad form fields"
-                                            {:status 400 :error params}))))
+                                            {:status 400 :error (schema.utils/error-val params)}))))
 
              :otherwise (assoc ctx :body fields))))))))
