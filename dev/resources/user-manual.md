@@ -720,9 +720,9 @@ or record may be extended to do so, using Clojure's `extend-protocol`
 macro.
 
 ```clojure
-(extend-protocol datomic.api.Database
-  yada.protocols.ResourceCoercion
-  (as-resource
+(extend-type datomic.api.Database
+  yada.protocols/ResourceCoercion
+  (as-resource [_]
     (resource
       {:properties
         {:last-modified …}
