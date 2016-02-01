@@ -30,7 +30,7 @@
    [org.clojure/data.codec "0.1.0"]
    [org.clojure/tools.reader "0.10.0"]
    [org.clojure/tools.trace "0.7.9"]
-   [org.clojars.ikoblik/clj-index "0.0.2"]
+   [juxt/clj-index "0.0.2-1"]
 
    ;; TODO: Find out where this is being excluded, Schema needs it?
    [org.clojure/core.cache "0.6.4"]
