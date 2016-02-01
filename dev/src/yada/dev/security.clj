@@ -58,7 +58,7 @@
                             ["scott" "tiger"])
                        (let [expires (time/plus (time/now) (time/minutes 15))
                              jwt (jws/sign {:user "scott"
-                                            :roles ["accounts/view"]
+                                            :roles ["secret/view"]
                                             :exp expires}
                                            "secret")
                              cookie {:value jwt
@@ -81,12 +81,14 @@
        :consumes "application/x-www-form-urlencoded"
        :produces "text/html"}}})))
 
-(defmethod verify-with-scheme "Custom"
-  [ctx {:keys [verify]}]
+(defmethod verify-with-scheme :buddy-jwt
+  [ctx {:keys [cookie secret] :or {cookie "session"}}]
   (let [auth (some->
-              (get-in ctx [:cookies "session"])
+              (get-in ctx [:cookies cookie])
               (jws/unsign "secret"))]
-    auth))
+    (do
+      (infof "auth is %s" auth)
+      auth)))
 
 (defn build-routes [*router]
   (try
@@ -125,13 +127,13 @@
          (merge (into {} (as-resource "SECRET!"))
                 {:id ::basic
                  :access-control
-                 {:realm "accounts"
+                 {;;:realm "accounts"
                   :scheme "Basic"
                   :verify (fn [[user password]]
                             (when (= [user password] ["scott" "tiger"])
                               {:user "scott"
-                               :roles #{"accounts/view"}}))
-                  :authorization {:methods {:get "accounts/view"}}}})))]
+                               :roles #{"secret/view"}}))
+                  :authorization {:methods {:get "secret/view"}}}})))]
 
       ["/cookie"
 
@@ -167,11 +169,9 @@
                                         [:p [:a {:href (path-for @*router ::logout)} "logout"]]))
                            :produces "text/html"}}
 
-           :access-control
-           {:scheme "Custom"
-            :verify identity
-            :authorization {:methods {:get [:and
-                                            "accounts/view"
+           {:scheme :buddy-jwt
+            :authorization {:methods {:get [:or
+                                            "secret/view"
                                             "accounts/view"]}}}
 
            :responses {401 {:produces "text/html" ;; TODO: If we neglect to put in produces we get an error
@@ -179,8 +179,19 @@
                                         (html
                                          [:h1 "Sorry"]
                                          [:p "You are not authorized yet"]
-                                         [:p "Please " [:a {:href (path-for @*router ::login)} "login" ]]))}}}))}]]]
+                                         [:p "Please " [:a {:href (path-for @*router ::login)} "login" ]]))}
+                       403 {:produces "text/html" ;; TODO: If we neglect to put in produces we get an error
+                            :response (fn [ctx]
+                                        (html
+                                         [:h1 "Sorry"]
+                                         [:p "Your access is forbidden"]
+                                         [:p "Try another user? " [:a {:href (path-for @*router ::logout)} "logout" ]]))}}}))}]]]
 
+    (catch clojure.lang.ExceptionInfo e
+      (errorf e (format "Errors: %s" (pr-str (ex-data e))))
+      (errorf e "Getting exception on security example routes")
+      ["/security/cookie/secret.html" (yada (str e))]
+      )
     (catch Throwable e
       (errorf e "Getting exception on security example routes")
       ["/security/cookie/secret.html" (yada (str e))]

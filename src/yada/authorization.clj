@@ -33,6 +33,7 @@
     (contains? (set roles) this)))
 
 (defmulti validate (fn [ctx credentials authorization]
+                     ;; TODO Rename this to 'scheme'
                      (:algorithm authorization)))
 
 (defmethod validate nil [ctx credentials authorization]

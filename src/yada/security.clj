@@ -12,8 +12,7 @@
 
 (defmulti verify-with-scheme
   "Multimethod that allows new schemes to be added."
-  (fn [ctx {:keys [scheme]}]
-    scheme))
+  (fn [ctx {:keys [scheme]}] scheme) :default ::default)
 
 (defmethod verify-with-scheme "Basic"
   [ctx {:keys [verify]}]
@@ -34,7 +33,7 @@
   (when verify
     (verify ctx)))
 
-(defmethod verify-with-scheme :default
+(defmethod verify-with-scheme ::default
   [ctx {:keys [scheme]}]
   ;; Scheme is not recognised by this server, we must return nil (to
   ;; move to the next scheme). This is technically a server issue but
@@ -95,7 +94,7 @@
                                         (str/join ", "
                                                   (filter some?
                                                           (for [{:keys [scheme]} authentication-schemes]
-                                                            (when scheme
+                                                            (when (string? scheme)
                                                               (format "%s realm=\"%s\"" scheme realm)))))))))
      ctx (get-in ctx [:resource :access-control :realms]))))
 
