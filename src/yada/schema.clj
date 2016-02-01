@@ -260,8 +260,10 @@ convenience of terse, expressive short-hand descriptions."}
 (s/defschema Keywords [s/Keyword])
 
 (def AuthScheme
-  {(s/optional-key :scheme) (s/cond-pre s/Keyword s/Str)
-   (s/optional-key :verify) s/Any})
+  (merge
+   {(s/optional-key :scheme) (s/cond-pre s/Keyword s/Str)
+    (s/optional-key :verify) s/Any}
+   NamespacedEntries))
 
 (s/defschema AuthSchemes
   {(s/optional-key :authentication-schemes) [AuthScheme]})

@@ -3,6 +3,7 @@
 (ns yada.dev.security
   (:require
    [bidi.bidi :refer [RouteProvider tag]]
+   [bidi.ring :refer [redirect]]
    [buddy.sign.jws :as jws]
    [clj-time.core :as time]
    [clojure.tools.logging :refer :all]
@@ -10,14 +11,14 @@
    [modular.component.co-dependency.schema :refer [co-dep]]
    [hiccup.core :refer (html)]
    [modular.bidi :refer (path-for)]
-   [modular.bidi :refer (path-for)]
    [modular.component.co-dependency :refer (co-using)]
    [schema.core :as s]
    [yada.dev.template :refer [new-template-resource]]
    [yada.security :refer [verify-with-scheme]]
    [yada.yada :as yada :refer [yada resource as-resource]]
    [ring.middleware.cookies :refer [cookies-request cookies-response]])
-  (:import [modular.bidi Router]))
+  (:import [modular.bidi Router]
+           [clojure.lang ExceptionInfo]))
 
 (defn- login-form-parameters [fields]
   {:form
@@ -27,7 +28,7 @@
 ;; TODO: cookie expiry not seen in Chrome Network/Cookies Expires
 ;; column, investigate!
 
-(defn login [fields *router]
+(defn login [fields secret *router]
   ;; Here we provide the fields as an argument, once. They serve 2
   ;; purposes: Generating the login form AND declaring the POST
   ;; parameters. This is a good example of cohesion. Instead of
@@ -60,7 +61,7 @@
                              jwt (jws/sign {:user "scott"
                                             :roles ["secret/view"]
                                             :exp expires}
-                                           "secret")
+                                           secret)
                              cookie {:value jwt
                                      :expires expires
                                      :http-only true}]
@@ -82,18 +83,26 @@
        :produces "text/html"}}})))
 
 (defmethod verify-with-scheme :buddy-jwt
-  [ctx {:keys [cookie secret] :or {cookie "session"}}]
-  (let [auth (some->
-              (get-in ctx [:cookies cookie])
-              (jws/unsign "secret"))]
-    (do
-      (infof "auth is %s" auth)
-      auth)))
+  [ctx {:keys [cookie yada.dev.security/secret] :or {cookie "session"} :as scheme}]
+  (when-not secret (throw (ex-info "Buddy JWT verifier requires a secret entry in scheme" {:scheme scheme})))
+  (try
+    (let [auth (some->
+                (get-in ctx [:cookies cookie])
+                (jws/unsign secret))]
+      auth)
+    (catch ExceptionInfo e
+      (if-not (= (ex-data e)
+                 {:type :validation :cause :signature})
+        (throw e)
+        )
+      )))
 
 (defn build-routes [*router]
   (try
     ["/security"
      [
+      ["" (redirect ::index)]
+      ["/" (redirect ::index)]
       ["/index.html"
        (-> (new-template-resource
             "templates/page.html"
@@ -106,7 +115,7 @@
                 [:p "The following exmples demonstrate the
                                     authentication and authorization
                                     features of yada. See " [:a
-                                    {:href "https://github.com/juxt/yada/blob/master/dev/src/yada/dev/security.clj"} "demo
+                                                             {:href "https://github.com/juxt/yada/blob/master/dev/src/yada/dev/security.clj"} "demo
                                     code"] " for implementation
                                     details."]
                 [:ul
@@ -127,8 +136,7 @@
          (merge (into {} (as-resource "SECRET!"))
                 {:id ::basic
                  :access-control
-                 {;;:realm "accounts"
-                  :scheme "Basic"
+                 {:scheme "Basic"
                   :verify (fn [[user password]]
                             (when (= [user password] ["scott" "tiger"])
                               {:user "scott"
@@ -137,55 +145,62 @@
 
       ["/cookie"
 
-       {"/login.html"
-        (login
-         [{:label "User" :type :text :name "user"}
-          {:label "Password" :type :password :name "password"}]
-         *router)
+       (let [secret "9eLPqOKtc3wiJImA69ybMXGVjnHMbZM9+pXs"]
 
-        "/logout"
-        (yada
-         (resource
-          {:id ::logout
-           :methods
-           {:get
-            {:produces "text/html"
-             :response (fn [ctx]
-                         (->
-                          (assoc (:response ctx)
-                                 :cookies {"session" {:value "" :expires 0}}
-                                 :body (html
-                                        [:h1 "Logged out"]
-                                        [:p [:a {:href (path-for @*router ::login)} "login"]]))))}}}))
+         {"/login.html"
+          (login
+           [{:label "User" :type :text :name "user"}
+            {:label "Password" :type :password :name "password"}]
+           secret
+           *router)
 
-        "/secret.html"
-        (yada
-         (resource
-          {:id ::secret
-           
-           :methods {:get {:response (fn [ctx]
-                                       (html
-                                        [:h1 "Seek happiness"]
-                                        [:p [:a {:href (path-for @*router ::logout)} "logout"]]))
-                           :produces "text/html"}}
+          "/logout"
+          (yada
+           (resource
+            {:id ::logout
+             :methods
+             {:get
+              {:produces "text/html"
+               :response (fn [ctx]
+                           (->
+                            (assoc (:response ctx)
+                                   :cookies {"session" {:value "" :expires 0}}
+                                   :body (html
+                                          [:h1 "Logged out"]
+                                          [:p [:a {:href (path-for @*router ::login)} "login"]]))))}}}))
 
-           {:scheme :buddy-jwt
-            :authorization {:methods {:get [:or
-                                            "secret/view"
-                                            "accounts/view"]}}}
+          "/secret.html"
+          (yada
+           (resource
+            {:id ::secret
+             
+             :methods {:get {:response (fn [ctx]
+                                         (html
+                                          [:h1 "Seek happiness"]
+                                          [:p [:a {:href (path-for @*router ::logout)} "logout"]]
+                                          ))
+                             :produces "text/html"}}
 
-           :responses {401 {:produces "text/html" ;; TODO: If we neglect to put in produces we get an error
-                            :response (fn [ctx]
-                                        (html
-                                         [:h1 "Sorry"]
-                                         [:p "You are not authorized yet"]
-                                         [:p "Please " [:a {:href (path-for @*router ::login)} "login" ]]))}
-                       403 {:produces "text/html" ;; TODO: If we neglect to put in produces we get an error
-                            :response (fn [ctx]
-                                        (html
-                                         [:h1 "Sorry"]
-                                         [:p "Your access is forbidden"]
-                                         [:p "Try another user? " [:a {:href (path-for @*router ::logout)} "logout" ]]))}}}))}]]]
+             :access-control
+             {:authentication-schemes [{:scheme :buddy-jwt ::secret secret}]
+              :authorization {:methods {:get [:or
+                                              "secret/view"
+                                              "accounts/view"]}}}
+
+             :responses {401 {:produces "text/html" ;; TODO: If we neglect to put in produces we get an error
+                              :response (fn [ctx]
+                                          (html
+                                           [:h1 "Sorry"]
+                                           [:p "You are not authorized yet"]
+                                           [:p "Please " [:a {:href (path-for @*router ::login)} "login" ]]
+                                           ))}
+                         403 {:produces "text/html" ;; TODO: If we neglect to put in produces we get an error
+                              :response (fn [ctx]
+                                          (html
+                                           [:h1 "Sorry"]
+                                           [:p "Your access is forbidden"]
+                                           [:p "Try another user? " [:a {:href (path-for @*router ::logout)} "logout" ]]
+                                           ))}}}))})]]]
 
     (catch clojure.lang.ExceptionInfo e
       (errorf e (format "Errors: %s" (pr-str (ex-data e))))
