@@ -11,7 +11,7 @@
    [byte-streams :as bs]
    [cheshire.core :as json]
    [hiccup.core :refer [html h]]
-   [hiccup.page :refer [html5]]
+   [hiccup.page :refer [html5 xhtml]]
    [json-html.core :as jh]
    [manifold.stream :refer [->source transform]]
    [ring.util.codec :as codec]
@@ -113,7 +113,7 @@
 
 (defmethod render-map "text/html"
   [m representation]
-  (-> (html5
+  (-> (html
        [:head [:style (slurp (io/resource "json.human.css"))]]
          (jh/edn->html m))
       (str \newline) ; annoying on the command-line otherwise
@@ -121,10 +121,15 @@
       ))
 
 (defmethod render-seq "text/html"
-  [m representation]
-  (-> (html5
-         [:head [:style (slurp (io/resource "json.human.css"))]]
-         (jh/edn->html m))
+  [s representation]
+  (-> (html s)
+      (str \newline) ; annoying on the command-line otherwise
+      (to-body representation) ; for string encoding
+      ))
+
+(defmethod render-seq "application/xhtml+xml"
+  [s representation]
+  (-> (xhtml s)
       (str \newline) ; annoying on the command-line otherwise
       (to-body representation) ; for string encoding
       ))
