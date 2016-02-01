@@ -319,7 +319,7 @@ convenience of terse, expressive short-hand descriptions."}
 (def SingleSchemeMapping
   {RealmValue
    (fn [x]
-     (if (:verify x)
+     (if (:scheme x)
        (-> x
            ;; Merge in a :authentication-schemes entry with a single
            ;; scheme containing the :scheme and :verify entries
