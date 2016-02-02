@@ -1681,7 +1681,7 @@ For example, let's take the bidi routing tree below:
   ])]
 ```
 
-This declares a route that (partially) matches on the URI path `/api`. The second element of the route pair is a custom record created with `swaggered` which satisfies bidi's `Matched` protocol. This acts as a sort of 'junction' which matches on the routes given in the second argument. Critically, however, it also adds an additional route, `swagger.json`, which exposes the Swagger specification of the given base template, routes and resources.
+This declares a route that (partially) matches on the URI path `/api`. The second element of the route pair is a custom record created with `swaggered` which satisfies bidi's `Matched` protocol. This acts as a sort of 'junction' which matches on the routes given in the second argument. Critically, however, it also adds an additional sub-route, `/swagger.json`, which exposes the Swagger specification of the given base template, routes and resources.
 
 Therefore, to access the JSON swagger specification in the example above, you would navigate to `/api/swagger.json`. Also, use `/api/greetings/hello` and `/api/greetings/goodbye` to access the services.
 
