@@ -1714,7 +1714,7 @@ to data-sources and other activities which may be _I/O-bound_. This means the th
 
 For heavily loaded or high-throughput web APIs, this is an inefficient
 use of resources. Today, this problem is addressed by asynchronous I/O
-programming modesl. The request thread is able to make a request for
+programming models. The request thread is able to make a request for
 data via I/O, and then is free to carry out further work (such as
 processing another web request). When the data requested arrives on the
 I/O channel, a potentially different thread carries on processing the
