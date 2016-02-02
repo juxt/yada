@@ -1301,7 +1301,7 @@ described in [RFC 2617](https://www.ietf.org/rfc/rfc2617.txt)
    :verify (fn [[user password]] …}}
 ```
 
-There are 3 entries here. The first specifies the _realm_, which is mandatory in Basic Authentication because the browser needs it to tell the user.
+There are 3 entries here. The first specifies the _realm_, which is defaults to `default` in Basic Authentication, but if specified is contained in the dialog the browser presents to the user.
 
 The second declares we are using Basic authentication.
 
@@ -1328,11 +1328,26 @@ You may choose to limit the number of times a failed 'login' attempt is tolerate
 
 #### Cookie authentication
 
+We can also use cookies to present authentication credentials. The advantage of cookies is that they can be set by the server based on custom authentication interaction with the user, such as the submission of a login-form.
+
+To protect a site with cookies:
+
+```clojure
+{:access-control
+  {:scheme :cookie
+   :cookie "session"
+   :verify (fn [cookie] …}}
+```
+
+#### JWT authentication
+
+[coming soon]
+
+### Form-based logins
+
 Basic Authentication has a number of weaknesses, such as the difficulty of logging out and the lack of control that a website has over the fields presented to a human.  Therefore, the vast majority of websites prefer to use a custom login form generated in HTML.
 
-In yada, a login 'form' is a resource that lets you present one set of credentials and acquire new ones. The credentials you present, via a form, are verified and if they correspond to a valid user, you get a cookie that certifies this. This cookie provides the certification to subsequent requests in which it is sent.
-
-##### Building a login
+You can think of a login form as a resource that lets the user present one set of credentials in order to acquire additional ones. The credentials the user presents, via a form, are verified and if they are true, a cookie is generated that certifies this. This cookie provides the certification to subsequent requests in which it is sent.
 
 Let's start by building this login resource that will provide a login form page to browsers and verify the form data when that form is submitted.
 
@@ -1378,15 +1393,11 @@ The other method, GET, simply produces a form for user-agents that can render HT
 
 ##### Protecting resources
 
-We now protect resources by declaring an authentication scheme that verifies the request's cookie.
-
-```clojure
-{:access-control
-  {:scheme "Session"
-   }
-```
-
 [Coming soon]
+
+##### Logout
+
+The recommended way of logging out is to remove the session.
 
 #### Bearer authentication (OAuth2)
 

@@ -14,14 +14,19 @@
   "Multimethod that allows new schemes to be added."
   (fn [ctx {:keys [scheme]}] scheme) :default ::default)
 
-(defmethod verify "Basic"
-  [ctx {:keys [verify]}]
+(defmethod verify "Basic" [ctx {:keys [verify]}]
 
   (let [auth (get-in ctx [:request :headers "authorization"])
         cred (and auth (apply str (map char (base64/decode (.getBytes (last (re-find #"^Basic (.*)$" auth)))))))]
     (when cred
       (let [[user password] (str/split (str cred) #":" 2)]
         (verify [user password])))))
+
+#_(defmethod verify :cookie [ctx {:keys [verify cookie]}]
+  
+  (get-in ctx [:cookies cookie])
+  
+  )
 
 ;; A nil scheme is simply one that does not use any of the built-in
 ;; algorithms for IANA registered auth-schemes at

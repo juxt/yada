@@ -13,6 +13,7 @@
    [modular.bidi :refer (path-for)]
    [modular.component.co-dependency :refer (co-using)]
    [schema.core :as s]
+   yada.jwt
    [yada.dev.template :refer [new-template-resource]]
    [yada.security :refer [verify]]
    [yada.yada :as yada :refer [yada resource as-resource]]
@@ -81,21 +82,6 @@
 
        :consumes "application/x-www-form-urlencoded"
        :produces "text/html"}}})))
-
-(defmethod verify :buddy-jwt
-  [ctx {:keys [cookie yada.dev.security/secret] :or {cookie "session"} :as scheme}]
-  (when-not secret (throw (ex-info "Buddy JWT verifier requires a secret entry in scheme" {:scheme scheme})))
-  (try
-    (let [auth (some->
-                (get-in ctx [:cookies cookie])
-                (jws/unsign secret))]
-      auth)
-    (catch ExceptionInfo e
-      (if-not (= (ex-data e)
-                 {:type :validation :cause :signature})
-        (throw e)
-        )
-      )))
 
 (defn build-routes [*router]
   (try
@@ -182,7 +168,10 @@
                              :produces "text/html"}}
 
              :access-control
-             {:authentication-schemes [{:scheme :buddy-jwt ::secret secret}]
+             {:authentication-schemes
+              [{:scheme :jwt
+                ;; TODO: Don't expose secrets in resource models
+                :yada.jwt/secret secret}]
               :authorization {:methods {:get [:or
                                               "secret/view"
                                               "accounts/view"]}}}

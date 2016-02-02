@@ -13,6 +13,7 @@
 
   :dependencies
   [[bidi "1.24.0" :exclusions [ring/ring-core]]
+   [buddy/buddy-sign "0.9.0"]
    [byte-streams "0.2.1-alpha2" :exclusions [clj-tuple]]
    [camel-snake-kebab "0.3.2"]
    [cheshire "5.5.0"]
@@ -84,7 +85,7 @@
 
           [aero "0.1.5"]
 
-          [buddy/buddy-sign "0.9.0"]
+          
 
           [juxt.modular/aleph "0.1.4"]
           [juxt.modular/bidi "0.9.4" :exclusions [bidi]]
