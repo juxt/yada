@@ -14,7 +14,7 @@
    [modular.component.co-dependency :refer (co-using)]
    [schema.core :as s]
    [yada.dev.template :refer [new-template-resource]]
-   [yada.security :refer [verify-with-scheme]]
+   [yada.security :refer [verify]]
    [yada.yada :as yada :refer [yada resource as-resource]]
    [ring.middleware.cookies :refer [cookies-request cookies-response]])
   (:import [modular.bidi Router]
@@ -82,7 +82,7 @@
        :consumes "application/x-www-form-urlencoded"
        :produces "text/html"}}})))
 
-(defmethod verify-with-scheme :buddy-jwt
+(defmethod verify :buddy-jwt
   [ctx {:keys [cookie yada.dev.security/secret] :or {cookie "session"} :as scheme}]
   (when-not secret (throw (ex-info "Buddy JWT verifier requires a secret entry in scheme" {:scheme scheme})))
   (try

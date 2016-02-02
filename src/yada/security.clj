@@ -10,11 +10,11 @@
    [clojure.data.codec.base64 :as base64]
    [yada.authorization :as authorization]))
 
-(defmulti verify-with-scheme
+(defmulti verify
   "Multimethod that allows new schemes to be added."
   (fn [ctx {:keys [scheme]}] scheme) :default ::default)
 
-(defmethod verify-with-scheme "Basic"
+(defmethod verify "Basic"
   [ctx {:keys [verify]}]
 
   (let [auth (get-in ctx [:request :headers "authorization"])
@@ -28,12 +28,12 @@
 ;; http://www.iana.org/assignments/http-authschemes. The verify
 ;; entry must therefore take the full context and do all the work to
 ;; verify the user from it.
-(defmethod verify-with-scheme nil
+(defmethod verify nil
   [ctx {:keys [verify]}]
   (when verify
     (verify ctx)))
 
-(defmethod verify-with-scheme ::default
+(defmethod verify ::default
   [ctx {:keys [scheme]}]
   ;; Scheme is not recognised by this server, we must return nil (to
   ;; move to the next scheme). This is technically a server issue but
@@ -54,7 +54,7 @@
      ~ctx
      ~@body))
 
-(defn verify [ctx]
+(defn authenticate [ctx]
   (when-not-cors-preflight ctx
     ;; Note that a response can have multiple challenges, one for each realm.
     (reduce
@@ -86,7 +86,7 @@
        ;; conjunctions and disjunctions across auth-schemes, in much
        ;; the same way we do for the built-in role-based
        ;; authorization.
-       (let [credentials (some (partial verify-with-scheme ctx) authentication-schemes)]
+       (let [credentials (some (partial verify ctx) authentication-schemes)]
          (cond-> ctx
            credentials (assoc-in [:authentication realm] credentials)
            (not credentials) (update-in [:response :headers "www-authenticate"]

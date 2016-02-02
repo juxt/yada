@@ -7,15 +7,15 @@
    [ring.mock.request :refer [request header]]
    [yada.schema :as ys]
    [schema.core :as s]
-   [yada.security :refer [verify verify-with-scheme]]))
+   [yada.security :refer [authenticate verify]]))
 
 ;; We create some fictitious schemes, just for testing
 
-(defmethod verify-with-scheme "S1"
+(defmethod verify "S1"
   [ctx {:keys [authenticated]}]
   authenticated)
 
-(defmethod verify-with-scheme "S2"
+(defmethod verify "S2"
   [ctx {:keys [authenticated]}]
   authenticated)
 
@@ -42,7 +42,7 @@
                         {:scheme "S2"
                          :verify (constantly false)}]}}}}}
              validate-ctx
-             verify
+             authenticate
              (get-in [:response :headers "www-authenticate"])))))
 
   (testing "Across multiple realms and schemes, with some prior authentication in one of the realms"
@@ -61,7 +61,7 @@
                           :authenticated false}
                          {:scheme "S2"
                           :authenticated false}]}}}}}
-          result (verify ctx)]
+          result (authenticate ctx)]
       
       ;; We have successfully verified in realm R1
       (is (= {"R1" {:user "george"
