@@ -1648,7 +1648,7 @@ The easiest way of creating a Swagger spec is by following these steps:
 Creating a bidi route structure containing your yada handlers (remember a yada handler _is_ a Ring handler). Remember, bidi is infinitely recursive, so you can group your resources however you like. Just use the vector-of-vectors syntax in place of a usual handler.
 
 ```clojure
-["/api"
+["/greetings"
   [
     ["/hello" (yada "Hello World!\n")]
     ["/goodbye" (yada "Goodbye!\n")]
