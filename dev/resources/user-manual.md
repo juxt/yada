@@ -1687,7 +1687,7 @@ Therefore, to access the JSON swagger specification in the example above, you wo
 
 ### Creating the specification: the simple way
 
-The Swagger spec is merely a map that can be created with `yada.swagger/swagger-spec-resource`. Once you have this map, publish it with `yada`, using the UTF-8 charset (or UTF-16 and UTF-32 if necessary).
+The Swagger spec is merely a map that can be created with `yada.swagger/swagger-spec-resource`. Once you have this map, publish it with `yada` (you should know how to do this already. Hint: `(yada m)`).
 
 There is a function `yada.swagger/swagger-spec-resource` that creates a yada resource for you, and can optionally take a content-type to publish the spec in HTML and EDN too.
 
