@@ -16,7 +16,7 @@
    [yada.dev.template :refer [new-template-resource]]
    yada.resources.file-resource
    [yada.dev.hello :as hello]
-   [yada.swagger :as swagger]
+   [yada.swagger :as swagger :refer [swaggered]]
    [yada.yada :as yada :refer [yada resource]])
   (:import [modular.bidi Router]
            [com.stuartsierra.component SystemMap]
@@ -107,42 +107,55 @@
                       config :- config/ConfigSchema]
   RouteProvider
   (routes [component]
-    ["/"
-     [["index.html" (index component)]
+    [""
+     [["/index.html" (index component)]
 
-      ["hello.html" (hello/index *router)]
+      ["/hello.html" (hello/index *router)]
 
-      ["body.html" (yada
-                    (resource
-                     {:produces "application/json"
-                      :methods
-                      {:get
-                       {:response (fn [_] {:greeting "Hello"})}}}))]
+      ["/body.html" (yada
+                     (resource
+                      {:produces "application/json"
+                       :methods
+                       {:get
+                        {:response (fn [_] {:greeting "Hello"})}}}))]
 
-      ["dir/" (yada (io/file "talks"))]
+      ["/dir/" (yada (io/file "talks"))]
 
-      ["404" (resource
-              {:properties {:exists? false}
-               :methods {:get nil}
-               :responses {404 {:description "Not found"
-                                :produces #{"text/html" "text/plain;q=0.9"}
-                                :response (let [msg "Oh dear I couldn't find that"]
-                                            (fn [ctx]
-                                              (case (get-in ctx [:response :produces :media-type :name])
-                                                "text/html" (html [:h2 msg])
-                                                (str msg \newline))))}}})]
+      ["/404" (resource
+               {:properties {:exists? false}
+                :methods {:get nil}
+                :responses {404 {:description "Not found"
+                                 :produces #{"text/html" "text/plain;q=0.9"}
+                                 :response (let [msg "Oh dear I couldn't find that"]
+                                             (fn [ctx]
+                                               (case (get-in ctx [:response :produces :media-type :name])
+                                                 "text/html" (html [:h2 msg])
+                                                 (str msg \newline))))}}})]
 
-      ["406" (resource
-              {:methods {:get {:response (fn [ctx] (throw (ex-info "" {:status 400})))
-                               :produces #{"text/html"}}}
-               :responses {#{406} {:description "Redirect on 406"
-                                   :produces #{"text/html" "text/plain;q=0.9"}
-                                   :response (fn [ctx]
-                                               (-> (:response ctx) 
-                                                   (assoc :status 304)
-                                                   (update :headers conj ["Location" "/foo"])))}}})]
+      ["/406" (resource
+               {:methods {:get {:response (fn [ctx] (throw (ex-info "" {:status 400})))
+                                :produces #{"text/html"}}}
+                :responses {#{406} {:description "Redirect on 406"
+                                    :produces #{"text/html" "text/plain;q=0.9"}
+                                    :response (fn [ctx]
+                                                (-> (:response ctx) 
+                                                    (assoc :status 304)
+                                                    (update :headers conj ["Location" "/foo"])))}}})]
 
-      ["phonebook-api/swagger.json"
+      ["/api" 
+       (swaggered
+        {:info {:title "Hello World!"
+                :version "1.0"
+                :description "A greetings service"}
+         :basePath "/api"}
+        ["/greetings"
+         [
+          ["/hello" (yada "Hello World!\n")]
+          ["/goodbye" (yada "Goodbye!\n")]
+          ]
+         ])]
+
+      ["/phonebook-api/swagger.json"
        (-> (yada
             (swagger/swagger-spec-resource
              (swagger/swagger-spec {:info {:title "Phonebook"
@@ -155,7 +168,7 @@
            (tag ::phonebook-swagger-spec))]
 
       ;;Boring specs
-      [["spec/rfc" :rfc] (rfc)]]]))
+      [["/spec/rfc" :rfc] (rfc)]]]))
 
 (defn new-docsite [& {:as opts}]
   (-> (map->Docsite opts)

@@ -27,7 +27,7 @@
                      :version "1.0"
                      :description "A swaggered String"}
               :basePath "/hello-swagger"}
-             ["/hello" (hello)]))
+             ["/hello" (yada "Hello World!\n")]))
 
 (defn hello-atom-swagger []
   (swaggered {:info {:title "Hello World!"
