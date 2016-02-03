@@ -24,6 +24,7 @@
    [yada.media-type :as mt]
    [yada.protocols :as p]
    [yada.resource :refer [resource]]
+   [yada.resources.classpath-resource :refer [new-classpath-resource]]
    [yada.schema :as ys]
    [yada.util :refer [md5-hash] :as util])
   (:import [clojure.lang PersistentVector Keyword]
@@ -114,43 +115,47 @@
 
 ;; Convenience
 
-(defrecord Swaggered [spec routes spec-handlers]
+(defrecord Swaggered [spec routes spec-handlers swagger-ui]
   Matched
   (resolve-handler [this m]
-    (cond (= (:remainder m) (str (or (:base-path spec) "") "/swagger.json"))
+    (cond (= (:remainder m) "/swagger.json")
           ;; Return this, which satisfies Ring.
           ;; Truncate :remainder to ensure succeed actually succeeds.
           (succeed this (assoc m :remainder "" :type "application/json"))
 
-          (= (:remainder m) (str (or (:base-path spec) "") "/swagger.edn"))
+          (= (:remainder m) "/swagger.edn")
           (succeed this (assoc m :remainder "" :type "application/edn"))
 
-          (= (:remainder m) (str (or (:base-path spec) "") "/swagger.html"))
+          (= (:remainder m) "/swagger.html")
           (succeed this (assoc m :remainder "" :type "text/html"))
 
-          (.startsWith (:remainder m) (str (or (:base-path spec) "") "/swagger/"))
-          {:handler (handler "<Swagger UI here>")}
+          (.startsWith (:remainder m) "/swagger")
+          {:handler this
+           :ui true
+           :remainder (subs (:remainder m) (count "/swagger"))}
 
           ;; Redirect to swagger.json
-          (= (:remainder m) (str (or (:base-path spec) "") "/"))
-          (succeed (reify Ring (request [_ req _] (redirect (str (:uri req) "swagger.json"))))
+          (= (:remainder m) "/")
+          (succeed (reify Ring (request [_ req _] (redirect (str (:uri req) "swagger/index.html?url=" (or (:basePath spec) "") "/swagger.json"))))
                    (assoc m :remainder ""))
 
           ;; Otherwise
           :otherwise
-          (resolve-handler [[(or (:base-path spec) "") [routes]]]
+          (resolve-handler [["" [routes]]]
                            (merge m {::spec spec}))))
 
   (unresolve-handler [this m]
     (if (= this (:handler m))
-      (or (:base-path spec) "")
+      (or (:basePath spec) "")
       (unmatch-pair routes m)))
 
   Ring
   (request [_ req match-context]
-    (if-let [h (get spec-handlers (:type match-context))]
-      (h req)
-      (throw (ex-info "Error: unknown type" {:match-context match-context}))))
+    (if (:ui match-context)
+      (swagger-ui (assoc req :path-info (:remainder match-context)))
+      (if-let [h (get spec-handlers (:type match-context))]
+        (h req)
+        (throw (ex-info "Error: unknown type" {:match-context match-context})))))
 
   ;; So that we can use the Swaggered record as a Ring handler
   clojure.lang.IFn
@@ -163,6 +168,7 @@
     (map->Swaggered
      {:spec spec
       :routes routes
+      :swagger-ui (handler (new-classpath-resource "META-INF/resources/webjars/swagger-ui/2.1.3")) 
       :spec-handlers
       (into {}
             (for [ct ["application/edn" "application/json" "text/html"]]

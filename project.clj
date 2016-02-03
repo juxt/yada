@@ -36,7 +36,11 @@
    ;; TODO: Find out where this is being excluded, Schema needs it?
    [org.clojure/core.cache "0.6.4"]
 
-   [com.cognitect/transit-clj "0.8.285"]]
+   [com.cognitect/transit-clj "0.8.285"]
+
+   ;; Built-in Swagger UI
+   [org.webjars/swagger-ui "2.1.3"]
+   ]
 
   :pedantic? :abort
 
@@ -94,7 +98,6 @@
           [juxt.modular/test "0.1.0"]
           [juxt.modular/template "0.6.3"]
 
-          [org.webjars/swagger-ui "2.1.3"]
           [org.webjars/jquery "2.1.3"]
           [org.webjars/bootstrap "3.3.6"]
           [org.webjars.bower/material-design-lite "1.0.2" :scope "test"]
