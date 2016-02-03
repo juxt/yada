@@ -135,9 +135,14 @@
            :remainder (subs (:remainder m) (count "/swagger"))}
 
           ;; Redirect to swagger.json
-          (= (:remainder m) "/")
-          (succeed (reify Ring (request [_ req _] (redirect (str (:uri req) "swagger/index.html?url=" (or (:basePath spec) "") "/swagger.json"))))
-                   (assoc m :remainder ""))
+          (#{"" "/"} (:remainder m))
+          (succeed
+           (reify Ring
+             (request [_ req _]
+               (redirect (str (:uri req)
+                              (subs "/swagger/index.html?url=" (count (:remainder m)))
+                              (or (:basePath spec) "") "/swagger.json"))))
+           (assoc m :remainder ""))
 
           ;; Otherwise
           :otherwise
