@@ -15,6 +15,7 @@
    [yada.dev.config :as config]
    [yada.dev.template :refer [new-template-resource]]
    yada.resources.file-resource
+   [yada.resources.classpath-resource :refer [new-classpath-resource]]
    [yada.dev.hello :as hello]
    [yada.swagger :as swagger :refer [swaggered]]
    [yada.yada :as yada :refer [yada resource]])
@@ -120,6 +121,9 @@
                         {:response (fn [_] {:greeting "Hello"})}}}))]
 
       ["/dir/" (yada (io/file "talks"))]
+      ["/jar" (yada (new-classpath-resource "META-INF/resources/webjars/swagger-ui/2.1.3"))]
+
+      ["/h1.html" (yada [:h1 "Heading"])]
 
       ["/404" (resource
                {:properties {:exists? false}

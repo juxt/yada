@@ -107,6 +107,10 @@
            [:style "th {font-family: sans-serif} td {font-family: monospace} td, th {border-bottom: 1px solid #aaa; padding: 4px} a {text-decoration: none} td.monospace {font-family: monospace; }"]]
           
           [:body
+           [:h1 "Files"]
+           [:dl
+            [:dt "Directory"]
+            [:dd [:tt (.getAbsolutePath dir)]]]
            [:table {:style "border-spacing: 14px; border: 1px solid black; border-collapse: collapse"}
             #_[:thead
              [:tr
@@ -130,7 +134,8 @@
                                         (doto (SimpleDateFormat. "yyyy-MM-dd HH:mm:ss zzz")
                                           (.setTimeZone (TimeZone/getTimeZone "UTC")))
                                         (java.util.Date. (.lastModified child)))]]
-                [:td (let [href (if (.isDirectory child) (str (.getName child) "/") (.getName child))]
+                [:td (let [href (if (.isDirectory child)
+                                  (str (.getName child) "/") (.getName child))]
                        [:a {:href href} (.getName child)])]])]]]])))))
 
 (defn dir-properties

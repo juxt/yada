@@ -128,6 +128,9 @@
           (= (:remainder m) (str (or (:base-path spec) "") "/swagger.html"))
           (succeed this (assoc m :remainder "" :type "text/html"))
 
+          (.startsWith (:remainder m) (str (or (:base-path spec) "") "/swagger/"))
+          {:handler (handler "<Swagger UI here>")}
+
           ;; Redirect to swagger.json
           (= (:remainder m) (str (or (:base-path spec) "") "/"))
           (succeed (reify Ring (request [_ req _] (redirect (str (:uri req) "swagger.json"))))
