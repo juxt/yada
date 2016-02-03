@@ -2,7 +2,7 @@
 
 Welcome to the yada manual!
 
-This manual corresponds with version 1.1.0-20160202.093502-16
+This manual corresponds with version 1.1.0-20160203.095755-17
 
 ### Table of Contents
 
@@ -1697,7 +1697,12 @@ This approach gives you more flexibility, since you aren't tied to publishing yo
 
 Once you have published the Swagger specification you should use the Swagger UI to access it.
 
-yada does not yet build in a Swagger UI but see `yada.dev.swagger` in the `dev` directory of the yada repo for how this can be done. Essentially it involves creating your own HTML file (copied from the Swagger UI examples) which includes the Swagger UI libraries and any custom configuration you need. See `dev/resources/swagger/phonebook-swagger.html` for an example.
+If you use the `swaggered` convenience function, a Swagger UI will automatically be hosted under the route. Use a single `/` to redirect to the UI for the Swagger specification of your routing tree. In the example above, navigating to `/api/` will bring up the Swagger UI allowing you to browse the API.
+
+It is also possible to host your own Swagger UI and link it to your published Swagger specifications. Just pass the `url` query parameter to the Swagger UI to indiciate the location of the yada-produced Swagger specification you want to browse.
+
+Advanced users: For an example of custom Swagger UI configuration see
+`dev/resources/swagger/phonebook-swagger.html` for an example.
 
 ### References
 
