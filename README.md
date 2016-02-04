@@ -21,7 +21,7 @@ Add the following dependency to your
 `project.clj` file
 
 ```clojure
-[yada "1.1.0-20160203.095755-17"]
+[yada "1.1.0-20160204.230009-18"]
 ```
 [![Build Status](https://travis-ci.org/juxt/yada.png)](https://travis-ci.org/juxt/yada)
 
