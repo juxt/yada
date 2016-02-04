@@ -8,17 +8,16 @@
             [byte-streams :as bs]))
 
 (deftest schema-error-is-available-in-context-error
-  (let [resource     (resource {:consumes  [{:media-type #{"application/edn"
-                                                           "application/x-www-form-urlencoded"}}]
-                                :produces  [{:media-type #{"application/edn"}}]
-                                :methods   {:post {:parameters {:body {:foo sc/Int}}
-                                                   :response   identity}}
-                                :responses {400 {:produces [{:media-type #{"application/edn"}}]
-                                                 :response (fn [ctx]
-                                                             (-> ctx :error ex-data :error))}}})
-        handler      (handler resource)
-        edn-request  (-> (mock/request :post "/" (pr-str {:foo :asdf}))
-                         (mock/content-type "application/edn"))
+  (let [resource (resource {:consumes [{:media-type #{"application/edn" "application/x-www-form-urlencoded"}}]
+                            :produces [{:media-type #{"application/edn"}}]
+                            :methods {:post {:parameters {:body {:foo sc/Int}}
+                                             :response identity}}
+                            :responses {400 {:produces [{:media-type #{"application/edn"}}]
+                                             :response (fn [ctx]
+                                                         (-> ctx :error ex-data :error))}}})
+        handler (handler resource)
+        edn-request (-> (mock/request :post "/" (pr-str {:foo :asdf}))
+                        (mock/content-type "application/edn"))
         form-request (mock/request :post "/" {:foo :asdf})]
 
     (let [response @(handler edn-request)]
