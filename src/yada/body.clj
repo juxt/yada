@@ -2,6 +2,7 @@
 
 (ns yada.body
   (:require
+   [clojure.core.async]
    [clojure.java.io :as io]
    [clojure.pprint :refer [pprint]]
    [clojure.tools.logging :refer :all]
@@ -14,6 +15,7 @@
    [hiccup.page :refer [html5 xhtml]]
    [json-html.core :as jh]
    [manifold.stream :refer [->source transform]]
+   [manifold.stream.async]
    [ring.util.codec :as codec]
    [ring.util.http-status :refer [status]]
    [schema.core :as s]
