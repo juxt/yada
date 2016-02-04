@@ -34,7 +34,8 @@
   (let [resource (io/file "test/yada/state/test.txt")
         handler (yada resource)
         request (request :get "/")
-        response @(handler request)]
+        response @(handler request)
+        last-modified-second-precision (parse-date (format-date (java.util.Date. (.lastModified resource))))]
 
     (testing "expectations of set-up"
       (is (exists? resource))
@@ -49,7 +50,7 @@
 
     (testing "last-modified"
       (let [d (get-in response [:headers "last-modified"])]
-        (is (= (java.util.Date. (.lastModified resource)) (parse-date d)))))
+        (is (= last-modified-second-precision (parse-date d)))))
 
     (testing "conditional-response"
       (let [r @(handler (assoc-in request [:headers "if-modified-since"]

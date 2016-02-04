@@ -14,7 +14,7 @@
    [ring.util.codec :as codec]
    [cognitect.transit :as transit]
    [schema.coerce :as sc]
-   [schema.utils :refer [error?]]
+   [schema.utils :refer [error? error-val]]
    [yada.coerce :as coerce]
    [yada.media-type :as mt]
    [yada.util :as util]))
@@ -66,7 +66,7 @@
         ;; Form and body schemas have to been done at the method level
         ;; - TODO: Build this contraint in yada.schema.
         schemas (get-in ctx [:resource :methods (:method ctx) :parameters])]
-    
+
     (cond
       ;; In Swagger 2.0 you can't have both form and body
       ;; parameters, which seems reasonable
@@ -87,7 +87,7 @@
         (if-not (error? params)
           (assoc-in ctx [:parameters (if (:form schemas) :form :body)] params)
           (d/error-deferred (ex-info "Bad form fields"
-                                     {:status 400 :error params}))))
+                                     {:status 400 :error (error-val params)}))))
 
       :otherwise (assoc ctx :body body-string))))
 
@@ -106,7 +106,8 @@
   (let [params ((sc/coercer schema {}) body)]
     (if-not (error? params)
       (assoc-in ctx [:parameters :body] params)
-      (throw (ex-info "Malformed body" {:status 400})))))
+      (throw (ex-info "Malformed body" {:status 400
+                                        :error (error-val params)})))))
 
 (defmethod process-request-body "application/edn"
   [ctx body-stream media-type & args]
