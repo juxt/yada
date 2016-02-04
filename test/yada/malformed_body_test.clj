@@ -7,9 +7,6 @@
             [clojure.edn :as edn]
             [byte-streams :as bs]))
 
-(defn to-string [s]
-  (bs/convert s String))
-
 (deftest schema-error-is-available-in-context-error
   (let [resource     (resource {:consumes  [{:media-type #{"application/edn"
                                                            "application/x-www-form-urlencoded"}}]
@@ -27,11 +24,11 @@
     (let [response @(handler edn-request)]
       (is (some? response))
       (is (= 400 (:status response)))
-      (let [body (-> response :body to-string edn/read-string)]
+      (let [body (-> response :body bs/to-string edn/read-string)]
         (is (= '{:foo (not (integer? :asdf))} body))))
 
     (let [response @(handler form-request)]
       (is (some? response))
       (is (= 400 (:status response)))
-      (let [body (-> response :body to-string edn/read-string)]
+      (let [body (-> response :body bs/to-string edn/read-string)]
         (is (= '{:foo (not (integer? :asdf))} body))))))
