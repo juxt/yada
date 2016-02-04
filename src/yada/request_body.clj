@@ -109,9 +109,15 @@
       (throw (ex-info "Malformed body" {:status 400
                                         :error (error-val params)})))))
 
+(defmacro with-400-maybe [& body]
+  `(try
+     ~@body
+     (catch Exception e#
+       (throw (ex-info "Malformed body" {:status 400} e#)))))
+
 (defmethod process-request-body "application/edn"
   [ctx body-stream media-type & args]
-  (let [body (edn/read-string (bs/to-string body-stream))
+  (let [body (with-400-maybe (edn/read-string (bs/to-string body-stream)))
         schema (get-in ctx [:resource :methods (:method ctx) :parameters :body])]
     (cond-> ctx
       true (assoc-in [:body] body)
@@ -119,7 +125,7 @@
 
 (defmethod process-request-body "application/json"
   [ctx body-stream media-type & args]
-  (let [body (json/decode (bs/to-string body-stream) keyword)
+  (let [body (with-400-maybe (json/decode (bs/to-string body-stream) keyword))
         schema (get-in ctx [:resource :methods (:method ctx) :parameters :body])]
     (cond-> ctx
       true (assoc-in [:body] body)
@@ -127,7 +133,7 @@
 
 (defmethod process-request-body "application/transit+json"
   [ctx body-stream media-type & args]
-  (let [body (transit/read (transit/reader (bs/to-input-stream body-stream) :json))
+  (let [body (with-400-maybe (transit/read (transit/reader (bs/to-input-stream body-stream) :json)))
         schema (get-in ctx [:resource :methods (:method ctx) :parameters :body])]
     (cond-> ctx
       true (assoc-in [:body] body)
@@ -135,7 +141,7 @@
 
 (defmethod process-request-body "application/transit+msgpack"
   [ctx body-stream media-type & args]
-  (let [body (transit/read (transit/reader (bs/to-input-stream body-stream) :msgpack))
+  (let [body (with-400-maybe (transit/read (transit/reader (bs/to-input-stream body-stream) :msgpack)))
         schema (get-in ctx [:resource :methods (:method ctx) :parameters :body])]
     (cond-> ctx
       true (assoc-in [:body] body)

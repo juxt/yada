@@ -7,6 +7,7 @@
             [clojure.edn :as edn]
             [byte-streams :as bs]))
 
+
 (deftest schema-error-is-available-in-context-error
   (let [resource (resource {:consumes [{:media-type #{"application/edn" "application/x-www-form-urlencoded"}}]
                             :produces [{:media-type #{"application/edn"}}]
@@ -31,3 +32,17 @@
       (is (= 400 (:status response)))
       (let [body (-> response :body bs/to-string edn/read-string)]
         (is (= '{:foo (not (integer? :asdf))} body))))))
+
+(deftest malformed-json-body
+  (let [resource
+        (resource {:consumes [{:media-type #{"application/json"}}]
+                   :methods {:post {:parameters {:body {:foo sc/Int}}
+                                    :response (fn [ctx] "OK")}}})
+        handler (handler resource)]
+
+    (testing "bad json gives 400 issue #54"
+      (let [req (-> (mock/request :post "/" "{\"x\":\"1}")
+                    (mock/content-type "application/json"))]
+        (is (= (:status @(handler req)) 400))))))
+
+
