@@ -82,6 +82,7 @@ feedback and suggestions.
 * Craig McCraig of the clan McCraig
 * Imre Koszo
 * Luo Tian
+* Joshua Griffith
 
 Also, see the dependency list. In particular, yada would certainly not
 exist without the considerable efforts of those behind the following
