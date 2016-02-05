@@ -400,4 +400,7 @@
                      {"etag" x}))))
 
          :body body}]
-    response))
+    
+    (assoc ctx :response response)))
+
+(defn return [ctx] (:response ctx))

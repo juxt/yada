@@ -149,7 +149,8 @@
                         true set-content-length)
                       
                       sec/access-control-headers
-                      i/create-response))))))))))
+                      i/create-response
+                      i/return))))))))))
 
 (defn- handle-request
   "Handle Ring request"
@@ -239,7 +240,9 @@
    i/get-new-properties
    i/compute-etag
    sec/access-control-headers
-   i/create-response])
+   i/create-response
+   i/return
+   ])
 
 (defn handler
   "Create a Ring handler"

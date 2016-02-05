@@ -10,7 +10,7 @@
 (deftest cookies-test []
   (testing "that simple values work"
     (let [ctx {:response {:cookies {"foo" "bar"}}}
-          response (create-response ctx)]
+          response (:response (create-response ctx))]
       (is (= ["foo=bar"]
              (get-in response [:headers "set-cookie"])))))
   (testing "that cookie attribute are formatted properly"
@@ -18,7 +18,7 @@
                {:cookies {"foo" {:value "bar"
                                  :path "/abc"
                                  :http-only true}}}}
-          response (create-response ctx)]
+          response (:response (create-response ctx))]
       (is (=
            ["foo=bar; Path=/abc; HttpOnly"]
            (get-in response [:headers "set-cookie"]))))))
