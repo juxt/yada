@@ -125,6 +125,13 @@
 
       ["/h1.html" (yada [:h1 "Heading"])]
 
+      ["/500" (resource
+               {:methods {:get {:produces "text/html"
+                                :response (fn [ctx] (throw (new Exception "Ooh!")))}}
+                :responses {500 {:produces "text/plain"
+                                 :response (fn [ctx] "Error, but I'm OK")}}}
+               )]
+
       ["/404" (resource
                {:properties {:exists? false}
                 :methods {:get nil}
