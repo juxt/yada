@@ -1,0 +1,82 @@
+# Swagger
+
+All yada resources are built on data which can be published in a variety of formats. A popular format is Swagger, which allows APIs to be quickly documented. This is particularly useful when multiple teams of developers need to share their service documentation with others during development.
+
+Swagger involves the creation of JSON-formatted specifications which, in the absence of libraries like yada, are hand-authored. There exist a variety of code generation libraries that can take hand-authored specifications and generate code in various programming languages. However, a key disadvantage with code-generation approaches like this is they do not support round-trip engineering, that is, the steady iterative co-evolution of the specification with the code.
+
+Since Swagger covers both URI routing as well as resources, we must involve routing information in the set of resources we wish to publish. Currently, [bidi](https://github.com/juxt/bidi) is the only supported router, but it should be possible to support other data-driven routers such as Silk in future.
+
+The first task is to create and publish the swagger specification for a set of resources.
+
+## Creating the specification: the easy way
+
+The easiest way of creating a Swagger spec is by following these steps:
+
+### Step 1:
+
+Creating a bidi route structure containing your yada handlers (remember a yada handler _is_ a Ring handler). Remember, bidi is infinitely recursive, so you can group your resources however you like. Just use the vector-of-vectors syntax in place of a usual handler.
+
+```clojure
+["/greetings"
+  [
+    ["/hello" (yada "Hello World!\n")]
+    ["/goodbye" (yada "Goodbye!\n")]
+  ]
+]
+```
+
+### Step 2: Wrap the route structure in `swaggered`
+
+The `swaggered` function can be used to further wrap the route structure.
+
+This function takes 2 arguments. The first argument is a 'base template' map which contains all the static data that should appear in the spec. such as the Swagger service meta-data. The second argument is simply the bidi routing tree containing your yada resources. The data contained in both the routing tree and the resources themselves is used to construct the specification.
+
+For example, let's take the bidi routing tree below:
+
+```clojure
+(require '[yada.swagger :refer [swaggered]]')
+
+["/api"
+ (swaggered
+  {:info {:title "Hello World!"
+          :version "1.0"
+          :description "A greetings service"}
+   :basePath "/api"}
+  ["/greetings"
+   [
+    ["/hello" (yada "Hello World!\n")]
+    ["/goodbye" (yada "Goodbye!\n")]
+   ]
+  ])]
+```
+
+This declares a route that (partially) matches on the URI path `/api`. The second element of the route pair is a custom record created with `swaggered` which satisfies bidi's `Matched` protocol. This acts as a sort of 'junction' which matches on the routes given in the second argument. Critically, however, it also adds an additional sub-route, `/swagger.json`, which exposes the Swagger specification of the given base template, routes and resources.
+
+Therefore, to access the JSON swagger specification in the example above, you would navigate to `/api/swagger.json`. Also, use `/api/greetings/hello` and `/api/greetings/goodbye` to access the services.
+
+### Creating the specification: the simple way
+
+The Swagger spec is merely a map that can be created with `yada.swagger/swagger-spec-resource`. Once you have this map, publish it with `yada` (you should know how to do this already. Hint: `(yada m)`).
+
+There is a function `yada.swagger/swagger-spec-resource` that creates a yada resource for you, and can optionally take a content-type to publish the spec in HTML and EDN too.
+
+This approach gives you more flexibility, since you aren't tied to publishing your swagger spec in the same route structure as your API (you might want to publish it on another server perhaps).
+
+## The Swagger UI
+
+Once you have published the Swagger specification you should use the Swagger UI to access it.
+
+If you use the `swaggered` convenience function, a Swagger UI will automatically be hosted under the route. Use a single `/` to redirect to the UI for the Swagger specification of your routing tree. In the example above, navigating to `/api/` will bring up the Swagger UI allowing you to browse and play with the API.
+
+![Greetings API in Swagger](static/img/greetings-swagger.png)
+
+It is also possible to host your own Swagger UI and link it to your published Swagger specifications. Just pass the `url` query parameter to the Swagger UI to indiciate the location of the yada-produced Swagger specification you want to browse.
+
+Advanced users: For an example of custom Swagger UI configuration see
+`dev/resources/swagger/phonebook-swagger.html` for an example.
+
+## References
+
+See
+[IBM's Watson Developer Cloud](http://www.ibm.com/smarterplanet/us/en/ibmwatson/developercloud/apis/)
+for a sophistated Swagger example.
