@@ -166,6 +166,22 @@
 
 ;; --------------------------------------------------------------------------------
 
+(defprotocol PutResult
+  (interpret-put-result [_ ctx]))
+
+(extend-protocol PutResult
+  Response
+  (interpret-put-result [response ctx]
+    (assoc ctx :response response))
+  Object
+  (interpret-put-result [o ctx]
+    ctx)
+  clojure.lang.Fn
+  (interpret-put-result [f ctx]
+    (interpret-put-result (f ctx) ctx))
+  nil
+  (interpret-put-result [_ ctx] ctx))
+
 (deftype PutMethod [])
 
 (extend-protocol Method
@@ -177,17 +193,24 @@
     (let [f (get-in ctx [:resource :methods (:method ctx) :response]
                     (fn [_] (d/error-deferred
                              (ex-info (format "Resource %s does not provide a handler for :put" (type (:resource ctx)))
-                                     {:status 500}))))]
+                                      {:status 500}))))]
       (d/chain
-       (f ctx)
+       (when-let [f (get-in ctx [:resource :methods (:method ctx) :response])]
+         (f ctx))
        (fn [res]
-         (assoc-in ctx [:response :status]
-                   (cond
-                     ;; TODO: A 202 may be not what the user wants!
-                     ;; TODO: See RFC7240
-                     (d/deferred? res) 202
-                     (ctx/exists? ctx) 204
-                     :otherwise 201)))))))
+         (interpret-put-result res ctx))
+       (fn [ctx]
+         (let [status (get-in ctx [:response :status])]
+           (cond-> ctx
+             (not status) (assoc-in [:response :status]
+                                    (cond
+                                      ;; TODO: A 202 may be not what the user wants!
+                                      ;; TODO: See RFC7240
+                                      ;;(d/deferred? (-> ctx :response :body)) 202
+                                      (ctx/exists? ctx) 204
+                                      :otherwise 201))
+             (not (-> ctx :response :body)) zero-content-length
+             )))))))
 
 ;; --------------------------------------------------------------------------------
 
