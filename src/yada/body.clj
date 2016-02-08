@@ -78,6 +78,10 @@
   clojure.lang.APersistentVector
   (to-body [v representation]
     (encode-message (render-seq v representation) representation))
+  
+  clojure.lang.ASeq
+  (to-body [v representation]
+    (encode-message (render-seq v representation) representation))
 
   File
   (to-body [f _]
