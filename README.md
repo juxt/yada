@@ -12,8 +12,11 @@ It has the following features
 * Async foundation based on [manifold](https://github.com/ztellman/manifold)
 * Protocol extensibility
 
-Full documentation for the latest beta (1.1.x) release is available at
+The user-manual for the latest beta (1.1.x) release is available at
 [https://yada.juxt.pro](https://yada.juxt.pro) and offline (see below).
+
+The user-manual is also available as an e-book or PDF, at
+[https://leanpub.com/yada](Leanpub).
 
 ## Installation
 
