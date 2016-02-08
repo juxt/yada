@@ -68,7 +68,7 @@ Once you have published the Swagger specification you should use the Swagger UI 
 
 If you use the `swaggered` convenience function, a Swagger UI will automatically be hosted under the route. Use a single `/` to redirect to the UI for the Swagger specification of your routing tree. In the example above, navigating to `/api/` will bring up the Swagger UI allowing you to browse and play with the API.
 
-![Greetings API in Swagger](greetings-swagger.png)
+![Greetings API in Swagger](images/greetings-swagger.png)
 
 It is also possible to host your own Swagger UI and link it to your published Swagger specifications. Just pass the `url` query parameter to the Swagger UI to indiciate the location of the yada-produced Swagger specification you want to browse.
 

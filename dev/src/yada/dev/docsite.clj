@@ -7,6 +7,7 @@
    [bidi.bidi :refer [RouteProvider tag]]
    [com.stuartsierra.component :refer (using)]
    [hiccup.core :refer (html)]
+   [markdown.core :refer (md-to-html-string)]
    [modular.bidi :refer (path-for)]
    [modular.component.co-dependency :refer (co-using)]
    [modular.component.co-dependency.schema :refer [co-dep]]
@@ -14,9 +15,10 @@
    [yada.dev.async :as async]
    [yada.dev.config :as config]
    [yada.dev.template :refer [new-template-resource]]
-   yada.resources.file-resource
+   [yada.resources.file-resource :refer [new-directory-resource]]
    [yada.resources.classpath-resource :refer [new-classpath-resource]]
    [yada.dev.hello :as hello]
+   [yada.schema :as ys]
    [yada.swagger :as swagger :refer [swaggered]]
    [yada.yada :as yada :refer [yada resource]])
   (:import [modular.bidi Router]
@@ -61,7 +63,8 @@
               [:div.container
                [:h2 "Welcome to " [:span.yada "yada"] "!"]
                [:ol
-                [:li [:a {:href (path-for @*router :yada.dev.user-manual/user-manual)} "The " [:span.yada "yada"] " manual"]
+                [:li [:a {:href (path-for @*router ::manual
+                                          )} "The " [:span.yada "yada"] " manual"]
                  " — the single authority on all things " [:span.yada "yada"]]
 
                 [:li "Examples — self-contained apps for you to explore"
@@ -89,7 +92,7 @@
                   ]]
 
                 #_[:li [:a {:href (path-for @*router :yada.dev.console/index :path "")}
-                      "The " [:span.yada "yada"] " console"] " — to capture traffic and debug your API (work in progress)"]
+                        "The " [:span.yada "yada"] " console"] " — to capture traffic and debug your API (work in progress)"]
 
                 [:li [:a {:href (path-for @*router :yada.dev.talks/index)} "Talks"]]
 
@@ -119,6 +122,21 @@
                        :methods
                        {:get
                         {:response (fn [_] {:greeting "Hello"})}}}))]
+
+      ["/manual/" (yada (-> (new-directory-resource
+                           (io/file "manuscript")
+                           {:custom-suffices
+                            {"md" {:produces (ys/representation-seq-coercer
+                                              [{:media-type #{"text/html" "text/plain;q=0.9"}}])
+                                   :reader (fn [f rep]
+                                             (cond
+                                               (= (-> rep :media-type :name) "text/html")
+                                               (str (md-to-html-string (slurp f)) \newline)
+                                               :otherwise f))}
+                             "org" {:produces (ys/representation-seq-coercer
+                                               [{:media-type #{"text/plain"}}])}}
+                            :index-files ["README.md"]})
+                          (conj [:id ::manual])))]
 
       ["/dir/" (yada (io/file "talks"))]
       ["/jar" (yada (new-classpath-resource "META-INF/resources/webjars/swagger-ui/2.1.3"))]

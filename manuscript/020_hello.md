@@ -170,7 +170,7 @@ and start the web server.
 
 The `yada/swaggered` wrapper provides a Swagger specification, in JSON, derived from its arguments. This specification can be used to drive a [Swagger UI](http://localhost:8090/swagger-ui/index.html?url=/hello-swagger/swagger.json).
 
-![Swagger](hello-swagger.png)
+![Swagger](images/hello-swagger.png)
 
 But we're getting ahead of ourselves here. Let's delve a bit deeper in our `Hello World!` resource.
 
@@ -316,7 +316,7 @@ curl -i http://localhost:8090/hello -X PUT -H "If-Match: 1462348343" -d "Hello D
 
 Before reverting our code back to the original, without the atom, let's see the Swagger UI again.
 
-![Swagger](mutable-hello-swagger.png)
+![Swagger](images/mutable-hello-swagger.png)
 
 We now have a few more methods. [See for yourself](http://localhost:8090/swagger-ui/index.html?url=/hello-atom-swagger/swagger.json).
 

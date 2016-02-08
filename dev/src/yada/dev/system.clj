@@ -14,7 +14,6 @@
    [modular.bidi :refer [new-router new-web-resources new-archived-web-resources new-redirect]]
    [yada.dev.docsite :refer [new-docsite]]
    [yada.dev.talks :refer [new-talks]]
-   [yada.dev.user-manual :refer [new-user-manual]]
    [yada.dev.database :refer [new-database]]
    [modular.aleph :refer [new-webserver]]
    [modular.component.co-dependency :refer [co-using system-co-using]]
@@ -33,8 +32,6 @@
 (defn docsite-components [system config]
   (assoc
    system
-   ::user-manual (new-user-manual :prefix (config/origin config :docsite))
-
    ::docsite (new-docsite :config config)
 
    ::security-examples (new-security-examples config)
@@ -113,7 +110,6 @@
                      ::hello-world
                      ::sse-example
                      ::security-examples
-                     ::user-manual
                      ::docsite
                      ::talks
                      ::jquery
@@ -128,7 +124,6 @@
   []
   {::docsite {:router ::docsite-router}
    ::talks {:router ::docsite-router}
-   ::user-manual {:router ::docsite-router}
    ::security-examples {:router ::docsite-router}})
 
 (defn new-production-system
