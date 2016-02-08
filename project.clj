@@ -62,8 +62,9 @@
                                 :compiler {:output-to "target/cljs/console.js"
                                            :pretty-print true}}}}
 
-         :exclusions [org.clojure/tools.nrepl
-                      org.clojure/core.cache]
+         :exclusions [org.clojure/tools.nrepl]
+
+         :pedantic? :abort
 
          :dependencies
          [[org.clojure/clojure "1.7.0"]
