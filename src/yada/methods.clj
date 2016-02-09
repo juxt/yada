@@ -173,7 +173,8 @@
 
       ;; function normally returns a (possibly deferred) body.
       (fn [x]
-        (if-let [f (get-in ctx [:resource :methods (:method ctx) :response])]
+        (if-let [f (or (get-in ctx [:resource :methods (:method ctx) :response])
+                       (get-in ctx [:resource :methods :* :response]))]
           (try
             (f ctx)
             (catch Exception e
@@ -220,12 +221,14 @@
   (safe? [_] false)
   (idempotent? [_] true)
   (request [_ ctx]
-    (let [f (get-in ctx [:resource :methods (:method ctx) :response]
-                    (fn [_] (d/error-deferred
-                             (ex-info (format "Resource %s does not provide a handler for :put" (type (:resource ctx)))
-                                      {:status 500}))))]
+    (let [f (or
+             (get-in ctx [:resource :methods (:method ctx) :response])
+             (get-in ctx [:resource :methods :* :response])
+             (fn [_] (d/error-deferred
+                      (ex-info (format "Resource %s does not provide a handler for :put" (type (:resource ctx)))
+                               {:status 500}))))]
       (d/chain
-       (when-let [f (get-in ctx [:resource :methods (:method ctx) :response])]
+       (when f
          (f ctx))
        (fn [res]
          (interpret-put-result res ctx))
@@ -284,7 +287,8 @@
   (idempotent? [_] false)
   (request [_ ctx]
     (d/chain
-     (when-let [f (get-in ctx [:resource :methods (:method ctx) :response])]
+     (when-let [f (or (get-in ctx [:resource :methods (:method ctx) :response])
+                      (get-in ctx [:resource :methods :* :response]))]
        (f ctx))
      (fn [res]
        (interpret-post-result res ctx))
@@ -344,7 +348,8 @@
   (idempotent? [_] true)
   (request [_ ctx]
     (d/chain
-     (if-let [f (get-in ctx [:resource :methods (:method ctx) :response])]
+     (if-let [f (or (get-in ctx [:resource :methods (:method ctx) :response])
+                    (get-in ctx [:resource :methods :* :response]))]
        (try
          (f ctx)
          (catch Exception e

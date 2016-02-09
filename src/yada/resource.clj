@@ -63,5 +63,11 @@
     (resource
      {:summary "Nil resource"
       :interceptor-chain [(fn [_]
-                            (throw (ex-info "" {:status 404})))]})))
+                            (throw (ex-info "" {:status 404})))]}))
+  clojure.lang.Fn
+  (as-resource [f]
+    (resource
+     {:produces "text/html"
+      :methods
+      {:* {:response (fn [ctx] "Hello World!")}}})))
 
