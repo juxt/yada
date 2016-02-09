@@ -3,6 +3,7 @@
 (ns yada.yada
   (:refer-clojure :exclude [partial])
   (:require
+   [bidi.bidi :as bidi]
    yada.swagger
    yada.resources.atom-resource
    yada.resources.collection-resource
@@ -30,3 +31,11 @@
 
 (defn language [ctx]
   (get-in ctx [:response :produces :language]))
+
+(extend-protocol bidi/Matched
+  clojure.lang.APersistentMap
+  (resolve-handler [this m]
+    (when (= (:remainder m) "")
+      (merge (dissoc m :remainder) {:handler (handler (resource this))})))
+  (unresolve-handler [this m]
+    (when (= this (:handler m)) "")))

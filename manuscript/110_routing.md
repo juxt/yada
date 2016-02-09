@@ -47,15 +47,13 @@ processed as a single dataset.
 ["/store/"
  [ ; Vector containing our store's routes (bidi)
   ["index.html"
-   (resource ; (everything under this is now yada)
-    {:summary "A list of the products we sell"
-     :methods
-     {:get
-      {:response (file "index.html")
-       :produces "text/html"}}})]
+   {:summary "A list of the products we sell"
+    :methods
+    {:get
+     {:response (file "index.html")
+      :produces "text/html"}}}]
   ["cart"
-   (resource
-    {:summary "Our visitor's shopping cart"
+   {:summary "Our visitor's shopping cart"
     :methods
     {:get
      {:response (fn [ctx] …)

@@ -4,7 +4,7 @@
   (:require
    [clojure.java.io :as io]
    [clojure.tools.logging :refer :all]
-   [bidi.bidi :refer [RouteProvider tag]]
+   [bidi.bidi :refer [RouteProvider tag Matched] :as bidi]
    [com.stuartsierra.component :refer (using)]
    [hiccup.core :refer (html)]
    [markdown.core :refer (md-to-html-string)]
@@ -116,12 +116,10 @@
 
       ["/hello.html" (hello/index *router)]
 
-      ["/body.html" (yada
-                     (resource
-                      {:produces "application/json"
-                       :methods
-                       {:get
-                        {:response (fn [_] {:greeting "Hello"})}}}))]
+      ["/body.html" {:produces "application/json"
+                     :methods
+                     {:get
+                      {:response (fn [_] {:greeting "Hello"})}}}]
 
       ["/manual/" (yada (-> (new-directory-resource
                            (io/file "manuscript")
@@ -147,8 +145,7 @@
                {:methods {:get {:produces "text/html"
                                 :response (fn [ctx] (throw (new Exception "Ooh!")))}}
                 :responses {500 {:produces "text/plain"
-                                 :response (fn [ctx] "Error, but I'm OK")}}}
-               )]
+                                 :response (fn [ctx] "Error, but I'm OK")}}})]
 
       ["/404" (resource
                {:properties {:exists? false}
