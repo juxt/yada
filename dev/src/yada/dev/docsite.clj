@@ -111,90 +111,92 @@
                       config :- config/ConfigSchema]
   RouteProvider
   (routes [component]
-    [""
-     [["/index.html" (index component)]
+    (try
+      [""
+       [["/index.html" (index component)]
 
-      ["/hello.html" (hello/index *router)]
+        ["/hello.html" (hello/index *router)]
 
-      ["/body.html" {:produces "application/json"
-                     :methods
-                     {:get
-                      {:response (fn [_] {:greeting "Hello"})}}}]
+        ["/body.html" {:produces "application/json"
+                       :response (fn [_] {:greeting "Hello"})}]
 
-      ["/manual/" (yada (-> (new-directory-resource
-                           (io/file "manuscript")
-                           {:custom-suffices
-                            {"md" {:produces (ys/representation-seq-coercer
-                                              [{:media-type #{"text/html" "text/plain;q=0.9"}}])
-                                   :reader (fn [f rep]
-                                             (cond
-                                               (= (-> rep :media-type :name) "text/html")
-                                               (str (md-to-html-string (slurp f)) \newline)
-                                               :otherwise f))}
-                             "org" {:produces (ys/representation-seq-coercer
-                                               [{:media-type #{"text/plain"}}])}}
-                            :index-files ["README.md"]})
-                          (conj [:id ::manual])))]
+        ["/manual/" (yada (-> (new-directory-resource
+                               (io/file "manuscript")
+                               {:custom-suffices
+                                {"md" {:produces (ys/representation-seq-coercer
+                                                  [{:media-type #{"text/html" "text/plain;q=0.9"}}])
+                                       :reader (fn [f rep]
+                                                 (cond
+                                                   (= (-> rep :media-type :name) "text/html")
+                                                   (str (md-to-html-string (slurp f)) \newline)
+                                                   :otherwise f))}
+                                 "org" {:produces (ys/representation-seq-coercer
+                                                   [{:media-type #{"text/plain"}}])}}
+                                :index-files ["README.md"]})
+                              (conj [:id ::manual])))]
 
-      ["/dir/" (yada (io/file "talks"))]
-      ["/jar" (yada (new-classpath-resource "META-INF/resources/webjars/swagger-ui/2.1.3"))]
+        ["/dir/" (yada (io/file "talks"))]
+        ["/jar" (yada (new-classpath-resource "META-INF/resources/webjars/swagger-ui/2.1.3"))]
 
-      ["/h1.html" (yada [:h1 "Heading"])]
+        ["/h1.html" (yada [:h1 "Heading"])]
 
-      ["/500" (resource
-               {:methods {:get {:produces "text/html"
-                                :response (fn [ctx] (throw (new Exception "Ooh!")))}}
-                :responses {500 {:produces "text/plain"
-                                 :response (fn [ctx] "Error, but I'm OK")}}})]
+        ["/500" (resource
+                 {:methods {:get {:produces "text/html"
+                                  :response (fn [ctx] (throw (new Exception "Ooh!")))}}
+                  :responses {500 {:produces "text/plain"
+                                   :response (fn [ctx] "Error, but I'm OK")}}})]
 
-      ["/404" (resource
-               {:properties {:exists? false}
-                :methods {:get nil}
-                :responses {404 {:description "Not found"
-                                 :produces #{"text/html" "text/plain;q=0.9"}
-                                 :response (let [msg "Oh dear I couldn't find that"]
-                                             (fn [ctx]
-                                               (case (get-in ctx [:response :produces :media-type :name])
-                                                 "text/html" (html [:h2 msg])
-                                                 (str msg \newline))))}}})]
+        ["/404" (resource
+                 {:properties {:exists? false}
+                  :methods {:get nil}
+                  :responses {404 {:description "Not found"
+                                   :produces #{"text/html" "text/plain;q=0.9"}
+                                   :response (let [msg "Oh dear I couldn't find that"]
+                                               (fn [ctx]
+                                                 (case (get-in ctx [:response :produces :media-type :name])
+                                                   "text/html" (html [:h2 msg])
+                                                   (str msg \newline))))}}})]
 
-      ["/406" (resource
-               {:methods {:get {:response (fn [ctx] (throw (ex-info "" {:status 400})))
-                                :produces #{"text/html"}}}
-                :responses {#{406} {:description "Redirect on 406"
-                                    :produces #{"text/html" "text/plain;q=0.9"}
-                                    :response (fn [ctx]
-                                                (-> (:response ctx) 
-                                                    (assoc :status 304)
-                                                    (update :headers conj ["Location" "/foo"])))}}})]
+        ["/406" (resource
+                 {:methods {:get {:response (fn [ctx] (throw (ex-info "" {:status 400})))
+                                  :produces #{"text/html"}}}
+                  :responses {#{406} {:description "Redirect on 406"
+                                      :produces #{"text/html" "text/plain;q=0.9"}
+                                      :response (fn [ctx]
+                                                  (-> (:response ctx) 
+                                                      (assoc :status 304)
+                                                      (update :headers conj ["Location" "/foo"])))}}})]
 
-      ["/api" 
-       (swaggered
-        {:info {:title "Hello World!"
-                :version "1.0"
-                :description "A greetings service"}
-         :basePath "/api"}
-        ["/greetings"
-         [
-          ["/hello" (yada "Hello World!\n")]
-          ["/goodbye" (yada "Goodbye!\n")]
-          ]
-         ])]
+        ["/api" 
+         (swaggered
+          {:info {:title "Hello World!"
+                  :version "1.0"
+                  :description "A greetings service"}
+           :basePath "/api"}
+          ["/greetings"
+           [
+            ["/hello" (yada "Hello World!\n")]
+            ["/goodbye" (yada "Goodbye!\n")]
+            ]
+           ])]
 
-      ["/phonebook-api/swagger.json"
-       (-> (yada
-            (swagger/swagger-spec-resource
-             (swagger/swagger-spec {:info {:title "Phonebook"
-                                           :version "1.0"
-                                           :description "A simple resource example"}
-                                    :host (config/host config :phonebook)
-                                    :schemes [(-> config :phonebook :scheme)]
-                                    :basePath ""}
-                                   (-> phonebook :api :routes))))
-           (tag ::phonebook-swagger-spec))]
+        ["/phonebook-api/swagger.json"
+         (-> (yada
+              (swagger/swagger-spec-resource
+               (swagger/swagger-spec {:info {:title "Phonebook"
+                                             :version "1.0"
+                                             :description "A simple resource example"}
+                                      :host (config/host config :phonebook)
+                                      :schemes [(-> config :phonebook :scheme)]
+                                      :basePath ""}
+                                     (-> phonebook :api :routes))))
+             (tag ::phonebook-swagger-spec))]
 
-      ;;Boring specs
-      [["/spec/rfc" :rfc] (rfc)]]]))
+        ;;Boring specs
+        [["/spec/rfc" :rfc] (rfc)]]]
+      (catch Exception e
+        ["/error" (fn [req] {:status 200 :body (str e)})]
+        ))))
 
 (defn new-docsite [& {:as opts}]
   (-> (map->Docsite opts)

@@ -380,7 +380,15 @@ convenience of terse, expressive short-hand descriptions."}
          MethodsMappings
          AccessControlMappings))
 
-(def resource-coercer (sc/coercer Resource ResourceMappings))
+(def resource-coercer
+  (sc/coercer Resource
+              (merge ResourceMappings
+                     {Resource (fn [m]
+                                 (let [r (:response m)]
+                                   (cond-> m
+                                     r (assoc-in [:methods :get :response] r)
+                                     true (dissoc :response))))})))
+
 
 ;; Handler ---------------------------------------------------------
 

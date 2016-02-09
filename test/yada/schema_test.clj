@@ -78,7 +78,6 @@
         (is (nil? (s/check Properties params)))
         (is (nil? (s/check PropertiesResult (invoke-with-ctx (:properties params)))))))))
 
-
 (deftest methods-test
   (let [coercer (sc/coercer Methods MethodsMappings)]
     (testing "methods"
@@ -119,7 +118,14 @@
         (let [r (coercer {:methods {:get {:parameters {:query {:q String}}
                                           :response "Hello World!"}}})]
           (is (not (error? r)))
-          (is (nil? (s/check Methods r))))))))
+          (is (nil? (s/check Methods r)))))
+
+      (testing "method mappings"
+        (let [r (coercer {:get "foo"})]
+          (is (error? r))
+          (is (= {:methods 'missing-required-key, :get 'disallowed-key} (:error r)))))
+
+      )))
 
 (deftest authentication-test
   (let [coerce (sc/coercer AccessControl AccessControlMappings)]
@@ -214,6 +220,13 @@
       (is (not (error? r)))
       (is (nil? (s/check Resource r)))))
 
+  (testing "no methods, just a response"
+    (let [r (resource-coercer {:response "Hello"})]
+      (is (not (error? r)))
+      (is (nil? (s/check Methods r)))
+      (let [f (get-in r [:methods :get :response])]
+        (is (= "Hello" (f nil))))))
+
   (testing "other keywords are not OK"
     (let [r (resource-coercer
              {:foo :bar
@@ -254,7 +267,4 @@
 (deftest user-manual-test
   (doseq [res user-guide-example-store-resources :let [r (resource-coercer res)]]
     (is (not (error? r)))))
-
-
-
 
