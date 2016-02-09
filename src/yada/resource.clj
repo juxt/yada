@@ -57,6 +57,11 @@
     (when (su/error? r) (throw (ex-info "Cannot turn resource-model into resource, because it doesn't conform to a resource-model schema" {:resource-model model :error (:error r)})))
     (map->Resource r)))
 
+(defn arg-count [f]
+  (let [m (first (.getDeclaredMethods (class f)))
+        p (.getParameterTypes m)]
+    (alength p)))
+
 (extend-protocol p/ResourceCoercion
   nil
   (as-resource [_]
@@ -67,8 +72,17 @@
                             (throw (ex-info "" {:status 404})))]}))
   clojure.lang.Fn
   (as-resource [f]
-    (resource
-     {:produces "text/html"
-      :methods
-      {:* {:response (fn [ctx] "Hello World!")}}})))
+    (let [arity (arg-count f)]
+      (resource
+       {:produces #{"text/html"
+                    "text/plain"
+                    "application/json"
+                    "application/edn"}
+        :methods
+        {:* {:response (fn [ctx]
+                         (case arity
+                           0 (f)
+                           1 (f ctx)
+                           (apply f ctx (repeat (dec arity) nil)))
+                         )}}}))))
 
