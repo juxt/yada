@@ -62,6 +62,7 @@
   (as-resource [_]
     (resource
      {:summary "Nil resource"
+      :methods {}
       :interceptor-chain [(fn [_]
                             (throw (ex-info "" {:status 404})))]}))
   clojure.lang.Fn

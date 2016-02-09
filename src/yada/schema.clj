@@ -214,7 +214,7 @@ convenience of terse, expressive short-hand descriptions."}
          NamespacedEntries))
 
 (s/defschema Methods
-  {(s/optional-key :methods) ; nil, for example, has no methods.
+  {:methods
    {s/Keyword Method}})
 
 (defprotocol MethodCoercion

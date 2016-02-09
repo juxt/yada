@@ -28,7 +28,8 @@
          ["S1 realm=\"R1\", S2 realm=\"R1\""
           "S1 realm=\"R2\", S2 realm=\"R2\""]
          (-> {:resource
-              {:access-control
+              {:methods {}
+               :access-control
                {:realms
                 {"R1" {:authentication-schemes
                        [{:scheme "S1"

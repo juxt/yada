@@ -11,6 +11,7 @@
 (defn new-classpath-resource [prefix]
   (resource
    {:path-info? true
+    :methods {}
     :sub-resource
     (fn [ctx]
       (let [path-info (-> ctx :request :path-info)

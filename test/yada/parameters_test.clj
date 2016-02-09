@@ -9,7 +9,8 @@
 
 (deftest header-test []
   (let [resource (r/resource {:parameters {:header {(s/required-key "X-Foo") s/Str
-                                                    }}})]
+                                                    }}
+                              :methods {}})]
     (let [ctx (i/parse-parameters {:resource resource
                                    :request {:headers {"X-Foo" "Bar"}}})]
       (is (= "Bar"
