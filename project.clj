@@ -49,7 +49,7 @@
 
   :profiles
   {:dev {:main yada.dev.main
-         :jvm-opts ["-Xms256m" "-Xmx512m" "-server" "-Dio.netty.leakDetectionLevel=advanced"]
+         :jvm-opts ["-Xms256m" "-Xmx768m" "-server" "-Dio.netty.leakDetectionLevel=advanced"]
 
          :plugins [[lein-cljsbuild "1.0.6"]
                    ;;[lein-less "1.7.5"]
