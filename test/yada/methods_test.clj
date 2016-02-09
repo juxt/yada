@@ -39,8 +39,12 @@
   (let [handler
         (yada
          (resource
-          {:methods {:post {:response (fn [ctx] (assoc (:response ctx)
-                                                      :status 201 :headers {"set-cookie" ["a" "b"]}))}}}))
+          {:methods
+           {:post
+            {:response
+             (fn [ctx]
+               (assoc (:response ctx)
+                      :status 201 :headers {"set-cookie" ["a" "b"]}))}}}))
         response @(handler (mock/request :post "/"))]
     (is (= 201 (:status response)))
     (is (= ["a" "b"] (get-in response [:headers "set-cookie"])))))
