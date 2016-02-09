@@ -21,7 +21,9 @@
    [yada.resource :as resource]
    [yada.schema :refer [resource-coercer] :as ys]
    [yada.util :refer [get*]])
-  (:import [yada.resource Resource]))
+  (:import
+   [yada.resource Resource]
+   [yada.methods AnyMethod]))
 
 (declare new-handler)
 
@@ -156,7 +158,8 @@
   "Handle Ring request"
   [handler request match-context]
   (let [method (:request-method request)
-        method-wrapper (get (:known-methods handler) method)
+        method-wrapper (or (get (:known-methods handler) method)
+                           (when (-> handler :resource :methods :*) (new AnyMethod)))
         id (java.util.UUID/randomUUID)]
     (handle-request-with-maybe-subresources
      ;; TODO: Possibly we should merge the request-specific details

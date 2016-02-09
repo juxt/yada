@@ -67,6 +67,36 @@
              [(keyword-binding i) i]))
          (extenders Method))))
 
+;; ----
+(defprotocol AnyResult
+  (interpret-any-result [_ ctx]))
+
+(extend-protocol AnyResult
+  Response
+  (interpret-any-result [response ctx]
+    (assoc ctx :response response))
+  Object
+  (interpret-any-result [o ctx]
+    (assoc-in ctx [:response :body] o))
+  nil
+  (interpret-any-result [_ ctx]
+    (d/error-deferred (ex-info "" {:status 404})))
+  clojure.lang.Fn
+  (interpret-any-result [f ctx]
+    (interpret-any-result (f ctx) ctx)))
+
+(deftype AnyMethod [])
+
+(extend-protocol Method
+  AnyMethod
+  (keyword-binding [_] :*)
+  (safe? [_] false)
+  (idempotent? [_] false)
+  (request [this ctx]
+    (if-let [f (get-in ctx [:resource :methods :* :response])]
+      (interpret-any-result (f ctx) ctx)
+      ctx)))
+
 ;; --------------------------------------------------------------------------------
 (deftype HeadMethod [])
 

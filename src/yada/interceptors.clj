@@ -63,7 +63,9 @@
   "Is method allowed on this resource?"
   [ctx]
   (assert ctx "method-allowed?, ctx is nil!")
-  (if-not (contains? (:allowed-methods ctx) (:method ctx))
+  (if (or (contains? (:allowed-methods ctx) (:method ctx))
+          (some-> ctx :resource :methods :*))
+    ctx
     (d/error-deferred
      (ex-info "Method Not Allowed"
               {:status 405
@@ -71,7 +73,7 @@
                          (str/join ", "
                                    (map (comp (memfn toUpperCase) name)
                                         (:allowed-methods ctx)))}}))
-    ctx))
+    ))
 
 (defn capture-cookies [ctx]
   (if-let [cookies (cookies/parse-cookies (:request ctx))]

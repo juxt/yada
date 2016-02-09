@@ -71,6 +71,18 @@ will be returned.
 
 [coming soon]
 
+## Handling all methods
+
+If you want to handle all request methods, or a complex set of them,
+you can specify the special keyword `:*` in the methods section of
+your resource model.
+
+```clojure
+{:methods
+  {:*
+    {:response (fn [ctx] …)}}}
+```
+
 ## Custom methods
 
 Custom methods can be added by defining new types that extend the

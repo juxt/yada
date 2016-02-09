@@ -49,6 +49,20 @@
     (is (= 201 (:status response)))
     (is (= ["a" "b"] (get-in response [:headers "set-cookie"])))))
 
+(deftest all-methods-test
+  (let [handler
+        (yada
+         (resource
+          {:methods
+           {:*
+            {:response
+             (fn [ctx]
+               (-> ctx :method name)
+               )}}}))
+        response @(handler (mock/request :brew "/"))]
+    (is (= 200 (:status response)))
+    (is (= "brew" (bs/to-string (:body response))))))
+
 ;; Allowed methods ---------------------------------------------------
 
 ;; To ensure coercion to StringResource which satisfies GET (tested
