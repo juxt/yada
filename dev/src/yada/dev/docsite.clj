@@ -117,6 +117,8 @@
 
         ["/hello.html" (hello/index *router)]
 
+        ["/nextroll" (yada (fn [ctx] (inc (rand-int 6))))]
+
         ["/body.html" {:produces "text/html" :response (fn [] "Hello")}]
 
         ["/manual/" (yada (-> (new-directory-resource

@@ -60,6 +60,10 @@
   (to-body [s representation]
     (encode-message s representation))
 
+  Long
+  (to-body [l representation]
+    (to-body (str l) representation))
+  
   ;; The content-length is NOT the length of the string, but the
   ;; "decimal number of octets, for a potential payload body".
   ;; See  http://mark.koli.ch/remember-kids-an-http-content-length-is-the-number-of-bytes-not-the-number-of-characters
