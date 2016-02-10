@@ -84,7 +84,7 @@
   ring.swagger.swagger2-schema"} ring-swagger-coercer
   (sc/coercer rss/Swagger {rss/Parameters #(set/rename-keys % {:form :formData})}))
 
-(defn swagger-spec [template routes & [content-type]]
+(defn swagger-spec [routes template & [content-type]]
   (-> template
       (merge {:paths (into {} (map to-path (route-seq routes)))})
       ring-swagger-coercer rs/swagger-json))
@@ -168,8 +168,8 @@
     (let [handler (make-handler ["" this])]
       (handler req))))
 
-(defn swaggered [template routes]
-  (let [spec (swagger-spec template routes)]
+(defn swaggered [routes & [template]]
+  (let [spec (swagger-spec routes (or template {}))]
     (map->Swaggered
      {:spec spec
       :routes routes

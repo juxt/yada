@@ -173,27 +173,28 @@
 
         ["/api" 
          (swaggered
-          {:info {:title "Hello World!"
-                  :version "1.0"
-                  :description "A greetings service"}
-           :basePath "/api"}
           ["/greetings"
            [
             ["/hello" (yada "Hello World!\n")]
             ["/goodbye" (yada "Goodbye!\n")]
             ]
-           ])]
+           ]
+          {:info {:title "Hello World!"
+                  :version "1.0"
+                  :description "A greetings service"}
+           :basePath "/api"})]
 
         ["/phonebook-api/swagger.json"
          (-> (yada
               (swagger/swagger-spec-resource
-               (swagger/swagger-spec {:info {:title "Phonebook"
-                                             :version "1.0"
-                                             :description "A simple resource example"}
-                                      :host (config/host config :phonebook)
-                                      :schemes [(-> config :phonebook :scheme)]
-                                      :basePath ""}
-                                     (-> phonebook :api :routes))))
+               (swagger/swagger-spec 
+                (-> phonebook :api :routes)
+                {:info {:title "Phonebook"
+                        :version "1.0"
+                        :description "A simple resource example"}
+                 :host (config/host config :phonebook)
+                 :schemes [(-> config :phonebook :scheme)]
+                 :basePath ""})))
              (tag ::phonebook-swagger-spec))]
 
         ;;Boring specs

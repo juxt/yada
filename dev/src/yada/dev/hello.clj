@@ -23,18 +23,20 @@
   (yada (atom "Hello World!\n")))
 
 (defn hello-swagger []
-  (swaggered {:info {:title "Hello World!"
+  (swaggered ["/hello" (yada "Hello World!\n")]
+             {:info {:title "Hello World!"
                      :version "1.0"
                      :description "A swaggered String"}
               :basePath "/hello-swagger"}
-             ["/hello" (yada "Hello World!\n")]))
+             ))
 
 (defn hello-atom-swagger []
-  (swaggered {:info {:title "Hello World!"
+  (swaggered ["/hello" (hello-atom)]
+             {:info {:title "Hello World!"
                      :version "1.0"
                      :description "A String inside a Clojure atom, swaggered"}
               :basePath "/hello-atom-swagger"}
-             ["/hello" (hello-atom)]))
+             ))
 
 (defn say-hello [ctx]
   (str "Hello " (get-in ctx [:parameters :query :p]) "!\n"))
