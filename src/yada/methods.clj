@@ -10,12 +10,10 @@
    [yada.body :as body]
    [yada.context :as ctx]
    [yada.protocols :as p]
-   [yada.util :as util]
-   yada.response)
+   [yada.util :as util])
   (:import
-   [yada.response Response]
+   [yada.context Response]
    [java.io File]))
-
 
 (defn- zero-content-length
   "Unless status code is 1xx or 204, or method is CONNECT. We don't set

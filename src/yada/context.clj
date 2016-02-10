@@ -2,10 +2,7 @@
 
 (ns yada.context)
 
-;; TODO: Can this go elsewhere? Or inlined?
-
-;; TODO: On the flip-side, sometimes you need code to enforce the
-;; data's semantics.
+(defrecord Response [])
 
 (defn exists?
   "We assume every resource exists unless it says otherwise, with an
