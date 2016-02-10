@@ -161,3 +161,11 @@
               (when (and (set? k*) (contains? k* k)) v ))
             m)
       (get m *)))
+
+;; Arity
+
+(defn arity [f]
+  (let [m (first (.getDeclaredMethods (class f)))
+        p (.getParameterTypes m)]
+    (alength p)))
+

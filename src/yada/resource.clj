@@ -11,7 +11,8 @@
    [yada.schema :as ys]
    yada.charset
    yada.media-type
-   [yada.protocols :as p])
+   [yada.protocols :as p]
+   [yada.util :refer [arity]])
   (:import [yada.charset CharsetMap]
            [yada.media_type MediaTypeMap]
            [java.util Date]))
@@ -57,11 +58,6 @@
     (when (su/error? r) (throw (ex-info "Cannot turn resource-model into resource, because it doesn't conform to a resource-model schema" {:resource-model model :error (:error r)})))
     (map->Resource r)))
 
-(defn arg-count [f]
-  (let [m (first (.getDeclaredMethods (class f)))
-        p (.getParameterTypes m)]
-    (alength p)))
-
 (extend-protocol p/ResourceCoercion
   nil
   (as-resource [_]
@@ -72,7 +68,7 @@
                             (throw (ex-info "" {:status 404})))]}))
   clojure.lang.Fn
   (as-resource [f]
-    (let [arity (arg-count f)]
+    (let [ar (arity f)]
       (resource
        {:produces #{"text/html"
                     "text/plain"
@@ -80,7 +76,7 @@
                     "application/edn"}
         :methods
         {:* {:response (fn [ctx]
-                         (case arity
+                         (case ar
                            0 (f)
                            1 (f ctx)
                            (apply f ctx (repeat (dec arity) nil)))

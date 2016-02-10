@@ -33,6 +33,15 @@
        (assoc-in ctx [:response :headers "content-length"] 0))
      ctx)))
 
+(defn apply-response-fn [f ctx]
+  (try
+    (f ctx)
+    (catch clojure.lang.ArityException e
+      (let [ar (util/arity f)]
+        (case ar
+          0 (f)
+          (apply f ctx (repeat (dec ar) nil)))))))
+
 ;; Allowed methods
 
 ;; RFC 7231 - 8.1.3.  Registrations
@@ -92,7 +101,7 @@
   (idempotent? [_] false)
   (request [this ctx]
     (if-let [f (get-in ctx [:resource :methods :* :response])]
-      (interpret-any-result (f ctx) ctx)
+      (-> f (apply-response-fn ctx) (interpret-any-result ctx))
       ctx)))
 
 ;; --------------------------------------------------------------------------------
@@ -174,7 +183,7 @@
         (if-let [f (or (get-in ctx [:resource :methods (:method ctx) :response])
                        (get-in ctx [:resource :methods :* :response]))]
           (try
-            (f ctx)
+            (apply-response-fn f ctx)
             (catch Exception e
               (d/error-deferred e)))
           ;; No handler!
@@ -227,7 +236,7 @@
                                {:status 500}))))]
       (d/chain
        (when f
-         (f ctx))
+         (apply-response-fn f ctx))
        (fn [res]
          (interpret-put-result res ctx))
        (fn [ctx]
@@ -287,7 +296,7 @@
     (d/chain
      (when-let [f (or (get-in ctx [:resource :methods (:method ctx) :response])
                       (get-in ctx [:resource :methods :* :response]))]
-       (f ctx))
+       (apply-response-fn f ctx))
      (fn [res]
        (interpret-post-result res ctx))
      (fn [ctx]
@@ -349,7 +358,7 @@
      (if-let [f (or (get-in ctx [:resource :methods (:method ctx) :response])
                     (get-in ctx [:resource :methods :* :response]))]
        (try
-         (f ctx)
+         (apply-response-fn f ctx)
          (catch Exception e
            (d/error-deferred e)))
        ;; No handler!

@@ -117,8 +117,7 @@
 
         ["/hello.html" (hello/index *router)]
 
-        ["/body.html" {:produces "application/json"
-                       :response (fn [_] {:greeting "Hello"})}]
+        ["/body.html" {:produces "text/html" :response (fn [] "Hello")}]
 
         ["/manual/" (yada (-> (new-directory-resource
                                (io/file "manuscript")
