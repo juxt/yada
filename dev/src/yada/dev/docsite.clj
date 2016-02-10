@@ -121,11 +121,14 @@
 
         ["/body.html" {:produces "text/html" :response (fn [] "Hello")}]
 
+
+
         ["/manual/" (yada (-> (new-directory-resource
                                (io/file "manuscript")
                                {:custom-suffices
                                 {"md" {:produces (ys/representation-seq-coercer
-                                                  [{:media-type #{"text/html" "text/plain;q=0.9"}}])
+                                                  [{:media-type #{"text/html" "text/plain;q=0.9"}
+                                                    :charset "utf-8"}])
                                        :reader (fn [f rep]
                                                  (cond
                                                    (= (-> rep :media-type :name) "text/html")
