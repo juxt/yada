@@ -87,6 +87,10 @@
   (to-body [v representation]
     (encode-message (render-seq v representation) representation))
 
+  java.util.HashSet
+  (to-body [v representation]
+    (encode-message (render-seq v representation) representation))
+
   File
   (to-body [f _]
     ;; The file can simply go into the body of the Ring response. We
