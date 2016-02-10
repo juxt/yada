@@ -1,27 +1,44 @@
 # Introduction
 
-yada is a library that lets you create stateful entities on the
-web. These stateful entities are called _web resources_ and each one
-is identified by a unique __URI__. With yada you can create web
-resources that are fully compliant with, and thereby take full
-advantage of, HTTP standards.
+yada is a Clojure library that lets you create stateful entities on the web. These stateful entities are called _web resources_ and each one is identified by a unique __URI__.
 
-yada strives to be a complete implementation of all of HTTP, which is
-a very rare thing indeed. Therefore, it can be used to serve static
-content, generate web pages and expose web APIs.
+In other words, you can use yada for creating websites, web APIs, REST services, Om Next Remotes and more.
 
-But yada is _not_ a 'web application framework' because it is
-not concerned with how your application stores or computes state, it
-is solely concerned with exchanging that state with other agents on
-the web, over HTTP.
+Whether you're building a simple web page, or full-blown REST API, yada is a good choice. It is easy enough to use for quick prototype work but can scale up when you need it to, handling the most demanding workloads.
 
-To build a full application serving web-clients you would need to add
-some application logic, somewhere to store your application's state
-and a way to retrieve it. Probably, you'll also need a templating
-library if you want to generate complex HTML, because yada doesn't
-care about that either.
+yada provides a complete implementation of the full HTTP standard (which is a very rare thing indeed).
 
-yada is implemented in the Clojure programming language and runs on the JVM.
+## yada is a library, not a framework
+
+However, yada is _not_ a 'web application framework' because it is not concerned with how your application stores or computes state. It is solely concerned with exchanging that state with other agents on the web, over HTTP.
+
+To build a full application serving web-clients you would need to add some application logic, somewhere to store your application's state and a way to retrieve it. Probably, you'll also need a templating library if you want to generate complex HTML, because yada doesn't care about that either.
+
+## Say 'Hello!' to yada!
+
+Perhaps the best thing about yada is that the basics are easy to learn.
+
+The obligatory Hello World! example is `(yada "Hello World!")`, which responds with a message.
+
+Perhaps you might want to serve a file? That's `(yada (new java.io.File "index.html"))`.
+
+Now you know how to serve a file, what about that directory full of static resources called `public`? That's `(yada (new java.io.File "public"))`.
+
+Maybe you've got some resources on the classpath? `(yada (Class/getResource "resources/"))`.
+
+What about `(yada nil)`? Without knowing, can you guess what that might do? (That's right, it produces a `404 Not Found` response).
+
+What about a quick dice generator? `(yada #(inc (rand-int 6)))`. Notice we use a function here (we don't want the same dice roll each time!).
+
+How about streaming those dice rolls as 'Server Sent Events'? Put those dice rolls on a channel, and return it with yada.
+
+## Types
+
+You will have noticed all those examples were different only in the argument type. You might have also realized that you can, of course, create your own types for producing custom behavior.
+
+It doesn't matter how easy it is to do, coding individual endpoints for an API can become a tedious activity in any language.
+
+With yada, there's the prospect of creating a single parameterized type and using it in multiple places.
 
 ## Resources
 
