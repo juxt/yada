@@ -38,16 +38,17 @@ For example, let's take the bidi routing tree below:
 
 ["/api"
  (swaggered
-  {:info {:title "Hello World!"
-          :version "1.0"
-          :description "A greetings service"}
-   :basePath "/api"}
   ["/greetings"
    [
     ["/hello" (yada "Hello World!\n")]
     ["/goodbye" (yada "Goodbye!\n")]
    ]
-  ])]
+  ]
+  {:info {:title "Hello World!"
+          :version "1.0"
+          :description "A greetings service"}
+   :basePath "/api"}
+  )]
 ```
 
 This declares a route that (partially) matches on the URI path `/api`. The second element of the route pair is a custom record created with `swaggered` which satisfies bidi's `Matched` protocol. This acts as a sort of 'junction' which matches on the routes given in the second argument. Critically, however, it also adds an additional sub-route, `/swagger.json`, which exposes the Swagger specification of the given base template, routes and resources.
