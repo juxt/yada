@@ -392,7 +392,6 @@ convenience of terse, expressive short-hand descriptions."}
 
 (s/defschema HandlerModel
   {:id s/Any
-   (s/optional-key :base) s/Any
    :resource s/Any ; TODO: if we fold yada.schema into yada.resource and yada.handler we'll be able to reference Resource
    (s/optional-key :parent) s/Any ; as TODO above
    :allowed-methods #{s/Keyword}

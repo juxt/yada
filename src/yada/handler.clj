@@ -92,67 +92,66 @@
              (or (:path-info (:request ctx))
                  (not (:path-info? resource))))
 
-        (let [subresourcefn (:sub-resource resource)]
-          ;; Subresource
-          (let [sub-resource (subresourcefn ctx)
-                handler
-                (new-handler
-                 {:id (get resource :id (java.util.UUID/randomUUID))
-                  :parent resource
-                  :resource sub-resource
-                  :allowed-methods (allowed-methods sub-resource)
-                  :known-methods (:known-methods ctx)
-                  :interceptor-chain (or
-                                      (:interceptor-chain sub-resource)
-                                      (-> ctx :interceptor-chain))})]
+      (let [subresourcefn (:sub-resource resource)]
+        ;; Subresource
+        (let [sub-resource (subresourcefn ctx)
+              handler
+              (new-handler
+               {:id (get resource :id (java.util.UUID/randomUUID))
+                :parent resource
+                :resource sub-resource
+                :allowed-methods (allowed-methods sub-resource)
+                :known-methods (:known-methods ctx)
+                :interceptor-chain (or
+                                    (:interceptor-chain sub-resource)
+                                    (-> ctx :interceptor-chain))})]
           
-            (handle-request-with-maybe-subresources
-             (-> ctx
-                 (merge handler)
-                 (dissoc :base)))))
+          (handle-request-with-maybe-subresources
+           (-> ctx
+               (merge handler)))))
 
-        ;; Normal resources
-        (->
-         (apply d/chain ctx (:interceptor-chain ctx))
+      ;; Normal resources
+      (->
+       (apply d/chain ctx (:interceptor-chain ctx))
 
-         (d/catch
-             clojure.lang.ExceptionInfo
-             (fn [e]
-               (error-handler e)
-               (let [data (error-data e)]
-                 (let [status (or (:status data) 500)]
+       (d/catch
+           clojure.lang.ExceptionInfo
+           (fn [e]
+             (error-handler e)
+             (let [data (error-data e)]
+               (let [status (or (:status data) 500)]
 
-                   (let [custom-response (get* (:responses resource) status)
-                         rep (rep/select-best-representation
-                              (:request ctx)
-                              (if custom-response
-                                (or (:produces custom-response) "text/plain")
-                                error-representations)
-                              )]
+                 (let [custom-response (get* (:responses resource) status)
+                       rep (rep/select-best-representation
+                            (:request ctx)
+                            (if custom-response
+                              (or (:produces custom-response) "text/plain")
+                              error-representations)
+                            )]
 
-                     (d/chain
-                      (cond-> ctx
-                        e (assoc :error e)
-                        ;; true (merge (select-keys ctx [:id :request :method]))
-                        status (assoc-in [:response :status] status)
-                        (:headers data) (assoc-in [:response :headers] (:headers data))
+                   (d/chain
+                    (cond-> ctx
+                      e (assoc :error e)
+                      ;; true (merge (select-keys ctx [:id :request :method]))
+                      status (assoc-in [:response :status] status)
+                      (:headers data) (assoc-in [:response :headers] (:headers data))
 
-                        rep (assoc-in [:response :produces] rep)
+                      rep (assoc-in [:response :produces] rep)
 
-                        (:body data)
-                        (assoc [:response :body] (:body data))
-                        
-                        (and (not (:body data)) (not (:response custom-response)))
-                        (standard-error status e rep)
-
-                        (and (not (:body data)) (:response custom-response))
-                        (custom-error (:response custom-response) rep)
-
-                        true set-content-length)
+                      (:body data)
+                      (assoc [:response :body] (:body data))
                       
-                      sec/access-control-headers
-                      i/create-response
-                      i/return))))))))))
+                      (and (not (:body data)) (not (:response custom-response)))
+                      (standard-error status e rep)
+
+                      (and (not (:body data)) (:response custom-response))
+                      (custom-error (:response custom-response) rep)
+
+                      true set-content-length)
+                    
+                    sec/access-control-headers
+                    i/create-response
+                    i/return))))))))))
 
 (defn- handle-request
   "Handle Ring request"
@@ -276,7 +275,6 @@
      (new-handler
       (merge
        {:id (get resource :id (java.util.UUID/randomUUID))
-        :base base
         :resource resource
         :allowed-methods (allowed-methods resource)
         :known-methods (methods/known-methods)
