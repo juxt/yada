@@ -1,14 +1,14 @@
 (ns ^{:author "Imre Koszo"}
     yada.process-request-body-test
-    (:require
-     [clojure.test :refer :all :exclude [deftest]]
-     [cheshire.core :as json]
-     [schema.core :as s]
-     [schema.test :refer [deftest]]
-     [yada.interceptors :as i]
-     [yada.resource :refer [resource]]
-     [yada.request-body :refer [process-request-body]]
-     [yada.test.util :refer [is-coercing-correctly?]]))
+  (:require
+   [clojure.test :refer :all :exclude [deftest]]
+   [cheshire.core :as json]
+   [schema.core :as s]
+   [schema.test :refer [deftest]]
+   [yada.interceptors :as i]
+   [yada.resource :refer [resource]]
+   [yada.request-body :refer [process-request-body]]
+   [yada.test-util :refer [is-coercing-correctly?]]))
 
 (def ^:private test-map {:a "Hello" :b :foo :c [4 5 6]})
 

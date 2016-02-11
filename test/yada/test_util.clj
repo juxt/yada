@@ -1,7 +1,7 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns ^{:doc "Test utilities"}
-  yada.test.util
+    yada.test-util
   (:require
    [manifold.stream :as s]
    [yada.request-body :refer [process-request-body]]   

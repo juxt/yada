@@ -11,6 +11,7 @@
    yada.resources.string-resource
    yada.resources.url-resource
    yada.resources.sse
+   yada.test
    yada.util
    [potemkin :refer (import-vars)]))
 
@@ -19,6 +20,7 @@
  [yada.swagger swaggered]
  [yada.resource resource]
  [yada.protocols as-resource]
+ [yada.test request-for response-for]
  [yada.util get-host-origin])
 
 ;; Convenience functions, allowing us to encapsulate the context

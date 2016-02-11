@@ -6,7 +6,7 @@
    [ring.mock.request :refer [request]]
    [clojure.java.io :as io]
    [manifold.stream :as s]
-   [yada.test.util :refer [to-string]]
+   [yada.test-util :refer [to-string]]
    [yada.yada :refer [yada]]))
 
 (defn add-headers [request m]

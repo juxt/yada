@@ -16,7 +16,7 @@
    [yada.yada :as yada :refer [yada]]
    [yada.protocols :as p]
    [yada.resources.file-resource :refer :all]
-   [yada.test.util :refer [to-string]])
+   [yada.test-util :refer [to-string]])
   (:import
    [java.io File ByteArrayInputStream]
    [java.util Date]))

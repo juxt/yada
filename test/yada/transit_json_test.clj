@@ -3,7 +3,7 @@
             [schema.core :as s]
             [byte-streams :as bs]
             [yada.body :as sut]
-            [yada.test.util :refer [is-coercing-correctly?]]))
+            [yada.test-util :refer [is-coercing-correctly?]]))
 
 (def ^:private test-map {:a "Hello" :b :foo :c [4 5 6]})
 

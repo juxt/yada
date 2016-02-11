@@ -116,7 +116,7 @@
 
          :resource-paths ["dev/resources"
                           "examples/phonebook/resources"]}
-   :test
-   {:source-paths ["yada.test/src"]}
+   #_:test
+   #_{:source-paths ["yada.test/src"]}
 
    })

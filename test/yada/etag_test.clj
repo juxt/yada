@@ -7,7 +7,7 @@
    [ring.mock.request :as mock]
    [yada.resource :refer [resource]]
    [yada.protocols :as p]
-   [yada.test.util :refer (etag?)]
+   [yada.test-util :refer (etag?)]
    [yada.yada :as yada :refer [yada]]))
 
 ;; ETags -------------------------------------------------------------

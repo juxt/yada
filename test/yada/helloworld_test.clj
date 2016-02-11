@@ -1,7 +1,7 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns ^{:doc "Test the Hello World tutorial"}
-  yada.helloworld-test
+    yada.helloworld-test
   (:require
    [clojure.test :refer :all]
    [cheshire.core :as json]
@@ -11,7 +11,7 @@
    [yada.dev.hello :as hello]
    [yada.media-type :as mt]
    [yada.util :refer (parse-csv)]
-   [yada.test.util :refer (etag? to-string)]
+   [yada.test-util :refer (etag? to-string)]
    [yada.yada :as yada])
   (:import [java.util Date]))
 

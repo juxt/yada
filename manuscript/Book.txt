@@ -22,4 +22,5 @@
 210_interceptors.md
 220_subresources.md
 230_fileserver.md
+235_testing.md
 240_reference.md
