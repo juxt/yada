@@ -19,13 +19,14 @@
   (->>
    (for [[k v] headers]
      (case k
-       "strict-transport-security" nil
        "content-length" nil
        "content-type" (when-not (mt/string->media-type v) "mime-type not valid")
        "last-modified" (when-not (instance? Date (parse-date v)) "last-modified not a date")
        "vary" (when-not (pos? (count (parse-csv v))) "vary empty")
        "allow" (when-not (pos? (count (parse-csv v))) "allow empty")
        "etag" (when-not (etag? v) "not a valid etag")
+       "strict-transport-security" nil
+       "x-frame-options" nil
        (throw (ex-info "Cannot validate unrecognized header" {:k k :v v}))))
    (remove nil?) vec))
 
@@ -34,7 +35,7 @@
         response @(resource (request :get "/"))
         headers (:headers response)]
     (is (= 200 (:status response)))
-    (is (= #{"last-modified" "content-type" "content-length" "vary" "etag" "strict-transport-security"} (set (keys headers))))
+    (is (= #{"last-modified" "content-type" "content-length" "vary" "etag" "strict-transport-security" "x-frame-options"} (set (keys headers))))
     (is (= [] (validate-headers? headers)))
     (is (= "text/plain;charset=utf-8" (get headers "content-type")))
     ;; TODO: See github issue regarding ints and strings
@@ -105,7 +106,7 @@
         response @(resource (request :options "/"))
         headers (:headers response)]
     (is (= 200 (:status response)))
-    (is (=  #{"allow" "content-length" "strict-transport-security"} (set (keys headers))))
+    (is (=  #{"allow" "content-length" "strict-transport-security" "x-frame-options"} (set (keys headers))))
     (is (= [] (validate-headers? headers)))
     (is (= #{"OPTIONS" "GET" "HEAD"} (set (parse-csv (get headers "allow")))))
     (is (nil? (:body response)))))
@@ -115,7 +116,7 @@
         response @(resource (request :options "/"))
         headers (:headers response)]
     (is (= 200 (:status response)))
-    (is (= #{"allow" "content-length" "strict-transport-security"} (set (keys headers))))
+    (is (= #{"allow" "content-length" "strict-transport-security" "x-frame-options"} (set (keys headers))))
     (is (= [] (validate-headers? headers)))
     (is (= #{"OPTIONS" "GET" "HEAD" "PUT" "DELETE"} (set (parse-csv (get headers "allow")))))
     (is (nil? (:body response)))))

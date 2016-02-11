@@ -243,6 +243,7 @@
    i/compute-etag
    sec/access-control-headers
    sec/hsts
+   sec/xfo
    i/create-response
    i/return
    ])

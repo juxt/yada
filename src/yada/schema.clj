@@ -368,6 +368,7 @@ convenience of terse, expressive short-hand descriptions."}
           {(s/optional-key :path-info?) Boolean
            (s/optional-key :sub-resource) (s/=> Resource Context)}
           {(s/optional-key :strict-transport-security) {:max-age s/Num}}
+          {(s/optional-key :x-frame-options) s/Str}
           NamespacedEntries)
    (fn [v] (not (and (:sub-resource v) (not (:path-info? v)))))
    "If a sub-resource entry exists then path-info? must be true"))
