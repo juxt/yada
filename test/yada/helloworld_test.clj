@@ -19,6 +19,7 @@
   (->>
    (for [[k v] headers]
      (case k
+       "strict-transport-security" nil
        "content-length" nil
        "content-type" (when-not (mt/string->media-type v) "mime-type not valid")
        "last-modified" (when-not (instance? Date (parse-date v)) "last-modified not a date")
@@ -33,7 +34,7 @@
         response @(resource (request :get "/"))
         headers (:headers response)]
     (is (= 200 (:status response)))
-    (is (= #{"last-modified" "content-type" "content-length" "vary" "etag"} (set (keys headers))))
+    (is (= #{"last-modified" "content-type" "content-length" "vary" "etag" "strict-transport-security"} (set (keys headers))))
     (is (= [] (validate-headers? headers)))
     (is (= "text/plain;charset=utf-8" (get headers "content-type")))
     ;; TODO: See github issue regarding ints and strings
@@ -104,7 +105,7 @@
         response @(resource (request :options "/"))
         headers (:headers response)]
     (is (= 200 (:status response)))
-    (is (=  #{"allow" "content-length"} (set (keys headers))))
+    (is (=  #{"allow" "content-length" "strict-transport-security"} (set (keys headers))))
     (is (= [] (validate-headers? headers)))
     (is (= #{"OPTIONS" "GET" "HEAD"} (set (parse-csv (get headers "allow")))))
     (is (nil? (:body response)))))
@@ -114,7 +115,7 @@
         response @(resource (request :options "/"))
         headers (:headers response)]
     (is (= 200 (:status response)))
-    (is (= #{"allow" "content-length"} (set (keys headers))))
+    (is (= #{"allow" "content-length" "strict-transport-security"} (set (keys headers))))
     (is (= [] (validate-headers? headers)))
     (is (= #{"OPTIONS" "GET" "HEAD" "PUT" "DELETE"} (set (parse-csv (get headers "allow")))))
     (is (nil? (:body response)))))

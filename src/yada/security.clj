@@ -168,3 +168,7 @@
     ;; Otherwise
     ctx))
 
+(defn hsts [ctx]
+  (assoc-in ctx [:response :headers "strict-transport-security"]
+            (format
+             "max-age=%s; includeSubdomains" (get-in ctx [:strict-transport-security :max-age] 31536000))))

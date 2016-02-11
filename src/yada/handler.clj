@@ -243,6 +243,7 @@
    i/get-new-properties
    i/compute-etag
    sec/access-control-headers
+   sec/hsts
    i/create-response
    i/return
    ])
