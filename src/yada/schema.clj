@@ -352,25 +352,22 @@ convenience of terse, expressive short-hand descriptions."}
 
 (s/defschema ResourceDocumentation CommonDocumentation)
 
-(s/defschema ResourceBase
-  (merge {(s/optional-key :id) s/Any}
-         ResourceDocumentation
-         AccessControl
-         Properties
-         ResourceParameters
-         Produces
-         Consumes
-         Methods
-         Responses
-         {(s/optional-key :interceptor-chain) [s/Any]}
-         ResourceDocumentation
-         NamespacedEntries))
-
 (s/defschema Resource
   (s/constrained
-   (merge ResourceBase
+   (merge {(s/optional-key :id) s/Any}
+          ResourceDocumentation
+          AccessControl
+          Properties
+          ResourceParameters
+          Produces
+          Consumes
+          Methods
+          Responses
+          {(s/optional-key :interceptor-chain) [s/Any]}
+          ResourceDocumentation
           {(s/optional-key :path-info?) Boolean
-           (s/optional-key :sub-resource) (s/=> ResourceBase Context)})
+           (s/optional-key :sub-resource) (s/=> Resource Context)}
+          NamespacedEntries)
    (fn [v] (not (and (:sub-resource v) (not (:path-info? v)))))
    "If a sub-resource entry exists then path-info? must be true"))
 
