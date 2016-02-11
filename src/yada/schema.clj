@@ -352,6 +352,12 @@ convenience of terse, expressive short-hand descriptions."}
 
 (s/defschema ResourceDocumentation CommonDocumentation)
 
+(s/defschema SecurityHeaders
+  {(s/optional-key :strict-transport-security) {:max-age s/Num}
+   (s/optional-key :content-security-policy) s/Str
+   (s/optional-key :x-frame-options) s/Str
+   (s/optional-key :xss-protection) s/Str})
+
 (s/defschema Resource
   (s/constrained
    (merge {(s/optional-key :id) s/Any}
@@ -363,12 +369,11 @@ convenience of terse, expressive short-hand descriptions."}
           Consumes
           Methods
           Responses
+          SecurityHeaders
           {(s/optional-key :interceptor-chain) [s/Any]}
           ResourceDocumentation
           {(s/optional-key :path-info?) Boolean
            (s/optional-key :sub-resource) (s/=> Resource Context)}
-          {(s/optional-key :strict-transport-security) {:max-age s/Num}}
-          {(s/optional-key :x-frame-options) s/Str}
           NamespacedEntries)
    (fn [v] (not (and (:sub-resource v) (not (:path-info? v)))))
    "If a sub-resource entry exists then path-info? must be true"))
