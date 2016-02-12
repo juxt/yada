@@ -194,28 +194,132 @@ In either case, we assume that the user has already been authenticated, and we a
 
 In yada, authorization happens _after_ the resource's properties has been loaded, because it may be necessary to check some aspect of the resource itself as part of the authorization process.
 
+By default, yada will use a declarative role-based authorization scheme.
+
+### Default authorization scheme
+
 Any method can be protected by declaring a role or set of roles in its model.
 
 ```clojure
-{:methods {:post :accounts/create-transaction}}
+{:access-control
+ {:authorization
+  {:methods
+   {:post :accounts/create-transaction}}}}
 ```
 
 If multiple roles are involved, they can be composed inside vectors using simple predicate logic.
 
 ```clojure
-{:methods {:post [:or [:and :accounts/user
-                            :accounts/create-transaction]
-                      :superuser}}
+{:access-control
+ {:authorization
+  {:methods
+   {:post [:or [:and :accounts/user
+                     :accounts/create-transaction]
+               :superuser}}}}
 ```
 
 Only the simple boolean 'operators' of `:and`, `:or` and `:not` are allowed in this authorization scheme. This keeps the role definitions declarative and easy to extract and process by other tooling.
 
 Of course, authentication information is available in the request context when a method is invoked, so any method may apply its own custom authorization logic as necessary. However, yada encourages developers to adopt a declarative approach to resources wherever possible, to maximise the integration opportunities with other libraries and tools.
 
+### Custom authorization scheme
+
+A custom authorization scheme can be declared that will completely replace the default authorization scheme already discussed.
+
+First, decide on a keyword that will be used to dispatch your authorization function. In this example, we've chosen `:my/custom-authorization`.
+
+Now declare the authorization function that will be called by yada during request processing. This is a `defmethod`, as follows:
+
+```clojure
+(defmethod yada.authorization/validate
+  :my/custom-authorization
+  [ctx credentials authorization]
+…
+)
+```
+
+The credentials argument contains all the verified credentials sent in the request.
+
+Now add an `:authorization` map to the `:access-control` part of your resource model. You must include a :scheme entry specifying your The map must contain a `:scheme` value o your resource model, along with any extra parameters you want to be passed as the `authorization` argument to your authorization function. In this example, we want to pass the `:my/ensure` parameter set to `[:same-account]`. You can specify anything you like to be passed as parameters (there are no schema restrictions here).
+
+```clojure
+{:access-control
+ {:authorization
+  {:scheme :my/custom-authorization
+   :my/ensure [:same-account]}}}
+
+```
+
 ## Realms
 
-yada supports multiple realms.
+yada supports multiple realms. By default, there is a single realm in operation called "default". However, you can group authentication schemes and authorization models in separate realms. Each realm can contain multiple authentication schemes (it might be that a realm offers a choice of how to authenticate).
+
+```clojure
+{:access-control
+  {:realms {"Gondor" {:authentication-schemes […]
+                      :authorization {…}}
+            "Mordor" {:authentication-schemes {…}
+                      :authorization {…}}}}}
+
+```
 
 ## Cross-Origin Resource Sharing (CORS)
 
-[coming soon]
+yada fully supports Cross-Origin Resource Sharing (CORS) allowing you to provide APIs that are accessible from other origins.
+
+For example, you may be creating an API that you wish other websites to make use of, by allowing browsers visiting those websites access to your API.
+
+CORS is specified in the `:access-control` section of the resource-model.
+
+```clojure
+{:access-control
+ {:allow-origin "*"
+  :allow-credentials false
+  :expose-headers #{"X-Custom"}
+  :allow-methods #{:get :post}
+  :allow-headers ["Api-Key"]
+ }}
+
+```
+
+With the exception of `:allow-credentials` (which must be a boolean) any of the values can be declared as single-arity functions, which are called with the request-context as an argument to determine the value for the corresponding response header.
+
+## HTTP Strict Transport Security (HSTS)
+
+```clojure
+{:strict-transport-security {:max-age 12000}}
+ ```
+
+Defaults to a maximum age of 31536000.
+
+The HSTS header is only set if the scheme is HTTPS or the service is behind a proxy (determined by the presence of the `X-Forwarded-For` request header).
+
+## Content Security Policy
+
+```clojure
+{:content-security-policy "url-src"}
+```
+
+Defaults to `default-src https: data: 'unsafe-inline' 'unsafe-eval'`.
+
+## Clickjacking prevention
+
+Use of a browser's iframe can be used for 'click-jacking', by default yada tells browsers not to allow this. The default value is `SAMEORIGIN`, unless you override it in the resource-model.
+
+```clojure
+{:x-frame-options "NONE"}
+```
+
+## Cross-site Scripting (XSS) protection
+
+yada also sets the `X-Xss-Protection` response header to `1; mode=block`. This can be overridden in the resource model.
+
+```clojure
+{:x-content-type-options "0"}
+```
+
+## Media-type sniffing protection
+
+By default, yada set the `X-Content-Type-Options` response header to `nosniff`. This tells browsers not to try to attempt to determine the content-type of the response body.
+
+Since yada sets the `Content-Type` header according to HTTP standards, there should never be a need for a browser to need to 'sniff' the response body for this information, preventing an attack that might exploit some vulnerability in this process.
