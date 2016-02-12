@@ -23,7 +23,7 @@
    [json-html "0.3.6"]
    [manifold "0.1.2-alpha2"]
    [metosin/ring-http-response "0.6.5"]
-   [metosin/ring-swagger "0.22.1" :exclusions [potemkin]]
+   [metosin/ring-swagger "0.22.4" :exclusions [potemkin com.google.guava/guava]]
    [prismatic/schema "1.0.4"]
    [potemkin "0.4.2" :exclusions [riddley]]
    
