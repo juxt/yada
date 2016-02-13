@@ -41,7 +41,7 @@ In yada, authentication happens after any request parameters have been
 processed, so if necessary they can be used to establish the identity
 of the user. However, it is important to remember that authentication
 happens before the resource's properties have been loaded, since
-credentials do not as it has do with the actual resource. Thus, if the
+credentials do not have to do with the actual resource. Thus, if the
 user is not genuine, we might well save a wasted trip to the
 resource's data-store.
 
@@ -55,10 +55,10 @@ __resource-model__.
 Each realm declares one or more _authentication schemes_
 governing how requests are authenticated.
 
-yada supports numerous authentication schemes, include custom ones you
+yada supports numerous authentication schemes, including custom ones you
 can provide yourself.
 
-Each scheme has a verifier, depending on the scheme this is usually a
+Each scheme has a verifier. Depending on the scheme this is usually a
 function. The verifier is used to extract or otherwise establish the
 credentials in the request, ensuring they are authentic and true, in
 which case it returns these credentials as a value to be stored in the
@@ -192,7 +192,7 @@ Authorization is the process of allowing a user access to a resource. This may r
 
 In either case, we assume that the user has already been authenticated, and we are confident that their credentials are genuine.
 
-In yada, authorization happens _after_ the resource's properties has been loaded, because it may be necessary to check some aspect of the resource itself as part of the authorization process.
+In yada, authorization happens _after_ the resource's properties have been loaded, because it may be necessary to check some aspect of the resource itself as part of the authorization process.
 
 By default, yada will use a declarative role-based authorization scheme.
 
@@ -240,7 +240,7 @@ Now declare the authorization function that will be called by yada during reques
 
 The credentials argument contains all the verified credentials sent in the request.
 
-Now add an `:authorization` map to the `:access-control` part of your resource model. You must include a :scheme entry specifying your The map must contain a `:scheme` value o your resource model, along with any extra parameters you want to be passed as the `authorization` argument to your authorization function. In this example, we want to pass the `:my/ensure` parameter set to `[:same-account]`. You can specify anything you like to be passed as parameters (there are no schema restrictions here).
+Now add an `:authorization` map to the `:access-control` part of your resource model.  The map must contain a `:scheme` value specific to your resource model, along with any extra parameters you want to be passed as the `authorization` argument to your authorization function. In this example, we want to pass the `:my/ensure` parameter set to `[:same-account]`. You can specify anything you like to be passed as parameters (there are no schema restrictions here).
 
 ```clojure
 {:access-control
@@ -282,7 +282,7 @@ CORS is specified in the `:access-control` section of the resource-model.
 
 ```
 
-With the exception of `:allow-credentials` (which must be a boolean) any of the values can be declared as single-arity functions, which are called with the request-context as an argument to determine the value for the corresponding response header.
+With the exception of `:allow-credentials` (which must be a boolean), any of the values can be declared as single-arity functions, which are called with the request-context as an argument to determine the value for the corresponding response header.
 
 ## HTTP Strict Transport Security (HSTS)
 
@@ -304,7 +304,7 @@ Defaults to `default-src https: data: 'unsafe-inline' 'unsafe-eval'`.
 
 ## Clickjacking prevention
 
-Use of a browser's iframe can be used for 'click-jacking', by default yada tells browsers not to allow this. The default value is `SAMEORIGIN`, unless you override it in the resource-model.
+A browser's iframe can be used for 'click-jacking'. By default yada tells browsers not to allow this. The default value is `SAMEORIGIN`, unless you override it in the resource-model.
 
 ```clojure
 {:x-frame-options "NONE"}
@@ -320,6 +320,6 @@ yada also sets the `X-Xss-Protection` response header to `1; mode=block`. This c
 
 ## Media-type sniffing protection
 
-By default, yada set the `X-Content-Type-Options` response header to `nosniff`. This tells browsers not to try to attempt to determine the content-type of the response body.
+By default, yada sets the `X-Content-Type-Options` response header to `nosniff`. This tells browsers not to try to attempt to determine the content-type of the response body.
 
-Since yada sets the `Content-Type` header according to HTTP standards, there should never be a need for a browser to need to 'sniff' the response body for this information, preventing an attack that might exploit some vulnerability in this process.
+Since yada sets the `Content-Type` header according to HTTP standards, there should never be a need for a browser to 'sniff' the response body for this information, preventing an attack that might exploit some vulnerability in this process.
