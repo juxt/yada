@@ -66,8 +66,8 @@ processed as a single dataset.
 ```
 
 A yada handler (created by yada's `yada` function) and a yada resource
-(created by yada's `resource` constructor function) extends bidi's
-`Matched` protocol are both able to participant in the pattern
+(created by yada's `resource` constructor function) that extends bidi's
+`Matched` protocol are both able to participate in the pattern
 matching of an incoming request's URI.
 
 For a more thorough introduction to bidi, see
@@ -83,18 +83,18 @@ In our view, this is wrong, for many reasons. A URI is purely a
 identifier for a resource. A resource's identifier might change, but
 such a change should not cause the resource to bahave differently.
 
-In the phraseology offered by Rich Hickey in his famous Simple Not
+In the phraseology offered by Rich Hickey in his famous Simple Made
 Easy talk, we should not _complect_ a resource's identification with
 its operation. Neither should we _complect_ a protection space with a
-URI 'space'. Doing so reduces adds an unnecessary constraint to the
-already difficult problem of naming things (URIs) which adding an
+URI 'space'. Doing so adds an unnecessary constraint to the
+already difficult problem of naming things (URIs) while adding an
 unnecessary constraint to the ring-facing of resources into protection
 spaces. For this reason, yada and bidi are kept apart as separate
 libraries.
 
 Some web frameworks can be excused for offering a pragmatic way
 of reducing duplication in specification, but this really ought not to
-be necessary for Clojure programmers which have powerful alternatives.
+be necessary for Clojure programmers who have powerful alternatives.
 
 What are these alternatives? How can we avoid typing the same
 declarations over and over in every resource?
@@ -105,7 +105,7 @@ number of resources.
 
 A variation of this option is to use Clojure's built-in tree-walking
 functions such as `clojure.walk/postwalk`. If you specify your entire
-API has a single bidi/yada tree it is easy to specify each policy as a
+API as a single bidi/yada tree, it is easy to specify each policy as a
 transformation from one version of the tree to another. What's more,
 you will be able to check, debug and automate testing on the end
 result prior to handling actual requests.

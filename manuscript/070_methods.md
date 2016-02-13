@@ -28,7 +28,7 @@ These semantics are important because they allow other web agents,
 such as browsers and proxies, to inter-operate with your site.
 
 Below is an explanation of the semantics for every method yada
-currently supports and the your responsibilities should you choose to
+currently supports and your responsibilities should you choose to
 provide the method for a resource.
 
 ## GET
