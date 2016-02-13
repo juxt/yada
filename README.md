@@ -86,6 +86,7 @@ feedback and suggestions.
 * Imre Koszo
 * Luo Tian
 * Joshua Griffith
+* Joseph Fahey
 
 Also, see the dependency list. In particular, yada would certainly not
 exist without the considerable efforts of those behind the following
