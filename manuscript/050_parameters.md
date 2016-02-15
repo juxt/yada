@@ -55,7 +55,7 @@ matches the request method.
 
 We declare parameter values using the syntax of
 [Prismatic](https://prismatic.com)'s
-](https://github.com/prismatic/schema) library. This allows us
+[schema](https://github.com/prismatic/schema) library. This allows us
 to get quite sophisticated in how we define parameters.
 
 ```clojure
@@ -82,7 +82,7 @@ parameter to be specified multiple times.
 ```
 
 To capture all values in a vector, declare your parameter type as a
-vector type,
+vector type:
 
 ```clojure
 {:parameters {:query {:accno [Long]}}}}

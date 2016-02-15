@@ -11,7 +11,7 @@ have to be determined by some logic, and often this logic involves
 I/O.
 
 Also, if the resource has declared parameters, it can be that
-resource's properties depend in some way on these parameters. For
+the resource's properties depend in some way on these parameters. For
 example, the properties of account A may well be different from the
 properties of account B.
 

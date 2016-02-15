@@ -9,7 +9,7 @@ representations.
 
 Representation may differ in a number of respects, including:
 
-- the media-type ('file format').
+- the media-type ('file format')
 - if textual, the character set used to encode it into octets
 - the (human) language used (if textual)
 - whether and how the content is compressed
