@@ -16,7 +16,7 @@ Perhaps you might want to serve a file? That's `(yada (new java.io.File "index.h
 
 Now you know how to serve a file, what about that directory full of static resources called `public`? That's `(yada (new java.io.File "public"))`.
 
-Maybe you've got some resources on the classpath? `(yada (Class/getResource "resources/"))`.
+Maybe you've got some resources on the classpath? `(yada (clojure.java.io/resource "resources/"))`.
 
 What about `(yada nil)`? Without knowing, can you guess what that might do? (That's right, it produces a `404 Not Found` response).
 
