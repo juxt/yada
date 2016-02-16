@@ -20,10 +20,12 @@
    [clj-time "0.11.0"]
 
    [hiccup "1.0.5"]
-   [json-html "0.3.6"]
+   [json-html "0.3.6" :exlusions [com.google.code.findbugs/jsr305]]
    [manifold "0.1.2-alpha2"]
    [metosin/ring-http-response "0.6.5"]
-   [metosin/ring-swagger "0.22.4" :exclusions [potemkin com.google.guava/guava]]
+   [metosin/ring-swagger "0.22.4" :exclusions [potemkin com.google.guava/guava com.google.code.findbugs/jsr305]]
+   [com.google.code.findbugs/jsr305 "3.0.0"]
+
    [prismatic/schema "1.0.4"]
    [potemkin "0.4.2" :exclusions [riddley]]
    
