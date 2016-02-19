@@ -1,6 +1,6 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(ns yada.resources.classpath-resource
+(ns yada.resources.jar-resource
   (:require
    [clojure.java.io :as io]
    [ring.util.mime-type :refer (ext-mime-type)]
@@ -8,7 +8,7 @@
    [yada.protocols :refer [as-resource]])
   (:import [java.util.jar JarFile]))
 
-(defn new-classpath-resource [prefix]
+(defn new-jar-resource [prefix]
   (resource
    {:path-info? true
     :methods {}
