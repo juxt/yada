@@ -34,10 +34,4 @@
 (defn language [ctx]
   (get-in ctx [:response :produces :language]))
 
-(extend-protocol bidi/Matched
-  clojure.lang.APersistentMap
-  (resolve-handler [this m]
-    (when (= (:remainder m) "")
-      (merge (dissoc m :remainder) {:handler (handler (resource this))})))
-  (unresolve-handler [this m]
-    (when (= this (:handler m)) "")))
+
