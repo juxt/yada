@@ -149,11 +149,11 @@ Now let's create a route structure housing this resource. This is our API.
 (def api
   ["/hello-swagger"
       (yada/swaggered
+        ["/hello" hello]
         {:info {:title "Hello World!"
                 :version "1.0"
                 :description "Demonstrating yada + swagger"}
-                :basePath "/hello-swagger"}
-        ["/hello" hello])])
+                :basePath "/hello-swagger"})])
 ```
 
 This is an API we can serialize into a data structure, store to disk,
