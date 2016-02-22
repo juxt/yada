@@ -11,13 +11,12 @@
            (require 'yada.dev.main)
            (require 'yada.dev.system)
            (require 'com.stuartsierra.component)
-           (require '[modular.component.co-dependency :as co-dependency])
 
            (println "Starting yada website")
 
            (let [system (->
                          (yada.dev.system/new-production-system)
-                         co-dependency/start-system)]
+                         component/start-system)]
 
              (println "System started")
              (println "Ready...")

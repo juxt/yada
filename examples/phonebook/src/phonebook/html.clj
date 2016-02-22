@@ -2,11 +2,11 @@
 
 (ns phonebook.html
   (:require
-   [bidi.bidi :refer [path-for]]
    [clojure.java.io :as io]
-   [hiccup.core :refer [html]]))
+   [hiccup.core :refer [html]]
+   [yada.yada :as yada]))
 
-(defn index-html [entries routes q]
+(defn index-html [ctx entries q]
   (html
    [:body
     [:form#search {:method :get}
@@ -24,7 +24,7 @@
 
        [:tbody
         (for [[id {:keys [surname firstname phone]}] entries
-              :let [href (path-for routes :phonebook.api/entry :entry id)]]
+              :let [href (:href (yada/uri-for ctx :phonebook.api/entry {:path-params {:entry id}}))]]
           [:tr
            [:td [:a {:href href} href]]
            [:td surname]

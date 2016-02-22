@@ -4,7 +4,7 @@
   (:require
    [byte-streams :as b]
    [bidi.bidi :as bidi]
-   [bidi.ring :refer [make-handler]]
+   [bidi.vhosts :refer [make-handler vhosts-model]]
    [clojure.java.io :as io]
    [clojure.set :as set]
    [clojure.test :refer :all]
@@ -27,10 +27,8 @@
                    :phone "1235"}})
 
 (defn create-api [db]
-  (let [*routes (promise)
-        api (api db *routes)]
-    (deliver *routes api)
-    api))
+  (let [api (api db)]
+    (vhosts-model [{:scheme :http :host "localhost"} api])))
 
 (deftest list-all-entries
   (let [db (db/create-db full-seed)

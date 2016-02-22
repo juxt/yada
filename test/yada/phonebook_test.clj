@@ -76,6 +76,26 @@
   (http/connection-pool
    {:middleware wrap-request}))
 
+(deftest get-test
+  (let [prefix "http://localhost:9015"
+        get-response
+        @(http/get
+          (str prefix "/phonebook")
+          {:pool test-connection-pool
+           :basic-auth ["tom" "watson"]
+           :follow-redirects false
+           :headers {"content-type" "application/x-www-form-urlencoded"
+                     "origin" "http://localhost:9015"
+                     "accept" "application/edn"
+                     ;; Must set the host to be the same origin in
+                     ;; order to get redirects to happen. Redirects
+                     ;; are "disallowed for cross-origin requests that
+                     ;; require preflight."
+                     "host" "localhost:9015"}
+           })]
+    (is (= 200 (:status get-response)))
+    ))
+
 (deftest post-test
   (let [prefix "http://localhost:9015"
         post-response
@@ -93,9 +113,10 @@
                      ;; require preflight."
                      "host" "localhost:9015"}
            :body (codec/form-encode {:firstname "Kath" :surname "Read" :phone "1236"})})]
+
     (is (= 303 (:status post-response)))
     (let [location (get-in post-response [:headers "location"])]
-        (is (re-matches #"/phonebook/\d+" location)))
+        (is (re-matches #"http://localhost:9015/phonebook/\d+" location)))
     (let [headers (set (keys (get post-response :headers)))]
         (is (set/superset? headers #{"content-length"}))
         (is (not (set/superset? headers #{"content-type"}))))))
@@ -133,7 +154,8 @@
            :basic-auth ["tom" "watson"]
            :headers
            {"content-type" (format "multipart/form-data;charset=utf-8;boundary=%s" boundary)
-            "content-length" content-length}
+            "content-length" content-length
+            "host" "localhost:9015"}
            :body formdata})]
     (is (= 400 (:status response)))
     (is (re-seq #"Multipart not properly terminated" (-> response :body b/to-string)))
@@ -149,7 +171,8 @@
            :basic-auth ["tom" "watson"]
            :follow-redirects false
            :headers {"content-type" (format "multipart/form-data;charset=utf-8;boundary=%s" boundary)
-                     "content-length" content-length}
+                     "content-length" content-length
+                     "host" "localhost:9015"}
            ;; We can switch on transfer encoding by transforming to byte-buffers
            ;; :body (b/to-byte-buffers formdata)
            :body formdata})]
@@ -170,7 +193,8 @@
                            "http://localhost:9015/phonebook/2"
                            {:pool test-connection-pool
                             :basic-auth ["tom" "watson"]
-                            :follow-redirects false})]
+                            :follow-redirects false
+                            :headers {"host" "localhost:9015"}})]
         (is (= (:status get-response) 200))))))
 
 (deftest delete-test
@@ -179,8 +203,9 @@
           "http://localhost:9015/phonebook/2"
           {:pool test-connection-pool
            :basic-auth ["tom" "watson"]
-           :follow-redirects false})]
-    
+           :follow-redirects false
+           :headers {"host" "localhost:9015"}})]
+
     (is (= 200 (:status response)))
 
     (let [phonebook @(get-in *system* [:phonebook :atom-db :phonebook])]
@@ -195,7 +220,8 @@
                             ;; TODO: Why do we get edn when no accept header? Because no accept header implies */*, and error negotiation means that edn wins.
                             ;;:headers {"accept" "text/html"}
                             :basic-auth ["tom" "watson"]
-                            :follow-redirects false})]
+                            :follow-redirects false
+                            :headers {"Host" "localhost:9015"}})]
 
         (is (= 404 (:status get-response)))))))
 

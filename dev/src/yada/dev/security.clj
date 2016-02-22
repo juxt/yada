@@ -8,10 +8,8 @@
    [clj-time.core :as time]
    [clojure.tools.logging :refer :all]
    [com.stuartsierra.component :refer [Lifecycle using]]
-   [modular.component.co-dependency.schema :refer [co-dep]]
    [hiccup.core :refer (html)]
-   [modular.bidi :refer (path-for)]
-   [modular.component.co-dependency :refer (co-using)]
+   [bidi.vhosts :refer [uri-for]]
    [schema.core :as s]
    yada.jwt
    [yada.dev.template :refer [new-template-resource]]
@@ -29,7 +27,7 @@
 ;; TODO: cookie expiry not seen in Chrome Network/Cookies Expires
 ;; column, investigate!
 
-(defn login [fields secret *router]
+(defn login [fields secret]
   ;; Here we provide the fields as an argument, once. They serve 2
   ;; purposes: Generating the login form AND declaring the POST
   ;; parameters. This is a good example of cohesion. Instead of
@@ -70,20 +68,20 @@
                                 :cookies {"session" cookie}
                                 :body (html
                                        [:h1 (format "Hello %s!" (get-in ctx [:parameters :form :user]))]
-                                       [:p [:a {:href (path-for @*router ::secret)} "secret"]]
-                                       [:p [:a {:href (path-for @*router ::logout)} "logout"]]
+                                       [:p [:a {:href (:href (yada/uri-for ctx ::secret))} "secret"]]
+                                       [:p [:a {:href (:href (yada/uri-for ctx ::logout))} "logout"]]
                                        )))
                        (assoc (:response ctx)
                               ;; It's possible the user was already logged in, in which case we log them out
                               :cookies {"session" {:value "" :expires 0}}
                               :body (html [:h1 "Login failed"]
-                                          [:p [:a {:href (path-for @*router ::login)} "try again"]]
-                                          [:p [:a {:href (path-for @*router ::secret)} "secret"]])))))
+                                          [:p [:a {:href (:uri (yada/uri-for ctx ::login))} "try again"]]
+                                          [:p [:a {:href (:uri (yada/uri-for ctx ::secret))} "secret"]])))))
 
        :consumes "application/x-www-form-urlencoded"
        :produces "text/html"}}})))
 
-(defn build-routes [*router]
+(defn build-routes []
   (try
     ["/security"
      [
@@ -92,8 +90,8 @@
       ["/index.html"
        (-> (new-template-resource
             "templates/page.html"
-            (delay
-             {:homeref (path-for @*router :yada.dev.docsite/index)
+            (fn [ctx]
+             {:homeref (:href (yada/uri-for ctx :yada.dev.docsite/index))
               :content
               (html
                [:div.container
@@ -105,8 +103,8 @@
                                     code"] " for implementation
                                     details."]
                 [:ul
-                 [:li [:a {:href (path-for @*router ::basic)} "Basic"]]
-                 [:li [:a {:href (path-for @*router ::login)} "Session"]]
+                 [:li [:a {:href (:href (yada/uri-for ctx ::basic))} "Basic"]]
+                 [:li [:a {:href (:href (yada/uri-for ctx ::login))} "Session"]]
                  [:li "Bearer (OAuth2) - coming soon"]]
 
                 [:h4 "Login details for all examples"]
@@ -137,8 +135,7 @@
           (login
            [{:label "User" :type :text :name "user"}
             {:label "Password" :type :password :name "password"}]
-           secret
-           *router)
+           secret)
 
           "/logout"
           (yada
@@ -153,7 +150,7 @@
                                    :cookies {"session" {:value "" :expires 0}}
                                    :body (html
                                           [:h1 "Logged out"]
-                                          [:p [:a {:href (path-for @*router ::login)} "login"]]))))}}}))
+                                          [:p [:a {:href (:href (yada/uri-for ctx ::login))} "login"]]))))}}}))
 
           "/secret.html"
           (yada
@@ -163,7 +160,7 @@
              :methods {:get {:response (fn [ctx]
                                          (html
                                           [:h1 "Seek happiness"]
-                                          [:p [:a {:href (path-for @*router ::logout)} "logout"]]
+                                          [:p [:a {:href (:href (yada/uri-for ctx ::logout))} "logout"]]
                                           ))
                              :produces "text/html"}}
 
@@ -181,14 +178,14 @@
                                           (html
                                            [:h1 "Sorry"]
                                            [:p "You are not authorized yet"]
-                                           [:p "Please " [:a {:href (path-for @*router ::login)} "login" ]]
+                                           [:p "Please " [:a {:href (:href (yada/uri-for ctx ::login))} "login" ]]
                                            ))}
                          403 {:produces "text/html" ;; TODO: If we neglect to put in produces we get an error
                               :response (fn [ctx]
                                           (html
                                            [:h1 "Sorry"]
                                            [:p "Your access is forbidden"]
-                                           [:p "Try another user? " [:a {:href (path-for @*router ::logout)} "logout" ]]
+                                           [:p "Try another user? " [:a {:href (:href (yada/uri-for ctx ::logout))} "logout" ]]
                                            ))}}}))})]]]
 
     (catch clojure.lang.ExceptionInfo e
@@ -201,13 +198,10 @@
       ["/security/cookie/secret.html" (yada (str e))]
       )))
 
-(s/defrecord SecurityExamples [*router :- (co-dep Router)]
+(s/defrecord SecurityExamples []
   RouteProvider
-  (routes [_] (build-routes *router)))
+  (routes [_] (build-routes)))
 
-(defn new-security-examples [config]
-  (-> 
-   (map->SecurityExamples {})
-   (using [])
-   (co-using [:router])))
+(defn new-security-examples []
+  (map->SecurityExamples {}))
 

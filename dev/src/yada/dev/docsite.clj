@@ -2,15 +2,14 @@
 
 (ns yada.dev.docsite
   (:require
+   [byte-streams :as b]
    [clojure.java.io :as io]
    [clojure.tools.logging :refer :all]
    [bidi.bidi :refer [RouteProvider tag Matched] :as bidi]
    [com.stuartsierra.component :refer (using)]
    [hiccup.core :refer (html)]
    [markdown.core :refer (md-to-html-string)]
-   [modular.bidi :refer (path-for)]
-   [modular.component.co-dependency :refer (co-using)]
-   [modular.component.co-dependency.schema :refer [co-dep]]
+   [bidi.vhosts :refer [uri-for]]
    [schema.core :as s]
    [yada.dev.async :as async]
    [yada.dev.config :as config]
@@ -22,8 +21,7 @@
    [yada.swagger :as swagger :refer [swaggered]]
    [yada.yada :as yada :refer [yada resource]])
   (:import [modular.bidi Router]
-           [com.stuartsierra.component SystemMap]
-           [modular.component.co_dependency CoDependencySystemMap]))
+           [com.stuartsierra.component SystemMap]))
 
 (def titles
   {2046 "Multipurpose Internet Mail Extensions (MIME) Part Two: Media Types"
@@ -50,64 +48,61 @@
     (let [source (io/resource (format "spec/rfc%s.html" (get-in req [:route-params :rfc])))]
       ((yada source) req))))
 
-(defn index [{:keys [*router phonebook config]}]
+(defn index [{:keys [phonebook config]}]
   (yada
    (->
     (new-template-resource
      "templates/page.html"
      ;; We delay the model until after the component's start phase
      ;; because we need the *router.
-     (delay {:banner true
-             :content
-             (html
-              [:div.container
-               [:h2 "Welcome to " [:span.yada "yada"] "!"]
-               [:ol
-                [:li [:a {:href (path-for @*router ::manual
-                                          )} "The " [:span.yada "yada"] " manual"]
-                 " — the single authority on all things " [:span.yada "yada"]]
+     (fn [ctx]
+       {:banner true
+        :content
+        (html
+         [:div.container
+          [:h2 "Welcome to " [:span.yada "yada"] "!"]
+          [:ol
+           [:li [:a {:href (:href
+                            (yada/uri-for ctx ::manual
+                                          ))} "The " [:span.yada "yada"] " manual"]
+            " — the single authority on all things " [:span.yada "yada"]]
 
-                [:li "Examples — self-contained apps for you to explore"
-                 [:ul
-                  [:li [:a {:href (path-for @*router :yada.dev.hello/index)} "Hello World!"] " — to introduce " [:span.yada "yada"] " in the proper way"]
+           [:li "Examples — self-contained apps for you to explore"
+            [:ul
+             [:li [:a {:href (:href (yada/uri-for ctx :yada.dev.hello/index))} "Hello World!"] " — to introduce " [:span.yada "yada"] " in the proper way"]
                   
-                  [:li
-                   [:a {:href (str
-                               (config/origin config :phonebook)
-                               (path-for (:server phonebook) :phonebook.api/index))} "Phonebook"]
-                   [:a {:href
-                        ;; TODO: use bidi's path-for
-                        (format "%s/phonebook-swagger.html?url=%s"
-                                (path-for @*router :swagger-ui)
-                                (str (config/origin config :docsite) (path-for @*router ::phonebook-swagger-spec))
+             [:li
+              [:a {:href (:href (yada/uri-for ctx :phonebook.api/index))}
+               "Phonebook"]
+              [:a {:href
+                   ;; TODO: use bidi's path-for
+                   (format "%s/phonebook-swagger.html?url=%s"
+                           (:href (yada/uri-for ctx :swagger-ui))
+                           (:href (yada/uri-for ctx ::phonebook-swagger-spec))
                                 
-                                )}
-                    " (Swagger)"]
-                   " — to demonstrate custom records implementing standard HTTP methods"]
+                           )}
+               " (Swagger)"]
+              " — to demonstrate custom records implementing standard HTTP methods"]
 
-                  [:li [:a {:href (path-for @*router :yada.dev.security/index)} "Security"] " — to demonstrate authentication and authorization features"]
+             [:li [:a {:href (:href (yada/uri-for ctx :yada.dev.security/index))} "Security"] " — to demonstrate authentication and authorization features"]
 
-                  [:li [:a {:href (path-for @*router :yada.dev.async/sse-demo)} "SSE demo"] " — to demonstrate Server Sent Events"]
+             [:li [:a {:href (:href (yada/uri-for ctx :yada.dev.async/sse-demo))} "SSE demo"] " — to demonstrate Server Sent Events"]
 
-                  ]]
+             ]]
 
-                #_[:li [:a {:href (path-for @*router :yada.dev.console/index :path "")}
-                        "The " [:span.yada "yada"] " console"] " — to capture traffic and debug your API (work in progress)"]
+           [:li [:a {:href (:href (yada/uri-for ctx :yada.dev.talks/index))} "Talks"]]
 
-                [:li [:a {:href (path-for @*router :yada.dev.talks/index)} "Talks"]]
+           [:li "Relevant standards"
+            [:ul
+             (for [i (sort (keys titles))]
+               [:li [:a {:href (format "/spec/rfc%d" i)}
+                     (format "RFC %d: %s" i (or (get titles i) ""))]])]]
 
-                [:li "Relevant standards"
-                 [:ul
-                  (for [i (sort (keys titles))]
-                    [:li [:a {:href (format "/spec/rfc%d" i)}
-                          (format "RFC %d: %s" i (or (get titles i) ""))]])]]
-
-                ]
-               ])}))
+           ]
+          ])}))
     (assoc :id ::index))))
 
-(s/defrecord Docsite [*router :- (co-dep Router)
-                      phonebook :- SystemMap
+(s/defrecord Docsite [phonebook :- SystemMap
                       config :- config/ConfigSchema]
   RouteProvider
   (routes [component]
@@ -115,11 +110,11 @@
       [""
        [["/index.html" (index component)]
 
-        ["/hello.html" (hello/index *router)]
+        ["/hello.html" (hello/index)]
 
         ["/nextroll" (yada #(inc (rand-int 6)))]
 
-        ["/body.html" {:produces "text/html" :response (fn [] "Hello")}]
+        ;;["/body.html" {:produces "text/html" :response (fn [] "Hello")}]
 
 
 
@@ -206,7 +201,7 @@
 (defn new-docsite [& {:as opts}]
   (-> (map->Docsite opts)
       (using [:phonebook])
-      (co-using [:router])))
+      ))
 
 
 

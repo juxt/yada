@@ -12,23 +12,18 @@
    [bidi.bidi :refer [routes-context]]
    [yada.yada :as yada :refer [yada]]))
 
-(defn api [db *routes]
+(defn api [db]
   ["/phonebook"
-   [["" (-> (new-index-resource db *routes)
+   [["" (-> (new-index-resource db)
             (assoc :id ::index))]
-    [["/" :entry] (-> (new-entry-resource db *routes)
+    [["/" :entry] (-> (new-entry-resource db)
                       (assoc :id ::entry))]]])
 
 (s/defrecord ApiComponent [db routes]
   Lifecycle
   (start [component]
-    (let [p (promise)]
-      ;; routes will be the overall routes structure, which we're in the
-      ;; process of creating. The final value will be delivered by a
-      ;; dependant.
-      (assoc component
-             :routes (api db p)
-             :promise p)))
+    (assoc component
+           :routes (api db)))
   (stop [component]))
 
 (defn new-api-component []
