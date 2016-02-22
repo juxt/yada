@@ -402,6 +402,9 @@
                      {"etag" x}))))
 
          :body body}]
+
+    ;;(infof "body in response is %s" body)
+    ;;(infof "body is type %s" (type body))
     
     (assoc ctx :response response)))
 

@@ -2,7 +2,6 @@
 
 (ns phonebook.resources
   (:require
-   [bidi.bidi :refer [path-for]]
    [clojure.tools.logging :refer :all]
    [clojure.java.io :as io]
    [hiccup.core :refer [html]]
@@ -83,7 +82,7 @@
     :allow-headers ["Api-Key"]
     }})
 
-(defn new-index-resource [db *routes]
+(defn new-index-resource [db]
   (resource
    (->
     {:description "Phonebook entries"
@@ -98,7 +97,7 @@
                                         (db/search-entries db q)
                                         (db/get-entries db))]
                           (case (yada/content-type ctx)
-                            "text/html" (html/index-html entries @*routes q)
+                            "text/html" (html/index-html ctx entries q)
                             entries)))}
 
       :post {:parameters {:form {:surname String :firstname String :phone String}}
@@ -106,11 +105,11 @@
                          :charset "UTF-8"}]
              :response (fn [ctx]
                          (let [id (db/add-entry db (get-in ctx [:parameters :form]))]
-                           (java.net.URI. nil nil (path-for @*routes :phonebook.api/entry :entry id) nil)))}}}
+                           (java.net.URI. nil nil (:href (yada/uri-for ctx :phonebook.api/entry {:path-params {:entry id}})))))}}}
     
     (merge access-control))))
 
-(defn new-entry-resource [db *routes]
+(defn new-entry-resource [db]
   (resource
    (->
     {:description "Phonebook entry"
@@ -132,8 +131,8 @@
                "text/html"
                (html/entry-html
                 entry
-                {:entry (path-for @*routes :phonebook.api/entry :entry id)
-                 :index (path-for @*routes :phonebook.api/index)})
+                {:entry (:href (yada/uri-for ctx :phonebook.api/entry {:path-params {:entry id}}))
+                 :index (:href (yada/uri-for ctx :phonebook.api/index))})
                entry))))}
 
       :put

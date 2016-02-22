@@ -12,3 +12,19 @@
     (if (contains? props :exists?)
       (:exists? props)
       true)))
+
+;; Convenience functions, allowing us to encapsulate the context
+;; structure.
+(defn content-type [ctx]
+  (get-in ctx [:response :produces :media-type :name]))
+
+(defn charset [ctx]
+  (get-in ctx [:response :produces :charset :alias]))
+
+(defn language [ctx]
+  (get-in ctx [:response :produces :language]))
+
+(defn uri-for [ctx handler & [options]]
+  (if-let [uri-for (:uri-for ctx)]
+    (uri-for handler options)
+    (throw (ex-info "Context does not contain a :uri-for entry" ctx))))

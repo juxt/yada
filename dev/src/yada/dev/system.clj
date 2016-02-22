@@ -4,26 +4,23 @@
   "Components and their dependency relationships"
   (:refer-clojure :exclude [read])
   (:require
+   [bidi.vhosts :refer [make-handler]]
    [clojure.java.io :as io]
    [clojure.tools.reader :refer [read]]
    [clojure.string :as str]
    [clojure.tools.reader.reader-types :refer [indexing-push-back-reader]]
    [com.stuartsierra.component :refer [system-map system-using using]]
-   [modular.component.co-dependency :as co-dependency]
-
    [modular.bidi :refer [new-router new-web-resources new-archived-web-resources new-redirect]]
    [yada.dev.docsite :refer [new-docsite]]
    [yada.dev.talks :refer [new-talks]]
    [yada.dev.database :refer [new-database]]
-   [modular.aleph :refer [new-webserver]]
-   [modular.component.co-dependency :refer [co-using system-co-using]]
+   [yada.dev.server :refer [new-webserver]]
    [yada.dev.swagger :refer [new-phonebook-swagger-ui-index]]
    [yada.dev.config :as config]
    [yada.dev.hello :refer [new-hello-world-example]]
    [yada.dev.security :refer [new-security-examples]]
    [yada.dev.async :refer [new-sse-example]]
    [yada.dev.error-example :refer [new-error-example]]
-
    [phonebook.system :refer [new-phonebook]]))
 
 (defn database-components [system]
@@ -34,7 +31,7 @@
    system
    ::docsite (new-docsite :config config)
 
-   ::security-examples (new-security-examples config)
+   ::security-examples (new-security-examples)
    ::sse-example (new-sse-example)
 
    ;; TODO: Replace new-web-resources with a yada equivalent
@@ -70,8 +67,10 @@
   (assoc system
          ::docsite-server
          (new-webserver
-          :port (config/port config :docsite)
-          :raw-stream? true)
+          {:port 8090
+           :raw-stream? true}
+          [{:scheme :http :host "localhost:8090"}]
+          )
          ::docsite-router (new-router)))
 
 (defn hello-world-components [system config]
@@ -104,7 +103,8 @@
 
 (defn new-dependency-map
   []
-  {::docsite-server {:request-handler ::docsite-router}
+  {::docsite-server {:router ::docsite-router
+                     :phonebook ::phonebook}
    ::docsite-router [::phonebook-swagger-ui-index
                      ::swagger-ui
                      ::hello-world
@@ -120,15 +120,9 @@
 
    ::docsite {:phonebook ::phonebook}})
 
-(defn new-co-dependency-map
-  []
-  {::docsite {:router ::docsite-router}
-   ::talks {:router ::docsite-router}
-   ::security-examples {:router ::docsite-router}})
-
 (defn new-production-system
   "Create the production system"
   []
   (-> (new-system-map (config/config :prod))
       (system-using (new-dependency-map))
-      (system-co-using (new-co-dependency-map))))
+      ))

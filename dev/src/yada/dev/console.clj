@@ -5,12 +5,11 @@
    [bidi.bidi :refer (RouteProvider)]
    [bidi.ring :refer (files resources-maybe)]
    [com.stuartsierra.component :refer (using)]
-   [modular.component.co-dependency :refer (co-using)]
    [clojure.java.io :as io]
    [schema.core :as s]
    [yada.yada :as yada :refer [yada]]))
 
-(defrecord Console [config *router]
+(defrecord Console [config]
   RouteProvider
   (routes [component]
     ["/"
@@ -27,8 +26,7 @@
       ]]))
 
 (defn new-console [config]
-  (-> (map->Console config)
-      (co-using [:router])))
+  (map->Console config))
 
 
 ;;(io/resource "cljsjs/development/react-with-addons.inc.js")

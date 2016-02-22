@@ -89,37 +89,37 @@
                                            :allow-credentials true}
                           :representations [{:media-type "text/plain"}]}))
 
-(defn index [*router]
+(defn index []
   (-> (new-template-resource
        "templates/page.html"
-       (delay      ; Delay because our *router won't be delivered yet
-        {:homeref (path-for @*router :yada.dev.docsite/index)
+       (fn [ctx]
+         {:homeref (:href (yada/uri-for ctx :yada.dev.docsite/index))
          :content
          (html
           [:div.container
            [:h2 "Demo: Hello World!"]
            [:ul
-            [:li [:a {:href (path-for @*router ::hello)} "Hello!"]
+            [:li [:a {:href (:href (yada/uri-for ctx ::hello))} "Hello!"]
              " - the simplest possible demo, showing the effect of " [:span.yada "yada"] " on a simple string"]
 
             [:li [:a {:href
                       (format "%s/index.html?url=%s/swagger.json"
-                              (path-for @*router :swagger-ui)
-                              (path-for @*router ::hello-swagger))}
+                              (:href (yada/uri-for ctx :swagger-ui))
+                              (:href (yada/uri-for ctx ::hello-swagger)))}
                   "Hello Swagger!"]
              " - demonstration of the Swagger interface on a simple string"]
 
-            [:li [:a {:href (path-for @*router ::hello-atom)} "Hello atom!"]
+            [:li [:a {:href (:href (yada/uri-for ctx ::hello-atom))} "Hello atom!"]
              " - demonstrating the use of Clojure's reference types to manage mutable state"]
 
             [:li [:a {:href
                       (format "%s/index.html?url=%s/swagger.json"
-                              (path-for @*router :swagger-ui)
-                              (path-for @*router ::hello-atom-swagger))}
+                              (:href (yada/uri-for ctx :swagger-ui))
+                              (:href (yada/uri-for ctx ::hello-atom-swagger)))}
                   "Hello Swaggatom!"]
              " - demonstration of the Swagger interface on an atom"]]
            
-           [:p [:a {:href (path-for @*router ::index)} "Index"]]])}))
+           [:p [:a {:href (:href (yada/uri-for ctx ::index))} "Index"]]])}))
       (assoc :id ::index)
       yada))
 

@@ -169,6 +169,7 @@
      ;; method-wrapper. Perhaps better to use yada.context to access
      ;; this structure.
      (merge (make-context)
+            match-context
             handler
             {:request-id id
              :request request
@@ -211,9 +212,9 @@
      this
      (if (and (-> this :resource :path-info?)
               (not-empty (:remainder match-context)))
-         (assoc req :path-info (:remainder match-context))
+       (assoc req :path-info (:remainder match-context))
        req)
-     (merge (make-context) match-context))))
+     match-context)))
 
 (s/defn new-handler [model :- ys/HandlerModel]
   (map->Handler model))
@@ -260,15 +261,11 @@
      (throw (ex-info "yada function is being passed a resource that is an error"
                      {:error (:error resource)})))
 
-   (let [base resource
-
-         ;; Validate the resource structure, with coercion if
-         ;; necessary.
-         resource (ys/resource-coercer (p/as-resource resource))]
+   (let [resource (ys/resource-coercer (p/as-resource resource))]
 
      (when (error? resource)
        (throw (ex-info "Resource does not conform to schema"
-                       {:resource (p/as-resource base)
+                       {:resource resource
                         :error (:error resource)
                         :schema ys/Resource})))
 
@@ -281,6 +278,7 @@
         :interceptor-chain (or (:interceptor-chain resource)
                                default-interceptor-chain)})))))
 
+;; Alias
 (def yada handler)
 
 ;; We also want resources to be able to be used in bidi routes without
@@ -302,18 +300,11 @@
 
   br/Ring
   (request [resource req match-context]
-    (handle-request
-     (new-handler
-      (merge
-       {:id (get resource :id (java.util.UUID/randomUUID))
-        :resource resource
-        :allowed-methods (allowed-methods resource)
-        :known-methods (methods/known-methods)
-        ;; TODO: interceptor chain should be defined in the resource itself
-        :interceptor-chain (or (:interceptor-chain resource) default-interceptor-chain)}))
-
-     (if (and (:path-info? resource)
-              (not-empty (:remainder match-context)))
-       (assoc req :path-info (:remainder match-context))
-       req)
-     (merge (make-context) match-context))))
+    (br/request (new-handler
+                 (merge
+                  {:id (get resource :id (java.util.UUID/randomUUID))
+                   :resource resource
+                   :allowed-methods (allowed-methods resource)
+                   :known-methods (methods/known-methods)
+                   :interceptor-chain (or (:interceptor-chain resource) default-interceptor-chain)}))
+                req match-context)))

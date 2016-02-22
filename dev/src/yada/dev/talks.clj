@@ -9,9 +9,7 @@
    [com.stuartsierra.component :refer [using]]
    [hiccup.core :refer (html)]
    [markdown.core :refer (md-to-html-string)]
-   [modular.bidi :refer [path-for]]
-   [modular.component.co-dependency :refer (co-using)]
-   [modular.component.co-dependency.schema :refer [co-dep]]
+   [bidi.vhosts :refer [uri-for]]
    [schema.core :as s]
    [yada.dev.config :as config]
    [yada.dev.template :refer [new-template-resource]]
@@ -23,8 +21,7 @@
    )
   (:import [modular.bidi Router]))
 
-(s/defrecord Talks [*router :- (co-dep Router)
-                    config :- config/ConfigSchema]
+(s/defrecord Talks [config :- config/ConfigSchema]
   RouteProvider
   (routes [component]
     (try
@@ -61,6 +58,5 @@
         (errorf e "Error building routes %s")))))
 
 (defn new-talks [config]
-  (-> (map->Talks {:config config})
-      (co-using [:router])))
+  (map->Talks {:config config}))
 

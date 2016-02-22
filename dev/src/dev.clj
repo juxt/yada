@@ -9,10 +9,9 @@
    [clojure.java.io :as io]
    [bidi.bidi :as bidi]
    [com.stuartsierra.component :as component]
-   [modular.component.co-dependency :as co-dependency]
    [schema.core :as s]
    [yada.dev.config :refer [config]]
-   [yada.dev.system :refer (new-system-map new-dependency-map new-co-dependency-map)]
+   [yada.dev.system :refer (new-system-map new-dependency-map)]
    ))
 
 (def system nil)
@@ -23,8 +22,7 @@
   (s/with-fn-validation
     (-> (config :dev)
         (new-system-map)
-        (component/system-using (new-dependency-map))
-        (co-dependency/system-co-using (new-co-dependency-map)))))
+        (component/system-using (new-dependency-map)))))
 
 (defn init
   "Constructs the current development system."
@@ -50,7 +48,7 @@
   []
   (alter-var-root
    #'system
-   co-dependency/start-system)
+   component/start-system)
   (when-let [errors (check)]
     (println "Warning, component integrity violated!" errors)))
 
