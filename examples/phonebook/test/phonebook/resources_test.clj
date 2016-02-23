@@ -27,10 +27,7 @@
                    :phone "1235"}})
 
 (defn create-api [db]
-  (let [*routes (promise)
-        api (api db *routes)]
-    (deliver *routes api)
-    api))
+    (api db))
 
 (deftest list-all-entries
   (let [db (db/create-db full-seed)
