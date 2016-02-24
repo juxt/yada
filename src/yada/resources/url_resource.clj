@@ -26,7 +26,8 @@
       :methods
       {:get
        {:produces
-        [{:media-type #{(ext-mime-type (.getPath url))}
+        [{:media-type #{(or (ext-mime-type (.getPath url))
+                            "application/octet-stream")}
           :charset charset/platform-charsets
           }]
         :response
