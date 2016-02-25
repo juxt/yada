@@ -49,6 +49,22 @@
     (is (= {:foo "bar"}
            (get-in (process {:foo s/Str}
                             (json/encode {:foo "bar"})
+                            ) [:parameters :body])))
+    (is (= {:foo :yoyo}
+           (get-in (process {:foo s/Keyword}
+                            (json/encode {:foo :yoyo})
+                            ) [:parameters :body])))
+    (is (= {:foo :yoyo}
+           (get-in (process {:foo clojure.lang.Keyword}
+                            (json/encode {:foo :yoyo})
+                            ) [:parameters :body])))
+    (is (= {:foo :yoyo}
+           (get-in (process {:foo (s/eq :yoyo)}
+                            (json/encode {:foo :yoyo})
+                            ) [:parameters :body])))
+    (is (= {:foo :yoyo}
+           (get-in (process {:foo (s/enum :yoyo :bar)}
+                            (json/encode {:foo :yoyo})
                             ) [:parameters :body]))))
   (testing "sad path"
     (is (thrown? clojure.lang.ExceptionInfo

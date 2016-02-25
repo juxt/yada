@@ -102,12 +102,15 @@
         (assoc-in [:parameters :body] body-string)
         (assoc-in [:body] body-string))))
 
-(defn assoc-body-if-valid [ctx schema body]
-  (let [params ((sc/coercer schema {}) body)]
-    (if-not (error? params)
-      (assoc-in ctx [:parameters :body] params)
-      (throw (ex-info "Malformed body" {:status 400
-                                        :error (error-val params)})))))
+(defn assoc-body-if-valid
+  ([ctx schema body]
+   (assoc-body-if-valid ctx schema {} body))
+  ([ctx schema coercion-matcher body]
+   (let [params ((sc/coercer schema coercion-matcher) body)]
+     (if-not (error? params)
+       (assoc-in ctx [:parameters :body] params)
+       (throw (ex-info "Malformed body" {:status 400
+                                         :error  (error-val params)}))))))
 
 (defmacro with-400-maybe [& body]
   `(try
@@ -129,7 +132,7 @@
         schema (get-in ctx [:resource :methods (:method ctx) :parameters :body])]
     (cond-> ctx
       true (assoc-in [:body] body)
-      schema (assoc-body-if-valid schema body))))
+      schema (assoc-body-if-valid schema sc/json-coercion-matcher body))))
 
 (defmethod process-request-body "application/transit+json"
   [ctx body-stream media-type & args]
