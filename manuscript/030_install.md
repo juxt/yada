@@ -17,12 +17,3 @@ do. But you can also clone the yada repository with `git`.
 ```nohighlight
 git clone https://github.com/juxt/yada
 ```
-
-You can then 'run' yada on your local machine to provide off-line access the documentation and demos.
-
-```nohighlight
-cd yada
-lein run
-```
-
-(`lein` is available from [http://leiningen.org](http://leiningen.org))
