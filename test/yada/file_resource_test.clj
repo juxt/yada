@@ -46,7 +46,7 @@
       (is (= 200 (:status response)))
       (is (= "text/plain" (get-in response [:headers "content-type"])))
       (is (instance? File (:body response)))
-      (is (= (.length resource) (get-in response [:headers "content-length"]))))
+      (is (= (str (.length resource)) (get-in response [:headers "content-length"]))))
 
     (testing "last-modified"
       (let [d (get-in response [:headers "last-modified"])]

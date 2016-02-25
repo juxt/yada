@@ -56,7 +56,7 @@
           response @(handler request)]
 
       (is (= 200 (:status response)))
-      (is (= {"content-length" (count "Hello World!")
+      (is (= {"content-length" (str (count "Hello World!"))
               "content-type" "text/plain;charset=utf-8"} (select-keys (:headers response) ["content-length" "content-type"])))
       (is (instance? java.nio.ByteBuffer (:body response)))))
 
@@ -72,7 +72,7 @@
 
                     ;; First request gets a 200
                     (is (= 200 (:status response)))
-                    (is (= {"content-length" (count "Hello World!")} (select-keys (:headers response) ["content-length"]))))
+                    (is (= {"content-length" (str (count "Hello World!"))} (select-keys (:headers response) ["content-length"]))))
                   
                   (let [request (merge-with merge (request :get "/")
                                             {:headers {"if-modified-since" (format-date (to-date (time/plus (time/now) (time/hours 1))))}})

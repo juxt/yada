@@ -42,7 +42,7 @@
     (is (= [] (validate-headers? headers)))
     (is (= "text/plain;charset=utf-8" (get headers "content-type")))
     ;; TODO: See github issue regarding ints and strings
-    (is (= 13 (get headers "content-length")))
+    (is (= "13" (get headers "content-length")))
     (is (= #{"accept-charset"} (set (parse-csv (get headers "vary")))))
     (is (= "-648266692" (get headers "etag")))
     (is (= "Hello World!\n" (to-string (:body response))))))
@@ -54,7 +54,7 @@
       :status := 200
       [:headers keys set] := #{"last-modified" "content-type" "content-length" "vary" "etag"}
       [:headers "content-type"] := "application/json"
-      [:headers "content-length"] := 409
+      [:headers "content-length"] := "409"
       [:headers "vary" parse-csv set] := #{"accept-charset"}
       [:headers "etag"] := "-570723708"
       )
@@ -72,7 +72,7 @@
           response @(resource (request :get "/"))
           last-modified (some-> response (get-in [:headers "last-modified"]) parse-date)
           etag (some-> response (get-in [:headers "etag"]))]
-
+      
       (is last-modified)
       (is (instance? Date last-modified))
 

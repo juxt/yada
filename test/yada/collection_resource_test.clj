@@ -32,7 +32,7 @@
 
       (is (= 200 (:status response)))
       (is (= {"content-type" "application/edn"
-              "content-length" (count (prn-str test-map))}
+              "content-length" (str (count (prn-str test-map)))}
              (select-keys (:headers response) ["content-type" "content-length"])))
       (is (instance? java.nio.HeapByteBuffer (:body response)))
       (is (= test-map

@@ -53,7 +53,14 @@
   [map]
   (->MapBody map))
 
+
 (extend-protocol MessageBody
+
+  (class (byte-array 0))
+  (to-body [ba representation]
+    ;; TODO: For text representations, try to encode into charset first
+    ba)
+  (content-length [ba] (count ba))
 
   String
   ;; A String is already its own representation, all we must do now is encode it to a char buffer
@@ -69,6 +76,8 @@
   ;; See  http://mark.koli.ch/remember-kids-an-http-content-length-is-the-number-of-bytes-not-the-number-of-characters
   (content-length [s]
     nil)
+
+  
 
   MapBody
   (to-body [mb representation]

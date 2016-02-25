@@ -20,7 +20,7 @@
           headers (:headers response)]
 
       (is (= 200 (:status response)))
-      (is (= {"content-length" 7
+      (is (= {"content-length" (str 7)
               "content-type" "text/plain;charset=utf-8"}
              (select-keys headers ["content-length" "content-type"])))
       (is (= "Bradley" (to-string (:body response))))
@@ -35,7 +35,7 @@
 
       (let [response @(handler (request :get "/"))]
         (is (= 200 (:status response)))
-        (is (= {"content-length" 7
+        (is (= {"content-length" (str 7)
                 "content-type" "text/plain;charset=utf-8"}
                (select-keys (:headers response) ["content-length" "content-type"])))
         (is (= "Chelsea" (to-string (:body response)))))))

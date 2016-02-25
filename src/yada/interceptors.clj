@@ -362,20 +362,12 @@
          :headers
          (merge
           (get-in ctx [:response :headers])
-          ;; TODO: The context and its response
-          ;; map must be documented so users are
-          ;; clear what they can change and the
-          ;; effect of this change.
           (when (not= (:method ctx) :options)
             (merge {}
-                   (when-let [content-length
-                              (let [cl (get-in ctx [:response :content-length])]
-                                (cond
-                                  cl (str cl)
-                                  body (or (body/content-length body) (str 0))
-                                  :otherwise nil))]
-                     {"content-length" content-length})
-
+                   (when (not= (:method ctx) :head)
+                     (when-let [cl (body/content-length body)]
+                       {"content-length" (str cl)}))
+                   
                    (when-let [cookies (get-in ctx [:response :cookies])]
                      (let [cookies (cookies/cookies-coercer cookies)]
                        (if (error? cookies)
