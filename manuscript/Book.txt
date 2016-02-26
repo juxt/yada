@@ -1,6 +1,6 @@
 010_intro.md
-020_hello.md
-030_install.md
+020_install.md
+030_hello.md
 040_resources.md
 050_parameters.md
 060_properties.md
