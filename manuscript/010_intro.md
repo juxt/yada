@@ -60,7 +60,6 @@ yada's `handler` takes a single parameter (the resource) and returns a __handler
 ```clojure
 (require '[yada.yada :refer [handler resource]])
 
-;; These 2 are equivalent
 (handler (resource {…}))
 ```
 
