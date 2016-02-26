@@ -5,13 +5,8 @@
    [byte-streams :as b]
    [bidi.ring :as br]
    [bidi.vhosts :as bv]
-   [yada.handler :refer [handler]]
-   [yada.resource :refer [resource]])
-  (:import
-   [bidi.vhosts VHostsModel]
-   [clojure.lang PersistentVector APersistentMap]
-   [yada.handler Handler]
-   [yada.resource Resource]))
+   [yada.handler :refer [handler as-handler]]
+   [yada.resource :refer [resource]]))
 
 (defn request-for [method uri options]
   (let [uri (new java.net.URI uri)]
@@ -26,23 +21,6 @@
      (cond-> options
              (:body options) (update :body b/to-byte-buffers)
              true (update :headers #(merge {"host" "localhost"} %))))))
-
-(defprotocol HandlerCoercion
-  (as-handler [_] "Coerce to a handler"))
-
-(extend-protocol HandlerCoercion
-  Handler
-  (as-handler [this] this)
-  Resource
-  (as-handler [this] (handler this))
-  APersistentMap
-  (as-handler [route] (as-handler (resource route)))
-  PersistentVector
-  (as-handler [route] (br/make-handler route))
-  VHostsModel
-  (as-handler [model] (bv/make-handler model))
-  Object
-  (as-handler [this] (handler this)))
 
 (defn response-for
   "Produces yada responses for a number of types. Maps are interpreted

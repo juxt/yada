@@ -3,12 +3,14 @@
 (ns yada.resource
   (:require
    [clojure.tools.logging :refer :all]
+   [hiccup.core :refer [html]]
    [manifold.deferred :as d]
    [schema.core :as s]
    [schema.coerce :as sc]
    [schema.utils :as su]
    [yada.representation :as rep]
    [yada.schema :as ys]
+   [yada.context :refer [content-type]]
    yada.charset
    yada.media-type
    [yada.protocols :as p]
@@ -80,5 +82,26 @@
                            0 (f)
                            1 (f ctx)
                            (apply f ctx (repeat (dec arity) nil)))
-                         )}}}))))
+                         )}}})))
+
+  Exception
+  (as-resource [e]
+    (resource
+     {:produces #{"text/html" "text/plain;q=0.9"}
+      :methods
+      {:* {:response
+           (fn [ctx]
+             (case (content-type ctx)
+               "text/html"
+               (html
+                [:body
+                 (interpose [:p "Caused by"]
+                            (for [e (take-while some? (iterate (fn [x] (.getCause x)) e))]
+                              [:div
+                               [:h2 "Error: " (.getMessage e)]
+                               [:div
+                                (for [stl (.getStackTrace e)]
+                                  [:p [:tt stl]])]]))])))}}})))
+
+
 

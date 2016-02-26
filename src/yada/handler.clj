@@ -4,6 +4,7 @@
   (:require
    [bidi.bidi :as bidi]
    [bidi.ring :as br]
+   [bidi.vhosts :as bv]
    [clojure.tools.logging :refer [errorf debugf infof]]
    [manifold.deferred :as d]
    [schema.core :as s]
@@ -17,11 +18,13 @@
    [yada.methods :as methods]
    [yada.protocols :as p]
    [yada.representation :as rep]
-   [yada.resource :as resource]
+   [yada.resource :as resource :refer [resource]]
    [yada.schema :refer [resource-coercer] :as ys]
    [yada.security :as sec]
    [yada.util :refer [get*]])
   (:import
+   [bidi.vhosts VHostsModel]
+   [clojure.lang PersistentVector APersistentMap]
    [yada.resource Resource]
    [yada.methods AnyMethod]))
 
@@ -308,3 +311,23 @@
                    :known-methods (methods/known-methods)
                    :interceptor-chain (or (:interceptor-chain resource) default-interceptor-chain)}))
                 req match-context)))
+
+
+;; Coercions
+
+(defprotocol HandlerCoercion
+  (as-handler [_] "Coerce to a handler"))
+
+(extend-protocol HandlerCoercion
+  Handler
+  (as-handler [this] this)
+  Resource
+  (as-handler [this] (handler this))
+  APersistentMap
+  (as-handler [route] (as-handler (resource route)))
+  PersistentVector
+  (as-handler [route] (br/make-handler route))
+  VHostsModel
+  (as-handler [model] (bv/make-handler model))
+  Object
+  (as-handler [this] (handler this)))
