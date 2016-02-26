@@ -4,10 +4,12 @@
   (:refer-clojure :exclude [partial])
   (:require
    [bidi.bidi :as bidi]
+   yada.aleph
    yada.context
    yada.swagger
    yada.resources.atom-resource
    yada.resources.collection-resource
+   yada.resources.exception-resource
    yada.resources.file-resource
    yada.resources.string-resource
    yada.resources.url-resource
@@ -17,6 +19,7 @@
    [potemkin :refer (import-vars)]))
 
 (import-vars
+ [yada.aleph server]
  [yada.context content-type charset language uri-for]
  [yada.handler handler yada]
  [yada.swagger swaggered]
