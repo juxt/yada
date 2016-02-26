@@ -266,16 +266,14 @@
     ;; Only
     (when *output-errors*
       [:div
-       [:p (.getMessage error)]
        (when *output-stack-traces*
-         [:pre
-          (h (with-out-str (pprint error)))])])
-
-    (when-let [path (:journal-browser-path options)]
-      [:div
-       [:p "Details"]
-       [:a {:href (str path (journal/path-for :entry :id id))} id]])
-
+         (let [baos (new java.io.ByteArrayOutputStream)
+               pw (new java.io.PrintWriter (new java.io.OutputStreamWriter baos))]
+           (.printStackTrace error pw)
+           (.flush pw)
+           (let [s (String. (.toByteArray baos))]
+             [:pre s])))])
+    
     [:hr]
     [:div
      [:p "yada"]]]))
