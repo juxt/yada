@@ -16,6 +16,7 @@
    yada.resources.sse
    yada.test
    yada.util
+   yada.wrappers
    [potemkin :refer (import-vars)]))
 
 (import-vars
@@ -26,5 +27,6 @@
  [yada.resource resource]
  [yada.protocols as-resource]
  [yada.test request-for response-for]
- [yada.util get-host-origin])
+ [yada.util get-host-origin]
+ [yada.wrappers routes])
 

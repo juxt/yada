@@ -6,8 +6,9 @@
    [bidi.ring :as br]
    [yada.handler :refer [as-handler]]))
 
-(defn server [routes port]
+(defn server [routes & [{:keys [port] :or {port 3000} :as aleph-options}]]
   (http/start-server
    (as-handler routes)
-   {:port port :raw-stream? true}))
+   (merge {:port port
+           :raw-stream? true} aleph-options)))
 
