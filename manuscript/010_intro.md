@@ -10,17 +10,17 @@ Whether you're building a simple web page, micro-service or full-blown REST API,
 
 Perhaps the best thing about yada is that the basics are easy to learn.
 
-The obligatory Hello World! example is `(yada "Hello World!")`, which responds with a message.
+The obligatory Hello World! example is `(handler "Hello World!")`, which responds with a message.
 
-Perhaps you might want to serve a file? That's `(yada (new java.io.File "index.html"))`.
+Perhaps you might want to serve a file? That's `(handler (new java.io.File "index.html"))`.
 
-Now you know how to serve a file, what about that directory full of static resources called `public`? That's `(yada (new java.io.File "public"))`.
+Now you know how to serve a file, what about that directory full of static resources called `public`? That's `(handler (new java.io.File "public"))`.
 
-Maybe you've got some resources on the classpath? `(yada (clojure.java.io/resource "resources/"))`.
+Maybe you've got some resources on the classpath? `(handler (clojure.java.io/resource "resources/"))`.
 
-What about `(yada nil)`? Without knowing, can you guess what that might do? (That's right, it produces a `404 Not Found` response).
+What about `(handler nil)`? Without knowing, can you guess what that might do? (That's right, it produces a `404 Not Found` response).
 
-What about a quick dice generator? `(yada #(inc (rand-int 6)))`. Notice we use a function here (we don't want the same dice roll each time!).
+What about a quick dice generator? `(handler #(inc (rand-int 6)))`. Notice we use a function here (we don't want the same dice roll each time!).
 
 How about streaming those dice rolls as 'Server Sent Events'? Put those dice rolls on a channel, and return it with yada.
 
@@ -55,12 +55,13 @@ In Clojure, you can create a __resource__ from a __resource-model__ with yada's 
 
 ## Handlers
 
-yada's eponymous function `yada` takes a single parameter (the resource) and returns a __handler__.
+yada's `handler` takes a single parameter (the resource) and returns a __handler__.
 
 ```clojure
-(require '[yada.yada :refer [yada resource]])
+(require '[yada.yada :refer [handler resource]])
 
-(yada (resource {…}))
+;; These 2 are equivalent
+(handler (resource {…}))
 ```
 
 A handler can be called like a function, with a single argument representing an HTTP __request__. It returns a value representing the corresponding HTTP response. (If you are familiar with Ring, this is the Ring handler, but not one you have to write yourself!)
