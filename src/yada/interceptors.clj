@@ -194,9 +194,10 @@
                          (get-in ctx [:resource :produces]))
         rep (rep/select-best-representation (:request ctx) produces)]
     (cond-> ctx
-      produces (assoc :produces produces)
+      produces (assoc :produces produces) ; all the possible representations
       produces (assoc-in [:response :vary] (rep/vary produces))
-      rep (assoc-in [:response :produces] rep))))
+      rep (assoc-in [:response :produces] rep) ; the best representation
+      )))
 
 ;; Conditional requests - last modified time
 (defn check-modification-time [ctx]
