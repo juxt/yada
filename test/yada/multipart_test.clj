@@ -216,7 +216,9 @@
                (parse-multipart "----WebKitFormBoundaryZ3oJB7WHOBmOjrEi" (:window-size spec) (:chunk-size spec))
                (s/transform (comp (xf-add-header-info) (xf-parse-content-disposition)))
                (s/reduce reduce-piece {:consumer (->DefaultPartConsumer) :state {:parts []}})
-               deref :parts)]
+               deref
+               :parts
+               )]
 
       (is (= [:part :part :part :part] (mapv :type parts)))
       (let [p (first parts)]
@@ -225,3 +227,4 @@
         (is (= [65130 49154 49152 49152 49152 49152 28929] (mapv :bytes (:pieces p))))
         (is (= (+ header-size image-size) (count (:bytes p))))
         (is (= 48 (:body-offset p)))))))
+

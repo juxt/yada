@@ -11,6 +11,7 @@
    [manifold.stream :as s]
    [ring.swagger.coerce :as rsc]
    [schema.coerce :as sc]
+   [yada.bmh :as bmh]
    [yada.coerce :as coerce]
    [yada.media-type :as mt]
    [yada.request-body :refer [process-request-body]]
@@ -68,10 +69,8 @@
 
 ;; TODO: Fix match so that it can stop at a limit, rather than having to
 ;; copy a buffer like this
-(defn- copy-and-match [{:keys [index window pos]}]
-  (let [b (byte-array pos)]
-    (System/arraycopy window 0 b 0 pos)
-    (match index b)))
+(defn- copy-and-match [{:keys [index indexnew window pos]}]
+  (bmh/search indexnew window pos))
 
 (defn- advance-window [m amount]
   (assert (pos? amount) "amount must be positive")
@@ -341,7 +340,8 @@
   (str "--" boundary))
 
 (defn- compute-index [delim]
-  (bm-index delim))
+  (bm-index delim)
+  #_(bmh/compute-index (b/to-byte-array delim)))
 
 (defn parse-multipart
   "Asynchronously parse a multipart stream arriving in chunks from the
@@ -403,7 +403,9 @@
                 :dash-boundary-size (count dash-boundary)
                 :delimiter delimiter
                 :delimiter-size (count delimiter)
-                :index (compute-index delimiter)}]
+                :index (compute-index delimiter)
+                :indexnew (bmh/compute-index (b/to-byte-array delimiter))
+                }]
       (->
        (d/chain
         (s/take! source ::drained)
