@@ -3,7 +3,6 @@
 (ns yada.multipart
   (:require
    [byte-streams :as b]
-   [clj-index.core :refer [bm-index match]]
    [clojure.string :as str]
    [clojure.pprint :refer [pprint]]
    [clojure.tools.logging :refer :all]
@@ -340,8 +339,7 @@
   (str "--" boundary))
 
 (defn- compute-index [delim]
-  (bm-index delim)
-  #_(bmh/compute-index (b/to-byte-array delim)))
+  (bmh/compute-index (b/to-byte-array delim)))
 
 (defn parse-multipart
   "Asynchronously parse a multipart stream arriving in chunks from the

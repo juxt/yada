@@ -3,7 +3,6 @@
 (ns yada.multipart-test
   (:require
    [byte-streams :as b]
-   [clj-index.core :refer [bm-index match]]
    [clojure.string :as str]
    [clojure.test :refer :all]
    [clojure.java.io :as io]
