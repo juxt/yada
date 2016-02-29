@@ -14,24 +14,24 @@
   :dependencies
   [[bidi "2.0.0" :exclusions [ring/ring-core]]
    [buddy/buddy-sign "0.9.0"]
-   [byte-streams "0.2.1-alpha2" :exclusions [clj-tuple]]
+   [byte-streams "0.2.1" :exclusions [clj-tuple]]
    [camel-snake-kebab "0.3.2"]
    [cheshire "5.5.0"]
    [clj-time "0.11.0"]
 
    [hiccup "1.0.5"]
-   [json-html "0.3.6" :exlusions [com.google.code.findbugs/jsr305]]
-   [manifold "0.1.2-alpha2"]
+   [json-html "0.3.8" :exlusions [com.google.code.findbugs/jsr305]]
+   [manifold "0.1.2"]
    [metosin/ring-http-response "0.6.5"]
    [metosin/ring-swagger "0.22.4" :exclusions [potemkin com.google.guava/guava com.google.code.findbugs/jsr305]]
    [com.google.code.findbugs/jsr305 "3.0.0"]
 
-   [prismatic/schema "1.0.4"]
-   [potemkin "0.4.2" :exclusions [riddley]]
+   [prismatic/schema "1.0.5"]
+   [potemkin "0.4.3" :exclusions [riddley]]
    
    [org.clojure/core.async "0.2.374"]
    [org.clojure/data.codec "0.1.0"]
-   [org.clojure/tools.reader "0.10.0"]
+   [org.clojure/tools.reader "1.0.0-alpha1"]
    [org.clojure/tools.trace "0.7.9"]
    
    ;; TODO: Find out where this is being excluded, Schema needs it?
@@ -76,23 +76,24 @@
           [org.clojure/tools.nrepl "0.2.12"] ; otherwise pedantic check fails
           [org.clojure/tools.logging "0.3.1"]
 
-          [ch.qos.logback/logback-classic "1.1.3"
+          [ch.qos.logback/logback-classic "1.1.5"
            :exclusions [org.slf4j/slf4j-api]]
-          [org.slf4j/jul-to-slf4j "1.7.13"]
-          [org.slf4j/jcl-over-slf4j "1.7.13"]
-          [org.slf4j/log4j-over-slf4j "1.7.13"]
+          [org.slf4j/jul-to-slf4j "1.7.18"]
+          [org.slf4j/jcl-over-slf4j "1.7.18"]
+          [org.slf4j/log4j-over-slf4j "1.7.18"]
 
           [com.stuartsierra/component "0.3.1"]
-          [org.clojure/tools.namespace "0.2.10"]
+          [org.clojure/tools.namespace "0.2.11"]
           [org.clojure/data.zip "0.1.1"]
 
-          [markdown-clj "0.9.84"]
+          [markdown-clj "0.9.86"]
           [ring-mock "0.1.5"]
 
           [aero "0.1.5"]
 
-          [juxt.modular/aleph "0.1.4"]
-          [juxt.modular/bidi "0.9.4" :exclusions [bidi]]
+          [juxt.modular/aleph "0.1.4" :excludes [aleph]]
+          [aleph "0.4.1-beta5"]
+          [juxt.modular/bidi "0.9.5" :exclusions [bidi]]
           [juxt.modular/stencil "0.1.1"]
           [juxt.modular/test "0.1.0"]
           [juxt.modular/template "0.6.3"]
