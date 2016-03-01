@@ -105,7 +105,7 @@
                          :charset "UTF-8"}]
              :response (fn [ctx]
                          (let [id (db/add-entry db (get-in ctx [:parameters :form]))]
-                           (java.net.URI. (:uri (yada/uri-for ctx :phonebook.api/entry {:path-params {:entry id}})))))}}}
+                           (java.net.URI. (:uri (yada/uri-for ctx :phonebook.api/entry {:route-params {:entry id}})))))}}}
     
     (merge access-control))))
 
@@ -131,7 +131,7 @@
                "text/html"
                (html/entry-html
                 entry
-                {:entry (:href (yada/uri-for ctx :phonebook.api/entry {:path-params {:entry id}}))
+                {:entry (:href (yada/uri-for ctx :phonebook.api/entry {:route-params {:entry id}}))
                  :index (:href (yada/uri-for ctx :phonebook.api/index))})
                entry))))}
 

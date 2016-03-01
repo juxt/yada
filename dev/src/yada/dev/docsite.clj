@@ -19,7 +19,7 @@
    [yada.dev.hello :as hello]
    [yada.schema :as ys]
    [yada.swagger :as swagger :refer [swaggered]]
-   [yada.yada :as yada :refer [yada resource]])
+   [yada.yada :as yada :refer [yada resource redirect]])
   (:import [modular.bidi Router]
            [com.stuartsierra.component SystemMap]))
 
@@ -144,6 +144,9 @@
                                   :response (fn [ctx] (throw (new Exception "Ooh!")))}}
                   :responses {500 {:produces "text/plain"
                                    :response (fn [ctx] "Error, but I'm OK")}}})]
+
+        ["/redirect-target" (resource {:id :foo :produces "text/html" :response "Hi\n"})]
+        ["/redirect" (redirect :foo)]
 
         ["/404" (resource
                  {:properties {:exists? false}

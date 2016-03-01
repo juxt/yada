@@ -7,6 +7,7 @@
    yada.aleph
    yada.context
    yada.swagger
+   yada.redirect
    yada.resources.atom-resource
    yada.resources.collection-resource
    yada.resources.exception-resource
@@ -24,6 +25,7 @@
  [yada.context content-type charset language uri-for]
  [yada.handler handler yada]
  [yada.swagger swaggered]
+ [yada.redirect redirect]
  [yada.resource resource]
  [yada.protocols as-resource]
  [yada.test request-for response-for]
