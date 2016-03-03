@@ -31,9 +31,7 @@ If you prefer to build your own development environment you'll need a few pointe
 
 ### Serving resources
 
-To serve the resources you define with yada you'll need to choose a port and start a web server. Currently, yada provides its own built-in web server called [Aleph](https://github.com/ztellman/aleph), but in the future other web servers will be supported.
-
-(For now, please be reassured that Aleph will support many thousands of concurrent connections without breaking a sweat. Aleph is built on Netty, a very capable platform used by Google, Apple, Facebook and many others to support extreme workloads.)
+To serve the resources you define with yada you'll need to choose a port and start a web server. Currently, yada provides its own built-in web server ([Aleph](https://github.com/ztellman/aleph)), but in the future other web servers will be supported. (For now, please be reassured that Aleph will support many thousands of concurrent connections without breaking a sweat. Aleph is built on Netty, a very capable platform used by Google, Apple, Facebook and many others to support extreme workloads.)
 
 To start a web-server, just require `server` from `yada.yada` and call it with some resources and some configuration that includes the port number.
 
