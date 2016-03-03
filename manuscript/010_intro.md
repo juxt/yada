@@ -1,10 +1,8 @@
 # Introduction
 
-yada is a Clojure library that lets you create stateful entities on the web. These stateful entities are called _web resources_ and each one is identified by a unique __URI__.
+yada is a web library written in Clojure that lets you create websites and web APIs.
 
-In other words, you can use yada for creating websites, web APIs, REST services, Om Next Remotes, micro-services and more.
-
-Whether you're building a simple web page, micro-service or full-blown REST API, yada is a good choice. It is sufficiently quick-and-easy for quick prototype work but scales up when you need it to, to feature-rich secure HTTP implementations that can handle the most demanding workloads.
+It is sufficiently quick-and-easy for quick prototype work but scales up when you need it to, to feature-rich secure services that can handle the most demanding workloads, while remaining faithful to the HTTP standards.
 
 ## Say 'Hello!' to yada!
 
@@ -20,25 +18,19 @@ Maybe you've got some resources on the classpath? `(handler (clojure.java.io/res
 
 What about `(handler nil)`? Without knowing, can you guess what that might do? (That's right, it produces a `404 Not Found` response).
 
-What about a quick dice generator? `(handler #(inc (rand-int 6)))`. Notice we use a function here (we don't want the same dice roll each time!).
+What about a quick dice generator? `(handler #(inc (rand-int 6)))`. Notice we use a function here, rather than a constant value.
 
 How about streaming those dice rolls as 'Server Sent Events'? Put those dice rolls on a channel, and return it with yada.
 
-## Types
-
-You will have noticed all those examples were different only in the argument type. You might have also realized that you can, of course, create your own types for producing custom behavior.
-
-It doesn't matter how easy it is to do, coding individual endpoints for an API can become a tedious activity in any language.
-
-With yada, there's the prospect of creating a single parameterized type and using it in multiple places.
+All these examples demonstrate the use of Clojure types that are converted on-the-fly into yada resources, and you can create your own types too.
 
 ## Resources
 
-In yada, resources are defined by a __resource-model__, which can be
-authored in a declarative syntax or generated programmatically.
+Most web libraries use functions to describe the functionality of a web resource. However, in yada, resources are described by a data structure. We call this data structure a __resource-model__.
 
-Here's an example of the declarative syntax of a typical
-__resource-model__ in Clojure:
+This has some benefits. While functions are opaque, data is open to inspection. Data structures are easy to generate, transform and query - tasks that Clojure is particularly good at.
+
+Here's an example of a __resource-model__ in Clojure:
 
 ```clojure
 {:properties {…}
@@ -49,9 +41,7 @@ __resource-model__ in Clojure:
 }
 ```
 
-You can also use Java or any JVM language to create these __resource-models__.
-
-In Clojure, you can create a __resource__ from a __resource-model__ with yada's `resource` function. This resource is a Clojure record (a Java object) that wraps the raw __resource-model__, having validated against a comprehensive schema first.
+You create a __resource__ from a __resource-model__ with yada's `resource` function. This resource is a Clojure record (a Java object) that wraps the raw __resource-model__, having validated against a comprehensive schema first. Since records behave like maps, resources and resource-models are approximately the same thing.
 
 ## Handlers
 
