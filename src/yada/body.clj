@@ -145,10 +145,7 @@
 
 (defmethod render-seq "text/html"
   [s representation]
-  (-> (html s)
-      (str \newline) ; annoying on the command-line otherwise
-      (to-body representation) ; for string encoding
-      ))
+  (render-map s representation))
 
 (defmethod render-seq "application/xhtml+xml"
   [s representation]
