@@ -118,9 +118,11 @@ Ring's middleware approach, Pedestal strives to be modular and asks the
 user to compose interceptor chains to add functionality. In comparison,
 yada attempts to do more 'out of the box', with features such as Swagger
 and content-negotiation built-in rather than implemented as
-extensions. Arguably this make things easier for the developer.
+extensions. Arguably this makes things easier for the developer.
 
-yada is based on Zach Tellman's Aleph, which is ultimately based on
+In Pedestal, routing and resource behavior are closely tied together. Resource behavior, such as which content headers are produced, security policies and parameter extraction are all defined as separate interceptors, rather than in the handler itself which ends up being a simple function. Therefore there is no way to consider and reason about resources outside of the routing structure in which they are situated. In yada, the philosophy is for all resources to be fully fledged Aleph handlers (and at some point in the future, fully-compliant Ring handlers which can be used anywhere).
+
+yada is currently dependent upon Zach Tellman's Aleph, which is ultimately based on
 Netty. It also uses manifold chains for async. In comparison, Pedestal
 is focussed more towards J2EE servlet containers and uses core.async directly.
 
