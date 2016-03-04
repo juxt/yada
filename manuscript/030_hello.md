@@ -1,9 +1,8 @@
 # Example 1: Hello World!
 
-Let's introduce yada properly by writing some code. Let's start with
-some state, a string: `Hello World!`. We'll be able to give an
-overview of many of yada's features using this simple example. For
-brevity, we'll be using Clojure.
+We took a normal Ring handler, injected it with a mix of radioactive isotopes stolen from the [same secret Soviet atomic research project as ØMQ](http://zguide.zeromq.org/page:all) and bombarded it with near-identical 1950-era cosmic rays, while injecting into it a potent cocktail of powerful steroids. As a result, yada's handlers are much more capable than your average Ring handler, and this chapter should demonstrate.
+
+Let's introduce yada properly by writing some code. We'll start with some state, a simple string: `Hello World!`.
 
 ```clojure
 (require '[yada.yada :refer [yada]])
@@ -11,15 +10,11 @@ brevity, we'll be using Clojure.
 (yada "Hello World!\n")
 ```
 
-First we require the `yada` function, which Clojure needs to know
-where it comes from.
+First we require the `yada` function, which Clojure needs to know where it comes from.
 
 We give it our string and it returns a __handler__.
 
-(Just a minute!  We just said that the argument to give to `yada` was
-a __resource__. Well, that's true, but yada has some built-in code
-that implicitly coerces the string into a resource. Don't worry about
-that for now, we'll discuss it more later).
+(Just a minute!  We just said that the argument to give to `yada` was a __resource__. Well, that's true, but yada has some built-in code that implicitly coerces the string into a resource. Don't worry about that for now, we'll discuss it more later).
 
 You can see the result of this at
 [http://localhost:8090/hello](http://localhost:8090/hello).

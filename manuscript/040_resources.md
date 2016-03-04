@@ -1,15 +1,11 @@
 # Resources
 
-Resources are defined by __resource models__, which are just data, and
-yada's defining feature.
+Resources are defined in one of two ways:
 
-Resource models should be defined ahead-of-time wherever possible,
-before the server starts listening for HTTP requests. Doing so will
-expose the resource model to tooling. However, you are free to create
-them dynamically on every request if necessary.
+1. Declaring the resource model explicitly
+2. Coercing data into a resource model, based on its type
 
-Once complete, resource models are used to create request handlers,
-which serve HTTP requests targeting the resource.
+In the introduction, we already saw some examples of the second option. In this chapter we'll explain how to write a resource model explicitly.
 
 ## Writing resource models
 
