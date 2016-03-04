@@ -68,8 +68,8 @@
 
 ;; TODO: Fix match so that it can stop at a limit, rather than having to
 ;; copy a buffer like this
-(defn- copy-and-match [{:keys [index indexnew window pos]}]
-  (bmh/search indexnew window pos))
+(defn- copy-and-match [{:keys [index window pos]}]
+  (bmh/search index window pos))
 
 (defn- advance-window [m amount]
   (assert (pos? amount) "amount must be positive")
@@ -254,10 +254,17 @@
             (throw (ex-info "Multipart not properly terminated" {:status 400}))))
 
         ;; No boundary found at all. This can be treated as all preamble and no parts
-        (do
-          (s/put! (:stream m) [{:type :preamble
-                                :bytes (copy-bytes (:window m) 0 (:pos m))
-                                :debug [:finish-up :start :all-preamble]}
+        (let [at-boundary?
+              (= (seq (:dash-boundary m))
+                 (seq (copy-bytes (:window m) 0 (:dash-boundary-size m))))]
+          
+          (s/put! (:stream m) [(if at-boundary?
+                                 {:type :part
+                                  :bytes (copy-bytes-after-dash-boundary m 0 (:pos m))
+                                  :debug [:finish-up :start :part]}
+                                 {:type :preamble
+                                  :bytes (copy-bytes (:window m) 0 (:pos m))
+                                  :debug [:finish-up :start :all-preamble]})
                                {:type :end
                                 :epilogue nil
                                 :debug [:finish-up :start :all-preamble :end]}]))))
@@ -379,7 +386,7 @@
   [boundary window-size max-chunk-size source]
   (assert boundary)
 
-  (let [stream (s/stream 32)
+  (let [stream (s/stream 4096)
         dash-boundary (dash-boundary boundary)
         delimiter (b/to-byte-array (str CRLF dash-boundary) {:encoding "US-ASCII"})
         minimum-window-size (+ (* 2 (count delimiter)) max-chunk-size)]
@@ -402,7 +409,6 @@
                 :delimiter delimiter
                 :delimiter-size (count delimiter)
                 :index (compute-index delimiter)
-                :indexnew (bmh/compute-index (b/to-byte-array delimiter))
                 }]
       (->
        (d/chain
