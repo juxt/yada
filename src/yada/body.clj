@@ -274,9 +274,11 @@
            (let [s (String. (.toByteArray baos))]
              [:pre s])))])
     
-    [:hr]
     [:div
-     [:p.yada "yada"]]]))
+     [:p.footer [:span.yada
+          [:a {:href "https://yada.juxt.pro"} "yada"]]
+      " by "
+      [:a {:href "https://juxt.pro"} "JUXT"]]]]))
 
 (defmethod render-error "application/edn"
   [status error representation {:keys [id options]}]
