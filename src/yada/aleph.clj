@@ -5,11 +5,18 @@
    [aleph.http :as http]
    [yada.handler :refer [as-handler]]))
 
-(defn listener [routes & [{:keys [port] :or {port 3000} :as aleph-options}]]
-  (http/start-server
-   (as-handler routes)
-   (merge {:port port
-           :raw-stream? true} aleph-options)))
+(defn listener
+  "Start an HTTP listener on a given port. If not specified, listener
+  will be started on any available port. Returns {:port port :close fn}"
+  [routes & [{:keys [port] :or {port 0} :as aleph-options}]]
+  (let [server
+        (http/start-server
+         (as-handler routes)
+         (merge {:port (or port 0) :raw-stream? true}
+                aleph-options))]
+    {:port (aleph.netty/port server)
+     :close (fn [] (.close server))}))
 
 ;; Alias
 (def ^:deprecated server listener)
+
