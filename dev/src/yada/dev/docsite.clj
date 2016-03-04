@@ -6,9 +6,9 @@
    [clojure.java.io :as io]
    [clojure.tools.logging :refer :all]
    [bidi.bidi :refer [RouteProvider tag Matched] :as bidi]
-   [com.stuartsierra.component :refer (using)]
-   [hiccup.core :refer (html)]
-   [markdown.core :refer (md-to-html-string)]
+   [com.stuartsierra.component :refer [using]]
+   [hiccup.core :refer [html h]]
+   [markdown.core :refer [md-to-html-string]]
    [bidi.vhosts :refer [uri-for]]
    [schema.core :as s]
    [yada.dev.async :as async]
@@ -118,21 +118,30 @@
 
 
 
-        ["/manual/" (yada (-> (new-directory-resource
-                               (io/file "manuscript")
-                               {:custom-suffices
-                                {"md" {:produces (ys/representation-seq-coercer
-                                                  [{:media-type #{"text/html" "text/plain;q=0.9"}
-                                                    :charset "utf-8"}])
-                                       :reader (fn [f rep]
-                                                 (cond
-                                                   (= (-> rep :media-type :name) "text/html")
-                                                   (str (md-to-html-string (slurp f)) \newline)
-                                                   :otherwise f))}
-                                 "org" {:produces (ys/representation-seq-coercer
-                                                   [{:media-type #{"text/plain"}}])}}
-                                :index-files ["README.md"]})
-                              (conj [:id ::manual])))]
+        ["/manual/"
+         (yada (->
+                (new-directory-resource
+                 (io/file "manuscript")
+                 {:custom-suffices
+                  {"md" {:produces (ys/representation-seq-coercer
+                                    [{:media-type #{"text/html" "text/plain;q=0.9"}
+                                      :charset "utf-8"}])
+                         :reader (fn [f rep]
+                                   (cond
+                                     (= (-> rep :media-type :name) "text/html")
+                                     (html
+                                      [:head
+                                       [:meta {:name "viewport" :content "width=device-width,initial-scale=1"}]
+                                       [:title (.getName f)]
+                                       [:style {:type "text/css"} (slurp (io/resource "style.css"))]]
+                                      [:body
+                                       [:p "The " [:span {:class "yada"} "yada"] " manual"]
+                                       (md-to-html-string (slurp f)) \newline])
+                                     :otherwise f))}
+                   "org" {:produces (ys/representation-seq-coercer
+                                     [{:media-type #{"text/plain"}}])}}
+                  :index-files ["README.md"]})
+                (conj [:id ::manual])))]
 
         ["/dir/" (yada (io/file "talks"))]
         ["/jar" (yada (new-classpath-resource "META-INF/resources/webjars/swagger-ui/2.1.3"))]
@@ -147,6 +156,8 @@
 
         ["/redirect-target" (resource {:id :foo :produces "text/html" :response "Hi\n"})]
         ["/redirect" (redirect :foo)]
+
+        ["/dominic" (yada nil)]
 
         ["/404" (resource
                  {:properties {:exists? false}

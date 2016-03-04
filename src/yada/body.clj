@@ -255,6 +255,9 @@
 (defmethod render-error "text/html"
   [status error representation {:keys [id options]}]
   (html
+   [:head
+    [:title "Error"]
+    [:style {:type "text/css"}(slurp (io/resource "style.css"))]]
    [:body
     [:h1 (format "%d: %s" status (get-error-message status))]
     (when-let [description (get-error-description status)]
@@ -273,7 +276,7 @@
     
     [:hr]
     [:div
-     [:p "yada"]]]))
+     [:p.yada "yada"]]]))
 
 (defmethod render-error "application/edn"
   [status error representation {:keys [id options]}]
