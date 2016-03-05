@@ -108,7 +108,8 @@
   (routes [component]
     (try
       [""
-       [["/index.html" (index component)]
+       [["/favicon.ico" (yada nil)]
+        ["/index.html" (index component)]
 
         ["/hello.html" (hello/index)]
 
@@ -134,6 +135,7 @@
                                        [:meta {:name "viewport" :content "width=device-width,initial-scale=1"}]
                                        [:title (.getName f)]
                                        [:style {:type "text/css"} (slurp (io/resource "style.css"))]]
+                                      
                                       [:body
                                        [:p "The " [:span {:class "yada"} "yada"] " manual"]
                                        (md-to-html-string (slurp f)) \newline])
