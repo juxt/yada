@@ -17,7 +17,7 @@
    [[{:scheme :http :host (str "localhost:" port)}]
     ["/" (fn [req] {:body "Phonebook"})]
     (:routes api)
-    [true (yada "hi")] ; TODO: uncomment this when pure-data branch done
+    [true (yada nil)]
     ]))
 
 (defrecord ServerComponent [api port]

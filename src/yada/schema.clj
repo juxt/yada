@@ -191,6 +191,11 @@ convenience of terse, expressive short-hand descriptions."}
     {(s/optional-key :form) s/Any
      (s/optional-key :body) s/Any}}))
 
+(s/defschema Consumer
+  "A consumer is a reducing function that is called with the request's
+  body payload chunks"
+  {(s/optional-key :consumer) (s/=> Context Context s/Any)})
+
 (def Realm s/Str)
 
 (s/defschema Restriction
@@ -209,6 +214,7 @@ convenience of terse, expressive short-hand descriptions."}
          MethodParameters
          Produces
          Consumes
+         Consumer
          Authorization
          MethodDocumentation
          NamespacedEntries))
@@ -367,6 +373,7 @@ convenience of terse, expressive short-hand descriptions."}
           ResourceParameters
           Produces
           Consumes
+          Consumer
           Methods
           Responses
           SecurityHeaders

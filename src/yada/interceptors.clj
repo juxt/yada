@@ -173,10 +173,14 @@
                      :consumes consumes-mt
                      :content-type content-type}))
           (if (and content-length (pos? content-length))
-            (rb/process-request-body
-             ctx
-             (stream/map bs/to-byte-array (bs/to-byte-buffers (:body request)))
-             (:name content-type))
+            (if-let [consumer (get-in ctx [:resource :methods (:method ctx) :consumer])]
+              (consumer ctx content-type
+                        (:body request))
+
+              (rb/process-request-body
+               ctx
+               (stream/map bs/to-byte-array (bs/to-byte-buffers (:body request)))
+               (:name content-type)))
             ctx)))
 
       ;; else

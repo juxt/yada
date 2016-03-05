@@ -19,6 +19,7 @@
    [yada.dev.config :as config]
    [yada.dev.hello :refer [new-hello-world-example]]
    [yada.dev.security :refer [new-security-examples]]
+   [yada.dev.upload :refer [new-upload-examples]]
    [yada.dev.async :refer [new-sse-example]]
    [yada.dev.error-example :refer [new-error-example]]
    [phonebook.system :refer [new-phonebook]]))
@@ -33,6 +34,7 @@
 
    ::security-examples (new-security-examples)
    ::sse-example (new-sse-example)
+   ::upload-examples (new-upload-examples)
 
    ;; TODO: Replace new-web-resources with a yada equivalent
    ::jquery (new-web-resources
@@ -110,6 +112,7 @@
                      ::hello-world
                      ::sse-example
                      ::security-examples
+                     ::upload-examples
                      ::docsite
                      ::talks
                      ::jquery
