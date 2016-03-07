@@ -19,4 +19,4 @@ A phone book entry must contain the following details:
 
 ## Acknowledgments
 
-Thomas van der Waar
+Thomas van der Veen
