@@ -10,6 +10,7 @@
    [schema.core :as s]
    [manifold.deferred :as d]
    [manifold.stream :as stream]
+   [yada.consume :refer [save-to-file]]
    [yada.yada :refer [handler resource]]))
 
 (defn build-routes []
@@ -23,32 +24,12 @@
         {:id ::index
          :methods
          {:post
-          {:response (fn [ctx] (format "hi, file is %s\n" (:file ctx)))
-           :consumes "application/octet-stream"
+          {:consumes "application/octet-stream"
            :consumer (fn [ctx _ body-stream]
-                       (let [tmpfile
-                             (java.io.File/createTempFile "yada" ".tmp" (io/file "/tmp"))
-                             fos (new java.io.FileOutputStream tmpfile false)
-                             fc (.getChannel fos)
-                             ]
-
-                         (infof "got a body-stream, streaming to %s" tmpfile)
-                         
-                         (d/chain
-                          (stream/reduce (fn [ctx buf]
-                                           (let [buf (bs/to-byte-buffer buf)]
-                                             (infof "buf is type %s" (type buf))
-                                             (.write fc buf))
-                                           ctx)
-                                         ctx
-                                         body-stream)
-                          (fn [ctx]
-                            (.close fc)
-                            (assoc-in ctx [:file] tmpfile)
-                            )
-                          )
-                         )
-                       )}}})]]]
+                       (save-to-file
+                        ctx body-stream
+                        (java.io.File/createTempFile "yada" ".tmp" (io/file "/tmp"))))
+           :response (fn [ctx] (format "Thank you, saved upload content to file: %s\n" (:file ctx)))}}})]]]
 
     (catch clojure.lang.ExceptionInfo e
       (errorf e (format "Errors: %s" (pr-str (ex-data e))))
