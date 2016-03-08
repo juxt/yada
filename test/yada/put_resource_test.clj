@@ -2,12 +2,13 @@
 
 (ns yada.put-resource-test
   (:require
+   [byte-streams :as b]
    [clojure.test :refer :all]
    [ring.mock.request :refer [request]]
    [clojure.java.io :as io]
    [manifold.stream :as s]
    [yada.test-util :refer [to-string]]
-   [yada.yada :refer [yada]]))
+   [yada.yada :refer [yada resource handler]]))
 
 (defn add-headers [request m]
   (merge-with merge request {:headers m}))
@@ -39,6 +40,11 @@
                 "content-type" "text/plain;charset=utf-8"}
                (select-keys (:headers response) ["content-length" "content-type"])))
         (is (= "Chelsea" (to-string (:body response)))))))
+
+  (testing "return response"
+    (let [h (yada (resource {:methods {:put {:response (fn [ctx] (assoc (:response ctx) :body "BODY"))}}}))
+          response (h (request :put "/"))]
+      (is (= "BODY" (b/to-string (:body @response))))))
 
   #_(testing "atom"
       (let [resource (atom {:name "Frank"})
