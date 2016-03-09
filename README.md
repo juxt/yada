@@ -35,6 +35,7 @@ yada requires the following :-
 - a Java JDK/JRE installation, version 8 or above
 - Clojure 1.7.0
 - Aleph 0.4.1-beta3 or above (provided via a dependency)
+- bidi 2.0.0 or above
 
 ## Running documentation and examples offline
 
