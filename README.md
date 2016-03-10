@@ -23,9 +23,7 @@ The user-manual is also available as an e-book or PDF, at
 Add the following dependency to your
 `project.clj` file
 
-```clojure
-[yada "1.1.0-20160308.162603-33"]
-```
+[![Clojars Project](http://clojars.org/yada/latest-version.svg)](http://clojars.org/yada)
 [![Build Status](https://travis-ci.org/juxt/yada.png)](https://travis-ci.org/juxt/yada)
 
 ## Dependencies
