@@ -71,10 +71,8 @@
          (new-webserver
           {:port 8090
            :raw-stream? true}
-          [{:scheme :http :host "localhost:8090"}
-           {:scheme :https :host "yada.juxt.pro"}
-           {:scheme :http :host "yada.juxt.pro"}]
-          )
+          [{:scheme :https :host "yada.juxt.pro"}
+           {:scheme :http :host "localhost:8090"}])
          ::docsite-router (new-router)))
 
 (defn hello-world-components [system config]
