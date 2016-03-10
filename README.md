@@ -31,8 +31,18 @@ Add the following dependency to your
 yada requires the following :-
 
 - a Java JDK/JRE installation, version 8 or above
-- Clojure 1.7.0
+- Clojure 1.8.0
 - Aleph 0.4.1-beta3 or above (provided via a dependency)
+
+A project using yada will need to bring in [aleph](https://github.com/ztellman/aleph), and optionally bidi.
+
+``` clojure
+   [aleph "0.4.1-beta5"]
+   [bidi "2.0.1"]
+   [yada "1.1.0"]
+```
+
+Support for other web-severs, such as undertow, are on the road-map.
 
 ## Running documentation and examples offline
 
