@@ -8,12 +8,11 @@
 (defn listener
   "Start an HTTP listener on a given port. If not specified, listener
   will be started on any available port. Returns {:port port :close fn}"
-  [routes & [{:keys [port] :or {port 0} :as aleph-options}]]
+  [routes & [aleph-options]]
   (let [server
         (http/start-server
          (as-handler routes)
-         (merge {:port (or port 0) :raw-stream? true}
-                aleph-options))]
+         (merge aleph-options {:port (or (:port aleph-options) 0) :raw-stream? true}))]
     {:port (aleph.netty/port server)
      :close (fn [] (.close server))}))
 
