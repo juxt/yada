@@ -37,6 +37,9 @@
   (try
     (f ctx)
     (catch clojure.lang.ArityException e
+      ;; TODO: This might not be the arity exception you are looking
+      ;; for (it might be a real arity-exception thrown up by the code
+      ;; in question. This should still mean that the code works, but it doesn't seem to.
       (let [ar (util/arity f)]
         (case ar
           0 (f)
