@@ -2,51 +2,58 @@
 
 (ns yada.bidi-test
   (:require
+   [byte-streams :as b]
+   [clojure.string :as str]
+   [bidi.vhosts :refer [vhosts-model make-handler]]
    [clojure.test :refer :all]
-   [clojure.walk :refer (postwalk)]
-   [bidi.ring :refer (make-handler Ring)]
-   [byte-streams :as bs]
-   [ring.mock.request :refer (request)]
-   [ring.util.codec :as codec]
-   [yada.walk :refer (basic-auth)]
-   [yada.yada :as yada :refer [yada]]))
+   [ring.mock.request :refer [request]]
+   [yada.context :refer [relativize]]
+   [yada.yada :refer [uri-for resource]]))
 
-(defn make-api []
-  ["/api"
-   {"/status" (yada "API working!")
-    "/hello" (fn [req] {:body "hello"})
-    "/protected" (basic-auth
-                  "Protected" (fn [ctx]
-                                (or
-                                 (when-let [auth (:authentication ctx)]
-                                   (= ((juxt :user :password) auth)
-                                      ["alice" "password"]))
-                                 :not-authorized))
-                  {"/a" (yada "Secret area A")
-                   "/b" (yada "Secret area B")})}])
+(deftest relativize-test
+  (are [source dest href] (= href (relativize source dest))
+    ;; TODO: Test to itself
+    "" "" nil
+    "/abc/cd/d.html" "/abc/" "../"
+    "/abc/foo.html" "/abc/bar.html" "bar.html"
+    "/abc/foo/a.html" "/abc/bar/b.html" "../bar/b.html"
+    "/abc/foo/a/b" "/abc/bar/b" "../../bar/b"
+    "/abc.html" "/abc.html" "abc.html"
+    "/a/abc.html" "/a/abc.html" "abc.html"
 
-#_(deftest status
-  (let [h (-> (make-api) make-handler)
-        response @(h (request :get "/api/status"))]
-    (testing "status"
-      (is (= 200 (:status response)))
-      (is (= (count (.getBytes "API working!" "UTF-8")) (get-in response [:headers "content-length"])))
-      (is (= "API working!" (bs/to-string (:body response)))))))
+    "/a/" "/a/abc.html" "abc.html"
+    "/a" "/a/abc.html" "a/abc.html"
 
-#_(deftest secure-route
-  (let [h (-> (make-api) make-handler)]
-    (testing "without-credentials"
-      (let [response @(h (request :get "/api/protected/a"))]
-        (given response
-          :status := 401                ; Unauthorized
-          :headers :> {"www-authenticate" "Basic realm=\"Protected\""}
-          :body :? nil?)))
-    (testing "with-credentials"
-      (let [response @(h (merge-with
-                          merge
-                          (request :get "/api/protected/a")
-                          {:headers {"authorization" (str "Basic " (codec/base64-encode (.getBytes "alice:password")))}}))]
-        (given response
-          :status := 200                ; OK
-          [:body #(bs/convert % String)] := "Secret area A"
-          )))))
+    "/a/abc.html" "/a/" ""
+    ))
+
+(deftest uri-for-test
+  (let [h
+        (make-handler
+         (vhosts-model
+          [{:scheme :http :host "localhost"}
+           ["/" [["foo"
+                  (resource
+                   {:id :foo
+                    :methods
+                    {:get
+                     {:produces "text/plain"
+                      :response (fn [ctx]
+                                  (str (:href (uri-for ctx :bar))
+                                       " "
+                                       (:href (uri-for ctx :foobarzip))))}}})]
+                 ["foo/bar/zip"
+                  (resource
+                   {:id :foobarzip
+                    :methods {:get {:produces "text/plain"
+                                    :response (fn [ctx]
+                                                (str (:href (uri-for ctx :bar))
+                                                     " "
+                                                     (:href (uri-for ctx :foo))))}}
+                    })]
+                 ["bar" (resource {:id :bar
+                                   :methods {}})]
+                 ["bar/foo" :barfoo]
+                 ]]]))]
+    (is (= "bar foo/bar/zip" (b/to-string (:body (deref (h (request :get "/foo")))))))
+    (is (= "../../bar ../../foo" (b/to-string (:body (deref (h (request :get "/foo/bar/zip")))))))))
