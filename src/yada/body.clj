@@ -96,6 +96,10 @@
   (to-body [v representation]
     (encode-message (render-seq v representation) representation))
 
+  clojure.lang.LazySeq
+  (to-body [v representation]
+    (encode-message (render-seq v representation) representation))
+
   java.util.HashSet
   (to-body [v representation]
     (encode-message (render-seq v representation) representation))
