@@ -38,8 +38,8 @@ A project using yada will need to bring in [aleph](https://github.com/ztellman/a
 
 ``` clojure
 [aleph "0.4.1-beta5"]
-[bidi "2.0.1"]
-[yada "1.1.0"]
+[bidi "2.0.4"]
+[yada "1.1.2"]
 ```
 
 Support for other web-severs, such as undertow, are on the road-map.
@@ -96,6 +96,7 @@ feedback and suggestions.
 * Joshua Griffith
 * Joseph Fahey
 * David Smith
+* Mike Fikes
 
 Also, see the dependency list. In particular, yada would certainly not
 exist without the considerable efforts of those behind the following
