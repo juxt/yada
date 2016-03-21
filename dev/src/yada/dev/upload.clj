@@ -26,9 +26,11 @@
          {:post
           {:consumes "application/octet-stream"
            :consumer (fn [ctx _ body-stream]
-                       (save-to-file
-                        ctx body-stream
-                        (java.io.File/createTempFile "yada" ".tmp" (io/file "/tmp"))))
+                       (let [f (java.io.File/createTempFile "yada" ".tmp" (io/file "/tmp"))]
+                         (infof "Saving to file: %s" f)
+                         (save-to-file
+                          ctx body-stream
+                          f)))
            :response (fn [ctx] (format "Thank you, saved upload content to file: %s\n" (:file ctx)))}}})]]]
 
     (catch clojure.lang.ExceptionInfo e

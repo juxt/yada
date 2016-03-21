@@ -50,7 +50,10 @@
 
   :profiles
   {:dev {:main yada.dev.main
-         :jvm-opts ["-Xms1g" "-Xmx1g" "-server" "-Dio.netty.leakDetectionLevel=advanced"]
+         :jvm-opts ["-Xms1g" "-Xmx1g"
+                    "-server"
+                    "-Dio.netty.leakDetectionLevel=advanced"
+                    "-Dio.netty.allocator.numDirectArenas=0"]
 
          :plugins [[lein-cljsbuild "1.0.6"]
                    ;;[lein-less "1.7.5"]

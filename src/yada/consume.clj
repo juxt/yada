@@ -36,12 +36,12 @@
     (d/chain
      (s/reduce
       (fn [ctx buf]
-        #_(infof "count is %s" (:count ctx))
-        (.retain buf)
+        (infof "count is %s" (:count ctx))
+        #_(.retain buf)
         (let [niobuf (b/to-byte-buffer buf)]
           #_(infof "Writing single buffer %s, refCnt is %s" (.capacity niobuf) (.refCnt buf))
           (.write fc niobuf))
-        (.release buf)
+        #_(.release buf)
         
         (update ctx :count (fnil inc 0)))
       ctx
