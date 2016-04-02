@@ -56,12 +56,17 @@
 
 (defn to-path [route]
   (let [path (->> route :path (map encode) (apply str))
-        {:keys [methods parameters produces consumes]} (handler->resource (:handler route))]
+        {:keys [methods parameters produces consumes] :as resource} (handler->resource (:handler route))]
     [path
      (into {}
            (for [m (keys methods)
                  :let [{:keys [description summary] :as method}
                        (get methods m)
+
+                       swagger-fn (fn [coll]
+                                    (into {} (map (fn [[k v]] [(keyword (name k)) v])
+                                                  (filter (fn [[k _]] (= "swagger" (namespace k)))
+                                                          coll))))
 
                        parameters (-> parameters
                                       (util/merge-parameters (:parameters method))
@@ -71,7 +76,9 @@
                                      (sequence media-type-names)) 
                        consumes (->> (:consumes method)
                                      (concat consumes)
-                                     (sequence media-type-names))]]
+                                     (sequence media-type-names))
+                       swagger (merge (swagger-fn resource)
+                                      (swagger-fn method))]]
              
              ;; Responses must be added in the static swagger section
              {m (merge
@@ -79,7 +86,8 @@
                  (when summary {:summary summary})
                  (when (not-empty parameters) {:parameters parameters})
                  (when (not-empty produces) {:produces produces})
-                 (when (not-empty consumes) {:consumes consumes}))}))]))
+                 (when (not-empty consumes) {:consumes consumes})
+                 swagger)}))]))
 
 (def ^{:doc "To achieve compatibility with ring-swagger as per
   ring.swagger.swagger2-schema"} ring-swagger-coercer

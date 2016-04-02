@@ -205,6 +205,8 @@
                         :description "A simple resource example"}
                  :host (config/host config :phonebook)
                  :schemes [(-> config :phonebook :scheme)]
+                 :tags [{:name "getters"
+                         :description "All paths that support GET"}]
                  :basePath ""})))
              (tag ::phonebook-swagger-spec))]
 

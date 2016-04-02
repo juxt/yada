@@ -117,7 +117,22 @@
                                                                            :privilege String}
                                                                   :header {:dairy #{:milk :cheese}
                                                                            :ext   [String]}}
-                                                     :response   (constantly nil)}}})]))))))
+                                                     :response   (constantly nil)}}})])))))
+  (testing "swagger namespace keys"
+    (is (= {:paths {"/api" {:get {:tags ["test"]}}}}
+           (routes->ring-swagger-spec
+             ["/api" (resource {:methods {:get {:swagger/tags ["test"]
+                                                :response   (fn [_] nil)}}})])))
+    (is (= {:paths {"/api" {:get {:tags ["test"]}}}}
+           (routes->ring-swagger-spec
+             ["/api" (resource {:swagger/tags ["test"]
+                                :methods {:get {:response   (fn [_] nil)}}})])))
+    (is (= {:paths {"/api" {:get {:tags ["get-stuff"]}}}}
+           (routes->ring-swagger-spec
+             ["/api" (resource {:swagger/tags ["test"]
+                                :methods {:get {:swagger/tags ["get-stuff"]
+                                                :response   (fn [_] nil)}}})])))
+    ))
 
 #_(select-keys
  (get-in (as-resource "Hello World!") [:methods :get])
