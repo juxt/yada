@@ -91,6 +91,7 @@
                  :charset "UTF-8"}]
      :methods
      {:get {:parameters {:query {(s/optional-key :q) String}}
+            :swagger/tags ["default" "getters"]
             :response (fn [ctx]
                         (let [q (get-in ctx [:parameters :query :q])
                               entries (if q
@@ -121,7 +122,8 @@
      
      :methods
      {:get
-      {:response
+      {:swagger/tags ["default" "getters"]
+       :response
        (fn [ctx]
          
          (let [id (get-in ctx [:parameters :path :entry])

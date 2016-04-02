@@ -86,12 +86,17 @@
 (defn to-path [route]
   (let [path (->> route :path (map encode) (apply str))
         path-parameters (->> route :path (map parameters) (apply merge))
-        {:keys [methods parameters produces consumes]} (handler->resource (:handler route))]
+        {:keys [methods parameters produces consumes] :as resource} (handler->resource (:handler route))]
     [path
      (into {}
            (for [m (keys methods)
                  :let [{:keys [description summary] :as method}
                        (get methods m)
+
+                       swagger-fn (fn [coll]
+                                    (into {} (map (fn [[k v]] [(keyword (name k)) v])
+                                                  (filter (fn [[k _]] (= "swagger" (namespace k)))
+                                                          coll))))
 
                        parameters (-> parameters
                                       (util/merge-parameters (:parameters method))
@@ -104,15 +109,18 @@
                                      (sequence media-type-names))
                        combined-parameters (if (or (seq (:path parameters)) (empty? path-parameters))
                                              parameters
-                                             (assoc parameters :path path-parameters))]]
-             
+                                             (assoc parameters :path path-parameters))
+                       swagger (merge (swagger-fn resource)
+                                      (swagger-fn method))]]
+
              ;; Responses must be added in the static swagger section
              {m (merge
                  (when description {:description description})
                  (when summary {:summary summary})
                  (when (not-empty combined-parameters) {:parameters combined-parameters})
                  (when (not-empty produces) {:produces produces})
-                 (when (not-empty consumes) {:consumes consumes}))}))]))
+                 (when (not-empty consumes) {:consumes consumes})
+                 swagger)}))]))
 
 (def ^{:doc "To achieve compatibility with ring-swagger as per
   ring.swagger.swagger2-schema"} ring-swagger-coercer
