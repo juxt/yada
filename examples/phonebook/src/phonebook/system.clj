@@ -6,30 +6,31 @@
    [bidi.bidi :as bidi]
    [bidi.vhosts :refer [vhosts-model make-handler]]
    [com.stuartsierra.component :refer [system-map Lifecycle system-using using]]
+   [hiccup.core :refer [html]]
    [phonebook.db :as db]
    [phonebook.api :refer [new-api-component]]
    [phonebook.schema :refer [Config]]
    [schema.core :as s]
-   [yada.yada :refer [yada]]))
+   [yada.yada :refer [handler server]]))
 
-(defn create-vhosts-model [api port]
+(defn create-vhosts-model [vhosts api]
   (vhosts-model
-   [[{:scheme :http :host (str "localhost:" port)}]
-    ["/" (fn [req] {:body "Phonebook"})]
+   [vhosts
+    ["/" (fn [req] {:body (html [:p [:a {:href "/phonebook"} "Phonebook"]])})]
     (:routes api)
-    [true (yada nil)]
+    [true (handler nil)]
     ]))
 
-(defrecord ServerComponent [api port]
+(defrecord ServerComponent [vhosts api port]
   Lifecycle
   (start [component]
-    (let [model (create-vhosts-model api port)]
+    (let [model (create-vhosts-model vhosts api)]
       (assoc component
              :vhosts-model model
-             :server (http/start-server (make-handler model) {:port port :raw-stream? true}))))
+             :server (server model {:port port}))))
   (stop [component]
-    (when-let [server (:server component)]
-      (.close server))
+    (when-let [close (some-> component :server :close)]
+      (close))
     (dissoc component :server)))
 
 (defn new-server-component [config]

@@ -20,7 +20,6 @@
     (let [model (apply vhosts-model
                        (conj (-> phonebook :server :vhosts-model :vhosts)
                              [vhosts (routes router)]))]
-      (infof "uri for is %s" (uri-for model :phonebook.api/index))
       (try
         (assoc component
                :server (http/start-server

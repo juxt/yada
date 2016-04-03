@@ -11,8 +11,7 @@
    [com.stuartsierra.component :as component]
    [schema.core :as s]
    [phonebook.schema :refer [Config]]
-   [phonebook.system :refer (new-system-map new-dependency-map)]
-   ))
+   [phonebook.system :refer (new-system-map new-dependency-map)]))
 
 (def system nil)
 
@@ -22,7 +21,8 @@
   []
   (read-config
    (io/resource "config.edn")
-   {:schema Config}))
+   {:profile :dev
+    :schema Config}))
 
 (defn new-dev-system
   "Create a development system"

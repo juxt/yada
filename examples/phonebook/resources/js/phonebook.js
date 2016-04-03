@@ -7,7 +7,7 @@ phonebook = {
     delete: function(url) {
         x = new XMLHttpRequest()
         x.onload = function(e) {
-            if (e.target.status == 204) {
+            if (e.target.status == 200) {
                 // index is set by the server
                 window.location.pathname = index
             }

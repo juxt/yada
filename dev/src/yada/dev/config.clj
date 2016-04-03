@@ -7,14 +7,10 @@
    [phonebook.schema :refer [PhonebookEntry Phonebook UserPort]]))
 
 (s/defschema ConfigSchema
-  {:proxy? s/Bool
+  {:docsite {:port UserPort
+             :vhosts [s/Str]}
 
-   :docsite {:scheme (s/enum "http" "https")
-             :host s/Str
-             :port UserPort}
-
-   :phonebook {:scheme (s/enum "http" "https")
-               :host s/Str
+   :phonebook {:vhosts [s/Str]
                :port UserPort
                :entries Phonebook}})
 
@@ -27,21 +23,5 @@
    {:profile profile
     :schema ConfigSchema}))
 
-(defn port [config section]
-  (get-in config [section :port]))
 
-(defn origin [config section]
-  (let [proxy? (:proxy? config)
-        config (get config section)]
-    (str (:scheme config)
-         "://"
-         (:host config)
-         (when-not proxy?
-           (str ":" (:port config))))))
 
-(defn host [config section]
-  (let [proxy? (:proxy? config)
-        config (get config section)]
-    (str (:host config)
-         (when-not proxy?
-           (str ":" (:port config))))))

@@ -29,8 +29,7 @@
   namespace to run"
   []
   (-> (system-map
-       :phonebook (new-phonebook {:scheme "http"
-                                  :host "localhost"
+       :phonebook (new-phonebook {:vhosts ["http://localhost:9015"]
                                   :port 9015
                                   :entries {1 {:surname "Sparks"
                                                :firstname "Malcolm"

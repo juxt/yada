@@ -131,8 +131,8 @@
                "text/html"
                (html/entry-html
                 entry
-                {:entry (:href (yada/uri-for ctx :phonebook.api/entry {:route-params {:entry id}}))
-                 :index (:href (yada/uri-for ctx :phonebook.api/index))})
+                {:entry (:path (yada/uri-for ctx :phonebook.api/entry {:route-params {:entry id}}))
+                 :index (:path (yada/uri-for ctx :phonebook.api/index))})
                entry))))}
 
       :put

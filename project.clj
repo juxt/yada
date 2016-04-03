@@ -12,7 +12,7 @@
                org.clojure/tools.reader]
 
   :dependencies
-  [[bidi "2.0.4" :exclusions [ring/ring-core]]
+  [[bidi "2.0.5" :exclusions [ring/ring-core]]
    [buddy/buddy-sign "0.9.0"]
    [byte-streams "0.2.1" :exclusions [clj-tuple]]
    [camel-snake-kebab "0.3.2"]
@@ -92,7 +92,7 @@
           [markdown-clj "0.9.86"]
           [ring-mock "0.1.5"]
 
-          [aero "0.1.5"]
+          [aero "0.2.1"]
 
           [juxt.modular/aleph "0.1.4" :excludes [aleph]]
           [aleph "0.4.1-beta5"]

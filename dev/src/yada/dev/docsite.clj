@@ -6,10 +6,10 @@
    [clojure.java.io :as io]
    [clojure.tools.logging :refer :all]
    [bidi.bidi :refer [RouteProvider tag Matched] :as bidi]
+   [bidi.vhosts :refer [uri-for coerce-to-vhost]]
    [com.stuartsierra.component :refer [using]]
    [hiccup.core :refer [html h]]
    [markdown.core :refer [md-to-html-string]]
-   [bidi.vhosts :refer [uri-for]]
    [schema.core :as s]
    [yada.dev.async :as async]
    [yada.dev.config :as config]
@@ -78,7 +78,11 @@
                    ;; TODO: use bidi's path-for
                    (format "%s/phonebook-swagger.html?url=%s"
                            (:href (yada/uri-for ctx :swagger-ui))
-                           (:href (yada/uri-for ctx ::phonebook-swagger-spec))
+                           ;; We don't want the relative path from
+                           ;; this docsite index, rather, we want to
+                           ;; pass the full URI of the swagger spec to
+                           ;; the swagger ui.
+                           (:path (yada/uri-for ctx ::phonebook-swagger-spec))
                                 
                            )}
                " (Swagger)"]
@@ -203,7 +207,7 @@
                 {:info {:title "Phonebook"
                         :version "1.0"
                         :description "A simple resource example"}
-                 :host (config/host config :phonebook)
+                 :host (-> config :phonebook :vhosts first coerce-to-vhost :host)
                  :schemes [(-> config :phonebook :scheme)]
                  :basePath ""})))
              (tag ::phonebook-swagger-spec))]
