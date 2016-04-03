@@ -16,7 +16,7 @@
 
            (let [system (->
                          (yada.dev.system/new-production-system)
-                         component/start-system)]
+                         com.stuartsierra.component/start-system)]
 
              (println "System started")
              (println "Ready...")
