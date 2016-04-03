@@ -69,10 +69,9 @@
   (assoc system
          ::docsite-server
          (new-webserver
-          {:port 8090
+          {:port (-> config :docsite :port)
            :raw-stream? true}
-          [{:scheme :https :host "yada.juxt.pro"}
-           {:scheme :http :host "localhost:8090"}])
+          (-> config :docsite :vhosts))
          ::docsite-router (new-router)))
 
 (defn hello-world-components [system config]
