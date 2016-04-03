@@ -44,7 +44,7 @@
 
 (defn uri-for [ctx handler & [options]]
   (if-let [uri-for (:uri-for ctx)]
-    (let [res (uri-for handler options)]
+    (when-let [res (uri-for handler options)]
       (-> res
           (update :href (fn [href]
                           (if (.startsWith href "/")
