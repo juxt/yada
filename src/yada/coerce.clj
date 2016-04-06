@@ -72,7 +72,8 @@
   (if (instance? clojure.lang.APersistentMap schema)
     (let [fns (into {}
                     (for [k (keys schema)]
-                      [(to-key k) (to-fn k)]))]
+                      (if (satisfies? ParameterKey k)
+                        [(to-key k) (to-fn k)])))]
       (fn [x]
         (if (map? x)
           (->> x
