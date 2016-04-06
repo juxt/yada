@@ -63,8 +63,9 @@
                  :let [{:keys [description summary] :as method}
                        (get methods m)
 
-                       parameters (->> (:parameters method)
-                                       (util/merge-parameters parameters))
+                       parameters (-> parameters
+                                      (util/merge-parameters (:parameters method))
+                                      (dissoc :cookie))
                        produces (->> (:produces method)
                                      (concat produces)
                                      (sequence media-type-names)) 
@@ -84,10 +85,15 @@
   ring.swagger.swagger2-schema"} ring-swagger-coercer
   (sc/coercer rss/Swagger {rss/Parameters #(set/rename-keys % {:form :formData})}))
 
-(defn swagger-spec [routes template & [content-type]]
-  (-> template
+(defn routes->ring-swagger-spec [routes & [template]]
+  (-> (or template {})
       (merge {:paths (into {} (map to-path (route-seq routes)))})
-      ring-swagger-coercer rs/swagger-json))
+      ring-swagger-coercer))
+
+(defn swagger-spec [routes template & [content-type]]
+  (-> routes
+      (routes->ring-swagger-spec template)
+      rs/swagger-json))
 
 (defrecord SwaggerSpecResource [spec content-type]
   p/ResourceCoercion
