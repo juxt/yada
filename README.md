@@ -98,6 +98,10 @@ feedback and suggestions.
 * Joseph Fahey
 * David Smith
 * Mike Fikes
+* Brian Olsen
+* Stanislas Nanchen
+* Nicolas Ha
+* Eric Fode
 
 Also, see the dependency list. In particular, yada would certainly not
 exist without the considerable efforts of those behind the following
