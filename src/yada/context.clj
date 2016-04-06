@@ -47,9 +47,10 @@
     (when-let [res (uri-for handler options)]
       (-> res
           (update :href (fn [href]
-                          (if (.startsWith href "/")
-                            (relativize (-> ctx :request :uri) href)
-                            href)))))
+                          (when href
+                            (if (.startsWith href "/")
+                              (relativize (-> ctx :request :uri) href)
+                              href))))))
     (throw (ex-info "Context does not contain a :uri-for entry" ctx))))
 
 
