@@ -2,7 +2,7 @@
 
 (ns yada.swagger
   (:require
-   [bidi.bidi :refer [Matched resolve-handler unresolve-handler route-seq succeed unmatch-pair]]
+   [bidi.bidi :refer [Matched resolve-handler unresolve-handler route-seq succeed unmatch-pair segment-regex-group]]
    [bidi.ring :refer [Ring request make-handler]]
    [camel-snake-kebab.core :as csk]
    [cheshire.core :as json]
@@ -27,17 +27,46 @@
    [yada.resources.classpath-resource :refer [new-classpath-resource]]
    [yada.schema :as ys]
    [yada.util :refer [md5-hash] :as util])
-  (:import [clojure.lang PersistentVector Keyword]
+  (:import [clojure.lang PersistentVector Keyword Fn]
            [yada.handler Handler]
-           [yada.resource Resource]))
+           [yada.resource Resource]
+           [java.util.regex Pattern]))
+
+(defn qualifier? [item]
+  (and (vector? item)
+       (= (count item) 2)
+       (keyword? (second item))
+       (let [qual (first item)]
+         (or (instance? Pattern qual)
+             (instance? Fn qual)))))
 
 (defprotocol SwaggerPath
-  (encode [_] "Format route as a swagger path"))
+  (encode [_] "Format route as a swagger path")
+  (parameters [_] "Path parameters in the path"))
 
 (extend-protocol SwaggerPath
-  String (encode [s] s)
-  PersistentVector (encode [v] (apply str (map encode v)))
-  Keyword (encode [k] (str "{" (name k) "}")))
+  String
+  (encode [s] s)
+  (parameters [_] {})
+
+  PersistentVector
+  (encode [v]
+    (if (qualifier? v)
+      (encode (second v))
+      (apply str (map encode v))))
+  (parameters [v]
+    (if (qualifier? v)
+      (let [qual (first v)
+            schema (cond
+                     (= qual long) Long
+                     (instance? Pattern qual) qual
+                     :else (re-pattern (segment-regex-group qual)))]
+        {(second v) schema})
+      (apply merge (map parameters v))))
+
+  Keyword
+  (encode [k] (str "{" (name k) "}"))
+  (parameters [k] {k String}))
 
 (def media-type-names
   (comp (map (comp :name :media-type))
@@ -56,6 +85,7 @@
 
 (defn to-path [route]
   (let [path (->> route :path (map encode) (apply str))
+        path-parameters (->> route :path (map parameters) (apply merge))
         {:keys [methods parameters produces consumes]} (handler->resource (:handler route))]
     [path
      (into {}
@@ -71,13 +101,16 @@
                                      (sequence media-type-names)) 
                        consumes (->> (:consumes method)
                                      (concat consumes)
-                                     (sequence media-type-names))]]
+                                     (sequence media-type-names))
+                       combined-parameters (if (or (seq (:path parameters)) (empty? path-parameters))
+                                             parameters
+                                             (assoc parameters :path path-parameters))]]
              
              ;; Responses must be added in the static swagger section
              {m (merge
                  (when description {:description description})
                  (when summary {:summary summary})
-                 (when (not-empty parameters) {:parameters parameters})
+                 (when (not-empty combined-parameters) {:parameters combined-parameters})
                  (when (not-empty produces) {:produces produces})
                  (when (not-empty consumes) {:consumes consumes}))}))]))
 
