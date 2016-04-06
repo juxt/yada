@@ -364,6 +364,9 @@ convenience of terse, expressive short-hand descriptions."}
    (s/optional-key :x-frame-options) s/Str
    (s/optional-key :xss-protection) s/Str})
 
+(s/defschema Logger
+  {(s/optional-key :logger) (s/=> s/Any Context)})
+
 (s/defschema Resource
   (s/constrained
    (merge {(s/optional-key :id) s/Any}
@@ -381,6 +384,7 @@ convenience of terse, expressive short-hand descriptions."}
           ResourceDocumentation
           {(s/optional-key :path-info?) Boolean
            (s/optional-key :sub-resource) (s/=> Resource Context)}
+          Logger
           NamespacedEntries)
    (fn [v] (not (and (:sub-resource v) (not (:path-info? v)))))
    "If a sub-resource entry exists then path-info? must be true"))

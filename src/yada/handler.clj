@@ -154,6 +154,7 @@
                     
                     sec/access-control-headers
                     i/create-response
+                    i/logging
                     i/return))))))))))
 
 (defn- handle-request
@@ -248,6 +249,7 @@
    sec/access-control-headers
    #_sec/security-headers
    i/create-response
+   i/logging
    i/return
    ])
 

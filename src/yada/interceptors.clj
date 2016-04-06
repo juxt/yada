@@ -25,7 +25,8 @@
    [yada.request-body :as rb]
    [yada.representation :as rep]
    [yada.schema :as ys]
-   [yada.util :as util]))
+   [yada.util :as util])
+  (:import [yada.context Response]))
 
 (defn available?
   "Is the service available?"
@@ -404,5 +405,19 @@
     ;;(infof "body is type %s" (type body))
     
     (assoc ctx :response response)))
+
+(defrecord Foo [])
+
+(instance? Foo (Exception.))
+
+(defn logging [ctx]
+  (or
+   (when-let [logger (-> ctx :resource :logger)]
+     ;; Loggers can return a modified context, affecting the response
+     (logger ctx))
+   ;; If no logger, or a logger returns nil, return the original
+   ;; context
+   ctx))
+
 
 (defn return [ctx] (:response ctx))
