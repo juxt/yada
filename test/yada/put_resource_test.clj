@@ -42,9 +42,10 @@
         (is (= "Chelsea" (to-string (:body response)))))))
 
   (testing "return response"
-    (let [h (yada (resource {:methods {:put {:response (fn [ctx] (assoc (:response ctx) :body "BODY"))}}}))
-          response (h (request :put "/"))]
-      (is (= "BODY" (b/to-string (:body @response))))))
+    (let [h (yada (resource {:methods {:put {:response (fn [ctx] (assoc (:response ctx) :body "BODY" :status 200))}}}))
+          response @(h (request :put "/"))]
+      (is (= "BODY" (b/to-string (:body response))))
+      (is (= 200 (:status response)))))
 
   #_(testing "atom"
       (let [resource (atom {:name "Frank"})
