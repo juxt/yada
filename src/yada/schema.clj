@@ -10,6 +10,7 @@ convenience of terse, expressive short-hand descriptions."}
     yada.schema
   (:require
    [clojure.walk :refer [postwalk]]
+   [clojure.set :as set]
    [clojure.tools.logging :refer :all]
    [yada.boolean :as b :refer [boolean?]]
    [yada.media-type :as mt]
@@ -247,15 +248,29 @@ convenience of terse, expressive short-hand descriptions."}
 
 ;; Responses
 
-(s/defschema Statii (s/conditional integer? s/Int set? #{s/Int}))
+(defn disjoint-statii?
+  "Checks that responses keys are disjoint. Meaning a given status matches only one key in the
+  responses map."
+  [responses]
+  (let [direct (set (filter #(not (set? %)) (keys (dissoc responses *))))
+        sets (cons direct (filter set? (keys responses)))]
+    (= (reduce + (map count sets))
+       (count (apply set/union sets)))))
+
+(defn wildcard? "is this the wildcard response" [fn]
+  (= fn *))
+
+(s/defschema Statii (s/conditional integer? s/Int set? #{s/Int} fn? (s/pred wildcard?)))
 
 (s/defschema Responses
-  {(s/optional-key :responses) 
-   {Statii (merge
-            {(s/optional-key :description) s/Str}
-            Produces
-            Response
-            )}})
+  {(s/optional-key :responses)
+   (s/constrained
+     {Statii (merge
+               {(s/optional-key :description) s/Str}
+               Produces
+               Response
+               )}
+     disjoint-statii?)})
 
 
 ;; Many HTTP headers are comma separated. We should accept these
