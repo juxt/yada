@@ -89,6 +89,8 @@
   (let [ctx (capture-cookies ctx)
         method (:method ctx)
         request (:request ctx)
+        matcher (fn [param-kw]
+                  (get-in ctx [:resource :parameters method :coercion-matchers param-kw]))
 
         schemas (util/merge-parameters (get-in ctx [:resource :parameters])
                                        (get-in ctx [:resource :methods method :parameters]))
@@ -98,14 +100,22 @@
 
         parameters
         {:path (if-let [schema (:path schemas)]
-                 (rs/coerce schema (:route-params request) :query)
+                 (rs/coerce schema
+                            (:route-params request)
+                            (fn [schema]
+                              (or (when-let [cm (matcher :query)]
+                                    (cm schema))
+                                  ((rsc/coercer :query) schema))))
                  (:route-params request))
          :query (let [qp (:query-params (assoc-query-params request (or (:charset ctx) "UTF-8")))]
                   (if-let [schema (:query schemas)]
-                    (let [coercer (sc/coercer schema
-                                              (or
-                                               coerce/+parameter-key-coercions+
-                                               (rsc/coercer :query)))]
+                    (let [coercion-matcher (matcher :query)
+                          coercer (sc/coercer schema
+                                              (fn [schema]
+                                                (or (when coercion-matcher
+                                                      (coercion-matcher schema))
+                                                    (coerce/+parameter-key-coercions+ schema)
+                                                    ((rsc/coercer :query) schema))))]
                       (coercer qp))
                     qp))
                     

@@ -65,7 +65,9 @@
   (let [body-string (bs/to-string body-stream)
         ;; Form and body schemas have to been done at the method level
         ;; - TODO: Build this contraint in yada.schema.
-        schemas (get-in ctx [:resource :methods (:method ctx) :parameters])]
+        schemas (get-in ctx [:resource :methods (:method ctx) :parameters])
+        matchers (get-in ctx [:resource :methods (:method ctx) :coercion-matchers])
+        coercion-matcher (or (:form matchers) (:body matchers))]
 
     (cond
       ;; In Swagger 2.0 you can't have both form and body
@@ -79,6 +81,7 @@
                      (or (:form schemas) (:body schemas))
                      (fn [schema]
                        (or
+                        (when coercion-matcher (coercion-matcher schema))
                         (coerce/+parameter-key-coercions+ schema)
                         ((rsc/coercer :json) schema))))
 
@@ -129,10 +132,14 @@
 (defmethod process-request-body "application/json"
   [ctx body-stream media-type & args]
   (let [body (with-400-maybe (json/decode (bs/to-string body-stream) keyword))
-        schema (get-in ctx [:resource :methods (:method ctx) :parameters :body])]
+        schema (get-in ctx [:resource :methods (:method ctx) :parameters :body])
+        matcher (get-in ctx [:resource :methods (:method ctx) :coercion-matchers :body])]
     (cond-> ctx
       true (assoc-in [:body] body)
-      schema (assoc-body-if-valid schema sc/json-coercion-matcher body))))
+      schema (assoc-body-if-valid schema (fn [schema]
+                                           (or (when matcher (matcher schema))
+                                               (sc/json-coercion-matcher schema)))
+                                  body))))
 
 (defmethod process-request-body "application/transit+json"
   [ctx body-stream media-type & args]
