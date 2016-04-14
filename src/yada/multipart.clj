@@ -310,7 +310,7 @@
                               :bytes (copy-bytes-after-delimiter m s e)
                               :debug [:finish-up :in-partial :parts]
                               }]))
-      (if-let [e (+ (last positions) (:delimiter-size m))]
+      (if-let [e (some-> (last positions) (+ (:delimiter-size m)))]
         (if (and (>= (:pos m) (+ 2 e))
                  (= (get (:window m) e) (byte \-))
                  (= (get (:window m) (inc e)) (byte \-)))
