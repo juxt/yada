@@ -106,6 +106,73 @@
           ])}))
     (assoc :id ::index))))
 
+(defrecord TempfilePartial [part fieldname filename content-type f out]
+  yada.multipart/Partial
+  (continue [this piece]
+    (info "continue TempfilePartial"
+          {:fieldname fieldname
+           :filename filename
+           :content-type content-type
+           :tempfile f})
+    (.write out (:bytes piece))
+    this)
+  (complete [this state piece]
+    (info "complete TempfilePartial"
+          {:fieldname fieldname
+           :filename filename
+           :content-type content-type
+           :tempfile f})
+    (.write out (:bytes piece))
+    (.close out)
+    (update state
+            :parts
+            (fnil conj [])
+            (-> part
+                (assoc :tempfile-partial this)))))
+
+(defn create-tempfile-partial
+  [{:keys [headers bytes body-offset] :as piece}]
+  (let [cd (get headers "content-disposition")
+        [_ fieldname] (some->> cd (re-find #"name=\"([^\"]+)\""))
+        [_ filename] (some->> cd (re-find #"filename=\"([^\"]+)\""))
+        [_ pre suff] (some->> filename (re-find #"(.+)\.(.*)"))
+        ct (get headers "content-type")
+        f (java.io.File/createTempFile (or pre "file") (when suff (str "." suff)))
+        out (io/output-stream f)]
+    (info "create-tempfile-partial"
+          {:fieldname fieldname
+           :filename filename
+           :content-type ct
+           :tempfile f})
+    (.write out
+            bytes
+            body-offset
+            (- (alength bytes) body-offset))
+    (->TempfilePartial (-> piece
+                           (dissoc :bytes)
+                           (assoc :type :part))
+                       fieldname
+                       filename
+                       ct
+                       f
+                       out)))
+
+(defrecord TempfilePartConsumer []
+  yada.multipart/PartConsumer
+  (consume-part [_ state part]
+    (info "consume-part" state part)
+    (update state :parts (fnil conj []) (yada.multipart/map->DefaultPart part)))
+  (start-partial [_ piece]
+    (info "start-partial" piece)
+    (create-tempfile-partial piece))
+  (part-coercion-matcher [_]
+    (info "part-coercion-matcher")
+    ;; Coerce a DefaultPart into the following keys
+    {String (fn [^yada.multipart.DefaultPart part]
+              (let [offset (get part :body-offset 0)]
+                (String. (:bytes part) offset (- (count (:bytes part)) offset))))
+     TempfilePartial :tempfile-partial}))
+
 (s/defrecord Docsite [phonebook :- SystemMap
                       config :- config/ConfigSchema]
   RouteProvider
@@ -185,6 +252,36 @@
                                                   (-> (:response ctx) 
                                                       (assoc :status 304)
                                                       (update :headers conj ["Location" "/foo"])))}}})]
+
+        ["/mu" (resource
+                {:methods
+                 {:get
+                  {:produces "text/html"
+                   :response
+                   (html
+                    [:body
+                     [:h2 "Bring me Liz Kelly"]
+                     [:form {:method :post :enctype "multipart/form-data"}
+                      [:p
+                       [:input {:type :text :name "foo" :value "bar"}]]
+                      [:p
+                       [:input {:type :file :name "liz"}]]
+                      [:p [:input {:type :submit}]]]
+                     ])}
+                  :post
+                  {:consumes "multipart/form-data"
+                   :consumer (fn [ctx content-type body]
+                               (yada.request-body/process-request-body
+                                (assoc-in ctx
+                                          [:options :part-consumer]
+                                          (->TempfilePartConsumer))
+                                (manifold.stream/map
+                                 b/to-byte-array
+                                 (b/to-byte-buffers body))
+                                (:name content-type)))
+                   :produces "text/plain"
+                   :response (fn [ctx] "thanks!")}}}
+                )]
 
         ["/api" 
          (swaggered

@@ -254,4 +254,17 @@
 
       (is (= [:part] (mapv :type parts))))))
 
+(deftest big-file-test-3
+  (let [[chunk-size window-size] [16384 (* 4 16384)]
+        spec {:chunk-size chunk-size :window-size window-size}]
+    (let [parts
+          (->> (s/->source (to-chunks (slurp-byte-array (io/resource "yada/multipart-6")) chunk-size))
+               (parse-multipart "--WebKitFormBoundary7MA4YWxkTrZu0gW" (:window-size spec) (:chunk-size spec))
+               (s/transform (comp (xf-add-header-info) (xf-parse-content-disposition)))
+               (s/reduce reduce-piece {:consumer (->DefaultPartConsumer) :state {:parts []}})
+               deref
+               :parts)]
+
+      (is (= [:part :part :part] (mapv :type parts))))))
+
 
