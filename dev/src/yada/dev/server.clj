@@ -7,7 +7,8 @@
    [schema.core :as s]
    [bidi.vhosts :refer [make-handler vhosts-model uri-for]]
    [bidi.bidi :refer [routes RouteProvider]]
-   [com.stuartsierra.component :refer [Lifecycle using]]))
+   [com.stuartsierra.component :refer [Lifecycle using]]
+   [yada.yada :refer [handler]]))
 
 (s/defrecord Webserver [config :- {:port s/Int
                                    s/Keyword s/Any}
@@ -19,7 +20,7 @@
   (start [component]
     (let [model (apply vhosts-model
                        (conj (-> phonebook :server :vhosts-model :vhosts)
-                             [vhosts (routes router)]))]
+                             [vhosts (routes router) [true (handler nil)]]))]
       (try
         (assoc component
                :server (http/start-server
