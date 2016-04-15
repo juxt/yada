@@ -63,6 +63,12 @@ dev> (go)
 
 Now browse to http://localhost:8090.
 
+## Troubleshooting FAQ
+
+Q. I'm migrating from a version before yada 1.1 and my async multipart and other uploads are not working, sometimes throwing NullPointerExceptions or other errors.
+
+A. Either use yada's built-in yada.server function or make sure you have started aleph's server with the option `raw-stream? :true`. Previous versions of yada left these settings up to the user but it's _very important_ in yada 1.1 that raw-stream? is set.
+
 ## Contributing
 
 If you want to help, please join the discussion group [yada-discuss](https://groups.google.com/forum/#!forum/yada-discuss).
