@@ -78,6 +78,26 @@
         (is (nil? (s/check Properties params)))
         (is (nil? (s/check PropertiesResult (invoke-with-ctx (:properties params)))))))))
 
+(deftest responses-test
+  (let [coercer (sc/coercer Responses MethodsMappings)]
+    (let [r (coercer {:responses {200 {:response "Hello World!"}}})]
+      (is (not (error? r)))
+      (is (nil? (s/check Responses r)))
+      (is (= "Hello World!" (invoke-with-ctx (get-in r [:responses 200 :response]))))))
+  (testing "wildcard"
+    (is (= nil (s/check Responses {:responses {200 {:response (constantly "Muh")}
+                                               *   {:response (constantly "Muh")}}}))))
+  (testing "overlap"
+    (is (nil? (s/check Responses {:responses {200                   {:response (constantly "Muh")}
+                                              (set (range 201 299)) {:response (constantly "Muh")}}})))
+    (is (not (nil? (s/check Responses {:responses {200        {:response (constantly "Muh")}
+                                                   #{200 201} {:response (constantly "Muh")}}})))))
+  (testing "disjoint sets"
+    (is (nil? (s/check Responses {:responses {#{200 201} {:response (constantly "Muh")}
+                                              #{202 203} {:response (constantly "Muh")}}})))
+    (is (not (nil? (s/check Responses {:responses {#{200 201} {:response (constantly "Muh")}
+                                                   #{201 202} {:response (constantly "Muh")}}}))))))
+
 (deftest methods-test
   (let [coercer (sc/coercer Methods MethodsMappings)]
     (testing "methods"

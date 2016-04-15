@@ -15,5 +15,6 @@
     (testing "wildcard"
       (is (= :c (get* m 405)))))
   (testing "nil"
-    (is (nil? (get {400 :a} 401)))))
+    (is (nil? (get* {400 :a} 401))))
+  (is (= :a (get* {400 :a #{400 401} :b} 400))))
 
