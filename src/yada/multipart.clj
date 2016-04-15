@@ -632,10 +632,14 @@
              ;; In Swagger 2.0 you can't have both form and body
              ;; parameters, which seems reasonable
              (or (:form schemas) (:body schemas))
-             (let [coercer (sc/coercer
+             (let [coercion-matchers (get-in ctx [:resource :methods (:method ctx)
+                                                  :coercion-matchers])
+                   matcher (or (:form coercion-matchers) (:body coercion-matchers))
+                   coercer (sc/coercer
                             (or (:form schemas) (:body schemas))
                             (fn [schema]
                               (or
+                               (when matcher (matcher schema))
                                (coerce/+parameter-key-coercions+ schema)
                                ((part-coercion-matcher part-consumer) schema)
                                ((rsc/coercer :json) schema))))

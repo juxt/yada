@@ -197,6 +197,13 @@ convenience of terse, expressive short-hand descriptions."}
   body payload chunks"
   {(s/optional-key :consumer) (s/=> Context Context s/Any)})
 
+(s/defschema MethodParametersCoercionMatchers
+  "A map of coercion matchers as required by `schema.coerce/coercer`."
+  {(s/optional-key :coercion-matchers) {(s/optional-key :path) (s/=> s/Any s/Any)
+                                        (s/optional-key :query) (s/=> s/Any s/Any) 
+                                        (s/optional-key :body) (s/=> s/Any s/Any)
+                                        (s/optional-key :form) (s/=> s/Any s/Any)}})
+
 (def Realm s/Str)
 
 (s/defschema Restriction
@@ -213,6 +220,7 @@ convenience of terse, expressive short-hand descriptions."}
 (s/defschema Method
   (merge Response
          MethodParameters
+         MethodParametersCoercionMatchers
          Produces
          Consumes
          Consumer
