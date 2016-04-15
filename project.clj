@@ -108,7 +108,11 @@
           [cljsjs/react "0.13.3-1"]
           [reagent "0.5.0"]
           [re-frame "0.4.1"]
-          [kibu/pushy "0.3.2"]]
+          [kibu/pushy "0.3.2"]
+
+          ;; To compare with aleph http client 
+          [clj-http "2.1.0"]
+          ]
 
          :source-paths ["dev/src"
                         "examples/phonebook/src"]

@@ -121,8 +121,6 @@
 
         ;;["/body.html" {:produces "text/html" :response (fn [] "Hello")}]
 
-
-
         ["/manual/"
          (yada (->
                 (new-directory-resource
@@ -215,7 +213,9 @@
              (tag ::phonebook-swagger-spec))]
 
         ;;Boring specs
-        [["/spec/rfc" :rfc] (rfc)]]]
+        [["/spec/rfc" :rfc] (rfc)]
+
+        ]]
       (catch Exception e
         ["/error" (fn [req] {:status 200 :body (str e)})]
         ))))
