@@ -115,7 +115,7 @@
                  [:ul
                   [:li [:a {:href (:href (yada/uri-for ctx ::basic-example))} "Basic"]]
                   [:li [:a {:href (:href (yada/uri-for ctx ::login))} "Session"]]
-                  [:li [:a {:href (:href (yada/uri-for ctx ::bearer-example))} "Bearer (OAuth2)"]]]
+                  [:li [:a {:href (:href (yada/uri-for ctx ::third-party-login-example))} "Third-party login"]]]
 
                  [:h4 "Login details for all examples"]
                  [:p "Login with username "
@@ -199,7 +199,7 @@
                                            [:p "Try another user? " [:a {:href (:href (yada/uri-for ctx ::logout))} "logout" ]]
                                            ))}}}))})]
 
-      ["/bearer"
+      ["/oauth2"
        (let [github-client-id "41cd4ede085de5969bd4"
              google-client-id "848581248307-th1bhe45q00alks9ricm8mj4kja4nn7v.apps.googleusercontent.com"
              secret (hash/sha256 "ABCD1234")]
@@ -212,7 +212,7 @@
                    :content
                    (html
                     [:div.container
-                     [:h2 "Bearer (OAuth2) example"]
+                     [:h2 "Third-party login"]
                      [:p
                       [:form
                        {:action (:href (yada/uri-for ctx ::initiate-google))
@@ -223,7 +223,7 @@
                        {:action (:href (yada/uri-for ctx ::initiate-github))
                         :method :post}
                        [:input {:type :submit :value "Login via GitHub"}]]]])}))
-               (assoc :id ::bearer-example))]
+               (assoc :id ::third-party-login-example))]
 
           ["/initiate-google" (oauth/oauth2-initiate-resource
                                {:id ::initiate-google
