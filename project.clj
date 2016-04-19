@@ -35,7 +35,7 @@
    [org.clojure/tools.trace "0.7.9"]
    
    ;; TODO: Find out where this is being excluded, Schema needs it?
-   [org.clojure/core.cache "0.6.4"]
+   ;; [org.clojure/core.cache "0.6.4"]
 
    [com.cognitect/transit-clj "0.8.285"]
 
@@ -43,7 +43,7 @@
    [org.webjars/swagger-ui "2.1.3"]
    ]
 
-  :pedantic? :abort
+  ;; :pedantic? :abort
 
   :repl-options {:init-ns user
                  :welcome (println "Type (dev) to start")}
@@ -66,17 +66,17 @@
                                 :compiler {:output-to "target/cljs/console.js"
                                            :pretty-print true}}}}
 
-         :exclusions [org.clojure/tools.nrepl]
+;;         :exclusions [org.clojure/tools.nrepl]
 
-         :pedantic? :abort
+;;         :pedantic? :abort
 
          :dependencies
-         [[org.clojure/clojure "1.7.0"]
+         [[org.clojure/clojure "1.8.0"]
           [org.clojure/clojurescript "1.7.170"]
 
-          [org.clojure/core.cache "0.6.4"]
+          ;; [org.clojure/core.cache "0.6.4"]
 
-          [org.clojure/tools.nrepl "0.2.12"] ; otherwise pedantic check fails
+          ;; [org.clojure/tools.nrepl "0.2.12"] ; otherwise pedantic check fails
           [org.clojure/tools.logging "0.3.1"]
 
           [ch.qos.logback/logback-classic "1.1.5"
@@ -92,12 +92,12 @@
           [markdown-clj "0.9.86"]
           [ring-mock "0.1.5"]
 
-          [aero "0.2.1"]
+          [aero "0.2.3"]
 
           [juxt.modular/aleph "0.1.4" :excludes [aleph]]
           [aleph "0.4.1-beta5"]
           [juxt.modular/bidi "0.9.5" :exclusions [bidi]]
-          [juxt.modular/stencil "0.1.1"]
+          [juxt.modular/stencil "0.1.1" :exclusions [org.clojure/core.cache]]
           [juxt.modular/test "0.1.0"]
           [juxt.modular/template "0.6.3"]
 
