@@ -1,6 +1,6 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(defproject yada "1.1.5"
+(defproject yada "1.1.6"
   :description "A powerful Clojure web library, full HTTP, full async"
   :url "http://github.com/juxt/yada"
   :license {:name "The MIT License"
@@ -28,12 +28,12 @@
 
    [prismatic/schema "1.0.5"]
    [potemkin "0.4.3" :exclusions [riddley]]
-   
+
    [org.clojure/core.async "0.2.374"]
    [org.clojure/data.codec "0.1.0"]
    [org.clojure/tools.reader "1.0.0-alpha1"]
    [org.clojure/tools.trace "0.7.9"]
-   
+
    ;; TODO: Find out where this is being excluded, Schema needs it?
    ;; [org.clojure/core.cache "0.6.4"]
 
@@ -110,13 +110,13 @@
           [re-frame "0.4.1"]
           [kibu/pushy "0.3.2"]
 
-          ;; To compare with aleph http client 
+          ;; To compare with aleph http client
           [clj-http "2.1.0"]
           ]
 
          :source-paths ["dev/src"
                         "examples/phonebook/src"]
-         
+
          :test-paths ["test"
                       "examples/phonebook/test"]
 
