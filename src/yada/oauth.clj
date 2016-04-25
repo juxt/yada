@@ -76,9 +76,10 @@
             ;; The function that will ultimately call the third-party API for user-details.
             ;; First argument is the access-token
             :access-token-handler (s/=> {s/Any s/Any} s/Str)
-            :access-token-url s/Str}]
+            :access-token-url s/Str
+            (s/optional-key :cookie-expiry-period) org.joda.time.Period}]
 
-  (let [{:keys [client-id client-secret secret access-token-handler access-token-url]} opts]
+  (let [{:keys [client-id client-secret secret access-token-handler access-token-url cookie-expiry-period]} opts]
     (assert access-token-handler)
     (resource
      (merge
@@ -134,7 +135,7 @@
                     (d/error-deferred (ex-info "Forbidden" {:status 403}))
 
                     ;; TODO: Refresh tokens
-                    (let [expires (time/plus (time/now) (time/minutes 15)) ; TODO parameterize
+                    (let [expires (time/plus (time/now) (or cookie-expiry-period (time/days 30)))
                           cookie {:value (jwe/encrypt data secret)
                                   :expires expires
                                   :http-only true}]
@@ -154,7 +155,7 @@
             ;; The function that will ultimately call the third-party API for user-details.
             ;; First argument is the access-token
             :handler (s/=> {s/Any s/Any} {:access-token s/Str :openid-claims {s/Str s/Str}})
-            (s/optional-key :cookie-expiry-period)
+            (s/optional-key :cookie-expiry-period) org.joda.time.Period
             }]
 
   (let [{:keys [access-token-url client-id client-secret secret redirect-uri handler cookie-expiry-period]} opts]
