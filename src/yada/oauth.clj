@@ -154,9 +154,10 @@
             ;; The function that will ultimately call the third-party API for user-details.
             ;; First argument is the access-token
             :handler (s/=> {s/Any s/Any} {:access-token s/Str :openid-claims {s/Str s/Str}})
+            (s/optional-key :cookie-expiry-period)
             }]
 
-  (let [{:keys [access-token-url client-id client-secret secret redirect-uri handler]} opts]
+  (let [{:keys [access-token-url client-id client-secret secret redirect-uri handler cookie-expiry-period]} opts]
     (assert handler)
     (resource
      (merge
@@ -213,7 +214,7 @@
                     (d/error-deferred (ex-info "Forbidden" {:status 403}))
 
                     ;; TODO: Refresh tokens
-                    (let [expires (time/plus (time/now) (time/minutes 15)) ; TODO parameterize
+                    (let [expires (time/plus (time/now) (or cookie-expiry-period (time/days 30))) ; TODO parameterize
                           cookie {:value (jwe/encrypt data secret)
                                   :expires expires
                                   :http-only true}]
