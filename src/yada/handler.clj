@@ -108,7 +108,7 @@
                 :interceptor-chain (or
                                     (:interceptor-chain sub-resource)
                                     (-> ctx :interceptor-chain))})]
-          
+
           (handle-request-with-maybe-subresources
            (-> ctx
                (merge handler)))))
@@ -143,7 +143,7 @@
 
                       (:body data)
                       (assoc [:response :body] (:body data))
-                      
+
                       (and (not (:body data)) (not (:response custom-response)))
                       (standard-error status e rep)
 
@@ -151,7 +151,7 @@
                       (custom-error (:response custom-response) rep)
 
                       true set-content-length)
-                    
+
                     sec/access-control-headers
                     i/create-response
                     i/logging
@@ -210,6 +210,13 @@
             (when-let [id (:id this)] (= id (:handler m))))
         ""))
 
+  bidi/RouteSeq
+  (gather [this context]
+    [(bidi/map->Route
+      (merge
+       (assoc context :handler this)
+       (when-let [id (some-> this :resource :id)] {:tag id})))])
+
   br/Ring
   (request [this req match-context]
     (handle-request
@@ -260,7 +267,7 @@
    (when (not (satisfies? p/ResourceCoercion resource))
      (throw (ex-info "The argument to the yada function must be a Resource record or something that can be coerced into one (i.e. a type that satisfies yada.protocols/ResourceCoercion)"
                      {:resource resource})))
-   
+
    ;; It's possible that we're being called with a resource that already has an error
    (when (error? resource)
      (throw (ex-info "yada function is being passed a resource that is an error"
@@ -302,6 +309,13 @@
         (or (= resource (:handler m))
             (when-let [id (:id resource)] (= id (:handler m))))
         ""))
+
+  bidi/RouteSeq
+  (gather [this context]
+    [(bidi/map->Route
+      (merge
+       (assoc context :handler this)
+       (when-let [id (:id this)] {:tag id})))])
 
   br/Ring
   (request [resource req match-context]
