@@ -26,31 +26,7 @@
 (defn language [ctx]
   (get-in ctx [:response :produces :language]))
 
-(defn- segments [s]
-  (let [l (re-seq #"[^/]*/?" s)]
-    (if (.endsWith s "/") l (butlast l))))
-
-(defn relativize [from to]
-  (if (and from to)
-    (loop [from (segments from)
-           to (segments to)]
-      (if-not (= (first from) (first to))
-        (str (apply str (repeat (+ (dec (count from))) "../"))
-             (apply str to))
-        (if (next from)
-          (recur (next from) (next to))
-          (first to))))
-    to))
-
 (defn uri-for [ctx handler & [options]]
   (if-let [uri-for (:uri-for ctx)]
-    (when-let [res (uri-for handler options)]
-      (-> res
-          (update :href (fn [href]
-                          (when href
-                            (if (.startsWith href "/")
-                              (relativize (-> ctx :request :uri) href)
-                              href))))))
+    (uri-for handler options)
     (throw (ex-info "Context does not contain a :uri-for entry" ctx))))
-
-
