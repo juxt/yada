@@ -62,9 +62,11 @@
      (merge
       (when-let [id (:id opts)] {:id id})
       {:methods
-       {:get {:parameters {:query {(s/optional-key :target-uri) s/Str}}
+       {:get {:produces "text/plain" ; it's a redirect, but we need to allow content neg to succeed
+              :parameters {:query {(s/optional-key :target-uri) s/Str}}
               :response (fn [ctx] (initiate ctx opts (-> ctx :parameters :query :target-uri)))}
-        :post {:parameters {:form {(s/optional-key :target-uri) s/Str}}
+        :post {:consumes "application/x-www-form-urlencoded"
+               :parameters {:form {(s/optional-key :target-uri) s/Str}}
                :response (fn [ctx] (initiate ctx opts (-> ctx :parameters :form :target-uri)))}}}))))
 
 (s/defn oauth2-callback-resource-github
