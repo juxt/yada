@@ -118,7 +118,7 @@
        (apply d/chain ctx (:interceptor-chain ctx))
 
        (d/catch
-           clojure.lang.ExceptionInfo
+           java.lang.Exception
            (fn [e]
              (error-handler e)
              (let [data (error-data e)]
