@@ -246,11 +246,10 @@
   [ctx {:keys [cookie yada.oauth2/secret] :or {cookie "session"} :as scheme}]
   (when-not secret (throw (ex-info "Buddy JWE decryption requires a secret entry in scheme" {:scheme scheme})))
   (try
-    (let [auth (some->
-                (get-in ctx [:cookies cookie])
-                (jwe/decrypt secret))]
-      auth)
+    (let [cookie (get-in ctx [:cookies cookie])]
+      (jwe/decrypt cookie secret))
     (catch clojure.lang.ExceptionInfo e
-      (if-not (= (ex-data e)
-                 {:type :validation :cause :decryption})
+      (when-not (contains? #{{:type :validation :cause :decryption}
+                             {:type :validation :cause :signature}}
+                           (ex-data e))
         (throw e)))))
