@@ -5,7 +5,6 @@
    [clojure.java.io :as io]
    [clojure.string :as str]
    [clojure.tools.logging :refer :all]
-   [clojure.tools.trace :refer [deftrace]]
    [schema.core :as s]
    [yada.coerce :refer (to-set to-list)]
    [yada.charset :as charset]
