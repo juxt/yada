@@ -11,7 +11,7 @@
   :dependencies
   [[bidi "2.0.8" :exclusions [ring/ring-core]]
    [buddy/buddy-sign "0.9.0"]
-   [byte-streams "0.2.1" :exclusions [clj-tuple]]
+   [byte-streams "0.2.2"]
    [camel-snake-kebab "0.4.0"]
    [cheshire "5.6.1"]
    [clj-time "0.11.0"]

@@ -5,7 +5,7 @@ Clojure application with a Leiningen `project.clj` file, include the
 following in the file's __:dependencies__ section.
 
 ```clojure
-[yada "1.1.0-SNAPSHOT"]
+[yada "1.1.14"]
 
 [aleph "0.4.1"]
 [bidi "2.0.0"]
