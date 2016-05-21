@@ -7,7 +7,7 @@ following in the file's __:dependencies__ section.
 ```clojure
 [yada "1.1.0-SNAPSHOT"]
 
-[aleph "0.4.1-beta3"]
+[aleph "0.4.1"]
 [bidi "2.0.0"]
 ```
 
