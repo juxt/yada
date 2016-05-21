@@ -6,8 +6,6 @@
   :license {:name "The MIT License"
             :url "http://opensource.org/licenses/MIT"}
 
-  :exclusions [com.google.guava/guava]
-
   :dependencies
   [[bidi "2.0.8" :exclusions [ring/ring-core]]
    [buddy/buddy-sign "0.9.0"]
@@ -23,7 +21,7 @@
    [metosin/ring-swagger "0.22.7"]
 
    [prismatic/schema "1.1.1"]
-   [potemkin "0.4.3" :exclusions [riddley]]
+   [potemkin "0.4.3"]
 
    [org.clojure/core.async "0.2.374"]
    [org.clojure/data.codec "0.1.0"]
@@ -51,28 +49,12 @@
                     "-Dio.netty.leakDetectionLevel=advanced"
                     "-Dio.netty.allocator.numDirectArenas=0"]
 
-         :plugins [[lein-cljsbuild "1.0.6"]
-                   ;;[lein-less "1.7.5"]
-                   [lein-figwheel "0.3.7" :exclusions [[org.clojure/clojure]
-                                                       [org.codehaus.plexus/plexus-utils]]]]
-
-         :cljsbuild {:builds
-                     {:console {:source-paths ["console/src-cljs"]
-                                :figwheel {:on-jsload "yada.console.core/reload-hook"}
-                                :compiler {:output-to "target/cljs/console.js"
-                                           :pretty-print true}}}}
-
-;;         :exclusions [org.clojure/tools.nrepl]
-
-;;         :pedantic? :abort
+         :pedantic? :abort
 
          :dependencies
          [[org.clojure/clojure "1.8.0"]
           [org.clojure/clojurescript "1.7.170"]
 
-          ;; [org.clojure/core.cache "0.6.4"]
-
-          ;; [org.clojure/tools.nrepl "0.2.12"] ; otherwise pedantic check fails
           [org.clojure/tools.logging "0.3.1"]
 
           [ch.qos.logback/logback-classic "1.1.5"
@@ -83,6 +65,8 @@
 
           [com.stuartsierra/component "0.3.1"]
           [org.clojure/tools.namespace "0.2.11"]
+          [org.clojure/tools.nrepl "0.2.12"]
+
           [org.clojure/data.zip "0.1.1"]
 
           [markdown-clj "0.9.86"]
@@ -107,8 +91,7 @@
           [kibu/pushy "0.3.2"]
 
           ;; To compare with aleph http client
-          [clj-http "2.1.0"]
-          ]
+          [clj-http "2.1.0"]]
 
          :source-paths ["dev/src"
                         "examples/phonebook/src"]
@@ -117,8 +100,4 @@
                       "examples/phonebook/test"]
 
          :resource-paths ["dev/resources"
-                          "examples/phonebook/resources"]}
-   #_:test
-   #_{:source-paths ["yada.test/src"]}
-
-   })
+                          "examples/phonebook/resources"]}})
