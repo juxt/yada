@@ -19,7 +19,7 @@ The best way to learn is to experiment with yada, either on its own or by using 
 
 The quickest and perhaps easiest way to get started is to clone the yada branch of JUXT's __edge__ repository. This is a continuously improving development environment representing our firm's best advice for building Clojure projects.
 
-    git clone -b yada git@github.com/juxt/edge
+    git clone git@github.com/juxt/edge
 
 __edge__ is opinionated and combines a number of practices that we've found useful on many projects at JUXT.
 
