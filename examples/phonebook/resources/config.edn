@@ -1,5 +1,5 @@
 {:port 9500
- :vhosts #cond {:dev ["http://localhost:9500"]}
+ :vhosts #profile {:dev ["http://localhost:9500"]}
  :entries {1 {:surname "Sparks"
               :firstname "Malcolm"
               :phone "1234"}

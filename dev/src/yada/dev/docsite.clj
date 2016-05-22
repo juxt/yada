@@ -70,7 +70,7 @@
            [:li "Examples — self-contained apps for you to explore"
             [:ul
              [:li [:a {:href (:href (yada/uri-for ctx :yada.dev.hello/index))} "Hello World!"] " — to introduce " [:span.yada "yada"] " in the proper way"]
-                  
+
              [:li
               [:a {:href (:href (yada/uri-for ctx :phonebook.api/index))}
                "Phonebook"]
@@ -78,12 +78,8 @@
                    ;; TODO: use bidi's path-for
                    (format "%s/phonebook-swagger.html?url=%s"
                            (:href (yada/uri-for ctx :swagger-ui))
-                           ;; We don't want the relative path from
-                           ;; this docsite index, rather, we want to
-                           ;; pass the full URI of the swagger spec to
-                           ;; the swagger ui.
-                           (:path (yada/uri-for ctx ::phonebook-swagger-spec))
-                                
+                           (:uri (yada/uri-for ctx ::phonebook-swagger-spec))
+
                            )}
                " (Swagger)"]
               " — to demonstrate custom records implementing standard HTTP methods"]
@@ -137,7 +133,7 @@
                                        [:meta {:name "viewport" :content "width=device-width,initial-scale=1"}]
                                        [:title (.getName f)]
                                        [:style {:type "text/css"} (slurp (io/resource "style.css"))]]
-                                      
+
                                       [:body
                                        [:p "The " [:span {:class "yada"} "yada"] " manual"]
                                        (md-to-html-string (slurp f)) \newline])
@@ -180,11 +176,11 @@
                   :responses {#{406} {:description "Redirect on 406"
                                       :produces #{"text/html" "text/plain;q=0.9"}
                                       :response (fn [ctx]
-                                                  (-> (:response ctx) 
+                                                  (-> (:response ctx)
                                                       (assoc :status 304)
                                                       (update :headers conj ["Location" "/foo"])))}}})]
 
-        ["/api" 
+        ["/api"
          (swaggered
           ["/greetings"
            [
@@ -200,7 +196,7 @@
         ["/phonebook-api/swagger.json"
          (-> (yada
               (swagger/swagger-spec-resource
-               (swagger/swagger-spec 
+               (swagger/swagger-spec
                 (-> phonebook :api :routes)
                 {:info {:title "Phonebook"
                         :version "1.0"
@@ -224,6 +220,3 @@
   (-> (map->Docsite opts)
       (using [:phonebook])
       ))
-
-
-

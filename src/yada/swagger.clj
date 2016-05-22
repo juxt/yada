@@ -103,7 +103,7 @@
                                       (dissoc :cookie))
                        produces (->> (:produces method)
                                      (concat produces)
-                                     (sequence media-type-names)) 
+                                     (sequence media-type-names))
                        consumes (->> (:consumes method)
                                      (concat consumes)
                                      (sequence media-type-names))
@@ -128,7 +128,9 @@
 
 (defn routes->ring-swagger-spec [routes & [template]]
   (-> (or template {})
-      (merge {:paths (into {} (map to-path (route-seq routes)))})
+      (merge {:paths (into {} (map to-path (route-seq routes)))
+              :produces []
+              :consumes []})
       ring-swagger-coercer))
 
 (defn swagger-spec [routes template & [content-type]]
@@ -220,9 +222,8 @@
     (map->Swaggered
      {:spec spec
       :routes routes
-      :swagger-ui (handler (new-classpath-resource "META-INF/resources/webjars/swagger-ui/2.1.3")) 
+      :swagger-ui (handler (new-classpath-resource "META-INF/resources/webjars/swagger-ui/2.1.3"))
       :spec-handlers
       (into {}
             (for [ct ["application/edn" "application/json" "text/html"]]
               [ct (handler (swagger-spec-resource spec ct))]))})))
-

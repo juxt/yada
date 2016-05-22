@@ -31,7 +31,7 @@
    [com.cognitect/transit-clj "0.8.285"]
 
    ;; Built-in Swagger UI
-   [org.webjars/swagger-ui "2.1.8-M1"]
+   [org.webjars/swagger-ui "2.1.4"]
 
    ;; Provide exclusions libraries
    [com.google.guava/guava "18.0"]

@@ -11,7 +11,7 @@
    [phonebook.api :refer [new-api-component]]
    [phonebook.schema :refer [Config]]
    [schema.core :as s]
-   [yada.yada :refer [handler server]]))
+   [yada.yada :refer [handler listener]]))
 
 (defn create-vhosts-model [vhosts api]
   (vhosts-model
@@ -27,7 +27,7 @@
     (let [model (create-vhosts-model vhosts api)]
       (assoc component
              :vhosts-model model
-             :server (server model {:port port}))))
+             :server (listener model {:port port}))))
   (stop [component]
     (when-let [close (some-> component :server :close)]
       (close))

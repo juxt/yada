@@ -105,7 +105,7 @@
             [:li [:a {:href
                       (format "%s/index.html?url=%s/swagger.json"
                               (:href (yada/uri-for ctx :swagger-ui))
-                              (:href (yada/uri-for ctx ::hello-swagger)))}
+                              (:uri (yada/uri-for ctx ::hello-swagger)))}
                   "Hello Swagger!"]
              " - demonstration of the Swagger interface on a simple string"]
 
@@ -115,10 +115,10 @@
             [:li [:a {:href
                       (format "%s/index.html?url=%s/swagger.json"
                               (:href (yada/uri-for ctx :swagger-ui))
-                              (:href (yada/uri-for ctx ::hello-atom-swagger)))}
+                              (:uri (yada/uri-for ctx ::hello-atom-swagger)))}
                   "Hello Swaggatom!"]
              " - demonstration of the Swagger interface on an atom"]]
-           
+
            [:p [:a {:href (:href (yada/uri-for ctx ::index))} "Index"]]])}))
       (assoc :id ::index)
       yada))

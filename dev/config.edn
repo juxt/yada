@@ -1,17 +1,16 @@
 {:docsite {:port 8090
-           :vhosts #cond {:dev ["http://localhost:8090"]
-                          :local ["http://yada.juxt.pro.local"]
-                          :prod ["https://yada.juxt.pro" "http://yada.juxt.pro"]}}
+           :vhosts #profile {:dev ["http://localhost:8090"]
+                             :local ["http://yada.juxt.pro.local"]
+                             :prod ["https://yada.juxt.pro" "http://yada.juxt.pro"]}}
 
  :phonebook {:port 8099
-             :vhosts #cond {:dev ["http://localhost:8099"]
-                            :local ["http://yada-phonebook.juxt.pro.local"]
-                            :prod ["https://yada-phonebook.juxt.pro" "http://yada-phonebook.juxt.pro"]}
-             
+             :vhosts #profile {:dev ["http://localhost:8099"]
+                               :local ["http://yada-phonebook.juxt.pro.local"]
+                               :prod ["https://yada-phonebook.juxt.pro" "http://yada-phonebook.juxt.pro"]}
+
              :entries {1 {:surname "Sparks"
                           :firstname "Malcolm"
                           :phone "1234"}
                        2 {:surname "Pither"
                           :firstname "Jon"
                           :phone "1235"}}}}
-

@@ -46,11 +46,11 @@
                :key :bootstrap
                :uri-context "/bootstrap"
                :resource-prefix "META-INF/resources/webjars/bootstrap/3.3.6")
-   
+
    ::web-resources (new-web-resources
                    :uri-context "/static"
                    :resource-prefix "static")
-   
+
    ::highlight-js-resources
    (new-archived-web-resources :archive (io/resource "highlight.zip") :uri-context "/hljs/")
    ))
@@ -63,7 +63,7 @@
          (new-web-resources
           :key :swagger-ui
           :uri-context "/swagger-ui"
-          :resource-prefix "META-INF/resources/webjars/swagger-ui/2.1.3")))
+          :resource-prefix "META-INF/resources/webjars/swagger-ui/2.1.4")))
 
 (defn http-server-components [system config]
   (assoc system
