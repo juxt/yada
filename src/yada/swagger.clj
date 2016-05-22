@@ -128,9 +128,7 @@
 
 (defn routes->ring-swagger-spec [routes & [template]]
   (-> (or template {})
-      (merge {:paths (into {} (map to-path (route-seq routes)))
-              :produces []
-              :consumes []})
+      (merge {:paths (into {} (map to-path (route-seq routes)))})
       ring-swagger-coercer))
 
 (defn swagger-spec [routes template & [content-type]]
