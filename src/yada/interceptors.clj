@@ -118,7 +118,7 @@
                                                     ((rsc/coercer :query) schema))))]
                       (coercer qp))
                     qp))
-                    
+
          :header (when-let [schema (:header schemas)]
                    ;; Allow any other headers
                    (let [coercer (sc/coercer (merge schema {s/Str s/Str}) {})]
@@ -265,7 +265,7 @@
             etags (into {}
                         (for [rep (:produces ctx)]
                           [rep (p/to-etag version rep)]))]
-        
+
         (if (empty? (set/intersection matches (set (vals etags))))
           (d/error-deferred
            (ex-info "Precondition failed"
@@ -287,7 +287,7 @@
     ;; TODO: Weak comparison. Since we don't (yet) support the
     ;; issuance of weak entity tags, weak and strong comparison are
     ;; identical here.
-    
+
     (if
         (-> ctx :properties :version)
         (let [version (-> ctx :properties :version)
@@ -383,7 +383,7 @@
                    (when (not= (:method ctx) :head)
                      (when-let [cl (body/content-length body)]
                        {"content-length" (str cl)}))
-                   
+
                    (when-let [cookies (get-in ctx [:response :cookies])]
                      (let [cookies (cookies/cookies-coercer cookies)]
                        (if (error? cookies)
@@ -413,7 +413,7 @@
 
     ;;(infof "body in response is %s" body)
     ;;(infof "body is type %s" (type body))
-    
+
     (assoc ctx :response response)))
 
 (defrecord Foo [])

@@ -200,7 +200,7 @@ convenience of terse, expressive short-hand descriptions."}
 (s/defschema MethodParametersCoercionMatchers
   "A map of coercion matchers as required by `schema.coerce/coercer`."
   {(s/optional-key :coercion-matchers) {(s/optional-key :path) (s/=> s/Any s/Any)
-                                        (s/optional-key :query) (s/=> s/Any s/Any) 
+                                        (s/optional-key :query) (s/=> s/Any s/Any)
                                         (s/optional-key :body) (s/=> s/Any s/Any)
                                         (s/optional-key :form) (s/=> s/Any s/Any)}})
 
@@ -243,7 +243,7 @@ convenience of terse, expressive short-hand descriptions."}
                       :produces "text/plain"})
   Object
   (as-method-map [o] {:response o})
-  
+
   nil
   (as-method-map [o] {:response nil}))
 
@@ -359,7 +359,7 @@ convenience of terse, expressive short-hand descriptions."}
            (dissoc :scheme :verify))
        x))})
 
-(def HeaderMappings 
+(def HeaderMappings
   {StringSet (fn [x]
                (cond
                  (string? x) (set (clojure.string/split x #"\s*,\s*"))

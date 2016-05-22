@@ -70,14 +70,14 @@
   Long
   (to-body [l representation]
     (to-body (str l) representation))
-  
+
   ;; The content-length is NOT the length of the string, but the
   ;; "decimal number of octets, for a potential payload body".
   ;; See  http://mark.koli.ch/remember-kids-an-http-content-length-is-the-number-of-bytes-not-the-number-of-characters
   (content-length [s]
     nil)
 
-  
+
 
   MapBody
   (to-body [mb representation]
@@ -91,7 +91,7 @@
   clojure.lang.APersistentVector
   (to-body [v representation]
     (encode-message (render-seq v representation) representation))
-  
+
   clojure.lang.ASeq
   (to-body [v representation]
     (encode-message (render-seq v representation) representation))
@@ -277,7 +277,7 @@
            (.flush pw)
            (let [s (String. (.toByteArray baos))]
              [:pre s])))])
-    
+
     [:div
      [:p.footer [:span.yada
           [:a {:href "https://yada.juxt.pro"} "yada"]]

@@ -39,7 +39,9 @@
     (testing "string-set"
       (is (= (coercer {:produces (sorted-set "text/html" "application/json")})
              {:produces [{:media-type JSON}
-                         {:media-type HTML}]})))))
+                         {:media-type HTML}]})))
+
+    ))
 
 (deftest consumes-test
   (let [coercer (sc/coercer Consumes RepresentationSeqMappings)]
@@ -71,7 +73,7 @@
         (is (not (error? params)))
         (is (nil? (s/check Properties params)))
         (is (nil? (s/check PropertiesResult (:properties params))))))
-    
+
     (testing "dynamic"
       (let [params (coercer {:properties (fn [ctx] {})})]
         (is (not (error? params)))
@@ -107,7 +109,7 @@
           (is (not (error? r)))
           (is (nil? (s/check Methods r)))
           (is (= "Hello World!" (invoke-with-ctx (get-in r [:methods :get :response]))))))
-      
+
       (testing "implied handler"
         (let [r (coercer {:methods {:get (fn [ctx] "Hello World!")}})]
           (is (not (error? r)))
@@ -143,9 +145,7 @@
       (testing "method mappings"
         (let [r (coercer {:get "foo"})]
           (is (error? r))
-          (is (= {:methods 'missing-required-key, :get 'disallowed-key} (:error r)))))
-
-      )))
+          (is (= {:methods 'missing-required-key, :get 'disallowed-key} (:error r))))))))
 
 (deftest authentication-test
   (let [coerce (sc/coercer AccessControl AccessControlMappings)]
@@ -159,7 +159,7 @@
               {:access-control {:realm "default"
                                 :authentication-schemes [{:scheme "Basic"
                                                           :verify identity}]
-                                
+
                                 :allow-origin "*"}}))))
 
     (testing "coerce single scheme shorthand to canonical form"
@@ -252,7 +252,7 @@
              {:foo :bar
               :methods {}})]
       (is (error? r))))
-  
+
   (testing "namespaced keywords are OK"
     (let [r (resource-coercer
              {:ns/foo :bar
@@ -287,4 +287,3 @@
 (deftest user-manual-test
   (doseq [res user-guide-example-store-resources :let [r (resource-coercer res)]]
     (is (not (error? r)))))
-
