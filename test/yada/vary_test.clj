@@ -4,26 +4,33 @@
   (:require
    [clojure.test :refer :all]
    [clojure.string :as str]
-   [ring.mock.request :refer (request)]
+   [ring.mock.request :refer [request]]
    [schema.test :as st]
    [yada.charset :as charset]
-   [yada.representation :refer (coerce-representations representation-seq vary)]
-   [yada.util :refer (parse-csv)]
+   [yada.representation :refer [vary]]
+   [yada.schema :as ys]
+   [yada.util :refer [parse-csv]]
    [yada.yada :as yada :refer [yada]]))
 
 (st/deftest vary-test
   (is (= #{:media-type}
          (vary
-          (representation-seq (coerce-representations [{:media-type #{"text/plain" "text/html"}}])))))
+          (ys/representation-seq
+           (ys/representation-set-coercer
+            [{:media-type #{"text/plain" "text/html"}}])))))
 
+  (is (= #{:charset}
+         (vary
+          (ys/representation-seq
+           (ys/representation-set-coercer
+            [{:media-type "text/html" :charset #{"UTF-8" "Latin-1"}}])))))
 
-  (is (= #{:charset} (vary
-                      (representation-seq (coerce-representations [{:charset #{"UTF-8" "Latin-1"}}])))))
-
-  (is (= #{:media-type :charset} (vary
-                                  (representation-seq (coerce-representations [{:media-type #{"text/plain" "text/html"}
-                                                                                :charset #{"UTF-8" "Latin-1"}}])))))
-)
+  (is (= #{:media-type :charset}
+         (vary
+          (ys/representation-seq
+           (ys/representation-set-coercer
+            [{:media-type #{"text/plain" "text/html"}
+              :charset #{"UTF-8" "Latin-1"}}]))))))
 
 (st/deftest vary-header-test []
   (let [resource "Hello World!"
