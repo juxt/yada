@@ -338,7 +338,7 @@
                                  ; expanded, is this necessary at this
                                  ; stage?
               (update-in [:produces]
-                         (comp rep/representation-seq rep/coerce-representations)))))))
+                         (comp ys/representation-seq ys/representation-set-coercer)))))))
       ctx)))
 
 ;; Compute ETag, if not already done so

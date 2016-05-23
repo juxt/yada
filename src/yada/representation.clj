@@ -336,21 +336,6 @@
           {:language (set (map parse-language (to-set langs)))})))
      reps)))
 
-(defn representation-seq
-  "Return a sequence of all possible individual representations from the
-  result of coerce-representations."
-  [reps]
-  (for [rep reps
-        media-type (or (:media-type rep) [nil])
-        charset (or (:charset rep) [nil])
-        language (or (:language rep) [nil])
-        encoding (or (:encoding rep) [nil])]
-    (merge
-     (when media-type {:media-type media-type})
-     (when charset {:charset charset})
-     (when language {:language language})
-     (when encoding {:encoding encoding}))))
-
 (defn vary
   "From a representation-seq, find the variable dimensions"
   [reps]

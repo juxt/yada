@@ -55,13 +55,13 @@
       (some #{:get} methods) (conj :head)
       true (conj :options))))
 
+;; Possibly in future it will be possible
+;; to support more media-types to render
+;; errors, including image and video
+;; formats.
 (def error-representations
-  (rep/representation-seq
-   (rep/coerce-representations
-    ;; Possibly in future it will be possible
-    ;; to support more media-types to render
-    ;; errors, including image and video
-    ;; formats.
+  (ys/representation-seq
+   (ys/representation-set-coercer
     [{:media-type #{"application/json"
                     "application/json;pretty=true;q=0.96"
                     "text/plain;q=0.9"
