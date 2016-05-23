@@ -13,14 +13,17 @@ convenience of terse, expressive short-hand descriptions."}
    [clojure.set :as set]
    [clojure.tools.logging :refer :all]
    [yada.boolean :as b :refer [boolean?]]
+   [yada.representation :as rep]
    [yada.media-type :as mt]
    [schema.core :as s]
    [schema.coerce :as sc]
    [schema.utils :refer [error?]]
-   [yada.charset :refer [to-charset-map]])
+   [yada.charset :refer [to-charset-map]]
+   [yada.representation :as rep])
   (:import
    [yada.charset CharsetMap]
-   [yada.media_type MediaTypeMap]))
+   [yada.media_type MediaTypeMap]
+   [yada.representation LanguageMap]))
 
 (s/defschema NamespacedKeyword
   (s/constrained s/Keyword namespace))
@@ -60,7 +63,7 @@ convenience of terse, expressive short-hand descriptions."}
   (s/constrained
    {:media-type MediaTypeMap
     (s/optional-key :charset) CharsetMap
-    (s/optional-key :language) String
+    (s/optional-key :language) LanguageMap
     (s/optional-key :encoding) String}
    not-empty))
 
@@ -68,7 +71,7 @@ convenience of terse, expressive short-hand descriptions."}
   (s/constrained
    {:media-type #{MediaTypeMap}
     (s/optional-key :charset) #{CharsetMap}
-    (s/optional-key :language) #{String}
+    (s/optional-key :language) #{LanguageMap}
     (s/optional-key :encoding) #{String}}
    not-empty))
 
@@ -99,6 +102,15 @@ convenience of terse, expressive short-hand descriptions."}
   String
   (as-media-type [s] (mt/string->media-type s)))
 
+(defprotocol LanguageMapCoercion
+  (as-language-map [_] ""))
+
+(extend-protocol LanguageMapCoercion
+  LanguageMap
+  (as-language-map [m] m)
+  String
+  (as-language-map [s] (rep/parse-language s)))
+
 (extend-protocol RepresentationSetCoercion
   clojure.lang.APersistentSet
   (as-representation-set [s] {:media-type s})
@@ -114,6 +126,8 @@ convenience of terse, expressive short-hand descriptions."}
    MediaTypeMap as-media-type
    #{CharsetMap} as-set
    CharsetMap to-charset-map
+   #{LanguageMap} as-set
+   LanguageMap as-language-map
    #{String} as-set})
 
 (def representation-set-coercer

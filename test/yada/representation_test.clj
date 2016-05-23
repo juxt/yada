@@ -243,10 +243,10 @@
 (deftest parse-language-test
   (testing "basic"
     (is (= (rep/parse-language "en-US;q=0.8")
-           {:language ["en" "us"] :quality (float 0.8)})))
+           (rep/map->LanguageMap {:language ["en" "us"] :quality (float 0.8)}))))
   (testing "wildcard"
     (is (= (rep/parse-language "en-*")
-           {:language ["en" "*"] :quality (float 1.0)}))))
+           (rep/map->LanguageMap {:language ["en" "*"] :quality (float 1.0)})))))
 
 (defn- lang-matches? [rep accepts]
   (rep/lang-matches?

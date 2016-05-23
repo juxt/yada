@@ -194,6 +194,8 @@
 
 ;; Languages ------------------------------------
 
+(defrecord LanguageMap [language quality])
+
 (defn parse-language [s]
   (let [[_ lang qvalue]
         (re-matches
@@ -202,8 +204,9 @@
          s)]
     ;; qvalue could be nil
     (when lang
-      {:language (vec (map str/lower-case (str/split lang #"-")))
-       :quality (if qvalue (Float/parseFloat qvalue) (float 1.0))})))
+      (map->LanguageMap
+       {:language (vec (map str/lower-case (str/split lang #"-")))
+        :quality (if qvalue (Float/parseFloat qvalue) (float 1.0))}))))
 
 (s/defn lang-matches?
   "See RFC 4647 Basic Filtering"
