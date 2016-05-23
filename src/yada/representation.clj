@@ -301,7 +301,7 @@
 ;; TODO: Might be able to remove this, because yada.resource now does
 ;; automatic coercions. However, still some requirement for checking bad
 ;; charsets, which could be moved into yada.resource now.
-(defn coerce-representations
+#_(defn coerce-representations
   "For performance reasons it is sensible to coerce the representations
   ahead of time, rather than on each request."
   [reps]
