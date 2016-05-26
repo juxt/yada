@@ -1,0 +1,1321 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head profile="http://dublincore.org/documents/2008/08/04/dc-html/">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="robots" content="index,follow" />
+    <meta name="creator" content="rfcmarkup version 1.118" />
+    <link rel="schema.DC" href="http://purl.org/dc/elements/1.1/" />
+<meta name="DC.Relation.Replaces" content="rfc3066" />
+<meta name="DC.Identifier" content="urn:ietf:rfc:4647" />
+<meta name="DC.Date.Issued" content="September, 2006" />
+<meta name="DC.Creator" content="Davis, Mark" />
+<meta name="DC.Creator" content="Phillips, Addison" />
+<meta name="DC.Description.Abstract" content="This document describes a syntax, called a &quot;language-range&quot;, for
+specifying items in a user's list of language preferences. It also
+describes different mechanisms for comparing and matching these to
+language tags. Two kinds of matching mechanisms, filtering and lookup,
+are defined. Filtering produces a (potentially empty) set of language
+tags, whereas lookup produces a single language tag. Possible
+applications include language negotiation or content selection. This
+document, in combination with RFC 4646, replaces RFC 3066, which
+replaced RFC 1766. This document specifies an Internet Best Current
+Practices for the Internet Community, and requests discussion and
+suggestions for improvements." />
+<meta name="DC.Title" content="Matching of Language Tags" />
+
+    <link rel="icon" href="/images/rfc.png" type="image/png" />
+    <link rel="shortcut icon" href="/images/rfc.png" type="image/png" />
+    <title>RFC 4647 - Matching of Language Tags</title>
+    
+    
+    <style type="text/css">
+	@media only screen 
+	  and (min-width: 992px)
+	  and (max-width: 1199px) {
+	    body { font-size: 14pt; }
+            div.content { width: 96ex; margin: 0 auto; }
+        }
+	@media only screen 
+	  and (min-width: 768px)
+	  and (max-width: 991px) {
+            body { font-size: 14pt; }
+            div.content { width: 96ex; margin: 0 auto; }
+        }
+	@media only screen 
+	  and (min-width: 480px)
+	  and (max-width: 767px) {
+            body { font-size: 11pt; }
+            div.content { width: 96ex; margin: 0 auto; }
+        }
+	@media only screen 
+	  and (max-width: 479px) {
+            body { font-size: 8pt; }
+            div.content { width: 96ex; margin: 0 auto; }
+        }
+	@media only screen 
+	  and (min-device-width : 375px) 
+	  and (max-device-width : 667px) {
+            body { font-size: 9.5pt; }
+            div.content { width: 96ex; margin: 0 1px; }
+        }
+	@media only screen 
+	  and (min-device-width: 1200px) {
+            body { font-size: 10pt; margin: 0 4em; }
+            div.content { width: 96ex; margin: 0; }
+        }
+        h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+	    font-weight: bold;
+            line-height: 0pt;
+            display: inline;
+            white-space: pre;
+            font-family: monospace;
+            font-size: 1em;
+	    font-weight: bold;
+        }
+        pre {
+            font-size: 1em;
+            margin-top: 0px;
+            margin-bottom: 0px;
+        }
+	.pre {
+	    white-space: pre;
+	    font-family: monospace;
+	}
+	.header{
+	    font-weight: bold;
+	}
+        .newpage {
+            page-break-before: always;
+        }
+        .invisible {
+            text-decoration: none;
+            color: white;
+        }
+        a.selflink {
+          color: black;
+          text-decoration: none;
+        }
+        @media print {
+            body {
+                font-family: monospace;
+                font-size: 10.5pt;
+            }
+            h1, h2, h3, h4, h5, h6 {
+                font-size: 1em;
+            }
+        
+            a:link, a:visited {
+                color: inherit;
+                text-decoration: none;
+            }
+            .noprint {
+                display: none;
+            }
+        }
+	@media screen {
+	    .grey, .grey a:link, .grey a:visited {
+		color: #777;
+	    }
+            .docinfo {
+                background-color: #EEE;
+            }
+            .top {
+                border-top: 7px solid #EEE;
+            }
+            .bgwhite  { background-color: white; }
+            .bgred    { background-color: #F44; }
+            .bggrey   { background-color: #666; }
+            .bgbrown  { background-color: #840; }            
+            .bgorange { background-color: #FA0; }
+            .bgyellow { background-color: #EE0; }
+            .bgmagenta{ background-color: #F4F; }
+            .bgblue   { background-color: #66F; }
+            .bgcyan   { background-color: #4DD; }
+            .bggreen  { background-color: #4F4; }
+
+            .legend   { font-size: 90%; }
+            .cplate   { font-size: 70%; border: solid grey 1px; }
+	}
+    </style>
+    <!--[if IE]>
+    <style>
+    body {
+       font-size: 13px;
+       margin: 10px 10px;
+    }
+    </style>
+    <![endif]-->
+
+    <script type="text/javascript"><!--
+    function addHeaderTags() {
+	var spans = document.getElementsByTagName("span");
+	for (var i=0; i < spans.length; i++) {
+	    var elem = spans[i];
+	    if (elem) {
+		var level = elem.getAttribute("class");
+                if (level == "h1" || level == "h2" || level == "h3" || level == "h4" || level == "h5" || level == "h6") {
+                    elem.innerHTML = "<"+level+">"+elem.innerHTML+"</"+level+">";		
+                }
+	    }
+	}
+    }
+    var legend_html = "Colour legend:<br />      <table>         <tr><td>Unknown:</td>                   <td><span class='cplate bgwhite'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Draft:</td>                     <td><span class='cplate bgred'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Informational:</td>             <td><span class='cplate bgorange'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Experimental:</td>              <td><span class='cplate bgyellow'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Best Common Practice:</td>      <td><span class='cplate bgmagenta'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Proposed Standard:</td>         <td><span class='cplate bgblue'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Draft Standard (old designation):</td> <td><span class='cplate bgcyan'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Internet Standard:</td>         <td><span class='cplate bggreen'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Historic:</td>                  <td><span class='cplate bggrey'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>         <tr><td>Obsolete:</td>                  <td><span class='cplate bgbrown'>&nbsp;&nbsp;&nbsp;&nbsp;</span></td></tr>     </table>";
+    function showElem(id) {
+        var elem = document.getElementById(id);
+        elem.innerHTML = eval(id+"_html");
+        elem.style.visibility='visible';
+    }
+    function hideElem(id) {
+        var elem = document.getElementById(id);
+        elem.style.visibility='hidden';        
+        elem.innerHTML = "";
+    }
+    // -->
+    </script>
+</head>
+<body onload="addHeaderTags()">
+  <div class="content">
+   <div style="height: 13px;">
+      <div onmouseover="this.style.cursor='pointer';"
+         onclick="showElem('legend');"
+         onmouseout="hideElem('legend')"
+	 style="height: 6px; position: absolute;"
+         class="pre noprint docinfo bgmagenta"
+         title="Click for colour legend." >                                                                        </div>
+      <div id="legend"
+           class="docinfo noprint pre legend"
+           style="position:absolute; top: 4px; left: 4ex; visibility:hidden; background-color: white; padding: 4px 9px 5px 7px; border: solid #345 1px; "
+           onmouseover="showElem('legend');"
+           onmouseout="hideElem('legend');">
+      </div>
+   </div>
+<span class="pre noprint docinfo top">[<a href="../html/" title="Document search and retrieval page">Docs</a>] [<a href="/rfc/rfc4647.txt" title="Plaintext version of this document">txt</a>|<a href="/pdf/rfc4647" title="PDF version of this document">pdf</a>] [<a href="./draft-ietf-ltru-matching" title="draft-ietf-ltru-matching">draft-ietf-ltru-m...</a>] [<a href="/rfcdiff?difftype=--hwdiff&amp;url2=rfc4647" title="Inline diff (wdiff)">Diff1</a>] [<a href="/rfcdiff?url2=rfc4647" title="Side-by-side diff">Diff2</a>]                 </span><br />
+<span class="pre noprint docinfo">                                                                        </span><br />
+<span class="pre noprint docinfo">                                                   BEST CURRENT PRACTICE</span><br />
+<span class="pre noprint docinfo">                                                                        </span><br />
+<pre>
+Network Working Group                                   A. Phillips, Ed.
+Request for Comments: 4647                                   Yahoo! Inc.
+BCP: 47                                                    M. Davis, Ed.
+Obsoletes: <a href="./rfc3066">3066</a>                                                   Google
+Category: Best Current Practice                           September 2006
+
+
+                       <span class="h1">Matching of Language Tags</span>
+
+Status of This Memo
+
+   This document specifies an Internet Best Current Practices for the
+   Internet Community, and requests discussion and suggestions for
+   improvements.  Distribution of this memo is unlimited.
+
+Copyright Notice
+
+   Copyright (C) The Internet Society (2006).
+
+Abstract
+
+   This document describes a syntax, called a "language-range", for
+   specifying items in a user's list of language preferences.  It also
+   describes different mechanisms for comparing and matching these to
+   language tags.  Two kinds of matching mechanisms, filtering and
+   lookup, are defined.  Filtering produces a (potentially empty) set of
+   language tags, whereas lookup produces a single language tag.
+   Possible applications include language negotiation or content
+   selection.  This document, in combination with <a href="./rfc4646">RFC 4646</a>, replaces <a href="./rfc3066">RFC</a>
+   <a href="./rfc3066">3066</a>, which replaced <a href="./rfc1766">RFC 1766</a>.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="grey">Phillips &amp; Davis         Best Current Practice                  [Page 1]</span></pre>
+<hr class='noprint' style='width: 96ex;' align='left'/><!--NewPage--><pre class='newpage'><a name="page-2" id="page-2" href="#page-2" class="invisible"> </a>
+<span class="grey"><a href="./rfc4647">RFC 4647</a>               Matching of Language Tags          September 2006</span>
+
+
+Table of Contents
+
+   <a href="#section-1">1</a>. Introduction ....................................................<a href="#page-3">3</a>
+   <a href="#section-2">2</a>. The Language Range ..............................................<a href="#page-3">3</a>
+      <a href="#section-2.1">2.1</a>. Basic Language Range .......................................<a href="#page-4">4</a>
+      <a href="#section-2.2">2.2</a>. Extended Language Range ....................................<a href="#page-4">4</a>
+      <a href="#section-2.3">2.3</a>. The Language Priority List .................................<a href="#page-5">5</a>
+   <a href="#section-3">3</a>. Types of Matching ...............................................<a href="#page-6">6</a>
+      <a href="#section-3.1">3.1</a>. Choosing a Matching Scheme .................................<a href="#page-6">6</a>
+      <a href="#section-3.2">3.2</a>. Implementation Considerations ..............................<a href="#page-7">7</a>
+      <a href="#section-3.3">3.3</a>. Filtering ..................................................<a href="#page-8">8</a>
+           <a href="#section-3.3.1">3.3.1</a>. Basic Filtering .....................................<a href="#page-9">9</a>
+           <a href="#section-3.3.2">3.3.2</a>. Extended Filtering .................................<a href="#page-10">10</a>
+      <a href="#section-3.4">3.4</a>. Lookup ....................................................<a href="#page-12">12</a>
+           <a href="#section-3.4.1">3.4.1</a>. Default Values .....................................<a href="#page-14">14</a>
+   <a href="#section-4">4</a>. Other Considerations ...........................................<a href="#page-15">15</a>
+      <a href="#section-4.1">4.1</a>. Choosing Language Ranges ..................................<a href="#page-15">15</a>
+      <a href="#section-4.2">4.2</a>. Meaning of Language Tags and Ranges .......................<a href="#page-16">16</a>
+      <a href="#section-4.3">4.3</a>. Considerations for Private-Use Subtags ....................<a href="#page-17">17</a>
+      <a href="#section-4.4">4.4</a>. Length Considerations for Language Ranges .................<a href="#page-17">17</a>
+   <a href="#section-5">5</a>. Security Considerations ........................................<a href="#page-17">17</a>
+   <a href="#section-6">6</a>. Character Set Considerations ...................................<a href="#page-17">17</a>
+   <a href="#section-7">7</a>. References .....................................................<a href="#page-18">18</a>
+      <a href="#section-7.1">7.1</a>. Normative References ......................................<a href="#page-18">18</a>
+      <a href="#section-7.2">7.2</a>. Informative References ....................................<a href="#page-18">18</a>
+   <a href="#appendix-A">Appendix A</a>. Acknowledgements ......................................<a href="#page-19">19</a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="grey">Phillips &amp; Davis         Best Current Practice                  [Page 2]</span></pre>
+<hr class='noprint' style='width: 96ex;' align='left'/><!--NewPage--><pre class='newpage'><a name="page-3" id="page-3" href="#page-3" class="invisible"> </a>
+<span class="grey"><a href="./rfc4647">RFC 4647</a>               Matching of Language Tags          September 2006</span>
+
+
+<span class="h2"><a class="selflink" name="section-1" href="#section-1">1</a>.  Introduction</span>
+
+   Human beings on our planet have, past and present, used a number of
+   languages.  There are many reasons why one would want to identify the
+   language used when presenting or requesting information.
+
+   Applications, protocols, or specifications that use language
+   identifiers, such as the language tags defined in [<a href="./rfc4646" title="&quot;Tags for Identifying Languages&quot;">RFC4646</a>],
+   sometimes need to match language tags to a user's language
+   preferences.
+
+   This document defines a syntax (called a language range (<a href="#section-2">Section 2</a>))
+   for specifying items in the user's list of language preferences
+   (called a language priority list (<a href="#section-2.3">Section 2.3</a>)), as well as several
+   schemes for selecting or filtering sets of language tags by comparing
+   the language tags to the user's preferences.  Applications,
+   protocols, or specifications will have varying needs and requirements
+   that affect the choice of a suitable matching scheme.
+
+   This document describes how to indicate a user's preferences using
+   language ranges, three schemes for matching these ranges to a set of
+   language tags, and the various practical considerations that apply to
+   implementing and using these schemes.
+
+   This document, in combination with [<a href="./rfc4646" title="&quot;Tags for Identifying Languages&quot;">RFC4646</a>], replaces [<a href="./rfc3066" title="&quot;Tags for the Identification of Languages&quot;">RFC3066</a>],
+   which replaced [<a href="./rfc1766" title="&quot;Tags for the Identification of Languages&quot;">RFC1766</a>].
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
+   document are to be interpreted as described in [<a href="./rfc2119" title="&quot;Key words for use in RFCs to Indicate Requirement Levels&quot;">RFC2119</a>].
+
+<span class="h2"><a class="selflink" name="section-2" href="#section-2">2</a>.  The Language Range</span>
+
+   Language tags [<a href="./rfc4646" title="&quot;Tags for Identifying Languages&quot;">RFC4646</a>] are used to help identify languages, whether
+   spoken, written, signed, or otherwise signaled, for the purpose of
+   communication.  Applications, protocols, or specifications that use
+   language tags are often faced with the problem of identifying sets of
+   content that share certain language attributes.  For example,
+   HTTP/1.1 [<a href="./rfc2616" title="&quot;Hypertext Transfer Protocol -- HTTP/1.1&quot;">RFC2616</a>] describes one such mechanism in its discussion of
+   the Accept-Language header (<a href="#section-14.4">Section 14.4</a>), which is used when
+   selecting content from servers based on the language of that content.
+
+   It is, thus, useful to have a mechanism for identifying sets of
+   language tags that share specific attributes.  This allows users to
+   select or filter the language tags based on specific requirements.
+   Such an identifier is called a "language range".
+
+
+
+
+
+<span class="grey">Phillips &amp; Davis         Best Current Practice                  [Page 3]</span></pre>
+<hr class='noprint' style='width: 96ex;' align='left'/><!--NewPage--><pre class='newpage'><a name="page-4" id="page-4" href="#page-4" class="invisible"> </a>
+<span class="grey"><a href="./rfc4647">RFC 4647</a>               Matching of Language Tags          September 2006</span>
+
+
+   There are different types of language range, whose specific
+   attributes vary according to their application.  Language ranges are
+   similar to language tags: they consist of a sequence of subtags
+   separated by hyphens.  In a language range, each subtag MUST either
+   be a sequence of ASCII alphanumeric characters or the single
+   character '*' (%x2A, ASTERISK).  The character '*' is a "wildcard"
+   that matches any sequence of subtags.  The meaning and uses of
+   wildcards vary according to the type of language range.
+
+   Language tags and thus language ranges are to be treated as case-
+   insensitive: there exist conventions for the capitalization of some
+   of the subtags, but these MUST NOT be taken to carry meaning.
+   Matching of language tags to language ranges MUST be done in a case-
+   insensitive manner.
+
+<span class="h3"><a class="selflink" name="section-2.1" href="#section-2.1">2.1</a>.  Basic Language Range</span>
+
+   A "basic language range" has the same syntax as an [<a href="./rfc3066" title="&quot;Tags for the Identification of Languages&quot;">RFC3066</a>] language
+   tag or is the single character "*".  The basic language range was
+   originally described by HTTP/1.1 [<a href="./rfc2616" title="&quot;Hypertext Transfer Protocol -- HTTP/1.1&quot;">RFC2616</a>] and later [<a href="./rfc3066" title="&quot;Tags for the Identification of Languages&quot;">RFC3066</a>].  It
+   is defined by the following ABNF [<a href="./rfc4234" title="&quot;Augmented BNF for Syntax Specifications: ABNF&quot;">RFC4234</a>]:
+
+   language-range   = (1*8ALPHA *("-" 1*8alphanum)) / "*"
+   alphanum         = ALPHA / DIGIT
+
+   A basic language range differs from the language tags defined in
+   [<a href="./rfc4646" title="&quot;Tags for Identifying Languages&quot;">RFC4646</a>] only in that there is no requirement that it be "well-
+   formed" or be validated against the IANA Language Subtag Registry.
+   Such ill-formed ranges will probably not match anything.  Note that
+   the ABNF [<a href="./rfc4234" title="&quot;Augmented BNF for Syntax Specifications: ABNF&quot;">RFC4234</a>] in [<a href="./rfc2616" title="&quot;Hypertext Transfer Protocol -- HTTP/1.1&quot;">RFC2616</a>] is incorrect, since it disallows the
+   use of digits anywhere in the 'language-range' (see [<a href="#ref-RFC2616errata" title="&quot;HTTP/1.1 Specification Errata&quot;">RFC2616errata</a>]).
+
+<span class="h3"><a class="selflink" name="section-2.2" href="#section-2.2">2.2</a>.  Extended Language Range</span>
+
+   Occasionally, users will wish to select a set of language tags based
+   on the presence of specific subtags.  An "extended language range"
+   describes a user's language preference as an ordered sequence of
+   subtags.  For example, a user might wish to select all language tags
+   that contain the region subtag 'CH' (Switzerland).  Extended language
+   ranges are useful for specifying a particular sequence of subtags
+   that appear in the set of matching tags without having to specify all
+   of the intervening subtags.
+
+   An extended language range can be represented by the following ABNF:
+
+   extended-language-range = (1*8ALPHA / "*")
+                             *("-" (1*8alphanum / "*"))
+
+
+
+
+<span class="grey">Phillips &amp; Davis         Best Current Practice                  [Page 4]</span></pre>
+<hr class='noprint' style='width: 96ex;' align='left'/><!--NewPage--><pre class='newpage'><a name="page-5" id="page-5" href="#page-5" class="invisible"> </a>
+<span class="grey"><a href="./rfc4647">RFC 4647</a>               Matching of Language Tags          September 2006</span>
+
+
+   The wildcard subtag '*' can occur in any position in the extended
+   language range, where it matches any sequence of subtags that might
+   occur in that position in a language tag.  However, wildcards outside
+   the first position are ignored by Extended Filtering (see <a href="#section-3.2.2">Section</a>
+   <a href="#section-3.2.2">3.2.2</a>).  The use or absence of one or more wildcards cannot be taken
+   to imply that a certain number of subtags will appear in the matching
+   set of language tags.
+
+<span class="h3"><a class="selflink" name="section-2.3" href="#section-2.3">2.3</a>.  The Language Priority List</span>
+
+   A user's language preferences will often need to specify more than
+   one language range, and thus users often need to specify a
+   prioritized list of language ranges in order to best reflect their
+   language preferences.  This is especially true for speakers of
+   minority languages.  A speaker of Breton in France, for example, can
+   specify "br" followed by "fr", meaning that if Breton is available,
+   it is preferred, but otherwise French is the best alternative.  It
+   can get more complex: a different user might want to fall back from
+   Skolt Sami to Northern Sami to Finnish.
+
+   A "language priority list" is a prioritized or weighted list of
+   language ranges.  One well-known example of such a list is the
+   "Accept-Language" header defined in <a href="./rfc2616">RFC 2616</a> [<a href="./rfc2616" title="&quot;Hypertext Transfer Protocol -- HTTP/1.1&quot;">RFC2616</a>] (see <a href="#section-14.4">Section</a>
+   <a href="#section-14.4">14.4</a>) and <a href="./rfc3282">RFC 3282</a> [<a href="./rfc3282" title="&quot;Content Language Headers&quot;">RFC3282</a>].
+
+   The various matching operations described in this document include
+   considerations for using a language priority list.  This document
+   does not define the syntax for a language priority list; defining
+   such a syntax is the responsibility of the protocol, application, or
+   specification that uses it.  When given as examples in this document,
+   language priority lists will be shown as a quoted sequence of ranges
+   separated by commas, like this: "en, fr, zh-Hant" (which is read
+   "English before French before Chinese as written in the Traditional
+   script").
+
+   A simple list of ranges is considered to be in descending order of
+   priority.  Other language priority lists provide "quality weights"
+   for the language ranges in order to specify the relative priority of
+   the user's language preferences.  An example of this is the use of
+   "q" values in the syntax of the "Accept-Language" header (defined in
+   <a href="./rfc2616#section-14.4">[RFC2616], Section&nbsp;14.4</a>, and [<a href="./rfc3282" title="&quot;Content Language Headers&quot;">RFC3282</a>]).
+
+
+
+
+
+
+
+
+
+
+<span class="grey">Phillips &amp; Davis         Best Current Practice                  [Page 5]</span></pre>
+<hr class='noprint' style='width: 96ex;' align='left'/><!--NewPage--><pre class='newpage'><a name="page-6" id="page-6" href="#page-6" class="invisible"> </a>
+<span class="grey"><a href="./rfc4647">RFC 4647</a>               Matching of Language Tags          September 2006</span>
+
+
+<span class="h2"><a class="selflink" name="section-3" href="#section-3">3</a>.  Types of Matching</span>
+
+   Matching language ranges to language tags can be done in many
+   different ways.  This section describes three such matching schemes,
+   as well as the considerations for choosing between them.  Protocols
+   and specifications requiring conformance to this specification MUST
+   clearly indicate the particular mechanism used in selecting or
+   matching language tags.
+
+   There are two types of matching scheme in this document.  A matching
+   scheme that produces zero or more matching language tags is called
+   "filtering".  A matching scheme that produces exactly one match for a
+   given request is called "lookup".
+
+<span class="h3"><a class="selflink" name="section-3.1" href="#section-3.1">3.1</a>.  Choosing a Matching Scheme</span>
+
+   Applications, protocols, and specifications are faced with the
+   decision of what type of matching to use.  Sometimes, different
+   styles of matching are suited to different kinds of processing within
+   a particular application or protocol.
+
+   This document describes three matching schemes:
+
+   1.  Basic Filtering (<a href="#section-3.3.1">Section 3.3.1</a>) matches a language priority list
+       consisting of basic language ranges (<a href="#section-2.1">Section 2.1</a>) to sets of
+       language tags.
+
+   2.  Extended Filtering (<a href="#section-3.3.2">Section 3.3.2</a>) matches a language priority
+       list consisting of extended language ranges (<a href="#section-2.2">Section 2.2</a>) to sets
+       of language tags.
+
+   3.  Lookup (<a href="#section-3.4">Section 3.4</a>) matches a language priority list consisting
+       of basic language ranges to sets of language tags to find the one
+       exact language tag that best matches the range.
+
+   Filtering can be used to produce a set of results (such as a
+   collection of documents) by comparing the user's preferences to a set
+   of language tags.  For example, when performing a search, filtering
+   can be used to limit the results to items tagged as being in the
+   French language.  Filtering can also be used when deciding whether to
+   perform a language-sensitive process on some content.  For example, a
+   process might cause paragraphs whose language tag matched the
+   language range "nl" (Dutch) to be displayed in italics within a
+   document.
+
+   Lookup produces the single result that best matches the user's
+   preferences from the list of available tags, so it is useful in cases
+   in which a single item is required (and for which only a single item
+
+
+
+<span class="grey">Phillips &amp; Davis         Best Current Practice                  [Page 6]</span></pre>
+<hr class='noprint' style='width: 96ex;' align='left'/><!--NewPage--><pre class='newpage'><a name="page-7" id="page-7" href="#page-7" class="invisible"> </a>
+<span class="grey"><a href="./rfc4647">RFC 4647</a>               Matching of Language Tags          September 2006</span>
+
+
+   can be returned).  For example, if a process were to insert a human-
+   readable error message into a protocol header, it might select the
+   text based on the user's language priority list.  Since the process
+   can return only one item, it is forced to choose a single item and it
+   has to return some item, even if none of the content's language tags
+   match the language priority list supplied by the user.
+
+<span class="h3"><a class="selflink" name="section-3.2" href="#section-3.2">3.2</a>.  Implementation Considerations</span>
+
+   Language tag matching is a tool, and does not by itself specify a
+   complete procedure for the use of language tags.  Such procedures are
+   intimately tied to the application protocol in which they occur.
+   When specifying a protocol operation using matching, the protocol
+   MUST specify:
+
+   o  Which type(s) of language tag matching it uses
+
+   o  Whether the operation returns a single result (lookup) or a
+      possibly empty set of results (filtering)
+
+   o  For lookup, what the default item is (or the sequence of
+      operations or configuration information used to determine the
+      default) when no matching tag is found.  For instance, a protocol
+      might define the result as failure of the operation, an empty
+      value, returning some protocol defined or implementation defined
+      default, or returning i-default [<a href="./rfc2277" title="&quot;IETF Policy on Character Sets and Languages&quot;">RFC2277</a>].
+
+   Applications, protocols, and specifications are not required to
+   validate or understand any of the semantics of the language tags or
+   ranges or of the subtags in them, nor do they require access to the
+   IANA Language Subtag Registry (see <a href="./rfc4646#section-3">Section&nbsp;3 in [RFC4646]</a>).  This
+   simplifies implementation.
+
+   However, designers of applications, protocols, or specifications are
+   encouraged to use the information from the IANA Language Subtag
+   Registry to support canonicalizing language tags and ranges in order
+   to map grandfathered and obsolete tags or subtags into modern
+   equivalents.
+
+   Applications, protocols, or specifications that canonicalize ranges
+   MUST either perform matching operations with both the canonical and
+   original (unmodified) form of the range or MUST also canonicalize
+   each tag for the purposes of comparison.
+
+
+
+
+
+
+
+
+<span class="grey">Phillips &amp; Davis         Best Current Practice                  [Page 7]</span></pre>
+<hr class='noprint' style='width: 96ex;' align='left'/><!--NewPage--><pre class='newpage'><a name="page-8" id="page-8" href="#page-8" class="invisible"> </a>
+<span class="grey"><a href="./rfc4647">RFC 4647</a>               Matching of Language Tags          September 2006</span>
+
+
+   Note that canonicalizing language ranges makes certain operations
+   impossible.  For example, an implementation that canonicalizes the
+   language range "art-lojban" (artificial language, lojban variant) to
+   use the more modern "jbo" (Lojban) cannot be used to select just the
+   items with the older tag.
+
+   Applications, protocols, or specifications that use basic ranges
+   might sometimes receive extended language ranges instead.  An
+   application, protocol, or specification MUST choose to a) map
+   extended language ranges to basic ranges using the algorithm below,
+   b) reject any extended language ranges in the language priority list
+   that are not valid basic language ranges, or c) treat each extended
+   language range as if it were a basic language range, which will have
+   the same result as ignoring them, since these ranges will not match
+   any valid language tags.
+
+   An extended language range is mapped to a basic language range as
+   follows: if the first subtag is a '*' then the entire range is
+   treated as "*", otherwise each wildcard subtag is removed.  For
+   example, the extended language range "en-*-US" maps to "en-US"
+   (English, United States).
+
+   Applications, protocols, or specifications, in addressing their
+   particular requirements, can offer pre-processing or configuration
+   options.  For example, an implementation could allow a user to
+   associate or map a particular language range to a different value.
+   Such a user might wish to associate the language range subtags 'nn'
+   (Nynorsk Norwegian) and 'nb' (Bokmal Norwegian) with the more general
+   subtag 'no' (Norwegian).  Or perhaps a user would want to associate
+   requests for the range "zh-Hans" (Chinese as written in the
+   Simplified script) with content bearing the language tag "zh-CN"
+   (Chinese as used in China, where the Simplified script is
+   predominant).  Documentation on how the ranges or tags are altered,
+   prioritized, or compared in the subsequent match in such an
+   implementation will assist users in making these types of
+   configuration choices.
+
+<span class="h3"><a class="selflink" name="section-3.3" href="#section-3.3">3.3</a>.  Filtering</span>
+
+   Filtering is used to select the set of language tags that matches a
+   given language priority list.  It is called "filtering" because this
+   set might contain no items at all or it might return an arbitrarily
+   large number of matching items: as many items as match the language
+   priority list, thus "filtering out" the non-matching items.
+
+   In filtering, each language range represents the least specific
+   language tag (that is, the language tag with fewest number of
+   subtags) that is an acceptable match.  All of the language tags in
+
+
+
+<span class="grey">Phillips &amp; Davis         Best Current Practice                  [Page 8]</span></pre>
+<hr class='noprint' style='width: 96ex;' align='left'/><!--NewPage--><pre class='newpage'><a name="page-9" id="page-9" href="#page-9" class="invisible"> </a>
+<span class="grey"><a href="./rfc4647">RFC 4647</a>               Matching of Language Tags          September 2006</span>
+
+
+   the matching set of tags will have an equal or greater number of
+   subtags than the language range.  Every non-wildcard subtag in the
+   language range will appear in every one of the matching language
+   tags.  For example, if the language priority list consists of the
+   range "de-CH" (German as used in Switzerland), one might see tags
+   such as "de-CH-1996" (German as used in Switzerland, orthography of
+   1996) but one will never see a tag such as "de" (because the 'CH'
+   subtag is missing).
+
+   If the language priority list (see <a href="#section-2.3">Section 2.3</a>) contains more than
+   one range, the content returned is typically ordered in descending
+   level of preference, but it MAY be unordered, according to the needs
+   of the application or protocol.
+
+   Some examples of applications where filtering might be appropriate
+   include:
+
+   o  Applying a style to sections of a document in a particular set of
+      languages.
+
+   o  Displaying the set of documents containing a particular set of
+      keywords written in a specific set of languages.
+
+   o  Selecting all email items written in a specific set of languages.
+
+   o  Selecting audio files spoken in a particular language.
+
+   Filtering seems to imply that there is a semantic relationship
+   between language tags that share the same prefix.  While this is
+   often the case, it is not always true: the language tags that match a
+   specific language range do not necessarily represent mutually
+   intelligible languages.
+
+<span class="h4"><a class="selflink" name="section-3.3.1" href="#section-3.3.1">3.3.1</a>.  Basic Filtering</span>
+
+   Basic filtering compares basic language ranges to language tags.
+   Each basic language range in the language priority list is considered
+   in turn, according to priority.  A language range matches a
+   particular language tag if, in a case-insensitive comparison, it
+   exactly equals the tag, or if it exactly equals a prefix of the tag
+   such that the first character following the prefix is "-".  For
+   example, the language-range "de-de" (German as used in Germany)
+   matches the language tag "de-DE-1996" (German as used in Germany,
+   orthography of 1996), but not the language tags "de-Deva" (German as
+   written in the Devanagari script) or "de-Latn-DE" (German, Latin
+   script, as used in Germany).
+
+
+
+
+
+<span class="grey">Phillips &amp; Davis         Best Current Practice                  [Page 9]</span></pre>
+<hr class='noprint' style='width: 96ex;' align='left'/><!--NewPage--><pre class='newpage'><a name="page-10" id="page-10" href="#page-10" class="invisible"> </a>
+<span class="grey"><a href="./rfc4647">RFC 4647</a>               Matching of Language Tags          September 2006</span>
+
+
+   The special range "*" in a language priority list matches any tag.  A
+   protocol that uses language ranges MAY specify additional rules about
+   the semantics of "*"; for instance, HTTP/1.1 [<a href="./rfc2616" title="&quot;Hypertext Transfer Protocol -- HTTP/1.1&quot;">RFC2616</a>] specifies that
+   the range "*" matches only languages not matched by any other range
+   within an "Accept-Language" header.
+
+   Basic filtering is identical to the type of matching described in
+   <a href="./rfc3066#section-2.5">[RFC3066], Section&nbsp;2.5</a> (Language-range).
+
+<span class="h4"><a class="selflink" name="section-3.3.2" href="#section-3.3.2">3.3.2</a>.  Extended Filtering</span>
+
+   Extended filtering compares extended language ranges to language
+   tags.  Each extended language range in the language priority list is
+   considered in turn, according to priority.  A language range matches
+   a particular language tag if each respective list of subtags matches.
+   To determine a match:
+
+   1.  Split both the extended language range and the language tag being
+       compared into a list of subtags by dividing on the hyphen (%x2D)
+       character.  Two subtags match if either they are the same when
+       compared case-insensitively or the language range's subtag is the
+       wildcard '*'.
+
+   2.  Begin with the first subtag in each list.  If the first subtag in
+       the range does not match the first subtag in the tag, the overall
+       match fails.  Otherwise, move to the next subtag in both the
+       range and the tag.
+
+   3.  While there are more subtags left in the language range's list:
+
+       A.  If the subtag currently being examined in the range is the
+           wildcard ('*'), move to the next subtag in the range and
+           continue with the loop.
+
+       B.  Else, if there are no more subtags in the language tag's
+           list, the match fails.
+
+       C.  Else, if the current subtag in the range's list matches the
+           current subtag in the language tag's list, move to the next
+           subtag in both lists and continue with the loop.
+
+       D.  Else, if the language tag's subtag is a "singleton" (a single
+           letter or digit, which includes the private-use subtag 'x')
+           the match fails.
+
+       E.  Else, move to the next subtag in the language tag's list and
+           continue with the loop.
+
+
+
+
+<span class="grey">Phillips &amp; Davis         Best Current Practice                 [Page 10]</span></pre>
+<hr class='noprint' style='width: 96ex;' align='left'/><!--NewPage--><pre class='newpage'><a name="page-11" id="page-11" href="#page-11" class="invisible"> </a>
+<span class="grey"><a href="./rfc4647">RFC 4647</a>               Matching of Language Tags          September 2006</span>
+
+
+   4.  When the language range's list has no more subtags, the match
+       succeeds.
+
+   Subtags not specified, including those at the end of the language
+   range, are thus treated as if assigned the wildcard value '*'.  Much
+   like basic filtering, extended filtering selects content with
+   arbitrarily long tags that share the same initial subtags as the
+   language range.  In addition, extended filtering selects language
+   tags that contain any intermediate subtags not specified in the
+   language range.  For example, the extended language range "de-*-DE"
+   (or its synonym "de-DE") matches all of the following tags:
+
+      de-DE (German, as used in Germany)
+
+      de-de (German, as used in Germany)
+
+      de-Latn-DE (Latin script)
+
+      de-Latf-DE (Fraktur variant of Latin script)
+
+      de-DE-x-goethe (private-use subtag)
+
+      de-Latn-DE-1996 (orthography of 1996)
+
+      de-Deva-DE (Devanagari script)
+
+   The same range does not match any of the following tags for the
+   reasons shown:
+
+      de (missing 'DE')
+
+      de-x-DE (singleton 'x' occurs before 'DE')
+
+      de-Deva ('Deva' not equal to 'DE')
+
+   Note: [<a href="./rfc4646" title="&quot;Tags for Identifying Languages&quot;">RFC4646</a>] defines each type of subtag (language, script,
+   region, and so forth) according to position, size, and content.  This
+   means that subtags in a language range can only match specific types
+   of subtags in a language tag.  For example, a subtag such as 'Latn'
+   is always a script subtag (unless it follows a singleton) while a
+   subtag such as 'nedis' can only match the equivalent variant subtag.
+   Two-letter subtags in the initial position have a different type
+   (language) than two-letter subtags in later positions (region).  This
+   is the reason why a wildcard in the extended language range is
+   significant in the first position but is ignored in all other
+   positions.
+
+
+
+
+
+<span class="grey">Phillips &amp; Davis         Best Current Practice                 [Page 11]</span></pre>
+<hr class='noprint' style='width: 96ex;' align='left'/><!--NewPage--><pre class='newpage'><a name="page-12" id="page-12" href="#page-12" class="invisible"> </a>
+<span class="grey"><a href="./rfc4647">RFC 4647</a>               Matching of Language Tags          September 2006</span>
+
+
+<span class="h3"><a class="selflink" name="section-3.4" href="#section-3.4">3.4</a>.  Lookup</span>
+
+   Lookup is used to select the single language tag that best matches
+   the language priority list for a given request.  When performing
+   lookup, each language range in the language priority list is
+   considered in turn, according to priority.  By contrast with
+   filtering, each language range represents the most specific tag that
+   is an acceptable match.  The first matching tag found, according to
+   the user's priority, is considered the closest match and is the item
+   returned.  For example, if the language range is "de-ch", a lookup
+   operation can produce content with the tags "de" or "de-CH" but never
+   content with the tag "de-CH-1996".  If no language tag matches the
+   request, the "default" value is returned.
+
+   For example, if an application inserts some dynamic content into a
+   document, returning an empty string if there is no exact match is not
+   an option.  Instead, the application "falls back" until it finds a
+   matching language tag associated with a suitable piece of content to
+   insert.  Some applications of lookup include:
+
+   o  Selection of a template containing the text for an automated email
+      response.
+
+   o  Selection of an item containing some text for inclusion in a
+      particular Web page.
+
+   o  Selection of a string of text for inclusion in an error log.
+
+   o  Selection of an audio file to play as a prompt in a phone system.
+
+   In the lookup scheme, the language range is progressively truncated
+   from the end until a matching language tag is located.  Single letter
+   or digit subtags (including both the letter 'x', which introduces
+   private-use sequences, and the subtags that introduce extensions) are
+   removed at the same time as their closest trailing subtag.  For
+   example, starting with the range "zh-Hant-CN-x-private1-private2"
+   (Chinese, Traditional script, China, two private-use tags) the lookup
+   progressively searches for content as shown below:
+
+   Example of a Lookup Fallback Pattern
+
+   Range to match: zh-Hant-CN-x-private1-private2
+   1. zh-Hant-CN-x-private1-private2
+   2. zh-Hant-CN-x-private1
+   3. zh-Hant-CN
+   4. zh-Hant
+   5. zh
+   6. (default)
+
+
+
+<span class="grey">Phillips &amp; Davis         Best Current Practice                 [Page 12]</span></pre>
+<hr class='noprint' style='width: 96ex;' align='left'/><!--NewPage--><pre class='newpage'><a name="page-13" id="page-13" href="#page-13" class="invisible"> </a>
+<span class="grey"><a href="./rfc4647">RFC 4647</a>               Matching of Language Tags          September 2006</span>
+
+
+   This fallback behavior allows some flexibility in finding a match.
+   Without fallback, the default content would be returned immediately
+   if exactly matching content is unavailable.  With fallback, a result
+   more closely matching the user request can be provided.
+
+   Extensions and unrecognized private-use subtags might be unrelated to
+   a particular application of lookup.  Since these subtags come at the
+   end of the subtag sequence, they are removed first during the
+   fallback process and usually pose no barrier to interoperability.
+   However, an implementation MAY remove these from ranges prior to
+   performing the lookup (provided the implementation also removes them
+   from the tags being compared).  Such modification is internal to the
+   implementation and applications, protocols, or specifications SHOULD
+   NOT remove or modify subtags in content that they return or forward,
+   because this removes information that can be used elsewhere.
+
+   The special language range "*" matches any language tag.  In the
+   lookup scheme, this range does not convey enough information by
+   itself to determine which language tag is most appropriate, since it
+   matches everything.  If the language range "*" is followed by other
+   language ranges, it is skipped.  If the language range "*" is the
+   only one in the language priority list or if no other language range
+   follows, the default value is computed and returned.
+
+   In some cases, the language priority list can contain one or more
+   extended language ranges (as, for example, when the same language
+   priority list is used as input for both lookup and filtering
+   operations).  Wildcard values in an extended language range normally
+   match any value that can occur in that position in a language tag.
+   Since only one item can be returned for any given lookup request,
+   wildcards in a language range have to be processed in a consistent
+   manner or the same request will produce widely varying results.
+   Applications, protocols, or specifications that accept extended
+   language ranges MUST define which item is returned when more than one
+   item matches the extended language range.
+
+   For example, an implementation could map the extended language ranges
+   to basic ranges.  Another possibility would be for an implementation
+   to return the matching tag that is first in ASCII-order.  If the
+   language range were "*-CH" ('CH' represents Switzerland) and the set
+   of tags included "de-CH" (German as used in Switzerland), "fr-CH"
+   (French, Switzerland), and "it-CH" (Italian, Switzerland), then the
+   tag "de-CH" would be returned.
+
+
+
+
+
+
+
+
+<span class="grey">Phillips &amp; Davis         Best Current Practice                 [Page 13]</span></pre>
+<hr class='noprint' style='width: 96ex;' align='left'/><!--NewPage--><pre class='newpage'><a name="page-14" id="page-14" href="#page-14" class="invisible"> </a>
+<span class="grey"><a href="./rfc4647">RFC 4647</a>               Matching of Language Tags          September 2006</span>
+
+
+<span class="h4"><a class="selflink" name="section-3.4.1" href="#section-3.4.1">3.4.1</a>.  Default Values</span>
+
+   Each application, protocol, or specification that uses lookup MUST
+   define the defaulting behavior when no tag matches the language
+   priority list.  What this action consists of strongly depends on how
+   lookup is being applied.  Some examples of defaulting behavior
+   include:
+
+   o  return an item with no language tag or an item of a non-linguistic
+      nature, such as an image or sound
+
+   o  return a null string as the language tag value, in cases where the
+      protocol permits the empty value (see, for example, "xml:lang" in
+      [<a href="#ref-XML10" title="&quot;Extensible Markup Language (XML) 1.0 (Third Edition)&quot;">XML10</a>])
+
+   o  return a particular language tag designated for the operation
+
+   o  return the language tag "i-default" (see [<a href="./rfc2277" title="&quot;IETF Policy on Character Sets and Languages&quot;">RFC2277</a>])
+
+   o  return an error condition or error message
+
+   o  return a list of available languages for the user to select from
+
+   When performing lookup using a language priority list, the
+   progressive search MUST process each language range in the list
+   before seeking or calculating the default.
+
+   The default value MAY be calculated or include additional searching
+   or matching.  Applications, protocols, or specifications can specify
+   different ways in which users can specify or override the defaults.
+
+   One common way to provide for a default is to allow a specific
+   language range to be set as the default for a specific type of
+   request.  If this approach is chosen, this language range MUST be
+   treated as if it were appended to the end of the language priority
+   list as a whole, rather than after each item in the language priority
+   list.  The application, protocol, or specification MUST also define
+   the defaulting behavior if that search fails to find a matching tag
+   or item.
+
+   For example, if a particular user's language priority list is "fr-FR,
+   zh-Hant" (French as used in France followed by Chinese as written in
+   the Traditional script) and the program doing the matching had a
+   default language range of "ja-JP" (Japanese as used in Japan), then
+   the program searches as follows:
+
+
+
+
+
+
+<span class="grey">Phillips &amp; Davis         Best Current Practice                 [Page 14]</span></pre>
+<hr class='noprint' style='width: 96ex;' align='left'/><!--NewPage--><pre class='newpage'><a name="page-15" id="page-15" href="#page-15" class="invisible"> </a>
+<span class="grey"><a href="./rfc4647">RFC 4647</a>               Matching of Language Tags          September 2006</span>
+
+
+   1. fr-FR
+   2. fr
+   3. zh-Hant // next language
+   4. zh
+   5. ja-JP   // now searching for the default content
+   6. ja
+   7. (implementation defined default)
+
+<span class="h2"><a class="selflink" name="section-4" href="#section-4">4</a>.  Other Considerations</span>
+
+   When working with language ranges and matching schemes, there are
+   some additional points that can influence the choice of either.
+
+<span class="h3"><a class="selflink" name="section-4.1" href="#section-4.1">4.1</a>.  Choosing Language Ranges</span>
+
+   Users indicate their language preferences via the choice of a
+   language range or the list of language ranges in a language priority
+   list.  The type of matching affects what the best choice is for a
+   user.
+
+   Most matching schemes make no attempt to process the semantic meaning
+   of the subtags.  The language range is compared, in a case-
+   insensitive manner, to each language tag being matched, using basic
+   string processing.  Users SHOULD select language ranges that are
+   well-formed, valid language tags according to [<a href="./rfc4646" title="&quot;Tags for Identifying Languages&quot;">RFC4646</a>] (substituting
+   wildcards as appropriate in extended language ranges).
+
+   Applications are encouraged to canonicalize language tags and ranges
+   by using the Preferred-Value from the IANA Language Subtag Registry
+   for tags or subtags that have been deprecated.  If the user is
+   working with content that might use the older form, the user might
+   want to include both the new and old forms in a language priority
+   list.  For example, the tag "art-lojban" is deprecated.  The subtag
+   'jbo' is supposed to be used instead, so the user might use it to
+   form the language range.  Or the user might include both in a
+   language priority list: "jbo, art-lojban".
+
+   Users SHOULD avoid subtags that add no distinguishing value to a
+   language range.  When filtering, the fewer the number of subtags that
+   appear in the language range, the more content the range will
+   probably match, while in lookup unnecessary subtags can cause
+   "better", more-specific content to be skipped in favor of less
+   specific content.  For example, the range "de-Latn-DE" returns
+   content tagged "de" instead of content tagged "de-DE", even though
+   the latter is probably a better match.
+
+
+
+
+
+
+<span class="grey">Phillips &amp; Davis         Best Current Practice                 [Page 15]</span></pre>
+<hr class='noprint' style='width: 96ex;' align='left'/><!--NewPage--><pre class='newpage'><a name="page-16" id="page-16" href="#page-16" class="invisible"> </a>
+<span class="grey"><a href="./rfc4647">RFC 4647</a>               Matching of Language Tags          September 2006</span>
+
+
+   Whether a subtag adds distinguishing value can depend on the context
+   of the request.  For example, a user who reads both Simplified and
+   Traditional Chinese, but who prefers Simplified, might use the range
+   "zh" for filtering (matching all items that user can read) but
+   "zh-Hans" for lookup (making sure that user gets the preferred form
+   if it's available, but the fallback to "zh" will still work).  On the
+   other hand, content in this case ought to be labeled as "zh-Hans" (or
+   "zh-Hant" if that applies) for filtering, while for lookup, if there
+   is either "zh-Hans" content or "zh-Hant" content, one of them (the
+   one considered 'default') also ought to be made available with the
+   simple "zh".  Note that the user can create a language priority list
+   "zh-Hans, zh" that delivers the best possible results for both
+   schemes.  If the user cannot be sure which scheme is being used (or
+   if more than one might be applied to a given request), the user
+   SHOULD specify the most specific (largest number of subtags) range
+   first and then supply shorter prefixes later in the list to ensure
+   that filtering returns a complete set of tags.
+
+   Many languages are written predominantly in a single script.  This is
+   usually recorded in the Suppress-Script field in that language
+   subtag's registry entry.  For these languages, script subtags SHOULD
+   NOT be used to form a language range.  Thus, the language range
+   "en-Latn" is inappropriate in most cases (because the vast majority
+   of English documents are written in the Latin script and thus the
+   'en' language subtag has a Suppress-Script field for 'Latn' in the
+   registry).
+
+   When working with tags and ranges, note that extensions and most
+   private-use subtags are orthogonal to language tag matching, in that
+   they specify additional attributes of the text not related to the
+   goals of most matching schemes.  Users SHOULD avoid using these
+   subtags in language ranges, since they interfere with the selection
+   of available content.  When used in language tags (as opposed to
+   ranges), these subtags normally do not interfere with filtering
+   (<a href="#section-3">Section 3</a>), since they appear at the end of the tag and will match
+   all prefixes.  Lookup (<a href="#section-3.4">Section 3.4</a>) implementations are advised to
+   ignore unrecognized private-use and extension subtags when performing
+   language tag fallback.
+
+<span class="h3"><a class="selflink" name="section-4.2" href="#section-4.2">4.2</a>.  Meaning of Language Tags and Ranges</span>
+
+   Selecting language tags using language ranges requires some
+   understanding by users of what they are selecting.  The meanings of
+   the various subtags in a language range are identical to their
+   meanings in a language tag (see <a href="./rfc4646#section-4.2">Section&nbsp;4.2 in [RFC4646]</a>), with the
+   addition that the wildcard "*" represents any matching sequence of
+   values.
+
+
+
+
+<span class="grey">Phillips &amp; Davis         Best Current Practice                 [Page 16]</span></pre>
+<hr class='noprint' style='width: 96ex;' align='left'/><!--NewPage--><pre class='newpage'><a name="page-17" id="page-17" href="#page-17" class="invisible"> </a>
+<span class="grey"><a href="./rfc4647">RFC 4647</a>               Matching of Language Tags          September 2006</span>
+
+
+<span class="h3"><a class="selflink" name="section-4.3" href="#section-4.3">4.3</a>.  Considerations for Private-Use Subtags</span>
+
+   Private agreement is necessary between the parties that intend to use
+   or exchange language tags that contain private-use subtags.  Great
+   caution SHOULD be used in employing private-use subtags in content or
+   protocols intended for general use.  Private-use subtags are simply
+   useless for information exchange without prior arrangement.
+
+   The value and semantic meaning of private-use tags and of the subtags
+   used within such a language tag are not defined.  Matching private-
+   use tags using language ranges or extended language ranges can result
+   in unpredictable content being returned.
+
+<span class="h3"><a class="selflink" name="section-4.4" href="#section-4.4">4.4</a>.  Length Considerations for Language Ranges</span>
+
+   Language ranges are very similar to language tags in terms of content
+   and usage.  The same types of restrictions on length that can be
+   applied to language tags can also be applied to language ranges.  See
+   <a href="./rfc4646#section-4.3">[RFC4646] Section&nbsp;4.3</a> (Length Considerations).
+
+<span class="h2"><a class="selflink" name="section-5" href="#section-5">5</a>.  Security Considerations</span>
+
+   Language ranges used in content negotiation might be used to infer
+   the nationality of the sender, and thus identify potential targets
+   for surveillance.  In addition, unique or highly unusual language
+   ranges or combinations of language ranges might be used to track a
+   specific individual's activities.
+
+   This is a special case of the general problem that anything you send
+   is visible to the receiving party.  It is useful to be aware that
+   such concerns can exist in some cases.
+
+   The evaluation of the exact magnitude of the threat, and any possible
+   countermeasures, is left to each application or protocol.
+
+<span class="h2"><a class="selflink" name="section-6" href="#section-6">6</a>.  Character Set Considerations</span>
+
+   Language tags permit only the characters A-Z, a-z, 0-9, and HYPHEN-
+   MINUS (%x2D).  Language ranges also use the character ASTERISK
+   (%x2A).  These characters are present in most character sets, so
+   presentation or exchange of language tags or ranges should not be
+   constrained by character set issues.
+
+
+
+
+
+
+
+
+
+<span class="grey">Phillips &amp; Davis         Best Current Practice                 [Page 17]</span></pre>
+<hr class='noprint' style='width: 96ex;' align='left'/><!--NewPage--><pre class='newpage'><a name="page-18" id="page-18" href="#page-18" class="invisible"> </a>
+<span class="grey"><a href="./rfc4647">RFC 4647</a>               Matching of Language Tags          September 2006</span>
+
+
+<span class="h2"><a class="selflink" name="section-7" href="#section-7">7</a>.  References</span>
+
+<span class="h3"><a class="selflink" name="section-7.1" href="#section-7.1">7.1</a>.  Normative References</span>
+
+   [<a name="ref-RFC2119" id="ref-RFC2119">RFC2119</a>]       Bradner, S., "Key words for use in RFCs to Indicate
+                   Requirement Levels", <a href="./bcp14">BCP 14</a>, <a href="./rfc2119">RFC 2119</a>, March 1997.
+
+   [<a name="ref-RFC2277" id="ref-RFC2277">RFC2277</a>]       Alvestrand, H., "IETF Policy on Character Sets and
+                   Languages", <a href="./bcp18">BCP 18</a>, <a href="./rfc2277">RFC 2277</a>, January 1998.
+
+   [<a name="ref-RFC4234" id="ref-RFC4234">RFC4234</a>]       Crocker, D., Ed. and P. Overell, "Augmented BNF for
+                   Syntax Specifications: ABNF", <a href="./rfc4234">RFC 4234</a>, October 2005.
+
+   [<a name="ref-RFC4646" id="ref-RFC4646">RFC4646</a>]       Phillips, A., Ed., and M. Davis, Ed., "Tags for
+                   Identifying Languages", <a href="./bcp47">BCP 47</a>, <a href="./rfc4646">RFC 4646</a>, September
+                   2006.
+
+<span class="h3"><a class="selflink" name="section-7.2" href="#section-7.2">7.2</a>.  Informative References</span>
+
+   [<a name="ref-RFC1766" id="ref-RFC1766">RFC1766</a>]       Alvestrand, H., "Tags for the Identification of
+                   Languages", <a href="./rfc1766">RFC 1766</a>, March 1995.
+
+   [<a name="ref-RFC2616" id="ref-RFC2616">RFC2616</a>]       Fielding, R., Gettys, J., Mogul, J., Frystyk, H.,
+                   Masinter, L., Leach, P., and T. Berners-Lee,
+                   "Hypertext Transfer Protocol -- HTTP/1.1", <a href="./rfc2616">RFC 2616</a>,
+                   June 1999.
+
+   [<a name="ref-RFC2616errata" id="ref-RFC2616errata">RFC2616errata</a>] IETF, "HTTP/1.1 Specification Errata", October 2004,
+                   &lt;<a href="http://purl.org/NET/http-errata">http://purl.org/NET/http-errata</a>&gt;.
+
+   [<a name="ref-RFC3066" id="ref-RFC3066">RFC3066</a>]       Alvestrand, H., "Tags for the Identification of
+                   Languages", <a href="./bcp47">BCP 47</a>, <a href="./rfc3066">RFC 3066</a>, January 2001.
+
+   [<a name="ref-RFC3282" id="ref-RFC3282">RFC3282</a>]       Alvestrand, H., "Content Language Headers", <a href="./rfc3282">RFC 3282</a>,
+                   May 2002.
+
+   [<a name="ref-XML10" id="ref-XML10">XML10</a>]         Bray, T., Paoli, J., Sperberg-McQueen, C., Maler, E.,
+                   and F. Yergeau, "Extensible Markup Language (XML) 1.0
+                   (Third Edition)", World Wide Web Consortium
+                   Recommendation, February 2004,
+                   &lt;<a href="http://www.w3.org/TR/REC-xml">http://www.w3.org/TR/REC-xml</a>&gt;.
+
+
+
+
+
+
+
+
+
+
+<span class="grey">Phillips &amp; Davis         Best Current Practice                 [Page 18]</span></pre>
+<hr class='noprint' style='width: 96ex;' align='left'/><!--NewPage--><pre class='newpage'><a name="page-19" id="page-19" href="#page-19" class="invisible"> </a>
+<span class="grey"><a href="./rfc4647">RFC 4647</a>               Matching of Language Tags          September 2006</span>
+
+
+<span class="h2"><a class="selflink" name="appendix-A" href="#appendix-A">Appendix A</a>.  Acknowledgements</span>
+
+   Any list of contributors is bound to be incomplete; please regard the
+   following as only a selection from the group of people who have
+   contributed to make this document what it is today.
+
+   The contributors to [<a href="./rfc1766" title="&quot;Tags for the Identification of Languages&quot;">RFC1766</a>] and [<a href="./rfc3066" title="&quot;Tags for the Identification of Languages&quot;">RFC3066</a>], each of which was a
+   precursor to this document, contributed greatly to the development of
+   language tag matching, and, in particular, the basic language range
+   and the basic matching scheme.  This document was originally part of
+   [<a href="./rfc4646" title="&quot;Tags for Identifying Languages&quot;">RFC4646</a>], but was split off before that document's completion.
+   Thus, directly or indirectly, those acknowledged in [<a href="./rfc4646" title="&quot;Tags for Identifying Languages&quot;">RFC4646</a>] also
+   had a hand in the development of this document, and work done prior
+   to the split is acknowledged in that document.
+
+   The following people (in alphabetical order by family name)
+   contributed to this document:
+
+   Harald Alvestrand, Stephane Bortzmeyer, Jeremy Carroll, Peter
+   Constable, John Cowan, Mark Crispin, Martin Duerst, Frank Ellermann,
+   Doug Ewell, Debbie Garside, Marion Gunn, Jon Hanna, Kent Karlsson,
+   Erkki Kolehmainen, Jukka Korpela, Ira McDonald, M. Patton, Randy
+   Presuhn, Eric van der Poel, Markus Scherer, Misha Wolf, and many,
+   many others.
+
+   Very special thanks must go to Harald Tveit Alvestrand, who
+   originated RFCs 1766 and 3066, and without whom this document would
+   not have been possible.
+
+Authors' Addresses
+
+   Addison Phillips (Editor)
+   Yahoo! Inc.
+
+   EMail: addison@inter-locale.com
+
+
+   Mark Davis (Editor)
+   Google
+
+   EMail: mark.davis@macchiato.com or mark.davis@google.com
+
+
+
+
+
+
+
+
+
+
+<span class="grey">Phillips &amp; Davis         Best Current Practice                 [Page 19]</span></pre>
+<hr class='noprint' style='width: 96ex;' align='left'/><!--NewPage--><pre class='newpage'><a name="page-20" id="page-20" href="#page-20" class="invisible"> </a>
+<span class="grey"><a href="./rfc4647">RFC 4647</a>               Matching of Language Tags          September 2006</span>
+
+
+Full Copyright Statement
+
+   Copyright (C) The Internet Society (2006).
+
+   This document is subject to the rights, licenses and restrictions
+   contained in <a href="./bcp78">BCP 78</a>, and except as set forth therein, the authors
+   retain all their rights.
+
+   This document and the information contained herein are provided on an
+   "AS IS" basis and THE CONTRIBUTOR, THE ORGANIZATION HE/SHE REPRESENTS
+   OR IS SPONSORED BY (IF ANY), THE INTERNET SOCIETY AND THE INTERNET
+   ENGINEERING TASK FORCE DISCLAIM ALL WARRANTIES, EXPRESS OR IMPLIED,
+   INCLUDING BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE
+   INFORMATION HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED
+   WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+
+Intellectual Property
+
+   The IETF takes no position regarding the validity or scope of any
+   Intellectual Property Rights or other rights that might be claimed to
+   pertain to the implementation or use of the technology described in
+   this document or the extent to which any license under such rights
+   might or might not be available; nor does it represent that it has
+   made any independent effort to identify any such rights.  Information
+   on the procedures with respect to rights in RFC documents can be
+   found in <a href="./bcp78">BCP 78</a> and <a href="./bcp79">BCP 79</a>.
+
+   Copies of IPR disclosures made to the IETF Secretariat and any
+   assurances of licenses to be made available, or the result of an
+   attempt made to obtain a general license or permission for the use of
+   such proprietary rights by implementers or users of this
+   specification can be obtained from the IETF on-line IPR repository at
+   <a href="http://www.ietf.org/ipr">http://www.ietf.org/ipr</a>.
+
+   The IETF invites any interested party to bring to its attention any
+   copyrights, patents or patent applications, or other proprietary
+   rights that may cover technology that may be required to implement
+   this standard.  Please address the information to the IETF at
+   ietf-ipr@ietf.org.
+
+Acknowledgement
+
+   Funding for the RFC Editor function is provided by the IETF
+   Administrative Support Activity (IASA).
+
+
+
+
+
+
+
+Phillips &amp; Davis         Best Current Practice                 [Page 20]
+
+</pre><br />
+    <span class="noprint"><small><small>Html markup produced by rfcmarkup 1.118, available from
+      <a href="https://tools.ietf.org/tools/rfcmarkup/">https://tools.ietf.org/tools/rfcmarkup/</a>
+    </small></small></span>
+  </div>
+</body>
+</html>
