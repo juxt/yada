@@ -85,44 +85,54 @@
   Resource
   (handler->resource [r] r))
 
+(defn safe-handler->resource
+ [h]
+ (try
+   (handler->resource h)
+   (catch Exception e
+     (warn e "failed to convert handler to resource" h)
+     nil)))
+
 (defn to-path [route]
   (let [path (->> route :path (map encode) (apply str))
         path-parameters (->> route :path (map parameters) (apply merge))
-        {:keys [methods parameters produces consumes] :as resource} (handler->resource (:handler route))]
-    [path
-     (into {}
-           (for [m (keys methods)
-                 :let [{:keys [description summary] :as method}
-                       (get methods m)
+        {:keys [methods parameters produces consumes]
+         :as resource} (safe-handler->resource (:handler route))]
+    (when resource
+      [path
+       (into {}
+             (for [m (keys methods)
+                   :let [{:keys [description summary] :as method}
+                         (get methods m)
 
-                       swagger-fn (fn [coll]
-                                    (into {} (map (fn [[k v]] [(keyword (name k)) v])
-                                                  (filter (fn [[k _]] (= "swagger" (namespace k)))
-                                                          coll))))
+                         swagger-fn (fn [coll]
+                                      (into {} (map (fn [[k v]] [(keyword (name k)) v])
+                                                    (filter (fn [[k _]] (= "swagger" (namespace k)))
+                                                            coll))))
 
-                       parameters (-> parameters
-                                      (util/merge-parameters (:parameters method))
-                                      (dissoc :cookie))
-                       produces (->> (:produces method)
-                                     (concat produces)
-                                     (sequence media-type-names))
-                       consumes (->> (:consumes method)
-                                     (concat consumes)
-                                     (sequence media-type-names))
-                       combined-parameters (if (or (seq (:path parameters)) (empty? path-parameters))
-                                             parameters
-                                             (assoc parameters :path path-parameters))
-                       swagger (merge (swagger-fn resource)
-                                      (swagger-fn method))]]
+                         parameters (-> parameters
+                                        (util/merge-parameters (:parameters method))
+                                        (dissoc :cookie))
+                         produces (->> (:produces method)
+                                       (concat produces)
+                                       (sequence media-type-names))
+                         consumes (->> (:consumes method)
+                                       (concat consumes)
+                                       (sequence media-type-names))
+                         combined-parameters (if (or (seq (:path parameters)) (empty? path-parameters))
+                                               parameters
+                                               (assoc parameters :path path-parameters))
+                         swagger (merge (swagger-fn resource)
+                                        (swagger-fn method))]]
 
-             ;; Responses must be added in the static swagger section
-             {m (merge
-                 (when description {:description description})
-                 (when summary {:summary summary})
-                 (when (not-empty combined-parameters) {:parameters combined-parameters})
-                 (when (not-empty produces) {:produces produces})
-                 (when (not-empty consumes) {:consumes consumes})
-                 swagger)}))]))
+               ;; Responses must be added in the static swagger section
+               {m (merge
+                   (when description {:description description})
+                   (when summary {:summary summary})
+                   (when (not-empty combined-parameters) {:parameters combined-parameters})
+                   (when (not-empty produces) {:produces produces})
+                   (when (not-empty consumes) {:consumes consumes})
+                   swagger)}))])))
 
 (def ^{:doc "To achieve compatibility with ring-swagger as per
   ring.swagger.swagger2-schema"} ring-swagger-coercer
@@ -130,7 +140,9 @@
 
 (defn routes->ring-swagger-spec [routes & [template]]
   (-> (or template {})
-      (merge {:paths (into {} (map to-path (route-seq routes)))})
+      (merge {:paths (into {} (->> (route-seq routes)
+                                   (map to-path)
+                                   (filter identity)))})
       ring-swagger-coercer))
 
 (defn swagger-spec [routes template & [content-type]]
