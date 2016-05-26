@@ -78,6 +78,8 @@
   (handler->resource [_] "Return a resource from a handler"))
 
 (extend-protocol HandlerToResource
+  clojure.lang.IFn
+  (handler->resource [h] (:resource h))
   Handler
   (handler->resource [h] (:resource h))
   Resource
