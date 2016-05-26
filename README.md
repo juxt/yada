@@ -32,8 +32,8 @@ yada requires the following :-
 
 - a Java JDK/JRE installation, version 8 or above
 - Clojure 1.8.0
-- Aleph 0.4.1-beta3 or above (provided via a dependency)
-- bidi 2.0.0 or above
+- Aleph 0.4.1 (provided via a dependency)
+- bidi 2.0.9 or above
 
 A project using yada will need to bring in [aleph](https://github.com/ztellman/aleph), and optionally bidi.
 
