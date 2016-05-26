@@ -56,10 +56,12 @@
     {:methods
      {:get
       {:produces [{:media-type "text/plain"
-                   :language #{"zh-ch" "en"}}]
+                   :language #{"zh-ch;q=0.8" "en-US;q=0.9" "en-gb;q=0.8" "en;q=0.6" }}]
        :response (fn [ctx]
                    (case (yada/language ctx)
                      "zh-ch" "你好世界!\n"
+                     "en-gb" "Hello Britain!\n"
+                     "en-us" "Howdy World!\n"
                      "en" "Hello World!\n"))}}})))
 
 (defn hello-sse [ch]
@@ -94,32 +96,35 @@
        "templates/page.html"
        (fn [ctx]
          {:homeref (:href (yada/uri-for ctx :yada.dev.docsite/index))
-         :content
-         (html
-          [:div.container
-           [:h2 "Demo: Hello World!"]
-           [:ul
-            [:li [:a {:href (:href (yada/uri-for ctx ::hello))} "Hello!"]
-             " - the simplest possible demo, showing the effect of " [:span.yada "yada"] " on a simple string"]
+          :content
+          (html
+           [:div.container
+            [:h2 "Demo: Hello World!"]
+            [:ul
+             [:li [:a {:href (:href (yada/uri-for ctx ::hello))} "Hello!"]
+              " - the simplest possible demo, showing the effect of " [:span.yada "yada"] " on a simple string"]
 
-            [:li [:a {:href
-                      (format "%s/index.html?url=%s/swagger.json"
-                              (:href (yada/uri-for ctx :swagger-ui))
-                              (:uri (yada/uri-for ctx ::hello-swagger)))}
-                  "Hello Swagger!"]
-             " - demonstration of the Swagger interface on a simple string"]
+             [:li [:a {:href
+                       (format "%s/index.html?url=%s/swagger.json"
+                               (:href (yada/uri-for ctx :swagger-ui))
+                               (:uri (yada/uri-for ctx ::hello-swagger)))}
+                   "Hello Swagger!"]
+              " - demonstration of the Swagger interface on a simple string"]
 
-            [:li [:a {:href (:href (yada/uri-for ctx ::hello-atom))} "Hello atom!"]
-             " - demonstrating the use of Clojure's reference types to manage mutable state"]
+             [:li [:a {:href (:href (yada/uri-for ctx ::hello-atom))} "Hello atom!"]
+              " - demonstrating the use of Clojure's reference types to manage mutable state"]
 
-            [:li [:a {:href
-                      (format "%s/index.html?url=%s/swagger.json"
-                              (:href (yada/uri-for ctx :swagger-ui))
-                              (:uri (yada/uri-for ctx ::hello-atom-swagger)))}
-                  "Hello Swaggatom!"]
-             " - demonstration of the Swagger interface on an atom"]]
+             [:li [:a {:href
+                       (format "%s/index.html?url=%s/swagger.json"
+                               (:href (yada/uri-for ctx :swagger-ui))
+                               (:uri (yada/uri-for ctx ::hello-atom-swagger)))}
+                   "Hello Swaggatom!"]
+              " - demonstration of the Swagger interface on an atom"]
 
-           [:p [:a {:href (:href (yada/uri-for ctx ::index))} "Index"]]])}))
+             [:li [:a {:href (:href (yada/uri-for ctx ::hello-languages))} "Hello languages!"]
+              " - demonstrating language tags"]]
+
+            [:p [:a {:href (:href (yada/uri-for ctx :yada.dev.docsite/index))} "Index"]]])}))
       (assoc :id ::index)
       yada))
 

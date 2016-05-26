@@ -399,8 +399,8 @@
                            {"content-type" (mt/media-type->string x)}))))
                    (when-let [x (:encoding produces)]
                      {"content-encoding" x})
-                   (when-let [x (:language produces)]
-                     {"content-language" x})
+                   (when-let [x (-> produces :language :language)]
+                     {"content-language" (apply str (interpose "-" x))})
                    (when-let [x (get-in ctx [:response :last-modified])]
                      {"last-modified" x})
                    (when-let [x (get-in ctx [:response :vary])]

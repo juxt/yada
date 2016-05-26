@@ -248,20 +248,24 @@
     (is (= (rep/parse-language "en-*")
            (rep/map->LanguageMap {:language ["en" "*"] :quality (float 1.0)})))))
 
-(defn- lang-matches? [rep accepts]
+;; rfc4647#section-3.4: each language range represents the most
+;; specific tag that is an acceptable match
+
+;; For example, if the language range is 'de-ch', a lookup operation
+;; can produce content with the tags 'de' or 'de-CH' but never content
+;; with the tag 'de-CH-1996'
+
+(defn- lang-matches? [accepts rep]
   (rep/lang-matches?
-   (:language (rep/parse-language rep))
-   (:language (rep/parse-language accepts))))
+   (:language (rep/parse-language accepts))
+   (:language (rep/parse-language rep))))
 
 (deftest lang-matches-test
-  (is (lang-matches? "en" "en"))
-  (is (lang-matches? "en" "en-US"))
-  (is (lang-matches? "en-US" "en-US"))
-  (is (not (lang-matches? "en-US" "en")))
-  (is (lang-matches? "en-US" "en-*"))
-  (is (not (lang-matches? "en-US-fr" "en-*")))
-  (is (lang-matches? "en-US-fr" "en-*-fr"))
-  (is (lang-matches? "en-US-fr" "en-US-fr")))
+  (is (lang-matches? "de-ch" "de"))
+  (is (lang-matches? "de-ch" "de-CH"))
+  (is (not (lang-matches? "de-ch" "de-CH-1996")))
+  (testing "default always matches" ; RFC 2277
+    (is (lang-matches? "de-ch" "i-default"))))
 
 (defn- get-highest-language-quality
   "Given the request and a representation, get the highest possible
@@ -279,18 +283,18 @@
     (is (= (get-highest-language-quality
             {:headers {"accept-language" "en"}}
             {:language (rep/parse-language "en")})
-           [(float 1.0) (float 1.0)])))
+           [(float 1.0) 1 (float 1.0)])))
 
   (testing "Wildcard match"
     (is (= (get-highest-language-quality
             {:headers {"accept-language" "en-*;q=0.8"}}
             {:language (rep/parse-language "en-US;q=0.7")})
-           [(float 0.8) (float 0.7)])))
+           [(float 0.8) 2 (float 0.7)])))
 
   (testing "Reject"
     (is (= (get-highest-language-quality
-            {:headers {"accept-language" "en"}}
-            {:language (rep/parse-language "en-US")})
+            {:headers {"accept-language" "en-US"}}
+            {:language (rep/parse-language "en-GB")})
            :rejected))))
 
 ;; TODO: Put the whole thing together, where an accept header corresponds to
@@ -361,12 +365,25 @@
       (is (= (rep/select-best-representation
               {:headers {"accept" "image/*"}}
               reps)
-             {:media-type (mt/string->media-type "image/png")})))
+             {:media-type (mt/string->media-type "image/png")})))))
 
+(deftest select-language
+  (let [gb {:media-type (mt/string->media-type "text/html")
+            :language (rep/parse-language "en-GB")}
+        us {:media-type (mt/string->media-type "text/html")
+            :language (rep/parse-language "en-US")}
+        da {:media-type (mt/string->media-type "text/html")
+            :language (rep/parse-language "da")}
+        ;; RFC 2277
+        dflt {:media-type (mt/string->media-type "text/html")
+              :language (rep/parse-language "i-default")}
+        headers {:headers {"accept-language" "da, en-gb;q=0.8, en;q=0.7"}}]
 
-    ))
+    (testing "Languages"
+      (is (= (rep/select-best-representation headers [gb us da]) da))
+      (is (= (rep/select-best-representation headers [us gb]) gb))
+      (is (= (rep/select-best-representation headers [us]) nil))
+      (is (= (rep/select-best-representation headers [us dflt]) dflt))
+      (is (= (rep/select-best-representation headers []) nil)))))
 
-
-;;                     "accept-charset" "utf-8"
-;;                     "accept-encoding" "gzip"
-;;                     "accept-language" "en"
+;; Encodings

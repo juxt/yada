@@ -24,7 +24,7 @@
   (get-in ctx [:response :produces :charset :alias]))
 
 (defn language [ctx]
-  (get-in ctx [:response :produces :language]))
+  (apply str (interpose "-" (get-in ctx [:response :produces :language :language]))))
 
 (defn uri-for [ctx handler & [options]]
   (if-let [uri-for (:uri-for ctx)]

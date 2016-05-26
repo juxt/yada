@@ -210,24 +210,29 @@
 
 (s/defn lang-matches?
   "See RFC 4647 Basic Filtering"
-  [rep :- [s/Str] accepts :- [s/Str]]
-  (every? some?
-          (map #(#{%1 "*"} %2)
-               rep
-               (concat accepts (repeat nil)))))
+  [accepts :- [s/Str]
+   rep :- [s/Str]]
+  (or (= rep ["i" "default"])
+      (every? true?
+              (map (fn [a rep]
+                     (or (= a rep) (= a "*")))
+                   (concat accepts (repeat :fail))
+                   rep))))
 
 (s/defn language-acceptable?
-  [rep :- {:language [s/Str]
-           :quality java.lang.Float}
-   acceptable-language :- {:language [s/Str]
-                           :quality java.lang.Float}]
+  [acceptable-language :- {:language [s/Str]
+                           :quality java.lang.Float}
+   rep :- {:language [s/Str]
+           :quality java.lang.Float}]
   (when
       (and
-       (lang-matches? (:language rep) (:language acceptable-language))
+       (lang-matches? (:language acceptable-language) (:language rep))
        (pos? (:quality acceptable-language))
        (pos? (:quality rep)))
 
-    [(:quality acceptable-language) (:quality rep)]))
+    [(:quality acceptable-language)
+     (count (:language rep)) ;; prefer more specific language tags
+     (:quality rep)]))
 
 (defn highest-language-quality
   "Given a collection of acceptable languages, return a function that
@@ -236,7 +241,7 @@
   (if accepts
     (fn [rep]
       (if-let [language (:language rep)]
-        (best (map (partial language-acceptable? language) accepts))
+        (best (map #(language-acceptable? % language) accepts))
         ;; If there is no language in the representation, don't reject,
         ;; just give the lowest score possible.
         [(float 0.001) (float 0.001)]
