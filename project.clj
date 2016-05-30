@@ -35,6 +35,9 @@
 
    ;; Provide exclusions libraries
    [com.google.guava/guava "18.0"]
+
+   ;; Webjars resources
+   [org.webjars/webjars-locator "0.27"]
    ]
 
   :pedantic? :abort
