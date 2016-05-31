@@ -1,5 +1,7 @@
 # yada
 
+[![Join the chat at https://gitter.im/juxt/yada](https://badges.gitter.im/juxt/yada.svg)](https://gitter.im/juxt/yada?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 yada is a web library for Clojure. It is a sibling library to [bidi](http://github.com/juxt/bidi) - whereas bidi is based on _routes as data_, yada is based on _resources as data_.
 
 yada takes data declarations and produces a sophisticated Ring
