@@ -309,7 +309,7 @@ convenience of terse, expressive short-hand descriptions."}
    NamespacedEntries))
 
 (s/defschema AuthSchemes
-  {(s/optional-key :authentication-schemes) [AuthScheme]})
+  {(s/optional-key :authentication-schemes) (s/conditional fn? (s/=> [AuthScheme] Context) :else [AuthScheme])})
 
 ;; Authorization can contain any content because it is up to the
 ;; authorization interceptor, which is pluggable.

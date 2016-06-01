@@ -63,7 +63,7 @@
                          {:scheme "S2"
                           :authenticated false}]}}}}}
           result (authenticate ctx)]
-      
+
       ;; We have successfully verified in realm R1
       (is (= {"R1" {:user "george"
                     :roles #{:pig}}}
@@ -84,4 +84,3 @@
 ;; (derive ::a ::b)
 ;; (derive ::b ::c)
 ;; (isa? ::a ::c)
-

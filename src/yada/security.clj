@@ -23,9 +23,9 @@
         (verify [user password])))))
 
 #_(defmethod verify :cookie [ctx {:keys [verify cookie]}]
-  
+
   (get-in ctx [:cookies cookie])
-  
+
   )
 
 ;; A nil scheme is simply one that does not use any of the built-in
@@ -59,6 +59,10 @@
      ~ctx
      ~@body))
 
+(defn call-fn-maybe [x ctx]
+  (when x
+    (if (fn? x) (x ctx) x)))
+
 (defn authenticate [ctx]
   (when-not-cors-preflight ctx
     ;; Note that a response can have multiple challenges, one for each realm.
@@ -91,16 +95,21 @@
        ;; conjunctions and disjunctions across auth-schemes, in much
        ;; the same way we do for the built-in role-based
        ;; authorization.
-       (let [credentials (some (partial verify ctx) authentication-schemes)]
-         (cond-> ctx
-           credentials (assoc-in [:authentication realm] credentials)
-           (not credentials) (update-in [:response :headers "www-authenticate"]
-                                        (fnil conj [])
-                                        (str/join ", "
-                                                  (filter some?
-                                                          (for [{:keys [scheme]} authentication-schemes]
-                                                            (when (string? scheme)
-                                                              (format "%s realm=\"%s\"" scheme realm)))))))))
+       (let [authentication-schemes (call-fn-maybe authentication-schemes ctx)
+             credentials (some (partial verify ctx) authentication-schemes)]
+
+         (if credentials
+           (assoc-in ctx [:authentication realm] credentials)
+           (let [vs (filter some?
+                            (for [{:keys [scheme]} authentication-schemes]
+                              (when (string? scheme)
+                                (format "%s realm=\"%s\"" scheme realm))))]
+             (if (not-empty vs)
+               (update-in ctx [:response :headers "www-authenticate"]
+                          (fnil conj [])
+                          (str/join ", " vs))
+               ctx)))))
+
      ctx (get-in ctx [:resource :access-control :realms]))))
 
 (defn authorize
@@ -120,10 +129,6 @@
          ctx))
      ctx (get-in ctx [:resource :access-control :realms]))))
 
-(defn call-fn-maybe [x ctx]
-  (when x
-    (if (fn? x) (x ctx) x)))
-
 (defn to-header [v]
   (if (coll? v)
     (apply str (interpose ", " v))
@@ -140,7 +145,7 @@
                            ;; Allow function to return a set
                            (ifn? s) (or (s origin)
                                         (s "*"))))]
-      
+
       (cond-> ctx
         allow-origin
         (assoc-in [:response :headers "access-control-allow-origin"] allow-origin)
@@ -185,7 +190,3 @@
                      (get ctx :xss-protection "1; mode=block"))
       true (assoc-in [:response :headers "x-content-type-options"]
                      "nosniff"))))
-
-
-
-
