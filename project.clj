@@ -52,6 +52,9 @@
          [[org.clojure/clojure "1.8.0"]
           [org.clojure/clojurescript "1.7.170"]
 
+          ;; Exclusions
+          [com.google.guava/guava "18.0"]
+
           [org.clojure/tools.logging "0.3.1"]
 
           [ch.qos.logback/logback-classic "1.1.5"
