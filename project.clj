@@ -15,7 +15,8 @@
    [clj-time "0.11.0"]
 
    [hiccup "1.0.5"]
-   [json-html "0.3.9"]
+   ;; We only need the back-end parts of json
+   [json-html "0.4.0" :exclusions [hiccups]]
    [manifold "0.1.4"]
    [metosin/ring-http-response "0.6.5"]
    [metosin/ring-swagger "0.22.7"]
@@ -31,11 +32,7 @@
    [com.cognitect/transit-clj "0.8.285"]
 
    ;; Built-in Swagger UI
-   [org.webjars/swagger-ui "2.1.4"]
-
-   ;; Provide exclusions libraries
-   [com.google.guava/guava "18.0"]
-   ]
+   [org.webjars/swagger-ui "2.1.4"]]
 
   :pedantic? :abort
 
