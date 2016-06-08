@@ -24,7 +24,7 @@
    [yada.media-type :as mt]
    [yada.protocols :as p]
    [yada.resource :refer [resource]]
-   [yada.resources.classpath-resource :refer [new-classpath-resource]]
+   [yada.resources.webjar-resource :refer [new-webjar-resource]]
    [yada.schema :as ys]
    [yada.util :refer [md5-hash] :as util])
   (:import [clojure.lang PersistentVector Keyword Fn]
@@ -222,7 +222,7 @@
     (map->Swaggered
      {:spec spec
       :routes routes
-      :swagger-ui (handler (new-classpath-resource "META-INF/resources/webjars/swagger-ui/2.1.3"))
+      :swagger-ui (handler (new-webjar-resource "swagger-ui"))
       :spec-handlers
       (into {}
             (for [ct ["application/edn" "application/json" "text/html"]]
