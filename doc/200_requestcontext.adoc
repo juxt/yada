@@ -1,0 +1,18 @@
+[[the-request-context]]
+The Request Context
+-------------------
+
+When given the HTTP **request**, the handler first creates a
+*request-context* and populates it with various values, such as the
+request and the *resource-model* that corresponds to the request's URI.
+
+The handler then threads the *request-context* through a chain of
+functions, called the **interceptor-chain**. This 'chain' is just a list
+of functions specified in the *resource-model* that has been carefully
+crafted to generate a response that complies fully with HTTP standards.
+However, as with anything in the resource-model, you can choose to
+modify it to your exact requirements if necessary.
+
+The functions making up the interceptor-chain are not necessarily
+executed in a single thread but rather an asynchronous event-driven
+implementation enabled by a third-party library called manifold.

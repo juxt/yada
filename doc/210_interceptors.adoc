@@ -1,0 +1,137 @@
+[[interceptors]]
+Interceptors
+------------
+
+The interceptor chain, established on the creation of a resource. A
+resource's interceptor chain can be modified from the defaults.
+
+[[core-interceptors]]
+Core interceptors
+~~~~~~~~~~~~~~~~~
+
+[[available]]
+available?
+^^^^^^^^^^
+
+[[known-method]]
+known-method?
+^^^^^^^^^^^^^
+
+[[uri-too-long]]
+uri-too-long?
+^^^^^^^^^^^^^
+
+[[trace]]
+TRACE
+^^^^^
+
+[[method-allowed]]
+method-allowed?
+^^^^^^^^^^^^^^^
+
+[[parse-parameters]]
+parse-parameters
+^^^^^^^^^^^^^^^^
+
+[[authenticate]]
+authenticate
+^^^^^^^^^^^^
+
+[[get-properties]]
+get-properties
+^^^^^^^^^^^^^^
+
+[[authorize]]
+authorize
+^^^^^^^^^
+
+[[process-request-body]]
+process-request-body
+^^^^^^^^^^^^^^^^^^^^
+
+[[check-modification-time]]
+check-modification-time
+^^^^^^^^^^^^^^^^^^^^^^^
+
+[[select-representation]]
+select-representation
+^^^^^^^^^^^^^^^^^^^^^
+
+[[if-match]]
+if-match
+^^^^^^^^
+
+[[if-none-match]]
+if-none-match
+^^^^^^^^^^^^^
+
+[[invoke-method]]
+invoke-method
+^^^^^^^^^^^^^
+
+[[get-new-properties]]
+get-new-properties
+^^^^^^^^^^^^^^^^^^
+
+[[compute-etag]]
+compute-etag
+^^^^^^^^^^^^
+
+[[access-control-headers]]
+access-control-headers
+^^^^^^^^^^^^^^^^^^^^^^
+
+[[create-response]]
+create-response
+^^^^^^^^^^^^^^^
+
+[[logging]]
+logging
+^^^^^^^
+
+[[return]]
+return
+^^^^^^
+
+[[modifying-interceptor-chains]]
+Modifying interceptor chains
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Say you want to modify the interceptor chain for a given resource.
+
+You might want to put your interceptor(s) at the front.
+
+[source,clojure]
+----
+(yada.resource/prepend-interceptor
+  resource
+  my-interceptor-a
+  my-interceptor-b)
+----
+
+Alternatively, you might want to replace some existing core
+interceptors:
+
+[source,clojure]
+----
+(update resource
+  :interceptor-chain
+  (partial replace {yada.interceptors/logging my-logging
+                    yada.security/authorize my-authorize}))
+----
+
+Or you may want to insert some of your own before a given interceptor:
+
+[source,clojure]
+----
+(yada.resource/insert-interceptor
+  resource yada.security/authorize my-pre-authorize)
+----
+
+You can also append interceptors after a given interceptor:
+
+[source,clojure]
+----
+(yada.resource/append-interceptor
+  resource yada.security/authorize my-post-authorize)
+----

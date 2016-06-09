@@ -1,0 +1,5 @@
+[[example-6-file-server]]
+Example 6: File server
+----------------------
+
+[coming soon]

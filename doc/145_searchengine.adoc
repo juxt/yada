@@ -1,0 +1,3 @@
+[[example-3-search-engine]]
+Example 3: Search engine
+------------------------
