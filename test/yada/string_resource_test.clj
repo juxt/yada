@@ -12,8 +12,6 @@
    [ring.util.time :refer (format-date)]
    [yada.yada :as yada :refer [yada]]))
 
-(yada/as-resource "Hello World")
-
 (deftest string-test
   (testing "Producing a Java string implies utf-8 charset"
     ;; Yada should make life easy for developers. If the developer does not
@@ -73,7 +71,7 @@
                     ;; First request gets a 200
                     (is (= 200 (:status response)))
                     (is (= {"content-length" (str (count "Hello World!"))} (select-keys (:headers response) ["content-length"]))))
-                  
+
                   (let [request (merge-with merge (request :get "/")
                                             {:headers {"if-modified-since" (format-date (to-date (time/plus (time/now) (time/hours 1))))}})
                         response @(handler request)]
@@ -90,4 +88,3 @@
           (is (= 405 (:status response)))
           (is (not (nil? allow-header)))
           (is (= #{"GET" "HEAD" "OPTIONS"} (parse-allow (get-in response [:headers "allow"])))))))))
-
