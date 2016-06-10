@@ -9,6 +9,8 @@
    [schema.coerce :as sc]
    [schema.utils :as su]
    [yada.representation :as rep]
+   [yada.interceptors :as i]
+   [yada.security :as sec]
    [yada.schema :as ys]
    [yada.context :refer [content-type]]
    yada.charset
@@ -51,12 +53,44 @@
 
 ;; --
 
+(def default-interceptor-chain
+  [i/available?
+   i/known-method?
+   i/uri-too-long?
+   i/TRACE
+   i/method-allowed?
+   i/parse-parameters
+   sec/authenticate ; step 1
+   i/get-properties ; step 2
+   sec/authorize ; steps 3,4 and 5
+   i/process-request-body
+   i/check-modification-time
+   i/select-representation
+   ;; if-match and if-none-match computes the etag of the selected
+   ;; representations, so needs to be run after select-representation
+   ;; - TODO: Specify dependencies as metadata so we can validate any
+   ;; given interceptor chain
+   i/if-match
+   i/if-none-match
+   i/invoke-method
+   i/get-new-properties
+   i/compute-etag
+   sec/access-control-headers
+   #_sec/security-headers
+   i/create-response
+   i/logging
+   i/return
+   ])
+
+;; --
+
 (defrecord Resource []
   p/ResourceCoercion
   (as-resource [this] this))
 
 (defn resource [model]
-  (let [r (ys/resource-coercer model)]
+  (let [r (ys/resource-coercer
+           (merge {:interceptor-chain default-interceptor-chain} model))]
     (when (su/error? r) (throw (ex-info "Cannot turn resource-model into resource, because it doesn't conform to a resource-model schema" {:resource-model model :error (:error r)})))
     (map->Resource r)))
 

@@ -15,21 +15,23 @@
   APersistentMap
   (as-resource [m]
     (let [last-modified (to-date (now))]
-      {:properties
-       (fn [ctx] {:last-modified last-modified})
-       :produces
-       [{:media-type #{"application/edn" "application/json;q=0.9" "text/html;q=0.8"}
-         :charset charset/platform-charsets}]
-       :methods {:get (as-body m)}
-       }))
+      (resource
+       {:properties
+        (fn [ctx] {:last-modified last-modified})
+        :produces
+        [{:media-type #{"application/edn" "application/json;q=0.9" "text/html;q=0.8"}
+          :charset charset/platform-charsets}]
+        :methods {:get (as-body m)}
+        })))
 
   PersistentVector
   (as-resource [v]
     (let [last-modified (to-date (now))]
-      {:properties
-       (fn [ctx] {:last-modified last-modified})
-       :produces
-       [{:media-type #{"application/edn" "application/json;q=0.9" "text/html;q=0.8"}
-         :charset charset/platform-charsets}]
-       :methods {:get v}
-       })))
+      (resource
+       {:properties
+        (fn [ctx] {:last-modified last-modified})
+        :produces
+        [{:media-type #{"application/edn" "application/json;q=0.9" "text/html;q=0.8"}
+          :charset charset/platform-charsets}]
+        :methods {:get v}
+        }))))

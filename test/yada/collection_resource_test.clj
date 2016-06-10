@@ -13,7 +13,7 @@
    [ring.util.time :refer (parse-date format-date)]
    [yada.representation :as rep]
    [yada.test-util :refer (to-string)]
-   [yada.yada :refer [yada]]
+   [yada.yada :refer [handler as-resource]]
    [clojure.edn :as edn]))
 
 (defn yesterday []
@@ -22,7 +22,7 @@
 (deftest map-resource-test
   (testing "map"
     (let [test-map {:name "Frank"}
-          handler (time/do-at (yesterday) (yada test-map))
+          handler (time/do-at (yesterday) (handler test-map))
           request (mock/request :get "/")
           response @(handler request)
           last-modified (some-> response :headers (get "last-modified") parse-date)]
@@ -42,3 +42,13 @@
                            {:headers {"if-modified-since" (format-date (to-date (time/now)))}})
             response @(handler request)]
         (is (= 304 (:status response)))))))
+
+
+(let [test-map {:name "Frank"}
+      handler (time/do-at (yesterday) (handler (as-resource test-map)))
+      request (mock/request :get "/")
+      response @(handler request)
+      ]
+  response
+
+  )

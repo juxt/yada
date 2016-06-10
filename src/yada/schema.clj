@@ -404,6 +404,9 @@ convenience of terse, expressive short-hand descriptions."}
 (s/defschema Logger
   {(s/optional-key :logger) (s/=> s/Any Context)})
 
+(s/defschema InterceptorChain
+  {(s/optional-key :interceptor-chain) [s/Any]})
+
 (s/defschema Resource
   (s/constrained
    (merge {(s/optional-key :id) s/Any}
@@ -417,11 +420,11 @@ convenience of terse, expressive short-hand descriptions."}
           Methods
           Responses
           SecurityHeaders
-          {(s/optional-key :interceptor-chain) [s/Any]}
           ResourceDocumentation
           {(s/optional-key :path-info?) Boolean
            (s/optional-key :sub-resource) (s/=> Resource Context)}
           Logger
+          InterceptorChain
           NamespacedEntries)
    (fn [v] (not (and (:sub-resource v) (not (:path-info? v)))))
    "If a sub-resource entry exists then path-info? must be true"))
