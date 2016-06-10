@@ -82,6 +82,12 @@
    i/return
    ])
 
+(def default-error-interceptor-chain
+  [sec/access-control-headers
+   i/create-response
+   i/logging
+   i/return])
+
 ;; --
 
 (defrecord Resource []
@@ -90,7 +96,10 @@
 
 (defn resource [model]
   (let [r (ys/resource-coercer
-           (merge {:interceptor-chain default-interceptor-chain} model))]
+           (merge
+            {:interceptor-chain default-interceptor-chain
+             :error-interceptor-chain default-error-interceptor-chain}
+            model))]
     (when (su/error? r) (throw (ex-info "Cannot turn resource-model into resource, because it doesn't conform to a resource-model schema" {:resource-model model :error (:error r)})))
     (map->Resource r)))
 

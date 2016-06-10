@@ -95,67 +95,69 @@
              (or (:path-info (:request ctx))
                  (not (:path-info? resource))))
 
-      (let [subresourcefn (:sub-resource resource)]
-        ;; Subresource
-        (let [sub-resource (subresourcefn ctx)
-              handler
-              (new-handler
-               {:id (get resource :id (java.util.UUID/randomUUID))
-                :parent resource
-                :resource sub-resource
-                :allowed-methods (allowed-methods sub-resource)
-                :known-methods (:known-methods ctx)
-                :interceptor-chain (or
-                                    (:interceptor-chain sub-resource)
-                                    (-> ctx :interceptor-chain))})]
+        (let [subresourcefn (:sub-resource resource)]
+          ;; Subresource
+          (let [sub-resource (subresourcefn ctx)
+                handler
+                (new-handler
+                 {:id (get resource :id (java.util.UUID/randomUUID))
+                  :parent resource
+                  :resource sub-resource
+                  :allowed-methods (allowed-methods sub-resource)
+                  :known-methods (:known-methods ctx)
+                  :interceptor-chain (or
+                                      (:interceptor-chain sub-resource)
+                                      (-> ctx :interceptor-chain))
+                  :error-interceptor-chain (or
+                                            (:error-interceptor-chain sub-resource)
+                                            (-> ctx :error-interceptor-chain))})]
 
-          (handle-request-with-maybe-subresources
-           (-> ctx
-               (merge handler)))))
+            (handle-request-with-maybe-subresources
+             (-> ctx
+                 (merge handler)))))
 
-      ;; Normal resources
-      (->
-       (apply d/chain ctx (:interceptor-chain ctx))
+        ;; Normal resources
+        (->
+         (apply d/chain ctx (:interceptor-chain ctx))
 
-       (d/catch
-           java.lang.Exception
-           (fn [e]
-             (error-handler e)
-             (let [data (error-data e)]
-               (let [status (or (:status data) 500)]
+         (d/catch
+             java.lang.Exception
+             (fn [e]
+               (error-handler e)
+               (let [data (error-data e)]
+                 (let [status (or (:status data) 500)]
 
-                 (let [custom-response (get* (:responses resource) status)
-                       rep (rep/select-best-representation
-                            (:request ctx)
-                            (if custom-response
-                              (or (:produces custom-response) "text/plain")
-                              error-representations)
-                            )]
+                   (let [custom-response (get* (:responses resource) status)
+                         rep (rep/select-best-representation
+                              (:request ctx)
+                              (if custom-response
+                                (or (:produces custom-response) "text/plain")
+                                error-representations)
+                              )]
 
-                   (d/chain
-                    (cond-> ctx
-                      e (assoc :error e)
-                      ;; true (merge (select-keys ctx [:id :request :method]))
-                      status (assoc-in [:response :status] status)
-                      (:headers data) (assoc-in [:response :headers] (:headers data))
+                     (apply d/chain
+                            (cond-> ctx
+                              e (assoc :error e)
+                              ;; true (merge (select-keys ctx [:id :request :method]))
+                              status (assoc-in [:response :status] status)
+                              (:headers data) (assoc-in [:response :headers] (:headers data))
 
-                      rep (assoc-in [:response :produces] rep)
+                              rep (assoc-in [:response :produces] rep)
 
-                      (:body data)
-                      (assoc [:response :body] (:body data))
+                              (:body data)
+                              (assoc [:response :body] (:body data))
 
-                      (and (not (:body data)) (not (:response custom-response)))
-                      (standard-error status e rep)
+                              (and (not (:body data)) (not (:response custom-response)))
+                              (standard-error status e rep)
 
-                      (and (not (:body data)) (:response custom-response))
-                      (custom-error (:response custom-response) rep)
+                              (and (not (:body data)) (:response custom-response))
+                              (custom-error (:response custom-response) rep)
 
-                      true set-content-length)
+                              true set-content-length)
 
-                    sec/access-control-headers
-                    i/create-response
-                    i/logging
-                    i/return))))))))))
+                            (:error-interceptor-chain ctx)
+
+                            ))))))))))
 
 (defn- handle-request
   "Handle Ring request"
@@ -257,7 +259,8 @@
        :resource resource
        :allowed-methods (allowed-methods resource)
        :known-methods (methods/known-methods)
-       :interceptor-chain (:interceptor-chain resource)}))))
+       :interceptor-chain (:interceptor-chain resource)
+       :error-interceptor-chain (:error-interceptor-chain resource)}))))
 
 ;; Alias
 (def yada handler)
@@ -294,7 +297,8 @@
                    :resource resource
                    :allowed-methods (allowed-methods resource)
                    :known-methods (methods/known-methods)
-                   :interceptor-chain (:interceptor-chain resource)}))
+                   :interceptor-chain (:interceptor-chain resource)
+                   :error-interceptor-chain (:error-interceptor-chain resource)}))
                 req match-context)))
 
 

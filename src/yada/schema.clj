@@ -405,7 +405,8 @@ convenience of terse, expressive short-hand descriptions."}
   {(s/optional-key :logger) (s/=> s/Any Context)})
 
 (s/defschema InterceptorChain
-  {(s/optional-key :interceptor-chain) [s/Any]})
+  {(s/optional-key :interceptor-chain) [s/Any]
+   (s/optional-key :error-interceptor-chain) [s/Any]})
 
 (s/defschema Resource
   (s/constrained
@@ -454,4 +455,5 @@ convenience of terse, expressive short-hand descriptions."}
    :allowed-methods #{s/Keyword}
    :known-methods {s/Keyword s/Any}
    :interceptor-chain [(s/=> Context Context)]
+   :error-interceptor-chain [(s/=> Context Context)]
    (s/optional-key :path-info?) s/Bool})
