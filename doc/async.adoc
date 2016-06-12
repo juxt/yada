@@ -1,6 +1,5 @@
 [[async]]
-Async
------
+= Async
 
 Under normal circumstances, with Clojure running on a JVM, each request
 can be processed by a separate thread.
@@ -22,8 +21,7 @@ As a developer, yada gives you fine-grained control over when to use a
 synchronous programming model and when to use an asynchronous one.
 
 [[deferred-values]]
-Deferred values
-~~~~~~~~~~~~~~~
+== Deferred values
 
 A deferred value is simply a value that may not yet be known. Examples
 include Clojure's futures, delays and promises. Deferred values are

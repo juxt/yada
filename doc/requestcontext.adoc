@@ -1,6 +1,5 @@
 [[the-request-context]]
-The Request Context
--------------------
+= The Request Context
 
 When given the HTTP **request**, the handler first creates a
 *request-context* and populates it with various values, such as the

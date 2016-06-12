@@ -1,6 +1,5 @@
 [[parameters]]
-Parameters
-----------
+= Parameters
 
 Web requests can contain parameters that can influence the response and
 yada can capture these. This is especially useful when you are writing
@@ -75,8 +74,7 @@ get quite sophisticated in how we define parameters.
 ----
 
 [[capturing-multi-value-parameters]]
-Capturing multi-value parameters
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+== Capturing multi-value parameters
 
 Occasionally, you may have multiple values associated with a given
 parameter. Query strings and HTML form data both allow for the same
@@ -95,8 +93,7 @@ vector type:
 ----
 
 [[capturing-large-request-bodies]]
-Capturing large request bodies
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+== Capturing large request bodies
 
 Sometimes, request bodies are very large or even unlimited. To ensure
 you don't run out of memory receiving this request data, you can specify

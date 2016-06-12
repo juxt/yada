@@ -1,13 +1,11 @@
 [[security]]
-Security
---------
+= Security
 
 Built-in to the library, yada offers a complete standards-based set of
 security features for today's secure applications and content delivery.
 
 [[security-is-part-of-the-resource-not-the-route]]
-Security is part of the resource, not the route
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+== Security is part of the resource, not the route
 
 In yada, resources are self-contained and are individually protected
 from unauthorized access. We agree with the HTTP standards authors when
@@ -30,15 +28,13 @@ supports systems that offer APIs to other applications, across origins,
 as standardised by http://www.w3.org/TR/cors/[CORS].
 
 [[the-access-control-entry]]
-The `:access-control` entry
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+== The `:access-control` entry
 
 All security aspects for a resource are specified in its model's
 `:access-control` entry.
 
 [[authentication]]
-Authentication
-~~~~~~~~~~~~~~
+== Authentication
 
 Let's look at authentication first. Authentication is the process of
 establishing and verifying the identity and credentials of the user,
@@ -58,8 +54,7 @@ is protected by, as part of the *:access-control* entry of its
 **resource-model**.
 
 [[authentication-schemes]]
-Authentication schemes
-^^^^^^^^^^^^^^^^^^^^^^
+=== Authentication schemes
 
 Each realm declares one or more _authentication schemes_ governing how
 requests are authenticated.
@@ -79,8 +74,7 @@ If no credentials are found by any of the schemes, a 401 response is
 returned containing a WWW-Authenticate header.
 
 [[basic-authentication]]
-Basic authentication
-^^^^^^^^^^^^^^^^^^^^
+=== Basic authentication
 
 Here is an example of a resource which uses Basic authentication
 described in https://www.ietf.org/rfc/rfc2617.txt[RFC 2617]
@@ -129,14 +123,12 @@ You may choose to limit the number of times a failed 'login' attempt is
 tolerated by setting a cookie or other means.
 
 [[digest-authentication]]
-Digest authentication
-^^^^^^^^^^^^^^^^^^^^^
+=== Digest authentication
 
 [coming soon]
 
 [[cookie-authentication]]
-Cookie authentication
-^^^^^^^^^^^^^^^^^^^^^
+=== Cookie authentication
 
 We can also use cookies to present authentication credentials. The
 advantage of cookies is that they can be set by the server based on
@@ -154,14 +146,12 @@ To protect a site with cookies:
 ----
 
 [[jwt-authentication]]
-JWT authentication
-^^^^^^^^^^^^^^^^^^
+=== JWT authentication
 
 [coming soon]
 
 [[form-based-logins]]
-Form-based logins
-^^^^^^^^^^^^^^^^^
+=== Form-based logins
 
 Basic Authentication has a number of weaknesses, such as the difficulty
 of logging out and the lack of control that a website has over the
@@ -237,32 +227,27 @@ encapsulate and dedupe the fields which are relevant to both the GET and
 the POST.
 
 [[protecting-resources]]
-Protecting resources
-^^^^^^^^^^^^^^^^^^^^
+=== Protecting resources
 
 [Coming soon]
 
 [[logout]]
-Logout
-^^^^^^
+=== Logout
 
 The recommended way of logging out is to remove the session.
 
 [[bearer-authentication-oauth2]]
-Bearer authentication (OAuth2)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+=== Bearer authentication (OAuth2)
 
 [coming soon]
 
 [[multifactor-authentication]]
-Multifactor authentication
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+=== Multifactor authentication
 
 [coming soon]
 
 [[authorization]]
-Authorization
-~~~~~~~~~~~~~
+== Authorization
 
 Authorization is the process of allowing a user access to a resource.
 This may require knowledge about the user only (for example, in
@@ -282,8 +267,7 @@ resource itself as part of the authorization process.
 By default, yada will use a declarative role-based authorization scheme.
 
 [[default-authorization-scheme]]
-Default authorization scheme
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+=== Default authorization scheme
 
 Any method can be protected by declaring a role or set of roles in its
 model.
@@ -320,8 +304,7 @@ adopt a declarative approach to resources wherever possible, to maximise
 the integration opportunities with other libraries and tools.
 
 [[custom-authorization-scheme]]
-Custom authorization scheme
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+=== Custom authorization scheme
 
 A custom authorization scheme can be declared that will completely
 replace the default authorization scheme already discussed.
@@ -362,8 +345,7 @@ parameters (there are no schema restrictions here).
 ----
 
 [[realms]]
-Realms
-~~~~~~
+== Realms
 
 yada supports multiple realms. By default, there is a single realm in
 operation called "default". However, you can group authentication
@@ -381,8 +363,7 @@ a choice of how to authenticate).
 ----
 
 [[cross-origin-resource-sharing-cors]]
-Cross-Origin Resource Sharing (CORS)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+== Cross-Origin Resource Sharing (CORS)
 
 yada fully supports Cross-Origin Resource Sharing (CORS) allowing you to
 provide APIs that are accessible from other origins.
@@ -411,8 +392,7 @@ called with the request-context as an argument to determine the value
 for the corresponding response header.
 
 [[http-strict-transport-security-hsts]]
-HTTP Strict Transport Security (HSTS)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+== HTTP Strict Transport Security (HSTS)
 
 `clojure {:strict-transport-security {:max-age 12000}}`
 
@@ -423,8 +403,7 @@ behind a proxy (determined by the presence of the `X-Forwarded-For`
 request header).
 
 [[content-security-policy]]
-Content Security Policy
-~~~~~~~~~~~~~~~~~~~~~~~
+== Content Security Policy
 
 [source,clojure]
 ----
@@ -434,8 +413,7 @@ Content Security Policy
 Defaults to `default-src https: data: 'unsafe-inline' 'unsafe-eval'`.
 
 [[clickjacking-prevention]]
-Clickjacking prevention
-~~~~~~~~~~~~~~~~~~~~~~~
+== Clickjacking prevention
 
 A browser's iframe can be used for 'click-jacking'. By default yada
 tells browsers not to allow this. The default value is `SAMEORIGIN`,
@@ -447,8 +425,7 @@ unless you override it in the resource-model.
 ----
 
 [[cross-site-scripting-xss-protection]]
-Cross-site Scripting (XSS) protection
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+== Cross-site Scripting (XSS) protection
 
 yada also sets the `X-Xss-Protection` response header to
 `1; mode=block`. This can be overridden in the resource model.
@@ -459,8 +436,7 @@ yada also sets the `X-Xss-Protection` response header to
 ----
 
 [[media-type-sniffing-protection]]
-Media-type sniffing protection
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+== Media-type sniffing protection
 
 By default, yada sets the `X-Content-Type-Options` response header to
 `nosniff`. This tells browsers not to try to attempt to determine the

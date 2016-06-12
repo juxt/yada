@@ -1,6 +1,5 @@
 [[routing]]
-Routing
--------
+= Routing
 
 Since the `yada` function returns a Ring-compatible handler, it is
 compatible with any Clojure URI router.
@@ -27,8 +26,7 @@ constructing these URIs, they must be generated from the same tree of
 data that defines the API route structure.
 
 [[declaring-your-website-or-api-as-a-bidiyada-tree]]
-Declaring your website or API as a bidi/yada tree
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+== Declaring your website or API as a bidi/yada tree
 
 A bidi routing model is a hierarchical pattern-matching tree. The tree
 is made up of pairs, which tie a pattern to a (resource) handler (or a
@@ -78,8 +76,7 @@ For a more thorough introduction to bidi, see
 https://github.com/juxt/bidi/README.md.
 
 [[declaring-policies-across-multiple-resources]]
-Declaring policies across multiple resources
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+== Declaring policies across multiple resources
 
 Many web frameworks allow you to set a particular behavioral policy
 (such as security) across a set of resources by specifying it within the

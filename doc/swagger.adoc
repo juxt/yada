@@ -1,6 +1,5 @@
 [[swagger]]
-Swagger
--------
+= Swagger
 
 All yada resources are built on data which can be published in a variety
 of formats. A popular format is Swagger, which allows APIs to be quickly
@@ -26,14 +25,12 @@ The first task is to create and publish the swagger specification for a
 set of resources.
 
 [[creating-the-specification-the-easy-way]]
-Creating the specification: the easy way
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+== Creating the specification: the easy way
 
 The easiest way of creating a Swagger spec is by following these steps:
 
 [[step-1]]
-Step 1:
-^^^^^^^
+=== Step 1:
 
 Creating a bidi route structure containing your yada handlers (remember
 a yada handler _is_ a Ring handler). Remember, bidi is infinitely
@@ -51,8 +48,7 @@ the vector-of-vectors syntax in place of a usual handler.
 ----
 
 [[step-2-wrap-the-route-structure-in-swaggered]]
-Step 2: Wrap the route structure in `swaggered`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+=== Step 2: Wrap the route structure in `swaggered`
 
 The `swaggered` function can be used to further wrap the route
 structure.
@@ -99,8 +95,7 @@ above, you would navigate to `/api/swagger.json`. Also, use
 services.
 
 [[creating-the-specification-the-simple-way]]
-Creating the specification: the simple way
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+=== Creating the specification: the simple way
 
 The Swagger spec is merely a map that can be created with
 `yada.swagger/swagger-spec-resource`. Once you have this map, publish it
@@ -115,8 +110,7 @@ publishing your swagger spec in the same route structure as your API
 (you might want to publish it on another server perhaps).
 
 [[the-swagger-ui]]
-The Swagger UI
-~~~~~~~~~~~~~~
+== The Swagger UI
 
 Once you have published the Swagger specification you should use the
 Swagger UI to access it.
@@ -138,8 +132,7 @@ Advanced users: For an example of custom Swagger UI configuration see
 `dev/resources/swagger/phonebook-swagger.html` for an example.
 
 [[references]]
-References
-~~~~~~~~~~
+== References
 
 See
 http://www.ibm.com/smarterplanet/us/en/ibmwatson/developercloud/apis/[IBM's

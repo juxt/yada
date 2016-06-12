@@ -1,6 +1,5 @@
 [[properties]]
-Properties
-----------
+= Properties
 
 Properties tell us about the current state of a resource, such as
 whether the resource exists, or when the resource was last modified.

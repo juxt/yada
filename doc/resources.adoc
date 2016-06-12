@@ -1,6 +1,5 @@
 [[resources]]
-Resources
----------
+= Resources
 
 Resources are defined in one of two ways:
 
@@ -11,8 +10,7 @@ In the introduction, we already saw some examples of the second option.
 In this chapter we'll explain how to write a resource model explicitly.
 
 [[writing-resource-models]]
-Writing resource models
-~~~~~~~~~~~~~~~~~~~~~~~
+== Writing resource models
 
 In Clojure, resource models are usually defined as map literals, but
 naturally they can be derived programmatically from other sources.
@@ -49,8 +47,7 @@ latter is possible, but you may risk creating a model that is no longer
 valid.
 
 [[data-abbreviations]]
-Data abbreviations
-~~~~~~~~~~~~~~~~~~
+== Data abbreviations
 
 Parts of the canonical resource model structure can be quite verbose. To
 make the job of authoring resource models easier a variety of literal
@@ -72,8 +69,7 @@ is automatically coerced to this _canonical_ form:
 ----
 
 [[common-examples]]
-Common examples
-~~~~~~~~~~~~~~~
+== Common examples
 
 There are numerous other short-hands. If in doubt, learn the canonical
 form and use that until you discover the short-hand for it. You can
@@ -84,8 +80,7 @@ should help you figure out why.
 [insert table of common coercions here]
 
 [[resource-types]]
-Resource types
-~~~~~~~~~~~~~~
+== Resource types
 
 A *resource type* is a Clojure types or record that can be automatically
 coerced into a **resource model**. These types satisfy the
@@ -109,8 +104,7 @@ The `as-resource` function must return a resource (by calling
 `yada.resource`, not just a map).
 
 [[summary]]
-Summary
-~~~~~~~
+== Summary
 
 The resource model is yada's central concept. The following chapters
 describe the various aspects of the resource-model in more detail.

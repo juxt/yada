@@ -1,6 +1,5 @@
 [[example-1-hello-world]]
-Example 1: Hello World!
------------------------
+= Example 1: Hello World!
 
 We took a normal Ring handler, injected it with a mix of radioactive
 isotopes stolen from the http://zguide.zeromq.org/page:all[same secret
@@ -141,8 +140,7 @@ Hello World!
 ----
 
 [[hello-swagger]]
-Hello Swagger!
-~~~~~~~~~~~~~~
+== Hello Swagger!
 
 Now we have a web resource, let's build an API!
 
@@ -211,8 +209,7 @@ But we're getting ahead of ourselves here. Let's delve a bit deeper in
 our `Hello World!` resource.
 
 [[a-conditional-request]]
-A conditional request
-~~~~~~~~~~~~~~~~~~~~~
+== A conditional request
 
 In HTTP, a conditional request is one where a user-agent (like a
 browser) can ask a server for the state of the resource but only if a
@@ -243,8 +240,7 @@ Content-Length: 0
 ----
 
 [[mutation]]
-Mutation
-~~~~~~~~
+== Mutation
 
 Let's try to overwrite the string by using a `PUT`.
 
@@ -378,8 +374,7 @@ http://localhost:8090/swagger-ui/index.html?url=/hello-atom-swagger/swagger.json
 for yourself].
 
 [[a-head-request]]
-A HEAD request
-~~~~~~~~~~~~~~
+== A HEAD request
 
 There was one more method indicated by the *Allow* header of our
 `OPTIONS` request, which was `HEAD`. Let's try this now.
@@ -407,8 +402,7 @@ if we were to try a `GET` request.
 For more details about HEAD queries, see [insert reference here].
 
 [[parameters]]
-Parameters
-~~~~~~~~~~
+== Parameters
 
 Often, a resource's state or behavior will depend on parameters in the
 request. Let's say we want to pass a parameter to the resource, via a
@@ -461,8 +455,7 @@ parameters to a range of types. For more details, see the
 link:#Parameters[Parameters] chapter.
 
 [[content-negotiation]]
-Content negotiation
-~~~~~~~~~~~~~~~~~~~
+== Content negotiation
 
 Let's suppose we wanted to provide our greeting in both (simplified)
 Chinese and English. Again, we can declare these two languages in the
@@ -518,8 +511,7 @@ There's a lot more to content negotiation than this simple example can
 show. It is covered in depth in subsequent chapters.
 
 [[summary]]
-Summary
-~~~~~~~
+== Summary
 
 This simple example demonstrated how a rich and functional HTTP resource
 was created with a tiny amount of code. And yet, none of the behaviour

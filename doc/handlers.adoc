@@ -1,5 +1,4 @@
 [[handlers]]
-Handlers
---------
+= Handlers
 
 [coming soon]

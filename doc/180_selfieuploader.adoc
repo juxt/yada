@@ -1,5 +1,0 @@
-[[example-5-selfie-uploader]]
-Example 5: Selfie uploader
---------------------------
-
-[coming soon]

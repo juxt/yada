@@ -1,6 +1,5 @@
 [[responses]]
-Responses
----------
+= Responses
 
 In resource interactions, a request is processed by a method, usually
 resulting in a response. The response contains a status code, headers
@@ -16,8 +15,7 @@ custom bodies for certain status codes (such as 404 errors), or want
 deviate from the HTTP standards entirely.
 
 [[explicit-responses]]
-Explicit responses
-~~~~~~~~~~~~~~~~~~
+== Explicit responses
 
 When you need _complete control_ over the response you should return the
 **request-context**'s response, modified if necessary. In which case
@@ -34,8 +32,7 @@ yada will see that you want to be explicit and get out of your way.
 ----
 
 [[declared-responses]]
-Declared responses
-~~~~~~~~~~~~~~~~~~
+== Declared responses
 
 yada declares the responses that may normally be produced by a method.
 It adds these declarations to the *resource-model* when creating a
@@ -72,8 +69,7 @@ checked is undefined. If you are using sets, avoid declaring the same
 status code in multiple keys.
 
 [[status-responses]]
-Status responses
-~~~~~~~~~~~~~~~~
+== Status responses
 
 Usually yada will return the responses produced by methods, and create
 ones for errors that occur along the way.

@@ -1,6 +1,5 @@
 [[introduction]]
-Introduction
-------------
+= Introduction
 
 yada is a web library written in Clojure that lets you create websites
 and web APIs.
@@ -11,8 +10,7 @@ most demanding workloads, while remaining faithful to the HTTP
 standards.
 
 [[say-hello-to-yada]]
-Say 'Hello!' to yada!
-~~~~~~~~~~~~~~~~~~~~~
+== Say 'Hello!' to yada!
 
 Perhaps the best thing about yada is that the basics are easy to learn.
 
@@ -43,8 +41,7 @@ converted on-the-fly into yada resources, and you can create your own
 types too.
 
 [[resources]]
-Resources
-~~~~~~~~~
+== Resources
 
 Most web libraries use functions to describe the functionality of a web
 resource. However, in yada, resources are described by a data structure.
@@ -73,8 +70,7 @@ schema first. Since records behave like maps, resources and
 resource-models are approximately the same thing.
 
 [[handlers]]
-Handlers
-~~~~~~~~
+== Handlers
 
 There's a lot of things you can do with a resource data model but
 perhaps the most obvious is to create a request handler from it to
@@ -96,8 +92,7 @@ corresponding HTTP response. (If you are familiar with Ring, this is the
 Ring handler, but not one you have to write yourself!)
 
 [[serving-requests]]
-Serving requests
-~~~~~~~~~~~~~~~~
+== Serving requests
 
 To use yada to create real responses to real HTTP requests, you need to
 add yada to a web-server, such as Aleph or Immutant. The web server
@@ -110,8 +105,7 @@ although there is nothing to stop you using yada with other routing
 libraries.
 
 [[conclusion]]
-Conclusion
-~~~~~~~~~~
+== Conclusion
 
 That's yada in a nutshell, but to learn more you might want to set up a
 test environment to try things out and have a play.

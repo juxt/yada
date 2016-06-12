@@ -1,101 +1,77 @@
 [[interceptors]]
-Interceptors
-------------
+= Interceptors
 
 The interceptor chain, established on the creation of a resource. A
 resource's interceptor chain can be modified from the defaults.
 
 [[core-interceptors]]
-Core interceptors
-~~~~~~~~~~~~~~~~~
+== Core interceptors
 
 [[available]]
-available?
-^^^^^^^^^^
+=== available?
 
 [[known-method]]
-known-method?
-^^^^^^^^^^^^^
+=== known-method?
 
 [[uri-too-long]]
-uri-too-long?
-^^^^^^^^^^^^^
+=== uri-too-long?
 
 [[trace]]
-TRACE
-^^^^^
+=== TRACE
 
 [[method-allowed]]
-method-allowed?
-^^^^^^^^^^^^^^^
+=== method-allowed?
 
 [[parse-parameters]]
-parse-parameters
-^^^^^^^^^^^^^^^^
+=== parse-parameters
 
 [[authenticate]]
-authenticate
-^^^^^^^^^^^^
+=== authenticate
 
 [[get-properties]]
-get-properties
-^^^^^^^^^^^^^^
+=== get-properties
 
 [[authorize]]
-authorize
-^^^^^^^^^
+=== authorize
 
 [[process-request-body]]
-process-request-body
-^^^^^^^^^^^^^^^^^^^^
+=== process-request-body
 
 [[check-modification-time]]
-check-modification-time
-^^^^^^^^^^^^^^^^^^^^^^^
+=== check-modification-time
 
 [[select-representation]]
-select-representation
-^^^^^^^^^^^^^^^^^^^^^
+=== select-representation
 
 [[if-match]]
-if-match
-^^^^^^^^
+=== if-match
 
 [[if-none-match]]
-if-none-match
-^^^^^^^^^^^^^
+=== if-none-match
 
 [[invoke-method]]
-invoke-method
-^^^^^^^^^^^^^
+=== invoke-method
 
 [[get-new-properties]]
-get-new-properties
-^^^^^^^^^^^^^^^^^^
+=== get-new-properties
 
 [[compute-etag]]
-compute-etag
-^^^^^^^^^^^^
+=== compute-etag
 
 [[access-control-headers]]
-access-control-headers
-^^^^^^^^^^^^^^^^^^^^^^
+=== access-control-headers
 
 [[create-response]]
-create-response
-^^^^^^^^^^^^^^^
+=== create-response
 
 [[logging]]
-logging
-^^^^^^^
+=== logging
 
 [[return]]
-return
-^^^^^^
+=== return
 
 [[modifying-interceptor-chains]]
-Modifying interceptor chains
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+== Modifying interceptor chains
 
 Say you want to modify the interceptor chain for a given resource.
 

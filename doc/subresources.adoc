@@ -1,6 +1,5 @@
 [[sub-resources]]
-Sub-resources
--------------
+= Sub-resources
 
 Usually, it is better to declare as much as possible about a resource
 prior to directing requests to it. If you do this, your resources will
@@ -18,8 +17,7 @@ has **sub-resources**. Sub-resources are resources that are created
 just-in-time when a request arrives.
 
 [[declaring-sub-resources]]
-Declaring sub-resources
-~~~~~~~~~~~~~~~~~~~~~~~
+== Declaring sub-resources
 
 Any *resource* can declare that it manages sub-resources by declaring a
 **:sub-resource**_ entry in its **resource-model**. The value of a
@@ -32,8 +30,7 @@ Sub-resources are recursive. A *resource* that is returned from a
 sub-resources, __ad-infinitum__.
 
 [[path-info]]
-Path info
-~~~~~~~~~
+== Path info
 
 When routing, it is common for resources that provide sub-resources to
 match a set of URIs all starting with a common prefix, and extract the
