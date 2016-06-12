@@ -155,6 +155,8 @@ convenience of terse, expressive short-hand descriptions."}
   (as-fn [_] "Coerce to function"))
 
 (extend-protocol FunctionCoercion
+  clojure.lang.Var
+  (as-fn [f] f)
   clojure.lang.Fn
   (as-fn [f] f)
   Object
