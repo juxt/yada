@@ -121,7 +121,7 @@ the UI for the Swagger specification of your routing tree. In the
 example above, navigating to `/api/` will bring up the Swagger UI
 allowing you to browse and play with the API.
 
-image:images/greetings-swagger.png[Greetings API in Swagger]
+image:greetings-swagger.png[Greetings API in Swagger]
 
 It is also possible to host your own Swagger UI and link it to your
 published Swagger specifications. Just pass the `url` query parameter to

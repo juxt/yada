@@ -1,10 +1,18 @@
 [[introduction]]
 = Introduction
 
-yada is a web library written in Clojure that lets you create websites
+[yada]#yada# is a web library written in Clojure that lets you create websites
 and web APIs.
 
-It is sufficiently quick-and-easy for quick prototype work but scales up
+Design goals:
+
+- Be easy of use for intermediate Clojure developers
+- Comprehensive compliance with HTTP standards over pragmatism and performance
+- Increase productivity through re-use
+- Handle large workloads with reasonable performance
+- Support multiple architectural styles, including Hypermedia APIs (REST)
+
+[yada]#yada# is sufficiently quick-and-easy for quick prototype work but scales up
 when you need it to, to feature-rich secure services that can handle the
 most demanding workloads, while remaining faithful to the HTTP
 standards.
@@ -12,40 +20,38 @@ standards.
 [[say-hello-to-yada]]
 == Say 'Hello!' to yada!
 
-Perhaps the best thing about yada is that the basics are easy to learn.
+It's quick to get started with [yada]#yada# without knowing how it works - the basics are easy to learn for those with a basic knowledge of Clojure. Let's begin with a few examples.
 
-The obligatory Hello World! example is `(handler "Hello World!")`, which
-responds with a message.
+The obligatory *Hello World!* example is `(yada/handler "Hello World!")`, which responds with a message.
 
 Perhaps you might want to serve a file? That's
-`(handler (new java.io.File "index.html"))`.
+`(yada/handler (new java.io.File "index.html"))`.
 
 Now you know how to serve a file, what about that directory full of
 static resources called `public`? That's
-`(handler (new java.io.File "public"))`.
+`(yada/handler (new java.io.File "public"))`.
 
 Maybe you've got some resources on the classpath?
-`(handler (clojure.java.io/resource "resources/"))`.
+`(yada/handler (clojure.java.io/resource "resources/"))`.
 
-What about `(handler nil)`? Without knowing, can you guess what that
+What about `(yada/handler nil)`? Without knowing, can you guess what that
 might do? (That's right, it produces a `404 Not Found` response).
 
-What about a quick dice generator? `(handler #(inc (rand-int 6)))`.
-Notice we use a function here, rather than a constant value.
+What about a quick dice generator? `(yada/handler #(inc (rand-int 6)))`.
+Notice we use a function here, rather than a constant value, to vary numbers between rolls.
 
 How about streaming those dice rolls as 'Server Sent Events'? Put those
-dice rolls on a channel, and return it with yada.
+dice rolls on a channel, and return it with [yada]#yada#.
 
 All these examples demonstrate the use of Clojure types that are
-converted on-the-fly into yada resources, and you can create your own
+converted on-the-fly into [yada]#yada# resources, and you can create your own
 types too.
 
 [[resources]]
 == Resources
 
 Most web libraries use functions to describe the functionality of a web
-resource. However, in yada, resources are described by a data structure.
-We call this data structure a **resource-model**.
+resource. However, in [yada]#yada#, resources are described by a data structure. We call this data structure a **resource-model**.
 
 This has some benefits. While functions are opaque, data is open to
 inspection. Data structures are easy to generate, transform and query -
@@ -63,21 +69,14 @@ Here's an example of a *resource-model* in Clojure:
 }
 ----
 
-You create a *resource* from a *resource-model* with yada's `resource`
-function. This resource is a Clojure record (a Java object) that wraps
-the raw **resource-model**, having validated against a comprehensive
-schema first. Since records behave like maps, resources and
-resource-models are approximately the same thing.
+You create a *resource* from a *resource-model* with [yada]#yada#'s `resource` function. This resource is a Clojure record (a Java object) that wraps the raw **resource-model**, having validated against a comprehensive schema first. Since records behave like maps, resources and resource-models are approximately the same thing.
 
 [[handlers]]
 == Handlers
 
-There's a lot of things you can do with a resource data model but
-perhaps the most obvious is to create a request handler from it to
-create responses from HTTP requests. That's the role of a **handler**.
+There's a lot of things you can do with a resource data model but perhaps the most obvious is to create a request handler from it to create responses from HTTP requests. That's the role of a **handler**.
 
-With yada, we transform a resource into a handler using the `handler`
-function.
+With [yada]#yada#, we transform a resource into a handler using the `handler` function.
 
 [source,clojure]
 ----
@@ -86,28 +85,18 @@ function.
 (handler (resource {…}))
 ----
 
-A handler can be called as a function, with a single argument
-representing an HTTP **request**. It returns a value representing the
-corresponding HTTP response. (If you are familiar with Ring, this is the
-Ring handler, but not one you have to write yourself!)
+A handler can be called as a function, with a single argument representing an HTTP **request**. It returns a value representing the corresponding HTTP response. (If you are familiar with Ring, this is the Ring handler, but not one you have to write yourself!)
 
 [[serving-requests]]
 == Serving requests
 
-To use yada to create real responses to real HTTP requests, you need to
-add yada to a web-server, such as Aleph or Immutant. The web server
-takes care of the networking and messages of HTTP (RFC 7230), while yada
-focuses on the semantics and content (starting with RFC 7231).
+To use [yada]#yada# to create real responses to real HTTP requests, you need to add [yada]#yada# to a web-server, such as Aleph or Immutant. The web server takes care of the networking and messages of HTTP (RFC 7230), while [yada]#yada# focuses on the semantics and content (starting with RFC 7231).
 
-To write real applications, you also need a router that understands
-URIs, and yada has some features that are enabled when used with bidi,
-although there is nothing to stop you using yada with other routing
-libraries.
+To write real applications, you also need a router that understands URIs, and [yada]#yada# has some features that are enabled when used with bidi, although there is nothing to stop you using [yada]#yada# with other routing libraries.
 
 [[conclusion]]
 == Conclusion
 
-That's yada in a nutshell, but to learn more you might want to set up a
-test environment to try things out and have a play.
+That's [yada]#yada# in a nutshell, but the quickest way to to learn it is to set up an environment and have a play.
 
-The next chapter explains how to do that.
+The link:quickstart.html[next chapter] explains how to do that.

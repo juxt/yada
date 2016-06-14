@@ -47,7 +47,7 @@ implementation will _deliver_ the promise with the response value. That
 will cause the continuation of processing of the original request. Note
 that __at no time is any thread blocked by I/O__.
 
-image:images/hello-async.png[Async]
+image:hello-async.png[Async]
 
 Actually, if we use Aleph or http-kit as our HTTP client the code is
 even simpler, since both libraries return promises from their request

@@ -1,4 +1,5 @@
 intro
+quickstart
 install
 hello
 resources

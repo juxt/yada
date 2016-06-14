@@ -8,31 +8,30 @@ PDF and e-book versions are available at https://leanpub.com/yada.
 
 Here are the chapters:
 
-- link:intro.html[Introduction]
-
-- link:install.html[Installation] - How to install [yada]#yada#
-
-- link:hello.html[Example 1: Hello World!]
-resources
-parameters
-properties
-methods
-representations
-responses
-security
-routing
-phonebook
-swagger
-async
-searchengine
-sse
-chatserver
-requestbodies
-selfieuploader
-handlers
-requestcontext
-interceptors
-subresources
-fileserver
-testing
-reference
+- link:intro.html[Introduction] - A beginner's introduction
+- link:quickstart.html[Quick Start] - Get stuck in
+- link:install.html[Installation] - How to install
+- link:hello.html[Example 1: Hello World!] - The first example
+- link:resources.html[Resources] - A web resource
+- link:parameters.html[Parameters] - Declaring expected request parameters
+- link:properties.html[Properties] - Resource metadata
+- link:methods.html[Methods] - Declaring and implementing a resource's methods
+- link:representations.html[Representations] - Declaring the data formats used to communicate a resource's state
+- link:responses.html[Responses] - Responses to a HTTP request
+- link:security.html[Security] - Authentication, Authorization, OAuth2, CORS, HSTS and more
+- link:routing.html[Routing] - URIs and how they target resources
+- link:phonebook.html[Example 2: Phonebook] - Putting it all together in a more comprehensive example
+- link:swagger.html[Swagger] - Generating a Swagger documentation website for your API
+- link:async.html[Async] - Exploiting the asynchronous foundations
+- link:searchengine.html[Example 3: Search engine] - Demonstration of returning deferred values in responses
+- link:sse.html[Server Sent Events] - Push notification of events to the client with HTML5 Server Sent Events
+- link:chatserver.html[Example 4: Chat server] - Another example demonstrating Server Sent Events
+- link:requestbodies.html[Handling request bodies] - Asynchronous processing large bodies in requests
+- link:selfieuploader.html[Example 5: Selfie uploader] - An example demonstrating request body processing
+- link:handlers.html[Handlers] - Functions that handle Ring requests
+- link:requestcontext.html[The Request Context] - Guide to the context that is passed between interceptors, what information it contains and what you can use it for
+- link:interceptors.html[Interceptors] - Understanding how it works, and how to change it with interceptors and interceptor chains
+- link:subresources.html[Sub-resources] - Creating resources dynamically at request-time. When you might when to do this and how.
+- link:fileserver.html[Example 6: File server] - A demonstration of sub-resources
+- link:testing.html[Testing] - Utilities for testing
+- link:reference.html[Reference]

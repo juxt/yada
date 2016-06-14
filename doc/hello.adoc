@@ -203,7 +203,7 @@ derived from its arguments. This specification can be used to drive a
 http://localhost:8090/swagger-ui/index.html?url=/hello-swagger/swagger.json[Swagger
 UI].
 
-image:images/hello-swagger.png[Swagger]
+image:hello-swagger.png[Swagger]
 
 But we're getting ahead of ourselves here. Let's delve a bit deeper in
 our `Hello World!` resource.
@@ -367,7 +367,7 @@ curl -i http://localhost:8090/hello -X PUT -H "If-Match: 1462348343" -d "Hello D
 Before reverting our code back to the original, without the atom, let's
 see the Swagger UI again.
 
-image:images/mutable-hello-swagger.png[Swagger]
+image:mutable-hello-swagger.png[Swagger]
 
 We now have a few more methods.
 http://localhost:8090/swagger-ui/index.html?url=/hello-atom-swagger/swagger.json[See
