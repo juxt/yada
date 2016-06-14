@@ -15,6 +15,7 @@ convenience of terse, expressive short-hand descriptions."}
    [yada.boolean :as b :refer [boolean?]]
    [yada.representation :as rep]
    [yada.media-type :as mt]
+   [yada.util :refer [disjoint*?]]
    [schema.core :as s]
    [schema.coerce :as sc]
    [schema.utils :refer [error?]]
@@ -272,15 +273,6 @@ convenience of terse, expressive short-hand descriptions."}
 
 ;; Responses
 
-(defn disjoint-statii?
-  "Checks that responses keys are disjoint. Meaning a given status matches only one key in the
-  responses map."
-  [responses]
-  (let [direct (set (filter #(not (set? %)) (keys (dissoc responses *))))
-        sets (cons direct (filter set? (keys responses)))]
-    (= (reduce + (map count sets))
-       (count (apply set/union sets)))))
-
 (defn wildcard? "is this the wildcard response" [fn]
   (= fn *))
 
@@ -293,8 +285,8 @@ convenience of terse, expressive short-hand descriptions."}
                {(s/optional-key :description) s/Str}
                Produces
                Response
-               )}
-     disjoint-statii?)})
+               NamespacedEntries)}
+     disjoint*?)})
 
 
 ;; Many HTTP headers are comma separated. We should accept these
