@@ -197,9 +197,15 @@ convenience of terse, expressive short-hand descriptions."}
   {(s/optional-key :description) String
    (s/optional-key :summary) String})
 
+(defn wildcard? "is this the wildcard response" [fn]
+  (= fn *))
+
+(s/defschema Statii (s/conditional integer? s/Int set? #{s/Int} fn? (s/pred wildcard?)))
+
 (s/defschema MethodDocumentation
   (merge CommonDocumentation
-         {(s/optional-key :responses) {s/Int {:description String}}}))
+         {(s/optional-key :responses) {Statii (merge {:description String}
+                                                     NamespacedEntries)}}))
 
 (s/defschema MethodParameters
   (merge-with
@@ -270,13 +276,6 @@ convenience of terse, expressive short-hand descriptions."}
     ContextFunction as-fn}
    RepresentationSeqMappings
    AuthorizationMappings))
-
-;; Responses
-
-(defn wildcard? "is this the wildcard response" [fn]
-  (= fn *))
-
-(s/defschema Statii (s/conditional integer? s/Int set? #{s/Int} fn? (s/pred wildcard?)))
 
 (s/defschema Responses
   {(s/optional-key :responses)
