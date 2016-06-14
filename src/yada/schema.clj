@@ -145,12 +145,6 @@ convenience of terse, expressive short-hand descriptions."}
 (def representation-seq-coercer
   (sc/coercer [Representation] RepresentationSeqMappings))
 
-(s/defschema Produces
-  {(s/optional-key :produces) [Representation]})
-
-(s/defschema Consumes
-  {(s/optional-key :consumes) [Representation]})
-
 (defprotocol FunctionCoercion
   (as-fn [_] "Coerce to function"))
 
@@ -168,6 +162,15 @@ convenience of terse, expressive short-hand descriptions."}
 
 (s/defschema ContextFunction
   (s/=> s/Any Context))
+
+(s/defschema Produces
+  {(s/optional-key :produces) (s/conditional
+                               fn? ContextFunction
+                               :else [Representation])})
+(s/defschema Consumes
+  {(s/optional-key :consumes) (s/conditional
+                               fn? ContextFunction
+                               :else [Representation])})
 
 (s/defschema Response
   {:response ContextFunction})

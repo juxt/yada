@@ -205,8 +205,12 @@
   determined)."
   [ctx]
   (assert ctx "select-representation, ctx is nil!")
-  (let [produces (concat (get-in ctx [:resource :methods (:method ctx) :produces])
-                         (get-in ctx [:resource :produces]))
+  (let [apply-if-fn (fn [f]
+                      (if (fn? f)
+                        (ys/representation-seq (ys/representation-set-coercer (f ctx)))
+                        f))
+        produces (concat (apply-if-fn (get-in ctx [:resource :methods (:method ctx) :produces]))
+                         (apply-if-fn (get-in ctx [:resource :produces])))
         rep (rep/select-best-representation (:request ctx) produces)]
     (cond-> ctx
       produces (assoc :produces produces) ; all the possible representations
