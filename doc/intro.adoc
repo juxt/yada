@@ -20,28 +20,24 @@ standards.
 [[say-hello-to-yada]]
 == Say 'Hello!' to yada!
 
-It's quick to get started with [yada]#yada# without knowing how it works - the basics are easy to learn for those with a basic knowledge of Clojure. Let's begin with a few examples.
+It's quick to get started with [yada]#yada# without knowing how it works - it's easy to get started even if you only have a basic knowledge of Clojure.
 
-The obligatory *Hello World!* example is `(yada/handler "Hello World!")`, which responds with a message.
+Let's begin with a few examples. The obligatory *Hello World!* example is link:intro-examples/hello[`(yada/handler "Hello World!")`], which responds with a message.
 
 Perhaps you might want to serve a file? That's
-`(yada/handler (new java.io.File "index.html"))`.
+link:intro-examples/index.html[`(yada/handler (new java.io.File "index.html"))`].
 
-Now you know how to serve a file, what about that directory full of
-static resources called `public`? That's
-`(yada/handler (new java.io.File "public"))`.
+Now you know how to serve a file, you know how to link:intro-examples/dir/[serve a directory]. But perhaps you've got some resources on the classpath?
+`(yada/handler (clojure.java.io/resource
+"talks/"))`.
 
-Maybe you've got some resources on the classpath?
-`(yada/handler (clojure.java.io/resource "resources/"))`.
+What about link:intro-examples/nil[`(yada/handler nil)`]? Without knowing, can you guess what that might do? (That's right, it produces a `404 Not Found` response).
 
-What about `(yada/handler nil)`? Without knowing, can you guess what that
-might do? (That's right, it produces a `404 Not Found` response).
-
-What about a quick dice generator? `(yada/handler #(inc (rand-int 6)))`.
+What about a quick dice generator? link:intro-examples/dice[`(yada/handler #(inc (rand-int 6)))`].
 Notice we use a function here, rather than a constant value, to vary numbers between rolls.
 
 How about streaming those dice rolls as 'Server Sent Events'? Put those
-dice rolls on a channel, and return it with [yada]#yada#.
+link:intro-examples/sse-dice[dice rolls on a core.async channel], and return it with [yada]#yada#.
 
 All these examples demonstrate the use of Clojure types that are
 converted on-the-fly into [yada]#yada# resources, and you can create your own
