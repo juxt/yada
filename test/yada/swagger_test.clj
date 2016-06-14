@@ -180,6 +180,29 @@
                [["/api/" [long :id]] (resource {:parameters {:path {:name String}}
                                                 :methods    {:get {:parameters {:path {:time String}}
                                                                    :response   (constantly nil)}}})])))))
+  (testing "responses"
+    (is (= {:paths {"/api" {:get {:responses {200      {:description "OK"}
+                                              301      {:description "Redirect"}
+                                              302      {:description "Redirect"}
+                                              :default {:description "default"}}}}}}
+           (routes->ring-swagger-spec
+             ["/api" (resource {:methods {:get {:responses {200        {:description "OK"}
+                                                            #{301 302} {:description "Redirect"}
+                                                            *          {:description "default"}}
+                                                :response  (fn [_] nil)}}})])))
+    (is (= {:paths {"/api" {:get {:responses {200      {:description "OK"}
+                                              301      {:description "Redirect"}
+                                              302      {:description "Redirect"}
+                                              400      {:description "Bad"}
+                                              :default {:description "default"}}}}}}
+           (routes->ring-swagger-spec
+             ["/api" (resource {:responses {#{302 400} {:description "Bad"
+                                                        :produces    "text/plain"
+                                                        :response (constantly nil)}}
+                                :methods {:get {:responses {200        {:description "OK"}
+                                                            #{301 302} {:description "Redirect"}
+                                                            *          {:description "default"}}
+                                                :response  (fn [_] nil)}}})]))))
   (testing "swagger namespace keys"
     (is (= {:paths {"/api" {:get {:tags ["test"]}}}}
            (routes->ring-swagger-spec
@@ -194,6 +217,12 @@
              ["/api" (resource {:swagger/tags ["test"]
                                 :methods {:get {:swagger/tags ["get-stuff"]
                                                 :response   (fn [_] nil)}}})])))
+    (is (= {:paths {"/api" {:get {:responses {200 {:description "OK"
+                                                   :schema String}}}}}}
+           (routes->ring-swagger-spec
+             ["/api" (resource {:methods      {:get {:responses {200 {:description "OK"
+                                                                      :swagger/schema String}}
+                                                     :response  (fn [_] nil)}}})])))
     ))
 
 #_(select-keys

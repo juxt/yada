@@ -26,8 +26,9 @@
    [yada.resource :refer [resource]]
    [yada.resources.webjar-resource :refer [new-webjar-resource]]
    [yada.schema :as ys]
-   [yada.util :refer [md5-hash] :as util])
-  (:import [clojure.lang PersistentVector Keyword Fn]
+   [yada.util :refer [md5-hash] :as util]
+   [clojure.walk :as walk])
+  (:import [clojure.lang PersistentVector Keyword Fn IMapEntry]
            [yada.handler Handler]
            [yada.resource Resource]
            [java.util.regex Pattern]))
@@ -88,7 +89,7 @@
 (defn to-path [route]
   (let [path (->> route :path (map encode) (apply str))
         path-parameters (->> route :path (map parameters) (apply merge))
-        {:keys [methods parameters produces consumes] :as resource} (handler->resource (:handler route))]
+        {:keys [methods parameters produces consumes responses] :as resource} (handler->resource (:handler route))]
     [path
      (into {}
            (for [m (keys methods)
@@ -96,9 +97,15 @@
                        (get methods m)
 
                        swagger-fn (fn [coll]
-                                    (into {} (map (fn [[k v]] [(keyword (name k)) v])
-                                                  (filter (fn [[k _]] (= "swagger" (namespace k)))
-                                                          coll))))
+                                    (->> coll
+                                         (filter (fn [[k _]] (= "swagger" (namespace k))))
+                                         (into {})))
+                       swagger-walk-fn (fn [val]
+                                         (if (and (instance? IMapEntry val)
+                                                  (keyword? (.key val))
+                                                  (= "swagger" (namespace (.key val))))
+                                           [(-> val .key name keyword) (.val val)]
+                                           val))
 
                        parameters (-> parameters
                                       (util/merge-parameters (:parameters method))
@@ -112,17 +119,27 @@
                        combined-parameters (if (or (seq (:path parameters)) (empty? path-parameters))
                                              parameters
                                              (assoc parameters :path path-parameters))
+                       responses (->>
+                                   (-> responses
+                                       (util/merge* (:responses method))
+                                       util/expand
+                                       (set/rename-keys {* :default}))
+                                   (map (fn [[k v]] [k (dissoc v :produces :response)]))
+                                   (into {}))
                        swagger (merge (swagger-fn resource)
                                       (swagger-fn method))]]
 
              ;; Responses must be added in the static swagger section
-             {m (merge
-                 (when description {:description description})
-                 (when summary {:summary summary})
-                 (when (not-empty combined-parameters) {:parameters combined-parameters})
-                 (when (not-empty produces) {:produces produces})
-                 (when (not-empty consumes) {:consumes consumes})
-                 swagger)}))]))
+             {m (walk/prewalk
+                  swagger-walk-fn
+                  (merge
+                    (when description {:description description})
+                    (when summary {:summary summary})
+                    (when (not-empty combined-parameters) {:parameters combined-parameters})
+                    (when (not-empty produces) {:produces produces})
+                    (when (not-empty consumes) {:consumes consumes})
+                    (when (not-empty responses) {:responses responses})
+                    swagger))}))]))
 
 (def ^{:doc "To achieve compatibility with ring-swagger as per
   ring.swagger.swagger2-schema"} ring-swagger-coercer
