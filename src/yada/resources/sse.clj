@@ -6,6 +6,7 @@
    [manifold.stream :refer [->source transform]]
    [yada.charset :as charset]
    [yada.protocols :as p]
+   [yada.resource :refer [resource]]
    clojure.core.async.impl.channels
    clojure.core.async.impl.protocols
    manifold.stream.async)
@@ -15,9 +16,10 @@
   ReadPort
   (as-resource [ch]
     (let [mlt (mult ch)]
-      {:produces [{:media-type "text/event-stream"
-                   :charset charset/platform-charsets}]
-       :methods {:get {:response (fn [ctx]
-                                   (let [ch (chan)]
-                                     (tap mlt ch)
-                                     (transform (map (partial format "data: %s\n\n")) (->source ch))))}}})))
+      (resource
+       {:produces [{:media-type "text/event-stream"
+                    :charset charset/platform-charsets}]
+        :methods {:get {:response (fn [ctx]
+                                    (let [ch (chan)]
+                                      (tap mlt ch)
+                                      (transform (map (partial format "data: %s\n\n")) (->source ch))))}}}))))
