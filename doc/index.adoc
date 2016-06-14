@@ -1,0 +1,38 @@
+= The [yada]#yada# manual
+
+Here is the complete, authoratitive guide to [yada]#yada#.
+
+PDF and e-book versions are available at https://leanpub.com/yada.
+
+== Table of Contents
+
+Here are the chapters:
+
+- link:intro.html[Introduction]
+
+- link:install.html[Installation] - How to install [yada]#yada#
+
+- link:hello.html[Example 1: Hello World!]
+resources
+parameters
+properties
+methods
+representations
+responses
+security
+routing
+phonebook
+swagger
+async
+searchengine
+sse
+chatserver
+requestbodies
+selfieuploader
+handlers
+requestcontext
+interceptors
+subresources
+fileserver
+testing
+reference
