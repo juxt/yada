@@ -1,6 +1,5 @@
 intro
 quickstart
-install
 hello
 resources
 parameters

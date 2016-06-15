@@ -95,6 +95,51 @@ Fire up a browser and browse to http://localhost:3000. You should see a banner "
 
 Fire up an editor and load up the file `src/edge/web.clj`. Locate the following line:
 
+[source,clojure]
 ----
-["test" (yada/handler "this is a test")]
+["hello" (yada/handler "Hello World!\n")]
 ----
+
+If you have curl on your machine, use it to send it a web request. Alternatively, use a web browser.
+
+[source]
+----
+curl -i http://localhost:3000/test
+----
+
+You should see something similar to the following:
+
+[source]
+----
+HTTP/1.1 200 OK
+Content-Length: 15
+Content-Type: text/plain;charset=utf-8
+Last-Modified: Wed, 15 Jun 2016 10:17:03 GMT
+Vary: accept-charset
+ETag: -1277479543
+Server: Aleph/0.4.1
+Connection: Keep-Alive
+Date: Wed, 15 Jun 2016 10:17:06 GMT
+
+Hello World!
+----
+
+Now make a change to this line.
+
+[source,clojure]
+----
+["hello" (yada/handler "Hello Wonderful World!\n")]
+----
+
+Go to your REPL and reset your system to pick up the changes:
+
+[source]
+----
+user=> (reset)
+:reloading (edge.web edge.server edge.system user)
+:resumed
+----
+
+Try the curl command (or web browser) again and verify the updated result.
+
+If it works, you're now ready to proceed with link:{next}[next chapter], where we will discuss this example in more depth.
