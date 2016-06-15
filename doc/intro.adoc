@@ -43,32 +43,29 @@ All these examples demonstrate the use of Clojure types that are
 converted on-the-fly into [yada]#yada# resources, and you can create your own
 types too.
 
+Let's delve a little deeper…
+
 [[resources]]
 == Resources
 
-Most web libraries use functions to describe the functionality of a web
-resource. However, in [yada]#yada#, resources are described by a data structure. We call this data structure a **resource-model**.
+In [yada]#yada#, resources are defined by a plain-old Clojure map.
 
-This has some benefits. While functions are opaque, data is open to
+This has many benefits. While functions are opaque, data is open to
 inspection. Data structures are easy to generate, transform and query -
-tasks that Clojure is particularly good at.
+chores that Clojure makes light work of.
 
-Here's an example of a *resource-model* in Clojure:
+Here's an example of a resource:
 
 [source,clojure]
 ----
-{:properties {…}
- :methods {:get {:response (fn [ctx] "Hello World!")}
-           :put {…}
-           :brew {…}}
+(yada/resource
+  {:properties {…}
+   :methods {:get {:response (fn [ctx] "Hello World!")}
+             :put {…}
+             :brew {…}}
  …
-}
+})
 ----
-
-You create a *resource* from a *resource-model* with [yada]#yada#'s `resource` function. This resource is a Clojure record (a Java object) that wraps the raw **resource-model**, having validated against a comprehensive schema first. Since records behave like maps, resources and resource-models are approximately the same thing.
-
-[[handlers]]
-== Handlers
 
 There's a lot of things you can do with a resource data model but perhaps the most obvious is to create a request handler from it to create responses from HTTP requests. That's the role of a **handler**.
 
@@ -76,9 +73,9 @@ With [yada]#yada#, we transform a resource into a handler using the `handler` fu
 
 [source,clojure]
 ----
-(require '[yada.yada :refer [handler resource]])
+(require '[yada.yada :as yada])
 
-(handler (resource {…}))
+(yada/handler (yada/resource {…}))
 ----
 
 A handler can be called as a function, with a single argument representing an HTTP **request**. It returns a value representing the corresponding HTTP response. (If you are familiar with Ring, this is the Ring handler, but not one you have to write yourself!)
@@ -95,4 +92,4 @@ To write real applications, you also need a router that understands URIs, and [y
 
 That's [yada]#yada# in a nutshell, but the quickest way to to learn it is to set up an environment and have a play.
 
-The link:quickstart.html[next chapter] explains how to do that.
+The link:{next}[next chapter] explains how to do that.

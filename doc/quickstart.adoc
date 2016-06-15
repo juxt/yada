@@ -1,2 +1,100 @@
 [[quickstart]]
 = Quick Start
+
+In this quick start we're going to run a real Clojure project, diving into the code to show how yada is powering some of its features.
+
+Our project is called 'edge' and it lives on GitHub. We'll clone it first, then run it and make modifications.
+
+So let's get going!
+
+== Clone
+
+link:https://github.com/juxt/edge[Edge] is a sample project from JUXT to show some of our libraries in action.
+
+First we need to clone it and change directory.
+
+[source]
+----
+git clone https://github.com/juxt/edge
+cd edge
+----
+
+== Run
+
+Next we run it, in its *development* mode.
+
+[source]
+----
+boot dev
+----
+
+This will take up to a couple of minutes to start so be patient.
+
+[source]
+----
+Starting reload server on ws://localhost:43201
+Writing boot_reload.cljs...
+Writing boot_cljs_repl.cljs...
+09:13:50.368 [clojure-agent-send-off-pool-0] INFO  edge.server - Started web-server on port 3000
+
+Starting file watcher (CTRL-C to quit)...
+
+Compiling {sass}... 3 changed files.
+----
+
+When you see the line below you can move on to the next step:
+
+----
+nREPL server started on port 5600 on host 127.0.0.1 - nrepl://127.0.0.1:5600
+----
+
+== Connect a REPL
+
+We connect a client REPL to this JVM like this:
+
+[source]
+----
+boot repl
+----
+
+Which results in something similar to this:
+
+[source]
+----
+REPL-y 0.3.7, nREPL 0.2.12
+Clojure 1.8.0
+OpenJDK 64-Bit Server VM 1.8.0_92-b14
+        Exit: Control+D or (exit) or (quit)
+    Commands: (user/help)
+        Docs: (doc function-name-here)
+              (find-doc "part-of-name-here")
+Find by Name: (find-name "part-of-name-here")
+      Source: (source function-name-here)
+     Javadoc: (javadoc java-object-or-class-here)
+    Examples from clojuredocs.org: [clojuredocs or cdoc]
+              (user/clojuredocs name-here)
+              (user/clojuredocs "ns-here" "name-here")
+user=>
+----
+
+We're going to start changing some of edge's source code soon, and when we do that we'll type `(reset)` on our REPL. So let's try that now.
+
+[source]
+----
+user=> (reset)
+:reloading (edge.web edge.api edge.server edge.system user)
+:resumed
+user=>
+----
+
+== Browse
+
+Fire up a browser and browse to http://localhost:3000. You should see a banner "Welcome to Edge".
+
+== View the source
+
+Fire up an editor and load up the file `src/edge/web.clj`. Locate the following line:
+
+----
+["test" (yada/handler "this is a test")]
+----
