@@ -1,17 +1,17 @@
-[[quickstart]]
-= Quick Start
+[[getting-started]]
+= Getting Started
 
-In this quick start we're going to run a real Clojure project, diving into the code to show how yada is powering some of its features.
+n this quick tutorial we're going to run a real Clojure project, diving into the code to show how [yada]#yada# is used.
 
-Our project is called 'edge' and it lives on GitHub. We'll clone it first, then run it and make modifications.
+Our project is called 'edge', a sample project from JUXT to show some of our libraries in action. It link:https://github.com/juxt/edge[lives on GitHub].
+
+We'll clone it first, then run it, browse the examples and even make modifications.
 
 So let's get going!
 
 == Clone
 
-link:https://github.com/juxt/edge[Edge] is a sample project from JUXT to show some of our libraries in action.
-
-First we need to clone it and change directory.
+First we need to clone the project and change into its working directory.
 
 [source]
 ----
@@ -19,16 +19,16 @@ git clone https://github.com/juxt/edge
 cd edge
 ----
 
-== Run
+== Build & Run
 
-Next we run it, in its *development* mode.
+Next we build and run it, in its *development* mode.
 
 [source]
 ----
 boot dev
 ----
 
-This will take up to a couple of minutes to start so be patient.
+This can take up to a couple of minutes to build and run from scratch so don't worry if you have to wait a bit before you see anything.
 
 [source]
 ----
