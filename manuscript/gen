@@ -1,7 +1,0 @@
-#!/bin/bash
-for i in *.md; do
-  f=$(echo $i | cut -c5-)
-  outfile=$(basename -s .md $f).adoc
-  echo "Converting $i to $outfile"
-  pandoc -s --atx-headers -o $outfile $i
-done
