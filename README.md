@@ -13,7 +13,7 @@ It has the following features
 * Protocol extensibility
 
 The user-manual for the latest beta (1.1.x) release is available at
-[https://yada.juxt.pro](https://yada.juxt.pro) and offline (see below).
+[https://juxt.pro/yada](https://juxt.pro/yada) and offline (see below).
 
 The user-manual is also available as an e-book or PDF, at
 [Leanpub](https://leanpub.com/yada).
