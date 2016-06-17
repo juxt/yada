@@ -1,4 +1,6 @@
-(ns yada.etag)
+(ns yada.etag
+  (:require
+   [yada.util :refer [md5-hash]]))
 
 (defprotocol ETag
   "The version function returns material that becomes the ETag response
@@ -11,6 +13,6 @@
 (extend-protocol ETag
   Object
   (to-etag [o rep]
-    (str (hash {:value o :representation rep})))
+    (md5-hash (str (hash {:value o :representation rep}))))
   nil
   (to-etag [o rep] nil))
