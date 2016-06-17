@@ -1,14 +1,6 @@
 [[example-1-hello-world]]
 = Example 1: Hello World!
 
-We took a normal Ring handler, injected it with a mix of radioactive
-isotopes stolen from the http://zguide.zeromq.org/page:all[same secret
-Soviet atomic research project as ØMQ] and bombarded it with
-near-identical 1950-era cosmic rays, while injecting into it a potent
-cocktail of powerful steroids. As a result, yada's handlers are much
-more capable than your average Ring handler, and this chapter should
-demonstrate.
-
 Let's introduce yada properly by writing some code. We'll start with
 some state, a simple string: `Hello World!`.
 

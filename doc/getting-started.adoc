@@ -1,17 +1,17 @@
 [[getting-started]]
 = Getting Started
 
-n this quick tutorial we're going to run a real Clojure project, diving into the code to show how [yada]#yada# is used.
+In this quick tutorial we're going to run a real Clojure project, diving into the code to show how [yada]#yada# is used.
 
 Our project is called 'edge', a sample project from JUXT to show some of our libraries in action. It link:https://github.com/juxt/edge[lives on GitHub].
 
-We'll clone it first, then run it, browse the examples and even make modifications.
+We'll clone it first, then build it, then run it, then browse the examples and even make modifications.
 
 So let's get going!
 
 == Clone
 
-First we need to clone the project and change into its working directory.
+First let's clone the project and change into its working directory.
 
 [source]
 ----
@@ -21,7 +21,7 @@ cd edge
 
 == Build & Run
 
-Next we build and run it, in its *development* mode.
+Next we build and run it, in _development_ mode.
 
 [source]
 ----
@@ -42,22 +42,35 @@ Starting file watcher (CTRL-C to quit)...
 Compiling {sass}... 3 changed files.
 ----
 
-When you see the line below you can move on to the next step:
+== Browse
+
+Fire up a browser and browse to http://localhost:3000/hello. You should see a simple `Hello World` message.
+
+== Connect a REPL
+
+Let's connect a REPL.
+
+Start a new terminal and change into the project's working directory again.
+
+[source]
+----
+cd edge
+----
+
+If the project is still building, wait until you see the following line before trying to connect.
 
 ----
 nREPL server started on port 5600 on host 127.0.0.1 - nrepl://127.0.0.1:5600
 ----
 
-== Connect a REPL
-
-We connect a client REPL to this JVM like this:
+Connect a client REPL to this JVM like this:
 
 [source]
 ----
 boot repl
 ----
 
-Which results in something similar to this:
+This should result in something similar to this:
 
 [source]
 ----
@@ -87,14 +100,30 @@ user=> (reset)
 user=>
 ----
 
-== Browse
-
-Fire up a browser and browse to http://localhost:3000. You should see a banner "Welcome to Edge".
-
 == View the source
 
-Fire up an editor and load up the file `src/edge/web.clj`. Locate the following line:
+Fire up an editor and load up the file `src/edge/web.clj`.
 
+Locate the function called `content-routes` and search for the `"Hello World!"` string.
+
+[source,clojure]
+----
+(defn content-routes [_]
+  ["/"
+   [ <1>
+    ["index.html"
+     (->
+      (templated-page-resource "index.html" (fn [ctx] {:foo "bar" :ctx ctx}))
+      (assoc :id ::index))]
+
+    ["" (yada/redirect ::index)]
+
+    ;; Add some pairs (as vectors) here. First item is the path, second is the handler.
+    ;; Here's an example
+    ["hello" (yada/handler "Hello World!\n")] <2>
+
+
+<<<<<<< Updated upstream
 [source,clojure]
 ----
 ["hello" (yada/handler "Hello World!\n")]
@@ -143,3 +172,92 @@ user=> (reset)
 Try the curl command (or web browser) again and verify the updated result.
 
 If it works, you're now ready to proceed with link:{next}[next chapter], where we will discuss this example in more depth.
+=======
+    [""
+     (-> (yada/as-resource (io/file "target"))
+         (assoc :id ::static))]
+
+    ]])
+----
+
+<1> The start of a series of vector pairs. These associate URI paths with handlers.
+<2> Change the string here from `"Hello World"` to `"Hello Wonderful World"`.
+
+Now go back to your REPL and enter `(reset)`.
+
+Finally, refresh your browser — http://localhost:3000 — and check that the message has changed.
+
+== Introducing Resources
+
+Edge uses a link:https://github.com/juxt/bidi[bidi] route structure to define URI paths.
+
+There are a series of vectors, each with 2 elements. The first element is a pattern which, if matched against the URI's path, causes the handler (the second element) to be selected.
+
+[source,clojure]
+----
+["hello" (yada/handler "Hello World!\n")]
+----
+
+In this line, the first element is "hello". Higher up the tree structure you'll see a "/". This means that `/hello` will match to `(yada/handler "Hello World!\n")`.
+
+Let's focus on this handler. We could put a standard Ring function `(fn [req] {...})` here but instead we choose to create one with `yada/handler`, which is a function that turns a *resource* into a Ring handler.
+
+A *resource* is a Clojure map (or more accurately, a Clojure record) that completely describes the methods, properties, representations, security and other miscellaneous properties of a web resource. The reason we can use a string (`Hello World`) here is because [yada]#yada# contains logic to coerce a string into a resource.
+
+== URIs and Routing
+
+A resource doesn't itself with a resource's identification (its URI). In Edge, that's why we need to combine [yada]#yada# with bidi.
+
+Think of the path as (part of) the *I* in *URI*, and the resource as the *R*. The route structure is where URI paths are associated with the resources they identify. This separation of concerns is very important to grasp. From now on we'll seldom mention URIs, since [yada]#yada# is about _resources_, not routing.
+
+== Examining the response
+
+Let's examine the response to our `/hello` request in more detail, via `curl`. The `-i` option shows us the HTTP headers as well as the body.
+
+[source,curl]
+----
+curl -i http://localhost:3000/hello
+----
+
+should result in a response similar to the following (note that headers may appear in a different order).
+
+[source,http]
+----
+HTTP/1.1 200 OK
+Server: Aleph/0.4.1
+Connection: Keep-Alive
+Date: Fri, 17 Jun 2016 16:44:23 GMT
+Last-Modified: Fri, 17 Jun 2016 16:43:02 GMT
+ETag: -1727906851
+Content-Type: text/plain;charset=utf-8
+Vary: accept-charset
+Content-Length: 23
+X-Frame-Options: SAMEORIGIN
+X-XSS-Protection: 1; mode=block
+X-Content-Type-Options: nosniff
+----
+
+The first three response headers are added by our webserver, Aleph.
+
+[source,http]
+----
+Server: Aleph/0.4.0
+Connection: Keep-Alive
+Date: Fri, 17 Jun 2016 16:44:23 GMT
+----
+
+Next we have another date and a string known as the __entity tag__.
+
+[source,http]
+----
+Last-Modified: Sun, 09 Aug 2015 07:25:10 GMT
+ETag: 1462348343
+----
+
+The *Last-Modified* header shows when the string `Hello World!` was
+created. As Java strings are immutable, yada is able to deduce that the
+string's creation date is also the last time it could have been
+modified.
+
+The entity tag is computed from the value of the `Hello World!` itself. The same goes for the entity tag. Both are used to support HTTP conditional requests and conflict detection.
+>>>>>>> Stashed changes
