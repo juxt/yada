@@ -6,14 +6,13 @@
    [clj-time.core :refer [now]]
    [clj-time.coerce :refer [to-date]]
    [yada.charset :as charset]
-   [yada.protocols :as p]
    [yada.methods :as m]
-   [yada.resource :refer [resource]]
+   [yada.resource :refer [resource as-resource ResourceCoercion]]
    yada.resources.string-resource))
 
 (defn string-atom-resource [*a]
   (let [*last-modified (atom (to-date (now)))
-        val (p/as-resource @*a)]
+        val (as-resource @*a)]
     (add-watch
      *a :last-modified
      (fn [_ _ _ _]
@@ -41,12 +40,10 @@
                           :summary "Reset the atom to nil"
                           :response (fn [ctx] (reset! *a nil))}}}))))
 
-(extend-protocol p/ResourceCoercion
+(extend-protocol ResourceCoercion
   clojure.lang.Atom
   (as-resource [*a]
     (let [v @*a]
       (cond
         (string? v) (string-atom-resource *a)
         :otherwise (throw (ex-info (format "Unsupported value type: %s" (type v)) {}))))))
-
-

@@ -3,7 +3,6 @@
 (ns yada.file-resource-test
   (:require
    [byte-streams :as bs]
-   ;;[bidi.ring :refer [make-handler]]
    [clojure.edn :as edn]
    [clojure.java.io :as io]
    [clojure.test :refer :all]
@@ -14,7 +13,6 @@
    [bidi.bidi :as bidi]
    [bidi.ring :as br]
    [yada.yada :as yada :refer [yada]]
-   [yada.protocols :as p]
    [yada.resources.file-resource :refer :all]
    [yada.test-util :refer [to-string]])
   (:import
@@ -117,4 +115,3 @@
     (is (nil? resp))
     (clojure.pprint/pprint (to-string (:body resp)))
     (is (nil? (to-string (:body resp))))))
-

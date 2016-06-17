@@ -7,7 +7,6 @@
    [ring.mock.request :as mock]
    [ring.util.codec :as codec]
    [schema.core :as s]
-   [yada.protocols :as p]
    [yada.resource :refer [resource]]
    [yada.yada :as yada :refer [yada]]))
 

@@ -4,8 +4,7 @@
   (:require
    [clojure.java.io :as io]
    [ring.util.mime-type :refer (ext-mime-type)]
-   [yada.resource :refer [resource]]
-   [yada.protocols :refer [as-resource]])
+   [yada.resource :refer [resource as-resource]])
   (:import [java.util.jar JarFile]))
 
 (defn new-jar-resource [prefix]
@@ -22,7 +21,7 @@
           (= (.getProtocol res) "jar")
           (let [[_ jarfile _] (re-matches #"file:(.*)!(.*)" (.getPath res))
                 jarfile (new JarFile jarfile)]
-            
+
             (let [je (.getEntry jarfile path)]
               (if (.isDirectory je)
                 (resource

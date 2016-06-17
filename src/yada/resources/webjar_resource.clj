@@ -3,10 +3,9 @@
   (:require
     [clojure.java.io :as io]
     [clojure.string :as str]
-    [yada.resource :refer [resource]]
+    [yada.resource :refer [resource as-resource]]
     [yada.resources.classpath-resource :refer [new-classpath-resource]]
-    [yada.test :as test]
-    [yada.protocols :refer [as-resource]]))
+    [yada.test :as test]))
 
 (def ^:private webjars-pattern
   #"META-INF/resources/webjars/([^/]+)/([^/]+)/(.*)")
@@ -70,4 +69,3 @@
                       keys
                       (map (juxt identity #(new-webjar-resource % options))))]
      ["" webjars])))
-

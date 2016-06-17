@@ -3,6 +3,7 @@
 (ns ^{:doc "Test the Hello World tutorial"}
     yada.helloworld-test
   (:require
+   [clojure.set :as set]
    [clojure.test :refer :all]
    [cheshire.core :as json]
    [byte-streams :as bs]
@@ -12,7 +13,8 @@
    [yada.media-type :as mt]
    [yada.util :refer (parse-csv)]
    [yada.test-util :refer (etag? to-string)]
-   [yada.yada :as yada])
+   [yada.yada :as yada]
+   [clojure.set :as set])
   (:import [java.util Date]))
 
 (defn validate-headers? [headers]
@@ -38,7 +40,7 @@
         response @(resource (request :get "/"))
         headers (:headers response)]
     (is (= 200 (:status response)))
-    (is (= #{"last-modified" "content-type" "content-length" "vary" "etag"} (set (keys headers))))
+    (is (set/subset? #{"last-modified" "content-type" "content-length" "vary" "etag"} (set (keys headers))))
     (is (= [] (validate-headers? headers)))
     (is (= "text/plain;charset=utf-8" (get headers "content-type")))
     ;; TODO: See github issue regarding ints and strings
@@ -72,7 +74,7 @@
           response @(resource (request :get "/"))
           last-modified (some-> response (get-in [:headers "last-modified"]) parse-date)
           etag (some-> response (get-in [:headers "etag"]))]
-      
+
       (is last-modified)
       (is (instance? Date last-modified))
 
@@ -109,7 +111,7 @@
         response @(resource (request :options "/"))
         headers (:headers response)]
     (is (= 200 (:status response)))
-    (is (=  #{"allow" "content-length"} (set (keys headers))))
+    (is (set/subset?  #{"allow" "content-length"} (set (keys headers))))
     (is (= [] (validate-headers? headers)))
     (is (= #{"OPTIONS" "GET" "HEAD"} (set (parse-csv (get headers "allow")))))
     (is (nil? (:body response)))))
@@ -119,7 +121,7 @@
         response @(resource (request :options "/"))
         headers (:headers response)]
     (is (= 200 (:status response)))
-    (is (= #{"allow" "content-length"} (set (keys headers))))
+    (is (set/subset? #{"allow" "content-length"} (set (keys headers))))
     (is (= [] (validate-headers? headers)))
     (is (= #{"OPTIONS" "GET" "HEAD" "PUT" "DELETE"} (set (parse-csv (get headers "allow")))))
     (is (nil? (:body response)))))
@@ -184,4 +186,3 @@
 ;; 	at manifold.executor$thread_factory$reify__20246$f__20247.invoke(executor.clj:36)
 ;; 	at clojure.lang.AFn.run(AFn.java:22)
 ;; 	at java.lang.Thread.run(Thread.java:745)
-

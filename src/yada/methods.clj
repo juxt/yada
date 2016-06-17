@@ -9,7 +9,6 @@
    [manifold.deferred :as d]
    [yada.body :as body]
    [yada.context :as ctx]
-   [yada.protocols :as p]
    [yada.util :as util])
   (:import
    [yada.context Response]
@@ -284,7 +283,7 @@
   java.net.URL
   (interpret-post-result [url ctx]
     (interpret-post-result (.toURI url) ctx))
-  
+
   nil
   (interpret-post-result [_ ctx] ctx))
 
@@ -328,7 +327,7 @@
     (-> ctx
         (assoc-in [:response :status] 200)
         (assoc-in [:response :body] s)))
-  
+
   clojure.lang.Fn
   (interpret-delete-result [f ctx]
     (interpret-delete-result (f ctx) ctx))

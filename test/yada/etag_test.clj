@@ -6,7 +6,6 @@
    [clojure.tools.logging :refer :all]
    [ring.mock.request :as mock]
    [yada.resource :refer [resource]]
-   [yada.protocols :as p]
    [yada.test-util :refer (etag?)]
    [yada.yada :as yada :refer [yada]]))
 
@@ -32,7 +31,7 @@
       (is (etag? (get-in r1 [:headers "etag"])))
       (is (= 200 (:status r2)))
       (is (etag? (get-in r2 [:headers "etag"])))
-      
+
       ;; ETags are the same in both responses
       (is (= (get-in r1 [:headers "etag"])
              (get-in r2 [:headers "etag"])))))
@@ -43,14 +42,14 @@
           r1 @(handler (mock/request :get "/"))
           r2 @(handler (mock/request :post "/"))
           r3 @(handler (mock/request :get "/"))]
-      
+
       (is (= 200 (:status r1)))
       (is (etag? (get-in r1 [:headers "etag"])))
       (is (= 200 (:status r3)))
       (is (etag? (get-in r3 [:headers "etag"])))
-      
+
       (is (= 200 (:status r2)))
-      
+
       ;; ETags are the same in both responses
       (is (not (= (get-in r1 [:headers "etag"])
                   (get-in r3 [:headers "etag"]))))))
@@ -67,7 +66,7 @@
         (let [r @(handler (-> (mock/request :post "/")
                               (update-in [:headers] merge {"if-match" etag})))]
           (is (= 412 (:status r))))
-        
+
         (let [r @(handler (-> (mock/request :post "/")
                               (update-in [:headers] merge {"if-match" (str "abc, " etag ",123")})))]
           (is (= 412 (:status r)))))

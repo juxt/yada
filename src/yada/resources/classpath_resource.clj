@@ -2,8 +2,7 @@
   (:require
    [clojure.java.io :as io]
    [clojure.string :as str]
-   [yada.resource :refer [resource]]
-   [yada.protocols :refer [as-resource]]))
+   [yada.resource :refer [resource as-resource]]))
 
 (defn new-classpath-resource
   "Create a new classpath resource that resolves requests with

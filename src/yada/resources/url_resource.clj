@@ -3,8 +3,7 @@
 (ns yada.resources.url-resource
   (:require
    [yada.charset :as charset]
-   [yada.protocols :as p]
-   [yada.resource :refer [resource]]
+   [yada.resource :refer [resource ResourceCoercion]]
    [yada.util :refer [as-file]]
    [ring.util.mime-type :refer (ext-mime-type)])
   (:import [java.net URL]
@@ -14,7 +13,7 @@
 ;; A UrlResource is a Java resource on the classpath.
 
 (extend-type URL
-  p/ResourceCoercion
+  ResourceCoercion
   (as-resource [url]
     (resource
      {:properties

@@ -18,10 +18,10 @@
    [yada.charset :as charset]
    [yada.coerce :as coerce]
    [yada.cookies :as cookies]
+   [yada.etag :as etag]
    [yada.media-type :as mt]
    [yada.methods :as methods]
    [yada.multipart]
-   [yada.protocols :as p]
    [yada.request-body :as rb]
    [yada.representation :as rep]
    [yada.schema :as ys]
@@ -268,7 +268,7 @@
       (let [version (-> ctx :properties :version)
             etags (into {}
                         (for [rep (:produces ctx)]
-                          [rep (p/to-etag version rep)]))]
+                          [rep (etag/to-etag version rep)]))]
 
         (if (empty? (set/intersection matches (set (vals etags))))
           (d/error-deferred
@@ -301,7 +301,7 @@
                           ;; if-none-match in the same request, so a performance
                           ;; optimization is unwarranted.
                           (for [rep (:produces ctx)]
-                            [rep (p/to-etag version rep)]))]
+                            [rep (etag/to-etag version rep)]))]
 
           (if (not-empty (set/intersection matches (set (vals etags))))
             (d/error-deferred
@@ -367,7 +367,7 @@
   (if-let [version (or
                     (-> ctx :new-properties :version)
                     (-> ctx :properties :version))]
-    (let [etag (p/to-etag version (get-in ctx [:response :produces]))]
+    (let [etag (etag/to-etag version (get-in ctx [:response :produces]))]
       (assoc-in ctx [:response :etag] etag))
     ctx))
 

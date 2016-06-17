@@ -22,8 +22,7 @@
    [yada.body :refer [as-body]]
    [yada.charset :as charset]
    [yada.media-type :as mt]
-   [yada.protocols :as p]
-   [yada.resource :refer [resource]]
+   [yada.resource :refer [resource ResourceCoercion]]
    [yada.resources.webjar-resource :refer [new-webjar-resource]]
    [yada.schema :as ys]
    [yada.util :refer [md5-hash] :as util])
@@ -139,7 +138,7 @@
       rs/swagger-json))
 
 (defrecord SwaggerSpecResource [spec content-type]
-  p/ResourceCoercion
+  ResourceCoercion
   (as-resource [_]
     (resource
      {:properties {:last-modified (to-date (now))

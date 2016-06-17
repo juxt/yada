@@ -6,7 +6,6 @@
    [hiccup.core :refer [html]]
    [yada.charset :as charset]
    [yada.journal :as journal]
-   [yada.protocols :as p]
    [yada.resource :refer [resource]]
    [yada.yada :as yada :refer [yada]]))
 

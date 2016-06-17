@@ -15,11 +15,19 @@
    [yada.context :refer [content-type]]
    yada.charset
    yada.media-type
-   [yada.protocols :as p]
    [yada.util :refer [arity]])
   (:import [yada.charset CharsetMap]
            [yada.media_type MediaTypeMap]
            [java.util Date]))
+
+(defprotocol ResourceCoercion
+  (as-resource [_] "Coerce to a resource. Often, resources need to be
+  coerced rather than extending types directly with the Resource
+  protocol. We can exploit the time of coercion to know the time of
+  birth for the resource, which supports time-based conditional
+  requests. For example, a simple StringResource is immutable, so by
+  knowing the time of construction, we can precisely state its
+  Last-Modified-Date."))
 
 ;; Deprecated
 
@@ -91,7 +99,7 @@
 ;; --
 
 (defrecord Resource []
-  p/ResourceCoercion
+  ResourceCoercion
   (as-resource [this] this))
 
 (defn resource [model]
@@ -103,7 +111,7 @@
     (when (su/error? r) (throw (ex-info "Cannot turn resource-model into resource, because it doesn't conform to a resource-model schema" {:resource-model model :error (:error r)})))
     (map->Resource r)))
 
-(extend-protocol p/ResourceCoercion
+(extend-protocol ResourceCoercion
   nil
   (as-resource [_]
     (resource

@@ -7,11 +7,10 @@
    [clj-time.coerce :refer [to-date]]
    [yada.charset :as charset]
    [yada.body :refer [as-body]]
-   [yada.protocols :as p]
-   [yada.resource :refer [resource]])
+   [yada.resource :refer [resource ResourceCoercion]])
   (:import [clojure.lang APersistentMap PersistentVector]))
 
-(extend-protocol p/ResourceCoercion
+(extend-protocol ResourceCoercion
   APersistentMap
   (as-resource [m]
     (let [last-modified (to-date (now))]

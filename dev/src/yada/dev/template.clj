@@ -13,7 +13,6 @@
    [stencil.loader :as loader]
    [yada.charset :as charset]
    [yada.methods :as m]
-   [yada.protocols :as p]
    [yada.resource :refer [resource]]
    [yada.util :refer [as-file]]))
 

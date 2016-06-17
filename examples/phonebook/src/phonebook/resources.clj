@@ -9,7 +9,6 @@
    [phonebook.db :as db]
    [phonebook.html :as html]
    [yada.methods :as m]
-   [yada.protocols :as p]
    [yada.resource :refer [resource]]
    [yada.yada :as yada])
   (:import [manifold.stream.core IEventSource]))
@@ -107,7 +106,7 @@
              :response (fn [ctx]
                          (let [id (db/add-entry db (get-in ctx [:parameters :form]))]
                            (java.net.URI. (:uri (yada/uri-for ctx :phonebook.api/entry {:route-params {:entry id}})))))}}}
-    
+
     (merge access-control))))
 
 (defn new-entry-resource [db]
@@ -119,13 +118,13 @@
                                "application/edn;q=0.9"
                                "application/json;q=0.8"}
                  :charset "UTF-8"}]
-     
+
      :methods
      {:get
       {:swagger/tags ["default" "getters"]
        :response
        (fn [ctx]
-         
+
          (let [id (get-in ctx [:parameters :path :entry])
                {:keys [firstname surname phone] :as entry} (db/get-entry db id)]
            (when entry

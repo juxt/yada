@@ -6,8 +6,7 @@
    [clj-time.core :refer (now)]
    [clj-time.coerce :refer (to-date)]
    [yada.charset :as charset]
-   [yada.protocols :refer [ResourceCoercion]]
-   [yada.resource :refer [resource]]
+   [yada.resource :refer [resource ResourceCoercion]]
    [yada.util :refer (md5-hash)]))
 
 (extend-protocol ResourceCoercion
@@ -25,4 +24,3 @@
           :media-type "text/plain"
           :charset charset/platform-charsets}]
         :response (fn [ctx] s)}}})))
-

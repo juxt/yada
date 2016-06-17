@@ -26,9 +26,7 @@
  [yada.handler handler yada]
  [yada.swagger swaggered]
  [yada.redirect redirect]
- [yada.resource resource]
- [yada.protocols as-resource]
+ [yada.resource resource as-resource]
  [yada.test request-for response-for]
  [yada.util get-host-origin]
  [yada.wrappers routes])
-

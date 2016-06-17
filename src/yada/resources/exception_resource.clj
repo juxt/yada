@@ -6,8 +6,7 @@
    [hiccup.core :refer [html]]
    [yada.body :as body]
    [yada.context :refer [content-type]]
-   [yada.protocols :refer [ResourceCoercion]]
-   [yada.resource :refer [resource]]))
+   [yada.resource :refer [resource ResourceCoercion]]))
 
 (extend-protocol ResourceCoercion
   Exception
@@ -24,4 +23,3 @@
                        "text/html"
                        (-> (body/render-error 500 e rep ctx)
                            (body/to-body rep)))))))})))
-

@@ -16,9 +16,8 @@
    [yada.interceptors :as i]
    [yada.media-type :as mt]
    [yada.methods :as methods]
-   [yada.protocols :as p]
    [yada.representation :as rep]
-   [yada.resource :as resource :refer [resource]]
+   [yada.resource :as resource :refer [resource as-resource ResourceCoercion]]
    [yada.schema :refer [resource-coercer] :as ys]
    [yada.security :as sec]
    [yada.util :refer [get*]])
@@ -187,7 +186,7 @@
   (invoke [this req]
     (handle-request this req (make-context)))
 
-  p/ResourceCoercion
+  ResourceCoercion
   (as-resource [h]
     (resource-coercer
      {:produces #{"text/html"
@@ -236,7 +235,7 @@
   "Create a Ring handler"
   [resource]
 
-  (when (not (satisfies? p/ResourceCoercion resource))
+  (when (not (satisfies? ResourceCoercion resource))
     (throw (ex-info "The argument to the yada function must be a Resource record or something that can be coerced into one (i.e. a type that satisfies yada.protocols/ResourceCoercion)"
                     {:resource resource})))
 
@@ -245,7 +244,7 @@
     (throw (ex-info "yada function is being passed a resource that is an error"
                     {:error (:error resource)})))
 
-  (let [resource (ys/resource-coercer (p/as-resource resource))]
+  (let [resource (ys/resource-coercer (as-resource resource))]
 
     (when (error? resource)
       (throw (ex-info "Resource does not conform to schema"

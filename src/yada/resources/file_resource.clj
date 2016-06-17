@@ -13,8 +13,7 @@
    [schema.core :as s]
    [yada.charset :as charset]
    [yada.representation :as rep]
-   [yada.resource :refer [resource]]
-   [yada.protocols :as p]
+   [yada.resource :refer [resource as-resource ResourceCoercion]]
    [yada.media-type :as mt]
    [yada.schema :refer [Representation]])
   (:import [java.io File]
@@ -64,7 +63,7 @@
                    ;; A representation can be given as a parameter, or deduced from
                    ;; the filename. The latter is unreliable, as it depends on file
                    ;; suffixes.
-                   
+
                    :exists? (.exists file)
                    :last-modified (Date. (.lastModified file))})
 
@@ -72,7 +71,7 @@
                                 (respond-with-file ctx file reader))}
               :put {:response (fn [ctx]
                                 (bs/transfer (-> ctx :request :body) file))}
-              
+
               :delete {:response (fn [ctx] (.delete file))}}}))
 
 (defn filename-ext
@@ -105,7 +104,7 @@
           [:head
            [:title (.getName dir)]
            [:style "th {font-family: sans-serif} td {font-family: monospace} td, th {border-bottom: 1px solid #aaa; padding: 4px} a {text-decoration: none} td.monospace {font-family: monospace; }"]]
-          
+
           [:body
            [:h1 "Files"]
            [:dl
@@ -192,9 +191,9 @@
                       :properties {:last-modified (Date. (.lastModified f))}
                       :methods {:get (fn [ctx] (dir-index f (-> ctx :response :produces :media-type)))}}))
 
-          :otherwise (p/as-resource nil))))}))
+          :otherwise (as-resource nil))))}))
 
-(extend-protocol p/ResourceCoercion
+(extend-protocol ResourceCoercion
   File
   (as-resource [f]
     (if (.isDirectory f)
