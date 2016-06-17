@@ -76,7 +76,7 @@
    i/get-new-properties
    i/compute-etag
    sec/access-control-headers
-   #_sec/security-headers
+   sec/security-headers
    i/create-response
    i/logging
    i/return
