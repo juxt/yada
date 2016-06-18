@@ -100,94 +100,36 @@ user=> (reset)
 user=>
 ----
 
-== View the source
+== Analyze the source code
 
 Fire up an editor and load up the file `src/edge/web.clj`.
 
-Locate the function called `content-routes` and search for the `"Hello World!"` string.
+Locate the function called `content-routes`. This returns a route structure that matches on the URI paths of incoming HTTP requests.
 
-[source,clojure]
+[source]
 ----
 (defn content-routes [_]
   ["/"
-   [ <1>
+   [
     ["index.html"
-     (->
-      (templated-page-resource "index.html" (fn [ctx] {:foo "bar" :ctx ctx}))
-      (assoc :id ::index))]
+     (yada/resource
+      {:id ::index
+       :methods
+       {:get
+        {:produces #{"text/html"}
+         :response (fn [ctx]
+                     (selmer/render-file "index.html" {}))}}})]
 
     ["" (yada/redirect ::index)]
 
     ;; Add some pairs (as vectors) here. First item is the path, second is the handler.
     ;; Here's an example
-    ["hello" (yada/handler "Hello World!\n")] <2>
+    ["hello" (yada/handler "Hello World!\n")]
 
-
-<<<<<<< Updated upstream
-[source,clojure]
-----
-["hello" (yada/handler "Hello World!\n")]
-----
-
-If you have curl on your machine, use it to send it a web request. Alternatively, use a web browser.
-
-[source]
-----
-curl -i http://localhost:3000/test
-----
-
-You should see something similar to the following:
-
-[source]
-----
-HTTP/1.1 200 OK
-Content-Length: 15
-Content-Type: text/plain;charset=utf-8
-Last-Modified: Wed, 15 Jun 2016 10:17:03 GMT
-Vary: accept-charset
-ETag: -1277479543
-Server: Aleph/0.4.1
-Connection: Keep-Alive
-Date: Wed, 15 Jun 2016 10:17:06 GMT
-
-Hello World!
-----
-
-Now make a change to this line.
-
-[source,clojure]
-----
-["hello" (yada/handler "Hello Wonderful World!\n")]
-----
-
-Go to your REPL and reset your system to pick up the changes:
-
-[source]
-----
-user=> (reset)
-:reloading (edge.web edge.server edge.system user)
-:resumed
-----
-
-Try the curl command (or web browser) again and verify the updated result.
-
-If it works, you're now ready to proceed with link:{next}[next chapter], where we will discuss this example in more depth.
-=======
     [""
      (-> (yada/as-resource (io/file "target"))
-         (assoc :id ::static))]
-
-    ]])
+         (assoc :id ::static))]]])
 ----
-
-<1> The start of a series of vector pairs. These associate URI paths with handlers.
-<2> Change the string here from `"Hello World"` to `"Hello Wonderful World"`.
-
-Now go back to your REPL and enter `(reset)`.
-
-Finally, refresh your browser — http://localhost:3000 — and check that the message has changed.
-
-== Introducing Resources
 
 Edge uses a link:https://github.com/juxt/bidi[bidi] route structure to define URI paths.
 
@@ -206,9 +148,9 @@ A *resource* is a Clojure map (or more accurately, a Clojure record) that comple
 
 == URIs and Routing
 
-A resource doesn't itself with a resource's identification (its URI). In Edge, that's why we need to combine [yada]#yada# with bidi.
+A resource is not the same thing as its identifier (its URI). In Edge, that's why we need to combine [yada]#yada# with bidi.
 
-Think of the path as (part of) the *I* in *URI*, and the resource as the *R*. The route structure is where URI paths are associated with the resources they identify. This separation of concerns is very important to grasp. From now on we'll seldom mention URIs, since [yada]#yada# is about _resources_, not routing.
+Think of the path as (part of) the *I* in *URI*, and the resource as the *R*. The route structure is where URI paths are associated with the resources they identify. This separation of concerns is very important to grasp as from now on we'll seldom mention URIs, since [yada]#yada# is about _resources_, not routing.
 
 == Examining the response
 
@@ -228,7 +170,7 @@ Server: Aleph/0.4.1
 Connection: Keep-Alive
 Date: Fri, 17 Jun 2016 16:44:23 GMT
 Last-Modified: Fri, 17 Jun 2016 16:43:02 GMT
-ETag: -1727906851
+ETag: fa863bd7ff53786d286e4bb3c0134416
 Content-Type: text/plain;charset=utf-8
 Vary: accept-charset
 Content-Length: 23
@@ -251,13 +193,26 @@ Next we have another date and a string known as the __entity tag__.
 [source,http]
 ----
 Last-Modified: Sun, 09 Aug 2015 07:25:10 GMT
-ETag: 1462348343
+ETag: fa863bd7ff53786d286e4bb3c0134416
 ----
 
-The *Last-Modified* header shows when the string `Hello World!` was
-created. As Java strings are immutable, yada is able to deduce that the
-string's creation date is also the last time it could have been
-modified.
+The *Last-Modified* header shows when the string `Hello World!` was created. As Java strings are immutable, [yada]#yada# is able to deduce that the
+string's creation date is also the last time it could have been modified.
 
-The entity tag is computed from the value of the `Hello World!` itself. The same goes for the entity tag. Both are used to support HTTP conditional requests and conflict detection.
->>>>>>> Stashed changes
+The entity tag is computed from the value of the `Hello World!` itself. The same goes for the entity tag. Both `Last-Modified` and `ETag` are used to support HTTP conditional requests and conflict detection when uploading new versions of a resource.
+
+Next we have a header telling us the media-type of the string's
+representation.
+
+[source,http]
+----
+Content-Type: text/plain;charset=utf-8
+----
+
+yada is able to determine that the media-type is text, but without more
+clues it defaults to `text/plain`.
+
+[source,http]
+----
+Vary: accept-charset
+----
