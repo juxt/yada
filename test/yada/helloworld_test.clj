@@ -46,7 +46,7 @@
     ;; TODO: See github issue regarding ints and strings
     (is (= "13" (get headers "content-length")))
     (is (= #{"accept-charset"} (set (parse-csv (get headers "vary")))))
-    (is (= "-648266692" (get headers "etag")))
+    (is (= "fa863bd7ff53786d286e4bb3c0134416" (get headers "etag")))
     (is (= "Hello World!\n" (to-string (:body response))))))
 
 (deftest swagger-intro-test

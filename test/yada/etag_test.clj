@@ -6,7 +6,7 @@
    [clojure.tools.logging :refer :all]
    [ring.mock.request :as mock]
    [yada.resource :refer [resource]]
-   [yada.test-util :refer (etag?)]
+   [yada.test-util :refer [etag?]]
    [yada.yada :as yada :refer [yada]]))
 
 ;; ETags -------------------------------------------------------------
