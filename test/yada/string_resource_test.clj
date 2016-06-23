@@ -76,7 +76,10 @@
                                             {:headers {"if-modified-since" (format-date (to-date (time/plus (time/now) (time/hours 1))))}})
                         response @(handler request)]
 
-                    (is (= 304 (:status response)))))))
+                    (is (= 304 (:status response)))
+                    ;; Ensure Vary, Etag is returned, as per RFC 7232 Section 4.1
+                    (is (= {"vary" "accept-charset"} (select-keys (:headers response) ["vary"])))
+                    (is (contains? (select-keys (:headers response) ["etag"]) "etag"))))))
 
   (testing "safe-by-default"
     (let [resource "Hello World!"

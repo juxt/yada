@@ -231,10 +231,7 @@
            (.getTime last-modified)
            (.getTime if-modified-since))
 
-        ;; exit with 304
-        (d/error-deferred
-         (ex-info "" (merge {:status 304} ctx)))
-
+        (assoc-in ctx [:response :status] 304)
         (assoc-in ctx [:response :last-modified] (ring.util.time/format-date last-modified)))
 
       (or
@@ -304,9 +301,7 @@
                             [rep (etag/to-etag version rep)]))]
 
           (if (not-empty (set/intersection matches (set (vals etags))))
-            (d/error-deferred
-             (ex-info ""
-                      {:status 304}))
+            (assoc-in ctx [:response :status] 304)
             ctx))
         ctx)
     ctx))
@@ -316,34 +311,43 @@
   [ctx]
   (assert ctx "invoke-method, ctx is nil!")
   (assert (:method-wrapper ctx))
-  (methods/request (:method-wrapper ctx) ctx))
+  ;; We check for a 304. A 304 does not escape through an error
+  ;; mechanism because RFC 7232 still demands we calculate the ETag,
+  ;; Vary and other headers.
+  (if (= (get-in ctx [:response :status]) 304)
+    ctx
+    (methods/request (:method-wrapper ctx) ctx)))
 
 (defn get-new-properties
   "If the method is unsafe, call properties again. This will
   pick up any changes that are used in subsequent interceptors, such as
   the new version of the resource."
   [ctx]
-  (let [resource (:resource ctx)]
-    (if (not (methods/safe? (:method-wrapper ctx)))
+  (cond
+    ;; If it's a 304, we know that no properties can have changed
+    ;; since no method has been invoked.
+    (= (get-in ctx [:response :status]) 304)
+    ctx
 
-      (let [propsfn (get-in ctx [:resource :properties] (constantly {}))]
-        (d/chain
+    (not (methods/safe? (:method-wrapper ctx)))
+    (let [propsfn (get-in ctx [:resource :properties] (constantly {}))]
+      (d/chain
 
-         (propsfn ctx)                 ; propsfn can returned a deferred
+       (propsfn ctx)                 ; propsfn can returned a deferred
 
-         ;; TODO: Do validation/coercion on properties as before - see
-         ;; get-properties - perhaps refactor for code re-use
-         (fn [props]
-           (assoc
-            ctx
-            :new-properties
-            (cond-> props
-              (:produces props)  ; representations shorthand is
-                                 ; expanded, is this necessary at this
-                                 ; stage?
-              (update-in [:produces]
-                         (comp ys/representation-seq ys/representation-set-coercer)))))))
-      ctx)))
+       ;; TODO: Do validation/coercion on properties as before - see
+       ;; get-properties - perhaps refactor for code re-use
+       (fn [props]
+         (assoc
+          ctx
+          :new-properties
+          (cond-> props
+            (:produces props)    ; representations shorthand is
+                                        ; expanded, is this necessary at this
+                                        ; stage?
+            (update-in [:produces]
+                       (comp ys/representation-seq ys/representation-set-coercer)))))))
+    :otherwise ctx))
 
 ;; Compute ETag, if not already done so
 
@@ -408,15 +412,12 @@
                    (when-let [x (get-in ctx [:response :last-modified])]
                      {"last-modified" x})
                    (when-let [x (get-in ctx [:response :vary])]
-                     (when (and (not-empty x) (or (= method :head) body))
+                     (when (not-empty x)
                        {"vary" (rep/to-vary-header x)}))
                    (when-let [x (get-in ctx [:response :etag])]
                      {"etag" x}))))
 
          :body body}]
-
-    ;;(infof "body in response is %s" body)
-    ;;(infof "body is type %s" (type body))
 
     (assoc ctx :response response)))
 
