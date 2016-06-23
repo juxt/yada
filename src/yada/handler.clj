@@ -143,13 +143,13 @@
 
                               rep (assoc-in [:response :produces] rep)
 
-                              (:body data)
+                              (contains? data :body)
                               (assoc [:response :body] (:body data))
 
-                              (and (not (:body data)) (not (:response custom-response)))
+                              (and (not (contains? data :body)) (not (:response custom-response)))
                               (standard-error status e rep)
 
-                              (and (not (:body data)) (:response custom-response))
+                              (and (not (contains? data :body)) (:response custom-response))
                               (custom-error (:response custom-response) rep)
 
                               true set-content-length)
