@@ -68,9 +68,9 @@
    i/TRACE
    i/method-allowed?
    i/parse-parameters
-   sec/authenticate ; step 1
-   i/get-properties ; step 2
-   sec/authorize ; steps 3,4 and 5
+   sec/authenticate
+   i/get-properties
+   sec/authorize
    i/process-request-body
    i/check-modification-time
    i/select-representation
