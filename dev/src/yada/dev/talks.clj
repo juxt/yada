@@ -43,11 +43,11 @@
                                      [{:media-type #{"text/plain"}}])}}
                   :index-files ["README.md"]})
                 {:id ::index})))]
-           ["/hello" (-> "Hello World!" yada)]
-           ["/hello-meta" (-> "Hello World!" yada yada)]
-           ["/hello-atom-meta" (-> "Hello World!" atom yada yada)]
+           #_["/hello" (-> "Hello World!\n" yada)]
+           #_["/hello-meta" (-> "Hello World!\n" yada yada)]
+           #_["/hello-atom-meta" (-> "Hello World!\n" atom yada yada)]
            ;; just a joke...
-           ["/hello-meta-meta" (-> "Hello World!" yada yada yada)]
+           #_["/hello-meta-meta" (-> "Hello World!\n" yada yada yada)]
 
            ;; Let's do this properly, and bind a file resource somehow
            ["/test.md" (yada (new-markdown-resource "# Heading\nHello"))]
@@ -59,4 +59,3 @@
 
 (defn new-talks [config]
   (map->Talks {:config config}))
-
