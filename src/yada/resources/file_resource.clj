@@ -148,17 +148,27 @@
      (ex-info "Redirect"
               {:status 302 :headers {"Location" (str (:uri req) index-file)}}))))
 
+(defprotocol PathCoercion
+  (as-path [_] "Coerce to java.nio.file.Path"))
+
+(extend-protocol PathCoercion
+  java.io.File
+  (as-path [f] (when f (.toPath f)))
+  String
+  (as-path [f] (when f (as-path (io/file f)))))
+
 (defn safe-relative-path
   "Given a parent java.nio.file.Path, return a child that is
   guaranteed not to ascend the parent. This is to ensure access cannot
   be made to files outside of the parent root."
-  [^java.nio.file.Path parent ^String path]
-  (when (and parent path)
-    (let [child (.normalize (.resolve parent path))]
-      (when (.startsWith child parent) child))))
+  [parent ^String path]
+  (let [parent (as-path parent)]
+    (when (and parent path)
+      (let [child (.normalize (.resolve parent path))]
+        (when (.startsWith child parent) child)))))
 
 (defn safe-relative-file
-  [^java.nio.file.Path parent ^String path]
+  [parent ^String path]
   (when-let [path (safe-relative-path parent path)]
     (.toFile path)))
 
