@@ -96,7 +96,7 @@
 
         (let [subresourcefn (:sub-resource resource)]
           ;; Subresource
-          (let [sub-resource (subresourcefn ctx)
+          (let [sub-resource (or (subresourcefn ctx) (resource nil))
                 handler
                 (new-handler
                  {:id (get resource :id (java.util.UUID/randomUUID))
