@@ -148,6 +148,19 @@
      (ex-info "Redirect"
               {:status 302 :headers {"Location" (str (:uri req) index-file)}}))))
 
+(defn safe-relative-path
+  "Given a parent java.nio.file.Path, return a child that is
+  guaranteed not to ascend the parent. This is to ensure access cannot
+  be made to files outside of the parent root."
+  [^java.nio.file.Path parent ^String path]
+  (let [child (.normalize (.resolve parent path))]
+    (when (.startsWith child parent) child)))
+
+(defn safe-relative-file
+  [^java.nio.file.Path parent ^String path]
+  (when-let [path (safe-relative-path parent path)]
+    (.toFile path)))
+
 (s/defn new-directory-resource
   [dir :- File
    ;; A map between file suffices and extra args that will be used
@@ -170,10 +183,12 @@
                          (dir-index dir (-> ctx :response :produces :media-type))))}
     :sub-resource
     (fn [ctx]
-      (let [f (io/file dir (-> ctx :request :path-info))
-            suffix (filename-ext (.getName f))
-            custom-suffix-args (get custom-suffices suffix)]
+      (let [f (safe-relative-file (.toPath dir) (-> ctx :request :path-info))
+            suffix (when f (filename-ext (.getName f)))
+            custom-suffix-args (when suffix (get custom-suffices suffix))]
         (cond
+          (nil? f) (resource nil)
+
           (.isFile f)
           (resource
            {:properties {:exists? (.exists f)
