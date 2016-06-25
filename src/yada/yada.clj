@@ -29,4 +29,5 @@
  [yada.resource resource as-resource]
  [yada.test request-for response-for]
  [yada.util get-host-origin]
+ [yada.resources.file-resource safe-relative-path safe-relative-file]
  [yada.wrappers routes])
