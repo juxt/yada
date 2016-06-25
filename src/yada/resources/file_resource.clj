@@ -153,8 +153,9 @@
   guaranteed not to ascend the parent. This is to ensure access cannot
   be made to files outside of the parent root."
   [^java.nio.file.Path parent ^String path]
-  (let [child (.normalize (.resolve parent path))]
-    (when (.startsWith child parent) child)))
+  (when (and parent path)
+    (let [child (.normalize (.resolve parent path))]
+      (when (.startsWith child parent) child))))
 
 (defn safe-relative-file
   [^java.nio.file.Path parent ^String path]
