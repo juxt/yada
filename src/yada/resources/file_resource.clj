@@ -177,7 +177,7 @@
 
   (resource
    {:path-info? true
-    :produces "text/html"
+    :produces #{"text/html" "text/plain"}
     :methods {:get (fn [ctx]
                      (or (maybe-redirect-to-index dir (:request ctx) index-files)
                          (dir-index dir (-> ctx :response :produces :media-type))))}
