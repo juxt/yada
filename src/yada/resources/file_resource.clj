@@ -155,7 +155,11 @@
   java.io.File
   (as-path [f] (when f (.toPath f)))
   String
-  (as-path [f] (when f (as-path (io/file f)))))
+  (as-path [s] (when s (as-path (io/file s))))
+  java.nio.file.Path
+  (as-path [p] p)
+  nil
+  (as-path [f] nil))
 
 (defn safe-relative-path
   "Given a parent java.nio.file.Path, return a child that is
