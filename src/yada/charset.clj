@@ -96,8 +96,6 @@
                                       ;; Tune down the number of charsets to manageable level by
                                       ;; excluding those prefixed by x- and 'IBM'.
                                       (filter (comp not (partial re-matches #"(x-|IBM).*") :alias))
-                                      ;; Extreme filter while developing
-                                      (filter (comp #{"Shift_JIS" "US-ASCII"} :alias))
                                       )]
     (set (concat
            preferred-charsets
