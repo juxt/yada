@@ -1,101 +1,74 @@
-[[example-1-hello-world]]
-= Example 1: Hello World!
+[[hello-world]]
+= Hello World!
 
-Let's introduce yada properly by writing some code. We'll start with
-some state, a simple string: `Hello World!`.
+In this chapter we examine the "Hello World!" resource in depth. If you have followed the link:getting-started.html[Getting Started] chapter, you'll be up and running and ready to try the examples yourself, but it's not mandatory.
 
-[source,clojure]
+Let's look at the route definition in the file `src/edge/hello.clj` (the same one we saw in the Getting Started chapter).
+
+[source]
 ----
-(require '[yada.yada :refer [yada]])
-
-(yada "Hello World!\n")
-----
-
-First we require the `yada` function, which Clojure needs to know where
-it comes from.
-
-We give it our string and it returns a **handler**.
-
-(Just a minute! We just said that the argument to give to `yada` was a
-**resource**. Well, that's true, but yada has some built-in code that
-implicitly coerces the string into a resource. Don't worry about that
-for now, we'll discuss it more later).
-
-You can see the result of this at http://localhost:8090/hello.
-
-By combining this handler with a web-server, we can start the service.
-
-Here's how you can start the service using
-https://github.com/ztellman/aleph[Aleph].
-
-[source,clojure]
-----
-(require '[yada.yada :refer [yada]]
-         '[aleph.http :refer [start-server]])
-
-(start-server
-  (yada "Hello World!\n")
-  {:port 3000})
+(defn hello-routes [deps]
+  ["/hello" (yada/handler "Hello World!\n")])
 ----
 
-(Note that you are free to choose any yada -compatible web server, as
-long as it's Aleph! Joking aside, as more web servers support end-to-end
-asynchronicity with back-pressure, all the way up to the application,
-then yada will support those. Currently Aleph is the only web server we
-know that offers this).
+This function returns a *route structure*. The simplest route structure is a pair of elements contained in a vector. The first element is a path (or pattern) which matches on the URI's path when handling HTTP requests. The second element is often a handler function (but can be a sequence of further pairs).
 
-Once we have bound this handler to the path `/hello`, we're able to make
-the following HTTP request:
+In this route structure, any incoming request with a path of `/hello` gets send to the [yada]#yada# handler defined by `(yada/handler "Hello World!\n")`.
 
-[source,nohighlight]
+Let's focus on this handler. We could have used a standard Ring function `(fn [req] {...})` here but instead we created one with `yada/handler`, which takes a *resource* and turns it into a handler function.
+
+A *resource* is a Clojure map (or more accurately, a Clojure record) that completely describes the methods, properties, representations, security and other miscellaneous properties of a web resource. The reason we can use a string (`Hello World`) here is because [yada]#yada# contains logic to _coerce_ a string into a resource. There are a number of built-in coercions from various Clojure types and you can even provide your own.
+
+== Examining the response
+
+So we send a request which gets routed to our handler which creates a response. Let's examine this response in more detail, via `curl`. The `-i` option shows us the HTTP headers as well as the body.
+
+[source,curl]
 ----
 curl -i http://localhost:3000/hello
 ----
 
-and receive a response like this:
+The response should be something like following (note that headers may appear in a different order):
 
 [source,http]
 ----
 HTTP/1.1 200 OK
-Server: Aleph/0.4.0
+Server: Aleph/0.4.1
 Connection: Keep-Alive
-Date: Sun, 09 Aug 2015 07:32:23 GMT
-Last-Modified: Sun, 09 Aug 2015 07:25:10 GMT
-ETag: 1462348343
+Date: Fri, 17 Jun 2016 16:44:23 GMT
+Last-Modified: Fri, 17 Jun 2016 16:43:02 GMT
+ETag: fa863bd7ff53786d286e4bb3c0134416
 Content-Type: text/plain;charset=utf-8
 Vary: accept-charset
-Content-Length: 13
-
-Hello World!
+Content-Length: 23
+X-Frame-Options: SAMEORIGIN
+X-XSS-Protection: 1; mode=block
+X-Content-Type-Options: nosniff
 ----
 
-Let's examine this response in detail.
-
-The status code is `200 OK`. We didn't have to set it explicitly in
-code, yada inferred the status from the request and the resource.
-
-The first three response headers are added by our webserver.
+The first three response headers are added by our webserver, Aleph.
 
 [source,http]
 ----
 Server: Aleph/0.4.0
 Connection: Keep-Alive
-Date: Sun, 09 Aug 2015 07:32:23 GMT
+Date: Fri, 17 Jun 2016 16:44:23 GMT
 ----
 
-Next we have another date and a string known as the __entity tag__.
+Next we have another date and a string known as the _entity tag_:
 
 [source,http]
 ----
 Last-Modified: Sun, 09 Aug 2015 07:25:10 GMT
-ETag: 1462348343
+ETag: fa863bd7ff53786d286e4bb3c0134416
 ----
 
-The *Last-Modified* header shows when the string `Hello World!` was
-created. As Java strings are immutable, yada is able to deduce that the
-string's creation date is also the last time it could have been
-modified. The same goes for the entity tag. Both are used in cacheing
-and conflict detection, which will be described later.
+The `Last-Modified` header shows when the string `Hello World!` was created, which happens to be the last time the system was started (or reset). Java strings are immutable, so [yada]#yada# is able to deduce that the
+string's creation date is also the last time it could have been modified.
+
+The entity tag is computed from the value of the `Hello World!` itself. Unlike the `Last-Modified` value, it can survives a reset.
+
+Both `Last-Modified` and `ETag` are used to support HTTP conditional requests and conflict detection when uploading new versions of a resource.
 
 Next we have a header telling us the media-type of the string's
 representation.
@@ -106,23 +79,23 @@ Content-Type: text/plain;charset=utf-8
 ----
 
 yada is able to determine that the media-type is text, but without more
-clues it defaults to `text/plain`.
+information it much default to `text/plain`. It can also tell us the charset, which defaults to the default charset of the JVM (almost always `utf-8`)
 
 [source,http]
 ----
 Vary: accept-charset
 ----
 
-Since the Java platform can encode a string in other charsets, yada uses
-the _Vary_ header to signal to the user-agent (and caches) that the body
-could change if a request contained an _Accept-Charset_ header.
+Since the Java platform can encode a string in other charsets, [yada]#yada# adds a _Vary_ header to signal to the user-agent (and proxy caches in between) that the body can change if a request contained a different _Accept-Charset_ header. Java installations support many different charsets, so [yada]#yada# does too.
 
-Next we are given the length of the body, in bytes.
+Next we are given the length of the body.
 
 [source,http]
 ----
 Content-Length: 13
 ----
+
+This value is in bytes, regardless of the charset. It includes the newline.
 
 Finally we see our response body.
 
@@ -131,159 +104,239 @@ Finally we see our response body.
 Hello World!
 ----
 
-[[hello-swagger]]
-== Hello Swagger!
-
-Now we have a web resource, let's build an API!
-
-First, we need to choose a URI router. Let's choose
-https://github.com/juxt/bidi[bidi], because it allows us to specify our
-__routes as data__. Since yada allows us to specify our __resources as
-data__, we can combine both to form a single data structure to describe
-our URI.
-
-Having the API specified as a data structure means we can easily derive
-a Swagger spec.
-
-First, let's require the support we need in the `ns` declaration.
-
-[source,clojure]
-----
-(require '[aleph.http :refer [start-server]]
-         '[bidi.ring :refer [make-handler] :as bidi]
-         '[yada.yada :refer [yada] :as yada])
-----
-
-Now for our resource.
-
-[source,clojure]
-----
-(def hello
-  (yada "Hello World!\n"))
-----
-
-Now let's create a route structure housing this resource. This is our
-API.
-
-[source,clojure]
-----
-(def api
-  ["/hello-swagger"
-      (yada/swaggered
-        ["/hello" hello]
-        {:info {:title "Hello World!"
-                :version "1.0"
-                :description "Demonstrating yada + swagger"}
-                :basePath "/hello-swagger"})])
-----
-
-This is an API we can serialize into a data structure, store to disk,
-generate and derive new data structures from.
-
-Finally, let's use bidi to create a Ring handler from our API definition
-and start the web server.
-
-[source,clojure]
-----
-(start-server
-  (bidi/make-handler api)
-  {:port 3000})
-----
-
-The `yada/swaggered` wrapper provides a Swagger specification, in JSON,
-derived from its arguments. This specification can be used to drive a
-http://localhost:8090/swagger-ui/index.html?url=/hello-swagger/swagger.json[Swagger
-UI].
-
-image:hello-swagger.png[Swagger]
-
-But we're getting ahead of ourselves here. Let's delve a bit deeper in
-our `Hello World!` resource.
-
 [[a-conditional-request]]
 == A conditional request
 
-In HTTP, a conditional request is one where a user-agent (like a
-browser) can ask a server for the state of the resource but only if a
-particular condition holds. A common condition is whether the resource
-has been modified since a particular date, usually because the
-user-agent already has a copy of the resource's state which it can use
-if possible. If the resource hasn't been modified since this date, the
-server can tell the user-agent that there is no new version of the
-state.
+In HTTP, a conditional request is one where a user-agent (like a browser) can ask a server for the state of the resource but only if a particular condition holds.
 
-We can test this by setting the *If-Modified-Since* header in the
-request.
+A common condition is whether the resource has been modified since a particular date, usually because the user-agent already has a copy of the resource's state which it can use if possible. If the resource hasn't been modified since this date, the server can tell the user-agent that there is no new version of the state.
+
+We can test this by setting the *If-Modified-Since* header in the request.
+
+Here's how we might do this using the curl command.
 
 [source,nohighlight]
 ----
-curl -i http://localhost:8090/hello -H "If-Modified-Since: Sun, 09 Aug 2015 07:25:10 GMT"
+curl -i http://localhost:3000/hello -H "If-Modified-Since: Mon, 1 Jan 2525 00:00:00 GMT"
 ----
 
-The server responds with
+You should get the following (assuming you're running this command before the year 2525):
+
+[source,nohighlight]
+----
+HTTP/1.1 304 Not Modified
+X-Frame-Options: SAMEORIGIN
+X-XSS-Protection: 1; mode=block
+X-Content-Type-Options: nosniff
+Content-Length: 0
+Vary: accept-charset
+ETag: fa863bd7ff53786d286e4bb3c0134416
+Server: Aleph/0.4.1
+Connection: Keep-Alive
+Date: Wed, 22 Jun 2016 16:57:46 GMT
+----
+
+Notice we also get the same `Vary` and `ETag` headers. These help any proxies between the user-agent and the service properly cache content, and its mandatory for servers to produce them in a 304 response (if they would have been produced in a 200 one).
+
+[[content-negotiation]]
+== Content negotiation
+
+The responses we have received back from our service all contain this curious header called `Vary` set to `accept-charset`. The server is telling us (and any proxies between us) that the representation might vary depending on the charset negotiated. Let's see if we can get our "Hello World!" message returned in other charsets.
+
+UTF-16 is a Unicode encoding where every character is encoded in 2 bytes. One reason we might want to use UTF-16 is if we need to know exactly how many bytes a string will take up.
+
+Let's try getting the string in UTF16 by telling the server that's the only charset we'll accept:
+
+[source,nohighlight]
+----
+curl -i http://localhost:3000/hello -H "Accept-Charset: UTF-16"
+----
+
+This returns the following:
+
+[source,nohighlight]
+----
+HTTP/1.1 200 OK
+X-Frame-Options: SAMEORIGIN
+X-XSS-Protection: 1; mode=block
+X-Content-Type-Options: nosniff
+Content-Length: 28
+Content-Type: text/plain;charset=utf-16
+Last-Modified: Sun, 26 Jun 2016 11:11:31 GMT
+Vary: accept-charset
+ETag: 43b1f79e8efe0fa97c32901fbd5746d6
+Server: Aleph/0.4.1
+Connection: Keep-Alive
+Date: Mon, 27 Jun 2016 07:45:07 GMT
+----
+
+The "Hello World!" message is prepended with 2 bytes called the *Byte Order Mark* (BOM). The length of the string (including the newline) is 13 characters. Since each character is 2 bytes, that makes 26. The additional of the BOM makes it 28, which is what our `Content-Length` header reports.
+
+A BOM indicates the order that the 2 bytes are transmitted in. In 'big endian' form the most-significant byte is transmitted first. We can tell the service that we only want the big endian form with the following:
+
+[source,nohighlight]
+----
+curl -i http://localhost:3000/hello -H "Accept-Charset: UTF-16BE"
+----
+
+This will now produce the message without the BOM, because it is unnecessary. This means our `Content-Length` will be exactly 13 * 2 = 26.
+
+[source,nohighlight]
+----
+HTTP/1.1 200 OK
+X-Frame-Options: SAMEORIGIN
+X-XSS-Protection: 1; mode=block
+X-Content-Type-Options: nosniff
+Content-Length: 26
+Content-Type: text/plain;charset=utf-16be
+Last-Modified: Sun, 26 Jun 2016 11:11:31 GMT
+Vary: accept-charset
+ETag: e22175425c763c00af1d8c8da5c89909
+Server: Aleph/0.4.1
+Connection: Keep-Alive
+Date: Mon, 27 Jun 2016 07:55:10 GMT
+
+Hello World!
+----
+
+If we were to use UTF-32, which defaults to big-endian, we'll get a Content-Length of 13 * 4 = 52.
+
+[source,nohighlight]
+----
+HTTP/1.1 200 OK
+X-Frame-Options: SAMEORIGIN
+X-XSS-Protection: 1; mode=block
+X-Content-Type-Options: nosniff
+Content-Length: 52
+Content-Type: text/plain;charset=utf-32
+Last-Modified: Sun, 26 Jun 2016 11:11:31 GMT
+Vary: accept-charset
+ETag: f7915f4ad5c5c1615ea33f1c033f8c2c
+Server: Aleph/0.4.1
+Connection: Keep-Alive
+Date: Mon, 27 Jun 2016 07:58:05 GMT
+
+Hello World!
+----
+
+Note also that different representations generate different `ETag` values. The entity tag is a way of managing a cache of representations, not a cache of resources. Think of the `ETag` value as the key you could use in a key/value store that stored a cache of representations.
+
+The negotiation of charsets may be considered by some to be unnecessary given the dominance of UTF-8. That is certainly true for today's modern browsers. However, there are many other types of devices that are being connected to the internet (under the banner 'Internet of Things'). Many of these devices have very tight constraints on processing and memory which prevent them from supporting UTF-8. If we are building a web service, we may want to connect these devices to it in the future.
+
+=== Languages
+
+Of course it is not just charsets that can be negotiated. Another example is languages. Our "Hello World!" string is in English. Let's provide support for simplified Chinese.
+
+This calls for a different implementation:
+
+[source,clojure]
+----
+(defn hello-language []
+  ["/hello-language"
+   (yada/resource <1>
+    {:methods
+     {:get <2>
+      {:produces
+       {:media-type "text/plain"
+        :language #{"en" "zh-ch;q=0.9"}} <3>
+       :response
+       #(case (yada/language %) <4>
+          "zh-ch" "你好世界\n"
+          "en" "Hello World!\n")}}})])
+----
+
+<1> Using the `yada/resource` function to create a custom resource
+<2> The resource has a single method, GET
+<3> English is preferred, but Simplified Chinese is available too
+<4> This is a function that is given a *context* as the first argument. The `yada/language` convenience function pulls out the negotiated language from this context
+
+Let's test this by providing a request header which indicates a preference for simplified Chinese
+
+[source,nohighlight]
+----
+curl -i http://localhost:3000/hello-language -H "Accept-Language: zh-CH"
+----
+
+We should get the following response:
 
 [source,http]
 ----
-HTTP/1.1 304 Not Modified
-Server: Aleph/0.4.0
+HTTP/1.1 200 OK
+X-Frame-Options: SAMEORIGIN
+X-XSS-Protection: 1; mode=block
+X-Content-Type-Options: nosniff
+Content-Length: 13
+Content-Type: text/plain
+Content-Language: zh-ch
+Vary: accept-language
+Server: Aleph/0.4.1
 Connection: Keep-Alive
-Date: Tue, 21 Jul 2015 20:17:51 GMT
-Content-Length: 0
+Date: Mon, 27 Jun 2016 08:20:59 GMT
+
+你好世界
 ----
+
+There's a lot more to content negotiation than this simple example can show. It is covered in depth in subsequent chapters.
+
+
 
 [[mutation]]
 == Mutation
 
 Let's try to overwrite the string by using a `PUT`.
 
-[source,nohighlight]
+[source]
 ----
-curl -i http://localhost:8090/hello -X PUT -d "Hello Dolly!"
+curl -i http://localhost:3000/hello -X PUT -d "Hello Wonderful World!"
 ----
 
-The response is as follows (we'll omit the Aleph contributed headers
-from now on).
+The response is as follows:
 
-[source,http]
+[source]
 ----
 HTTP/1.1 405 Method Not Allowed
 Allow: GET, HEAD, OPTIONS
-Server: Aleph/0.4.0
+Content-Length: 284
+Content-Type: application/json
+Server: Aleph/0.4.1
 Connection: Keep-Alive
-Date: Sun, 09 Aug 2015 07:32:23 GMT
-Content-Length: 0
+Date: Mon, 27 Jun 2016 08:56:58 GMT
 ----
 
-The response status is `405 Method Not Allowed`, telling us that our
-request was unacceptable. There is also an *Allow* header, telling us
-which methods are allowed. One of these methods is OPTIONS, which we
-could have used to check whether PUT was available without actually
-attempting it.
+The response status is `405 Method Not Allowed`, telling us that our request was unacceptable. There is also an *Allow* header, telling us which methods are allowed. One of these methods is OPTIONS, which we could have used to check whether PUT was available without actually attempting it.
 
-[source,nohighlight]
+[source]
 ----
-curl -i http://localhost:8090/hello -X OPTIONS
+curl -i http://localhost:3000/hello -X OPTIONS
 ----
 
-[source,http]
+The response should be:
+
+[source]
 ----
 HTTP/1.1 200 OK
 Allow: GET, HEAD, OPTIONS
-Server: Aleph/0.4.0
-Connection: Keep-Alive
-Date: Thu, 23 Jul 2015 14:22:12 GMT
 Content-Length: 0
+X-Frame-Options: SAMEORIGIN
+X-XSS-Protection: 1; mode=block
+X-Content-Type-Options: nosniff
+Server: Aleph/0.4.1
+Connection: Keep-Alive
+Date: Mon, 27 Jun 2016 09:00:27 GMT
 ----
 
-Both the `PUT` and the `OPTIONS` response contain an *Allow* header
-which tells us that `PUT` isn't possible. This makes sense, because we
-can't mutate a Java string.
+Both the `PUT` and the `OPTIONS` response contain an *Allow* header which tells us that `PUT` isn't possible. This makes sense, because we can't mutate a Java string.
 
-We could, however, wrap the Java string with a Clojure reference which
-could be changed to point at different Java strings.
+We could, however, wrap the Java string as Clojure reference rather than a value, which could be changed to point at different Java strings.
 
-To demonstrate this, let's use a Clojure atom instead, adding the new
-resource with the identifier `http://localhost:8090/hello-atom`.
+To demonstrate this, let's use a Clojure atom instead, adding the new resource with the identifier `http://localhost:3000/hello-atom`.
+
+
+
+
+
+
+
 
 [source,clojure]
 ----
@@ -446,73 +499,106 @@ headers, form data, cookies and request bodies. It can also coerce
 parameters to a range of types. For more details, see the
 link:#Parameters[Parameters] chapter.
 
-[[content-negotiation]]
-== Content negotiation
+[[hello-swagger]]
+== Hello Swagger!
 
-Let's suppose we wanted to provide our greeting in both (simplified)
-Chinese and English. Again, we can declare these two languages in the
-**resource-model**.
+Now we have seen how to build a single web resource, let's see how to build a Swagger description from a collection of web resources.
 
-We add an option indicating the language codes of the two languages we
-are going to support. We can then
+In your editor, switch to `src/edge/server.clj`. This file defines the overall route structure which includes our routes for "Hello World!". This has been included twice, both at the root and under the `/api` path.
+
+This second version uses the Clojure threading macro `->` which wraps the route structure with `yada/swaggered` and gives it a bidi tag (used for generating URIs, we'll use this later).
 
 [source,clojure]
 ----
-(require '[yada.yada :as yada :refer [yada resource]])
+[
+    ;; Hello World!
+    (hello-routes {})
 
-(defn say-hello [ctx]
-  (case (yada/language ctx)
-    "zh-ch" "你好世界!\n"
-    "en" "Hello World!\n"))
-
-(def hello-languages-resource
-  (resource
-    {:methods
-      {:get
-        {:produces {:media-type "text/plain"
-                    :language #{"zh-ch" "en"}}
-         :response say-hello}}}))
-
-(def handler (yada hello-languages-resource))
+    ["/api" (-> (hello-routes {})
+                ;; Wrap this route structure in a Swagger
+                ;; wrapper. This introspects the data model and
+                ;; provides a swagger.json file, used by Swagger UI
+                ;; and other tools.
+                (yada/swaggered
+                 {:info {:title "Edge API"
+                         :version "1.0"
+                         :description "An example API"}
+                  :basePath "/api"})
+                ;; Tag it so we can create an href to this API
+                (tag :edge.resources/api))]]
 ----
 
-Let's test this by providing a request header which indicates a
-preference for simplified Chinese
+The purpose of `yada/swaggered` is to augment the route structure given to it with a route to `swagger.json`, which responds with a Swagger description of the route structure in JSON. Since [yada]#yada# resources are data maps, this is a relatively simple data transformation of the route structure.
 
-[source,nohighlight]
+We can test the resource is available at its `/api` location with this `curl` command:
+
+[source,curl]
 ----
-curl -i http://localhost:8090/hello-languages -H "Accept-Language: zh-CH"
+curl -i http://localhost:3000/api/hello
 ----
 
-We should get the following response
+We can also query the Swagger description with this `curl` command:
 
-[source,http]
+[source,curl]
+----
+curl -i http://localhost:3000/api/swagger.json
+----
+
+This time we get a JSON body returned:
+
+[source]
 ----
 HTTP/1.1 200 OK
-Content-Type: text/plain;charset=utf-8
-Vary: accept-language
-Server: Aleph/0.4.0
+X-Frame-Options: SAMEORIGIN
+X-XSS-Protection: 1; mode=block
+X-Content-Type-Options: nosniff
+Content-Length: 290
+Content-Type: application/json
+Last-Modified: Wed, 22 Jun 2016 15:45:16 GMT
+Vary: accept-charset
+ETag: 7833a69510d2b80f2a414c3c4ef2b4d4
+Server: Aleph/0.4.1
 Connection: Keep-Alive
-Date: Mon, 27 Jul 2015 17:36:42 GMT
-Content-Length: 14
+Date: Wed, 22 Jun 2016 15:56:25 GMT
 
-你好世界!
+{"swagger":"2.0","info":{"title":"Edge API","version":"1.0","description":"An example API"},"produces":["application/json"],"consumes":["application/json"],"paths":{"/hello":{"get":{"produces":["text/plain"],"responses":{"default":{"description":""}}}}},"basePath":"/api","definitions":{}}
 ----
 
-There's a lot more to content negotiation than this simple example can
-show. It is covered in depth in subsequent chapters.
+Notice we still get a `Vary` header telling us that multiple charsets are available. JSON bodies are available in UTF-16 and UTF-32. Compare this with Clojure's EDN, which is specificed to be UTF-8 only. In fact, [yada]#yada# is happy to produce Swagger definitions in EDN too:
+
+[source,curl]
+----
+curl -i http://localhost:3000/api/swagger.edn
+----
+
+Note that this time we get no `Vary` header, since there are no charset alternatives.
+
+[source]
+----
+HTTP/1.1 200 OK
+X-Frame-Options: SAMEORIGIN
+X-XSS-Protection: 1; mode=block
+X-Content-Type-Options: nosniff
+Content-Length: 284
+Content-Type: application/edn
+Last-Modified: Wed, 22 Jun 2016 15:45:16 GMT
+ETag: 3aa57341aa88d68108dbead14f5b462c
+Server: Aleph/0.4.1
+Connection: Keep-Alive
+Date: Wed, 22 Jun 2016 15:59:26 GMT
+
+{:swagger "2.0", :info {:title "Edge API", :version "1.0", :description "An example API"}, :produces ["application/json"], :consumes ["application/json"], :paths {"/hello" {:get {:produces ("text/plain"), :responses {:default {:description ""}}}}}, :basePath "/api", :definitions {}}
+----
+
+It's these little details that [yada]#yada# takes care of for you. There is no trickery involved, it's simply the result of an almost obsessive focus on the relevant web standards. There is nothing special about strings, [yada]#yada# applies the same logic for anything else you ask it to handle. We'll see more in the next chapter.
+
+By the way, if you want to see the Swagger UI, browse to http://localhost:3000/swagger/?url=http://localhost:3000/api/swagger.json
+
+image:hello-swagger.png[Swagger]
 
 [[summary]]
 == Summary
 
-This simple example demonstrated how a rich and functional HTTP resource
-was created with a tiny amount of code. And yet, none of the behaviour
-we have seen is hardcoded or contrived. Much of the behavior was
-inferred from the types of the first argument given to the `yada`
-function, in this case, the Java string. And yada includes support for
-many other basic types (atoms, Clojure collections, files, directories,
-Java resources…).
+This has been a long chapter, but we have only covered a simple "Hello World!" example. You should now realise that implementing even a basic example that properly complies with the HTTP standard is a surprisingly tough undertaking. But this simple example demonstrated how a rich and functional HTTP resource was created with a tiny amount of code, and none of the behaviour we have seen is hardcoded or contrived. We have only demonstrated a simple Java string, but yada includes the same support for many other basic types (atoms, Clojure collections, files, directories, Java resources…). But the best thing is you can programmatically create your own resources and types to fit your particular requirements.
 
-But the real power of yada comes when you define your own resource
-models and types, as we shall discover in subsequent chapters. But
-first, let's see how to install and integrate yada in your web app.
+Without a library like [yada]#yada# we would need to read and understand hundreds of pages of the HTTP RFCs and spend a great deal of extra effort coding up its various aspects. Of course, nobody would bother doing that, but the consequence is that we miss out on the many architectural benefits of HTTP. Client code that access most APIs today cannot make any assumptions that the API complies with the text in the HTTP RFCs, and must therefore rely on detailed knowledge of how the API is written, either through documentation, Swagger definitions, close collaboration between development teams or some other means (trial-and-error). This is a big problem because it causes huge rigidity between our systems.

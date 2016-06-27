@@ -10,7 +10,7 @@ Here are the chapters:
 
 1. link:intro.html[Introduction] - A beginner's introduction
 1. link:getting-started.html[Getting Started] - Get started with an example project
-1. link:hello.html[Example 1: Hello World!] - The first example
+1. link:hello.html[Hello World!] - The classic introductory example
 1. link:install.html[Installation] - How to install
 1. link:resources.html[Resources] - A web resource
 1. link:parameters.html[Parameters] - Declaring expected request parameters

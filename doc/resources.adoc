@@ -3,11 +3,11 @@
 
 Resources are defined in one of two ways:
 
-1.  Declaring the resource model explicitly
-2.  Coercing data into a resource model, based on its type
+1.  Coercing a type into a resource
+2.  Declaring the resource model explicitly
 
-In the introduction, we already saw some examples of the second option.
-In this chapter we'll explain how to write a resource model explicitly.
+In the link:getting-started.html[Getting Started] chapter we saw some examples of the first option.
+In this chapter we'll explain how to declare a resource explicitly.
 
 [[writing-resource-models]]
 == Writing resource models
