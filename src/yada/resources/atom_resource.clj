@@ -35,7 +35,9 @@
                                    ;; no representation and yield 404s on
                                    ;; GET, hence this when guard
                                    (when-let [body (get-in ctx [:parameters :form :value])]
-                                     (reset! *a body)))}
+                                     (reset! *a body)
+                                     ;; Return a nil
+                                     nil))}
                  :delete {:description "Reset the atom to nil, such that this resource has no representation"
                           :summary "Reset the atom to nil"
                           :response (fn [ctx] (reset! *a nil))}}}))))

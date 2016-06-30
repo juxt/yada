@@ -215,7 +215,9 @@
     (assoc ctx :response response))
   Object
   (interpret-put-result [o ctx]
-    ctx)
+    (if (instance? Response (:response o))
+      o ; modified ctx
+      (assoc-in ctx [:response :body] o)))
   clojure.lang.Fn
   (interpret-put-result [f ctx]
     (interpret-put-result (f ctx) ctx))
@@ -246,7 +248,7 @@
            (cond-> ctx
              (not status) (assoc-in [:response :status]
                                     (cond
-                                      ;; TODO: A 202 may be not what the user wants!
+                                      (-> ctx :response :body) 200
                                       ;; TODO: See RFC7240
                                       ;;(d/deferred? (-> ctx :response :body)) 202
                                       (ctx/exists? ctx) 204

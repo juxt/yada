@@ -152,7 +152,9 @@
                form (get-in ctx [:parameters :form])]
            (assert entry)
            (assert form)
-           (db/update-entry db entry form)))}
+           (db/update-entry db entry form)
+           ;; Return nil, to ensure we get a 201/204, not a 200
+           nil))}
 
       :delete
       {:produces "text/plain"
