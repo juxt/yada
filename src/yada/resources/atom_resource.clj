@@ -12,16 +12,19 @@
 
 (defn string-atom-resource [*a]
   (let [*last-modified (atom (to-date (now)))
-        val (as-resource @*a)]
+        val (as-resource @*a)
+        *version (atom @*a)]
     (add-watch
      *a :last-modified
-     (fn [_ _ _ _]
-       (reset! *last-modified (to-date (now)))))
+     (fn [_ _ _ s]
+       (reset! *last-modified (to-date (now)))
+       (reset! *version s)))
     (resource
      (merge
       (when-let [produces (:produces val)]
         {:produces produces})
-      {:properties (fn [ctx] {:last-modified @*last-modified})
+      {:properties (fn [ctx] {:last-modified @*last-modified
+                              :version @*version})
        :methods {:get (merge (get-in val [:methods :get])
                              {:description "Derefrence to get the value of the atom"
                               :summary "Get the atom's value"
