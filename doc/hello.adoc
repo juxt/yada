@@ -17,7 +17,7 @@ In this route structure, any incoming request with a path of `/hello` gets send 
 
 Let's focus on this handler. We could have used a standard Ring function `(fn [req] {...})` here but instead we created one with `yada/handler`, which takes a *resource* and turns it into a handler function.
 
-A *resource* is a Clojure map (or more accurately, a Clojure record) that completely describes the methods, properties, representations, security and other miscellaneous properties of a web resource. The reason we can use a string (`Hello World`) here is because [yada]#yada# contains logic to _coerce_ a string into a resource. There are a number of built-in coercions from various Clojure types and you can even provide your own.
+A *resource* is a Clojure map (or more accurately, a Clojure record) that completely describes the methods, properties, representations, security and other miscellaneous properties of a web resource. The reason we can use a string (`Hello World`) here is because [yada]#yada# contains logic to _coerce_ a string into a resource. There are a number of built-in coercions from various Clojure types and of course you can provide your own.
 
 == Examining the response
 
@@ -99,7 +99,7 @@ This value is in bytes, regardless of the charset. It includes the newline.
 
 Finally we see our response body.
 
-[source,nohighlight]
+[source]
 ----
 Hello World!
 ----
@@ -115,14 +115,14 @@ We can test this by setting the *If-Modified-Since* header in the request.
 
 Here's how we might do this using the curl command.
 
-[source,nohighlight]
+[source]
 ----
 curl -i http://localhost:3000/hello -H "If-Modified-Since: Mon, 1 Jan 2525 00:00:00 GMT"
 ----
 
-You should get the following (assuming you're running this command before the year 2525):
+Of course, nobody will have modified the resource _since_ the year 2525, so we should get a 304 response, telling us we can use our cached copy:
 
-[source,nohighlight]
+[source]
 ----
 HTTP/1.1 304 Not Modified
 X-Frame-Options: SAMEORIGIN
@@ -136,7 +136,7 @@ Connection: Keep-Alive
 Date: Wed, 22 Jun 2016 16:57:46 GMT
 ----
 
-Notice we also get the same `Vary` and `ETag` headers. These help any proxies between the user-agent and the service properly cache content, and its mandatory for servers to produce them in a 304 response (if they would have been produced in a 200 one).
+Notice we also get the same `Vary` and `ETag` headers. These help any proxies between the user-agent and the service properly cache content, and if they would have been produced in a 200 response, then they must also be produced in a 304. (This is the kind of thing that [yada]#yada# takes care of for you, unlike most libraries).
 
 [[content-negotiation]]
 == Content negotiation
@@ -147,14 +147,14 @@ UTF-16 is a Unicode encoding where every character is encoded in 2 bytes. One re
 
 Let's try getting the string in UTF16 by telling the server that's the only charset we'll accept:
 
-[source,nohighlight]
+[source]
 ----
 curl -i http://localhost:3000/hello -H "Accept-Charset: UTF-16"
 ----
 
 This returns the following:
 
-[source,nohighlight]
+[source]
 ----
 HTTP/1.1 200 OK
 X-Frame-Options: SAMEORIGIN
@@ -168,53 +168,37 @@ ETag: 43b1f79e8efe0fa97c32901fbd5746d6
 Server: Aleph/0.4.1
 Connection: Keep-Alive
 Date: Mon, 27 Jun 2016 07:45:07 GMT
+
+��Hello World!
 ----
 
 The "Hello World!" message is prepended with 2 bytes called the *Byte Order Mark* (BOM). The length of the string (including the newline) is 13 characters. Since each character is 2 bytes, that makes 26. The additional of the BOM makes it 28, which is what our `Content-Length` header reports.
 
 A BOM indicates the order that the 2 bytes are transmitted in. In 'big endian' form the most-significant byte is transmitted first. We can tell the service that we only want the big endian form with the following:
 
-[source,nohighlight]
+[source]
 ----
 curl -i http://localhost:3000/hello -H "Accept-Charset: UTF-16BE"
 ----
 
 This will now produce the message without the BOM, because it is unnecessary. This means our `Content-Length` will be exactly 13 * 2 = 26.
 
-[source,nohighlight]
+[source]
 ----
 HTTP/1.1 200 OK
-X-Frame-Options: SAMEORIGIN
-X-XSS-Protection: 1; mode=block
-X-Content-Type-Options: nosniff
+…
 Content-Length: 26
-Content-Type: text/plain;charset=utf-16be
-Last-Modified: Sun, 26 Jun 2016 11:11:31 GMT
-Vary: accept-charset
-ETag: e22175425c763c00af1d8c8da5c89909
-Server: Aleph/0.4.1
-Connection: Keep-Alive
-Date: Mon, 27 Jun 2016 07:55:10 GMT
 
 Hello World!
 ----
 
 If we were to use UTF-32, which defaults to big-endian, we'll get a Content-Length of 13 * 4 = 52.
 
-[source,nohighlight]
+[source]
 ----
 HTTP/1.1 200 OK
-X-Frame-Options: SAMEORIGIN
-X-XSS-Protection: 1; mode=block
-X-Content-Type-Options: nosniff
+…
 Content-Length: 52
-Content-Type: text/plain;charset=utf-32
-Last-Modified: Sun, 26 Jun 2016 11:11:31 GMT
-Vary: accept-charset
-ETag: f7915f4ad5c5c1615ea33f1c033f8c2c
-Server: Aleph/0.4.1
-Connection: Keep-Alive
-Date: Mon, 27 Jun 2016 07:58:05 GMT
 
 Hello World!
 ----
@@ -250,9 +234,9 @@ This calls for a different implementation:
 <3> English is preferred, but Simplified Chinese is available too
 <4> This is a function that is given a *context* as the first argument. The `yada/language` convenience function pulls out the negotiated language from this context
 
-Let's test this by providing a request header which indicates a preference for simplified Chinese
+Let's test this by providing a request header which indicates a preference for simplified Chinese:
 
-[source,nohighlight]
+[source]
 ----
 curl -i http://localhost:3000/hello-language -H "Accept-Language: zh-CH"
 ----
@@ -279,7 +263,6 @@ Date: Mon, 27 Jun 2016 08:20:59 GMT
 There's a lot more to content negotiation than this simple example can show. It is covered in depth in subsequent chapters.
 
 
-
 [[mutation]]
 == Mutation
 
@@ -287,7 +270,7 @@ Let's try to overwrite the string by using a `PUT`.
 
 [source]
 ----
-curl -i http://localhost:3000/hello -X PUT -d "Hello Wonderful World!"
+curl -i http://localhost:3000/hello -X PUT -d "Hello Wonderful World!%0a"
 ----
 
 The response is as follows:
@@ -327,50 +310,52 @@ Date: Mon, 27 Jun 2016 09:00:27 GMT
 
 Both the `PUT` and the `OPTIONS` response contain an *Allow* header which tells us that `PUT` isn't possible. This makes sense, because we can't mutate a Java string.
 
-We could, however, wrap the Java string as Clojure reference rather than a value, which could be changed to point at different Java strings.
+We could, however, wrap the Java string in a Clojure atom which could reference different Java strings at different times.
 
-To demonstrate this, let's use a Clojure atom instead, adding the new resource with the identifier `http://localhost:3000/hello-atom`.
-
-
-
-
-
-
-
+To demonstrate this, try the following with the identifier `http://localhost:3000/hello-atom`.
 
 [source,clojure]
 ----
-(yada (atom "Hello World!"))
+(yada/handler (atom "Hello World!\n"))
 ----
 
-We can now make another `OPTIONS` request to see whether `PUT` is
-available, before trying it.
+Let's try a normal GET.
 
-[source,nohighlight]
+[source]
 ----
-curl -i http://localhost:8090/hello-atom -X OPTIONS
+curl -i http://localhost:3000/hello-atom -X OPTIONS
 ----
 
-[source,http]
+We can now make another `OPTIONS` request to see whether `PUT` is available, before trying it.
+
+[source]
+----
+curl -i http://localhost:3000/hello-atom -X OPTIONS
+----
+
+[source]
 ----
 HTTP/1.1 200 OK
-Allow: GET, DELETE, HEAD, POST, OPTIONS, PUT
-Server: Aleph/0.4.0
-Connection: Keep-Alive
-Date: Sun, 09 Aug 2015 07:56:20 GMT
+Allow: GET, DELETE, HEAD, OPTIONS, PUT
 Content-Length: 0
+X-Frame-Options: SAMEORIGIN
+X-XSS-Protection: 1; mode=block
+X-Content-Type-Options: nosniff
+Server: Aleph/0.4.1
+Connection: Keep-Alive
+Date: Tue, 05 Jul 2016 15:41:36 GMT
 ----
 
 It is! So let's try it.
 
-[source,nohighlight]
+[source]
 ----
-curl -i http://localhost:8090/hello-atom -X PUT -d "Hello Dolly!"
+curl -i http://localhost:3000/hello-atom -X PUT -d "value=Hello Wonderful World!%0a"
 ----
 
 And now let's see if we've managed to change the state of the resource.
 
-[source,nohighlight]
+[source]
 ----
 curl -i http://localhost:8090/hello-atom
 ----
@@ -378,73 +363,59 @@ curl -i http://localhost:8090/hello-atom
 [source,http]
 ----
 HTTP/1.1 200 OK
-Last-Modified: Thu, 23 Jul 2015 14:38:20 GMT
-Content-Type: application/edn
+X-Frame-Options: SAMEORIGIN
+X-XSS-Protection: 1; mode=block
+X-Content-Type-Options: nosniff
+Content-Length: 23
+Content-Type: text/plain;charset=utf-8
+Last-Modified: Tue, 05 Jul 2016 16:08:22 GMT
 Vary: accept-charset
-ETag: 1462348343
-Server: Aleph/0.4.0
+ETag: 3c3e0684be182b7185f6ad10b63f246a
+Server: Aleph/0.4.1
 Connection: Keep-Alive
-Date: Sun, 09 Aug 2015 08:00:58 GMT
-Content-Length: 14
+Date: Tue, 05 Jul 2016 16:08:35 GMT
 
-Hello Dolly!
+Hello Wonderful World!
 ----
 
-As long as someone else hasn't sneaked in a different state between your
-`PUT` and subsequent `GET`, you should see the new state of the resource
-is "Hello Dolly!".
+As long as someone else hasn't sneaked in a different state between your `PUT` and subsequent `GET`, you should see the new state of the resource is "Hello Wonderful World!". Great!
 
-But what if someone _did_ manage to `PUT` their change ahead of yours?
-Their version would now be overwritten. That might not be what you
-wanted. To ensure we don't override someone's change, we could have set
-the *If-Match* header using the *ETag* value.
+But what if someone _did_ manage to `PUT` their change ahead of yours? Their version would now be overwritten. That might not be what you wanted. To ensure we don't override someone's change, we could have set the *If-Match* header using the *ETag* value.
 
-Let's test this now, using the ETag value we got before we sent our
-`PUT` request.
+Let's test this now, using the ETag value we got before we sent our `PUT` request.
 
-[source,nohighlight]
+[source]
 ----
-curl -i http://localhost:8090/hello -X PUT -H "If-Match: 1462348343" -d "Hello Dolly!"
+curl -i http://localhost:3000/hello-atom -X PUT -H "If-Match: fa863bd7ff53786d286e4bb3c0134416" -d "value=Hello Wonderful World!%0a"
 ----
 
-[fill out]
+[source]
+----
+HTTP/1.1 412 Precondition Failed
+Content-Length: 196
+Content-Type: application/json
+Server: Aleph/0.4.1
+Connection: Keep-Alive
+Date: Tue, 05 Jul 2016 16:10:53 GMT
+----
 
-Before reverting our code back to the original, without the atom, let's
-see the Swagger UI again.
-
-image:mutable-hello-swagger.png[Swagger]
-
-We now have a few more methods.
-http://localhost:8090/swagger-ui/index.html?url=/hello-atom-swagger/swagger.json[See
-for yourself].
+We get a 412, which means a pre-condition failed. The pre-condition in question relates to our `If-Match` header value not matching the current value of the atom. This is a very useful result, because it means we can ensure that we don't overwrite someone else's data.
 
 [[a-head-request]]
 == A HEAD request
 
-There was one more method indicated by the *Allow* header of our
-`OPTIONS` request, which was `HEAD`. Let's try this now.
+There was one more method indicated by the *Allow* header of our `OPTIONS` request, which was `HEAD`. Let's try this now.
 
-[source,nohighlight]
+[source]
 ----
-curl -i http://localhost:8090/hello -X HEAD
+curl -i http://localhost:3000/hello -X HEAD
 ----
 
 [source,http]
 ----
-HTTP/1.1 200 OK
-Last-Modified: Thu, 23 Jul 2015 14:41:20 GMT
-Content-Type: text/plain;charset=utf-8
-Vary: accept-charset
-Server: Aleph/0.4.0
-Connection: Keep-Alive
-Date: Thu, 23 Jul 2015 14:42:26 GMT
-Content-Length: 0
 ----
 
-The response does not have a body, but tells us the headers we would get
-if we were to try a `GET` request.
-
-For more details about HEAD queries, see [insert reference here].
+The response does not have a body, but tells us the headers we would get if we were to try a `GET` request.
 
 [[parameters]]
 == Parameters
@@ -470,34 +441,47 @@ To show this, we'll write some real code:
          :produces "text/plain"
          :response say-hello}}}))
 
-(def handler (yada hello-parameters-resource))
+(def handler (yada/handler hello-parameters-resource))
 ----
 
-This declares a resource with a GET method, which responds with a
-plain-text message formed from the query parameter.
+This declares a resource with a GET method, which responds with a plain-text message formed from the query parameter.
 
-Let's see this in action: http://localhost:8090/hello-parameters?p=Ken
+Let's see this in action, but without a parameter:
 
-[source,nohighlight]
+[source]
 ----
-curl -i http://localhost:8090/hello-parameters?p=Ken
+curl -i http://localhost:3000/hello-parameter
 ----
+
+Here we get a 400 response. This means we've done something wrong (we've forgotten to add the query parameter).
+
+Now let's add the query parameter to the URI:
+
+[source]
+----
+curl -i http://localhost:3000/hello-parameter?p=Ken
+----
+
+This should now get the 200 response we wanted:
 
 [source,http]
 ----
 HTTP/1.1 200 OK
-Server: Aleph/0.4.0
+X-Frame-Options: SAMEORIGIN
+X-XSS-Protection: 1; mode=block
+X-Content-Type-Options: nosniff
+Content-Length: 11
+Content-Type: text/plain
+Server: Aleph/0.4.1
 Connection: Keep-Alive
-Date: Mon, 27 Jul 2015 16:31:59 GMT
-Content-Length: 7
+Date: Tue, 05 Jul 2016 16:23:26 GMT
 
 Hello Ken!
 ----
 
-As well as query parameters, yada supports path parameters, request
-headers, form data, cookies and request bodies. It can also coerce
-parameters to a range of types. For more details, see the
-link:#Parameters[Parameters] chapter.
+Great!
+
+As well as query parameters, yada supports path parameters, request headers, form data, cookies and request bodies. You can have optional parameters, in fact, anything that can be expressed in Plumatic Schema, and [yada]#yada# will even coerce parameters to a range of types. For more details, see the link:parameters.html[Parameters] chapter.
 
 [[hello-swagger]]
 == Hello Swagger!
