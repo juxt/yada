@@ -18,9 +18,10 @@
     (resource
      {:properties
       (fn [ctx]
-        {:last-modified (when-let [f (as-file url)]
-                          (when (.exists f)
-                            (Date. (.lastModified f))))})
+        (merge {}
+               (when-let [f (as-file url)]
+                 (when (.exists f)
+                   {:last-modified (Date. (.lastModified f))}))))
 
       :methods
       {:get
