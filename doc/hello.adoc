@@ -357,7 +357,7 @@ And now let's see if we've managed to change the state of the resource.
 
 [source]
 ----
-curl -i http://localhost:8090/hello-atom
+curl -i http://localhost:3000/hello-atom
 ----
 
 [source,http]
@@ -583,6 +583,14 @@ image:hello-swagger.png[Swagger]
 [[summary]]
 == Summary
 
-This has been a long chapter, but we have only covered a simple "Hello World!" example. You should now realise that implementing even a basic example that properly complies with the HTTP standard is a surprisingly tough undertaking. But this simple example demonstrated how a rich and functional HTTP resource was created with a tiny amount of code, and none of the behaviour we have seen is hardcoded or contrived. We have only demonstrated a simple Java string, but yada includes the same support for many other basic types (atoms, Clojure collections, files, directories, Java resources…). But the best thing is you can programmatically create your own resources and types to fit your particular requirements.
+This has been a long chapter, but we have only covered a simple "Hello World!" example.
 
-Without a library like [yada]#yada# we would need to read and understand hundreds of pages of the HTTP RFCs and spend a great deal of extra effort coding up its various aspects. Of course, nobody would bother doing that, but the consequence is that we miss out on the many architectural benefits of HTTP. Client code that access most APIs today cannot make any assumptions that the API complies with the text in the HTTP RFCs, and must therefore rely on detailed knowledge of how the API is written, either through documentation, Swagger definitions, close collaboration between development teams or some other means (trial-and-error). This is a big problem because it causes huge rigidity between our systems.
+You should now realise that implementing even a basic example that properly complies with the HTTP standard is a surprisingly tough undertaking. But this simple example demonstrated how a rich and functional HTTP resource can be created with a tiny amount of code, and none of the behaviour we have seen is hardcoded or contrived. We have only demonstrated a simple Java string, and [yada]#yada# includes similar support for many other basic types (atoms, Clojure collections, files, directories, Java resources…).
+
+But the best thing is you can programmatically create your own resources and types to fit your particular requirements.
+
+Without a library like [yada]#yada# we would need to read and understand hundreds of pages of the HTTP RFCs and spend a great deal of extra effort coding up its various aspects. Of course, nobody would bother doing that, but the consequence is that we miss out on the many architectural benefits of HTTP.
+
+Rarely can client code make any assumptions that the HTTP API it is accessing complies with the text in the HTTP RFCs, and must therefore rely on detailed knowledge of how the API is written, either through documentation, Swagger definitions, close collaboration between development teams or some other means (trial-and-error). This is a problem because it causes rigidity between our systems.
+
+By using [yada]#yada#, we are pushing the responsibility of implementing HTTP correctly away from the programmer and into a library.

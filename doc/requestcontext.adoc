@@ -15,3 +15,15 @@ modify it to your exact requirements if necessary.
 The functions making up the interceptor-chain are not necessarily
 executed in a single thread but rather an asynchronous event-driven
 implementation enabled by a third-party library called manifold.
+
+
+== path-for
+
+Rather than hardcode URLs, you can create the correctly URL with yada's `path-for` function.
+
+[source,clojure]
+----
+(require '[yada.yada :refer [path-for]])
+
+(path-for ctx :resources/user-profile)
+----

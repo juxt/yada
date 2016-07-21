@@ -1,50 +1,93 @@
 [[resources]]
 = Resources
 
-Resources are defined in one of two ways:
+In [yada]#yada#'s terminology, a resource is the same as it is in HTTP:
 
-1.  Coercing a type into a resource
-2.  Declaring the resource model explicitly
+[quote,'RFC 7231 Section 2']
+--
+The target of an HTTP request is called a "resource".  HTTP does not limit the nature of a resource; it merely defines an interface that might be used to interact with resources.  Each resource is  identified by a Uniform Resource Identifier (URI),
+--
 
-In the link:getting-started.html[Getting Started] chapter we saw some examples of the first option.
-In this chapter we'll explain how to declare a resource explicitly.
+We can describe a resource directly using a plain old Clojure map, known as a *resource model*.
 
-[[writing-resource-models]]
-== Writing resource models
-
-In Clojure, resource models are usually defined as map literals, but
-naturally they can be derived programmatically from other sources.
-
-Internally, resource models are defined by a strict schema, which
-ensures that they are properly specified before they can be turned into
-request handlers.
+Here is an example:
 
 [source,clojure]
 ----
 (require '[yada.yada :refer [resource]])
 
-(def my-web-resource
+(def my-resource
   (resource
-    {:id …
-     :description …
-     :summary …
-     :parameters {…}
-     :produces {…}
-     :consumes {…}
-     :authentication {…}
-     :cors {…}
-     :properties {…}
-     :methods {…}
-     :custom/other {…}}))
+    {:id :example
+     :description "The description to this example resource"
+     :summary "An example resource"
+     :access-control …
+     :properties …
+     :parameters {:query … :path … :header …}
+     :produces …
+     :consumes …
+     :consumer …
+     :methods {:get … :put … :post … :delete … :patch …}
+     :responses …
+     :path-info? false
+     :sub-resource …
+     :logger …
+     :interceptor-chain …
+     :error-interceptor-chain …
+     :custom/other …}))
 ----
 
-To create a resource from a map, call the `yada.resource` function with
-the map as the single argument. Since the `yada.resource` function
-checks the map conforms to the resource-model schema, it is recommended
-to build your map fully _before_ calling the `yada.resource` function,
-rather than building the resource and then modifying it further. The
-latter is possible, but you may risk creating a model that is no longer
-valid.
+Resource models are constrained by a schema, ensuring they are valid. The purpose of the `yada.yada/resource` function is to check the resource model is valid. The schema will attempt to coerce invalid resource models into their valid equivalents wherever possible. An error will be thrown only after these coercions have been attempted.
+
+(The result of a call to `yada.yada/resource` is actually an instance of the Clojure record `yada.resource/Resource` but you can treat it just like a map)
+
+== Creating a Ring handler
+
+Now we have a valid resource, we can now use it for various purposes. The most obvious of these is to handle requests. We can create a Ring-compatible request handler from a resource with the `yada.yada/handler` function:
+
+[source,clojure]
+----
+(require '[yada.yada :refer [handler]])
+
+(def my-ring-handler
+  (handler my-resource))
+----
+
+We can now use this handler in a route.
+
+For example, with Compojure:
+
+[source,clojure]
+----
+(GET "/my-resource" [] my-ring-handler)
+----
+
+Or with link:https://github.com/juxt/bidi[bidi]:
+
+[source,clojure]
+----
+["/my-resource" my-ring-handler]
+----
+
+Note, since [yada]#yada# is aware of bidi's `bidi.ring.Ring` protocol, resources can be used in bidi route structures directly:
+
+[source,clojure]
+----
+["/my-resource" my-resource]
+----
+
+== Resource identity
+
+The optional `:id` entry of the resource model gives the resource a unique identity. You can use whatever you like for the value, but it should be unique. A namespaced keyword is typical:
+
+[source,clojure]
+----
+{:id :resources/user-profile}
+----
+
+The main benefit of giving your resources an identity is when you need to create a hyperlink URL to it.
+
+
 
 [[data-abbreviations]]
 == Data abbreviations
