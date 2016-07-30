@@ -4,7 +4,7 @@ Here is the complete, authoratitive guide to [yada]#yada#.
 
 PDF and e-book versions are available at https://leanpub.com/yada.
 
-== Table of Contents
+=== Table of Contents
 
 Here are the chapters:
 

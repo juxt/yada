@@ -1,14 +1,16 @@
 [[resources]]
-= Resources
+== Resources
 
 In [yada]#yada#'s terminology, a resource is the same as it is in HTTP:
+
+yada
 
 [quote,'RFC 7231 Section 2']
 --
 The target of an HTTP request is called a "resource".  HTTP does not limit the nature of a resource; it merely defines an interface that might be used to interact with resources.  Each resource is  identified by a Uniform Resource Identifier (URI),
 --
 
-We can describe a resource directly using a plain old Clojure map, known as a *resource model*.
+We can describe a resource directly using a plain old Clojure map, known as a _resource model_.
 
 Here is an example:
 
@@ -41,9 +43,9 @@ Resource models are constrained by a schema, ensuring they are valid. The purpos
 
 (The result of a call to `yada.yada/resource` is actually an instance of the Clojure record `yada.resource/Resource` but you can treat it just like a map)
 
-== Creating a Ring handler
+=== Creating a Ring handler
 
-Now we have a valid resource, we can now use it for various purposes. The most obvious of these is to handle requests. We can create a Ring-compatible request handler from a resource with the `yada.yada/handler` function:
+Now we have a valid resource, we can now use it for various purposes the most obvious being to handle requests. We can create a Ring request handler from a resource with the `yada.yada/handler` function:
 
 [source,clojure]
 ----
@@ -76,7 +78,46 @@ Note, since [yada]#yada# is aware of bidi's `bidi.ring.Ring` protocol, resources
 ["/my-resource" my-resource]
 ----
 
-== Resource identity
+=== Responding to requests
+
+The handler created by [yada]#yada# works by constructing a series of internal functions called _interceptors_.
+
+When a request is received, the handler creates a new instance of an object known as the _request context_, usually represented by the symbol `ctx`.
+
+Each interceptor is a single-arity function that takes this request context as an argument.
+
+An interceptor must return this request context, or a modified copy.
+
+Here's an example of an interceptor which adds some information into the request context.
+
+[source,clojure]
+----
+(fn [ctx]
+  (assoc ctx :key :value))
+----
+
+On each request, the request context is 'threaded' through a fixed 'chain' of interceptors, the result of each interceptor being used as the argument to the next.
+
+One of the key entries in the request context is `:response`, which contains the Ring response that will be returned to the web server. Any interceptor can modify this (or any other value) in the request context.
+
+Here's an example of a request context during the handling of a request:
+
+[source,clojure]
+----
+{:request {:method :get :headers {…}}
+ :request-id #uuid "bf2c06e1-b4bd-49fb-aa74-05a17f4e9e9c"
+ :method :get
+ :response {:status 200 :headers {} :body "Hello!"}}
+----
+
+The request context is not just passed to interceptors, but to functions you can declare in your resource.
+
+.Shorthands
+****
+The resource model is large and can seem unwieldy to author. In certain places it is possible to use shorthands. Wherever a shorthand is possible, it will be introduced and described along with the description of its expanded form.
+****
+
+=== Resource identity
 
 The optional `:id` entry of the resource model gives the resource a unique identity. You can use whatever you like for the value, but it should be unique. A namespaced keyword is typical:
 
@@ -85,51 +126,80 @@ The optional `:id` entry of the resource model gives the resource a unique ident
 {:id :resources/user-profile}
 ----
 
-The main benefit of giving your resources an identity is when you need to create a hyperlink URL to it.
-
-
-
-[[data-abbreviations]]
-== Data abbreviations
-
-Parts of the canonical resource model structure can be quite verbose. To
-make the job of authoring resource models easier a variety of literal
-short-hand forms are available. Short-forms are automatically coerced to
-their canonical equivalents, prior to building the request handler.
-
-For example:
+The main reason for giving your resources an identity is for creating hyperlinks targeting your resource. For example, this is how you would create a URL to the resource.
 
 [source,clojure]
 ----
-{:produces "text/html"}
+(yada.yada/path-for ctx :resources/user-profile)
 ----
 
-is automatically coerced to this _canonical_ form:
+This feature is only available if your resources are declared in a bidi hierarchical route structure. Otherwise, the URL cannot be determined.
+
+=== Resource description and summary
+
+Optionally, a resource can contain a textual description. This should be used for any descriptive text that applies to the resource as a whole (rather than individual methods, which can contain their own descriptions).
 
 [source,clojure]
 ----
-{:produces [{:media-type "text/html"}]}
+{:description "<descriptive text here>"
+ :summary "<summary here>"}
 ----
 
-[[common-examples]]
-== Common examples
+The description and summary values are used in generated Swagger descriptions and can be used for any other purpose you like.
 
-There are numerous other short-hands. If in doubt, learn the canonical
-form and use that until you discover the short-hand for it. You can
-experiment with the `yada.resource` function ahead of time in the REPL.
-If you do something that isn't possible, the schema validation errors
-should help you figure out why.
+=== Access Control
 
-[insert table of common coercions here]
+The `:access-control` entry can be used to restrict access to a resource, usually for security reasons.
+
+// TODO: xref to access-control (security) chapter.
+
+=== Properties
+
+You can define various properties on a resource. These can be thought of as a resource's metadata, information about a resource (rather than the resource's state).
+
+If is possible to specify a complete map of constant properties, if they are all known prior to a request. This is rare, and usually it's necessary to provide a function that will be called during the processing of a request.
+
+[source,clojure]
+----
+{:properties (fn [ctx]
+               {:exists? true
+                :last-modified #inst "2016-07-25 16:00:00 Z"})}
+----
+
+Certain properties, such as `:exists?` and `:last-modified` are special and used by [yada]#yada# to determine responses.
+
+For example, if you know how to determine the date that your resource was last modified, you should return this date in the `:last-modified` entry of a map containing your resources's properties. Doing so will enable [yada]#yada#'s logic for conditional requests, for instance, allowing it to return `304 Not Modified` responses when appropriate.
+
+=== Parameters
+
+Web requests can contain parameters that can influence the response and
+yada can capture these. This is especially useful when you are writing
+APIs.
+
+There are different types of parameters, which you can mix-and-match:
+
+* Query parameters (part of the request URI's query-string)
+* Path parameters (embedded in the request URI's path)
+* Request headers
+* Form data
+* Request bodies
+* Cookies
+
+There are benefits to declaring these parameters explicitly:
+
+* yada will check they exist, and return 400 (Malformed Request) errors on requests that don't provide the ones you need for your logic
+* yada will coerce them to the types you want, so you can avoid writing loads of type-conversion logic in your code
+* yada and other tools can process your declarations independently of your request-processing code, e.g. to generate API documentation
+
+// TODO: xref to more detailed chapter
+
+
+
 
 [[resource-types]]
-== Resource types
+=== Resource types
 
-A *resource type* is a Clojure types or record that can be automatically
-coerced into a **resource model**. These types satisfy the
-`yada.protocols.ResourceCoercion` protocol, and any existing type or
-record may be extended to do so, using Clojure's `extend-protocol`
-macro.
+A _resource type_ is a Clojure type or record that can be automatically coerced into a resource model. These types must satisfy the `yada.protocols.ResourceCoercion` protocol, and any existing type or record may be extended to do so, using Clojure's `extend-protocol` macro.
 
 [source,clojure]
 ----
@@ -143,11 +213,4 @@ macro.
         {:get …}}})))
 ----
 
-The `as-resource` function must return a resource (by calling
-`yada.resource`, not just a map).
-
-[[summary]]
-== Summary
-
-The resource model is yada's central concept. The following chapters
-describe the various aspects of the resource-model in more detail.
+The `as-resource` function must return a resource (by calling `yada.resource/resource`, not just a map).

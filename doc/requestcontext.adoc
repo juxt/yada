@@ -1,5 +1,5 @@
 [[the-request-context]]
-= The Request Context
+== The Request Context
 
 When given the HTTP **request**, the handler first creates a
 *request-context* and populates it with various values, such as the
@@ -17,7 +17,7 @@ executed in a single thread but rather an asynchronous event-driven
 implementation enabled by a third-party library called manifold.
 
 
-== path-for
+=== path-for
 
 Rather than hardcode URLs, you can create the correctly URL with yada's `path-for` function.
 

@@ -1,5 +1,5 @@
 [[getting-started]]
-= Getting Started
+== Getting Started
 
 In this quick tutorial we're going to run a real Clojure project, diving into the code to show how [yada]#yada# is used.
 
@@ -9,7 +9,7 @@ We'll clone it first, then build it, then run it, then browse the examples and e
 
 So let's get going!
 
-== Clone
+=== Clone
 
 First let's clone the project and change into its working directory.
 
@@ -19,7 +19,7 @@ git clone https://github.com/juxt/edge
 cd edge
 ----
 
-== Build & Run
+=== Build & Run
 
 Next we build and run it, in _development_ mode.
 
@@ -42,11 +42,11 @@ Starting file watcher (CTRL-C to quit)...
 Compiling {sass}... 3 changed files.
 ----
 
-== Browse
+=== Browse
 
 Fire up a browser and browse to http://localhost:3000/hello. You should see a simple `Hello World` message.
 
-== Connect a REPL
+=== Connect a REPL
 
 Let's connect a REPL.
 
@@ -100,7 +100,7 @@ user=> (reset)
 user=>
 ----
 
-== Test the service
+=== Test the service
 
 Let's send an HTTP request to the system to check it is working. We can use a browser to visit http://localhost:3000/hello or use `curl` if you have it installed on your system:
 
@@ -116,7 +116,7 @@ The result should be the same:
 Hello World!
 ----
 
-== Locate the source code
+=== Locate the source code
 
 Fire up an editor and load up the file `src/edge/hello.clj`.
 
@@ -131,7 +131,7 @@ Locate the function called `hello-routes`. This returns a simple route structure
 Make a change to string `"Hello World!"`, for example, change it to `"Hello Wonderful World!"`.
 
 
-== Reset the system
+=== Reset the system
 
 Now we've made a change to Edge's source code, we must tell the system to reset. The system will then detect all the code changes and necessary dependencies to reload.
 
