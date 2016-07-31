@@ -1,4 +1,10 @@
-= The yada user-manual
+The yada user-manual
+====================
+:doctype: book
+:description: A user manual explaining yada, an HTTP library for Clojure from JUXT.
+:source-highlighter: coderay
+:coderay-css: class
+:icons: font
 
 include::intro.adoc[]
 include::getting-started.adoc[]
@@ -14,6 +20,10 @@ include::security.adoc[]
 include::routing.adoc[]
 include::phonebook.adoc[]
 include::swagger.adoc[]
+
+Advanced topics
+===============
+
 include::async.adoc[]
 include::searchengine.adoc[]
 include::sse.adoc[]
@@ -26,4 +36,8 @@ include::interceptors.adoc[]
 include::subresources.adoc[]
 include::fileserver.adoc[]
 include::testing.adoc[]
+
+Reference
+=========
+
 include::reference.adoc[]

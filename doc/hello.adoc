@@ -1,11 +1,11 @@
 [[hello-world]]
 == Hello World!
 
-In this chapter we examine the "Hello World!" resource in depth. If you have followed the link:getting-started.html[Getting Started] chapter, you'll be up and running and ready to try the examples yourself, but it's not mandatory.
+In this chapter we examine the "Hello World!" resource in depth. If you have followed the <<getting-started,Getting Started>> chapter, you'll be up and running and ready to try the examples yourself, but it's not mandatory.
 
 Let's look at the route definition in the file `src/edge/hello.clj` (the same one we saw in the Getting Started chapter).
 
-[source]
+[source,clojure]
 ----
 (defn hello-routes [deps]
   ["/hello" (yada/handler "Hello World!\n")])

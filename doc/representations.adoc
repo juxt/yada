@@ -18,10 +18,9 @@ Representation may differ in a number of respects, including:
 Whenever a user-agent requests the state from a resource, a particular
 representation is chosen, either by the server (proactive) or client
 (reactive). The process of choosing which representation is the most
-suitable is known as link:/spec/rfc7231#section-3.4[_content
+suitable is known as https://tools.ietf.org/html/rfc7231#section-3.4[_content
 negotiation_].
 
-[[producing-content]]
 === Producing content
 
 Content negotiation is an important feature of HTTP, allowing clients
@@ -32,7 +31,6 @@ legacy media-types can be supported concurrently. (It is also the
 mechanism by which new versions of media-types can be introduced, even
 media-types that define hypermedia interactions, more on this later.)
 
-[[proactive-negotiation]]
 === Proactive negotiation
 
 There are 2 types of content negotiation. The first is termed _proactive
@@ -79,7 +77,6 @@ Content-Length: 9
 ?�D���E!
 ----
 
-[[reactive-negotiation]]
 === Reactive negotiation
 
 The second type of negotiation is termed _reactive negotiation_ where
@@ -88,12 +85,10 @@ the agent chooses from a list of representations provided by the server.
 (Currently, yada does not yet support reactive negotiation but it is
 definitely on the road-map.)
 
-[[the-vary-response-header]]
 === The Vary response header
 
 [coming soon]
 
-[[body-coercion]]
 === Body coercion
 
 Where necessary, and according to the semantics of the HTTP method, yada
@@ -135,7 +130,6 @@ https://github.com/clojure/data.json[`org.clojure/data.json`] or
 https://github.com/dakrone/cheshire[Cheshire] and encode the string
 yourself.
 
-[[consuming-content]]
 === Consuming content
 
 [coming soon]

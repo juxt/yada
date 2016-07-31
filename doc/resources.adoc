@@ -3,8 +3,6 @@
 
 In [yada]#yada#'s terminology, a resource is the same as it is in HTTP:
 
-yada
-
 [quote,'RFC 7231 Section 2']
 --
 The target of an HTTP request is called a "resource".  HTTP does not limit the nature of a resource; it merely defines an interface that might be used to interact with resources.  Each resource is  identified by a Uniform Resource Identifier (URI),
@@ -71,12 +69,15 @@ Or with link:https://github.com/juxt/bidi[bidi]:
 ["/my-resource" my-ring-handler]
 ----
 
+[NOTE]
+--
 Note, since [yada]#yada# is aware of bidi's `bidi.ring.Ring` protocol, resources can be used in bidi route structures directly:
 
 [source,clojure]
 ----
 ["/my-resource" my-resource]
 ----
+--
 
 === Responding to requests
 
