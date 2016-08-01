@@ -88,7 +88,9 @@
   (def header-possibilities [["x-forwarded-proto" "https" :https]
                              ["x-forwarded-proto" "http" :http]
                              ["forwarded-proto" "https" :https]
-                             ["forwarded-proto" "http" :http]])
+                             ["forwarded-proto" "http" :http]
+                             ["front-end-https" "on" :https]
+                             ["front-end-https" "off" :http]])
 
   (testing "scheme is properly detected from valid header combinations"
     (doseq [[key value expected] header-possibilities]
