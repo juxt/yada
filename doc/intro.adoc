@@ -1,5 +1,5 @@
 [[introduction]]
-= Introduction
+== Introduction
 
 [yada]#yada# is a web library written in Clojure that lets you create websites
 and web APIs.
@@ -17,8 +17,7 @@ when you need it to, to feature-rich secure services that can handle the
 most demanding workloads, while remaining faithful to the HTTP
 standards.
 
-[[say-hello-to-yada]]
-== Say 'Hello!' to yada!
+=== Say 'Hello!' to yada!
 
 It's quick to get started with [yada]#yada# without knowing how it works - it's easy to get started even if you only have a basic knowledge of Clojure.
 
@@ -45,8 +44,7 @@ types too.
 
 Let's delve a little deeper…
 
-[[resources]]
-== Resources
+=== Resources
 
 In [yada]#yada#, resources are defined by a plain-old Clojure map.
 
@@ -80,15 +78,13 @@ With [yada]#yada#, we transform a resource into a handler using the `handler` fu
 
 A handler can be called as a function, with a single argument representing an HTTP **request**. It returns a value representing the corresponding HTTP response. (If you are familiar with Ring, this is the Ring handler, but not one you have to write yourself!)
 
-[[serving-requests]]
-== Serving requests
+=== Serving requests
 
 To use [yada]#yada# to create real responses to real HTTP requests, you need to add [yada]#yada# to a web-server, such as Aleph or Immutant. The web server takes care of the networking and messages of HTTP (RFC 7230), while [yada]#yada# focuses on the semantics and content (starting with RFC 7231).
 
 To write real applications, you also need a router that understands URIs, and [yada]#yada# has some features that are enabled when used with bidi, although there is nothing to stop you using [yada]#yada# with other routing libraries.
 
-[[conclusion]]
-== Conclusion
+=== Conclusion
 
 That's [yada]#yada# in a nutshell, but the quickest way to to learn it is to set up an environment and have a play.
 

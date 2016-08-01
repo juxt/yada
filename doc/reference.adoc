@@ -1,34 +1,34 @@
 [[reference]]
-= Reference
+== Reference
 
 [[resource-model-schema]]
-== Resource model schema
+=== Resource model schema
 
 This is defined in `yada.schema`.
 
 [[handler-schema]]
-== Handler schema
+=== Handler schema
 
 [coming soon]
 
 [[request-context-schema]]
-== Request context schema
+=== Request context schema
 
 [coming soon]
 
 [[protocols]]
-== Protocols
+=== Protocols
 
 yada defines a number of protocols. Existing Clojure types and records
 can be extended with these protocols to adapt them to use with yada.
 
 [[yada.protocols.resourcecoercion]]
-=== `yada.protocols.ResourceCoercion`
+==== `yada.protocols.ResourceCoercion`
 
 [coming soon]
 
 [[yada.methods.method]]
-=== `yada.methods.Method`
+==== `yada.methods.Method`
 
 Every HTTP method is implemented as a type which extends the
 yada.methods.Method protocols. This way, new HTTP methods can be added.
@@ -44,7 +44,7 @@ implemented. In the `Get` example, the resource type is asked to return
 its state, from which the representation for the response is produced.
 
 [[yada.body.messagebody]]
-=== `yada.body.MessageBody`
+==== `yada.body.MessageBody`
 
 Message bodies are formed from data provided by the resource, according
 to the representation being requested (or having been negotiated). This
@@ -53,13 +53,13 @@ this facility can be extended via this protocol for new message body
 types.
 
 [[built-in-types]]
-== Built-in types
+=== Built-in types
 
 There are numerous types already built into yada, but you can also add
 your own. You can also add your own custom methods.
 
 [[files]]
-=== Files
+==== Files
 
 The `yada.resources.file-resource.FileResource` exposes a single file in
 the file-system.
@@ -126,7 +126,7 @@ metadata. For example, a file with a `.png` suffix will be assumed to
 have a media-type of `image/png`.
 
 [[directories]]
-=== Directories
+==== Directories
 
 The `yada.resources.file-resource.DirectoryResource` record exposes a
 directory in a filesystem as a collection of read-only web resources.
@@ -186,4 +186,4 @@ as `text/html`.
 ----
 
 [[glossary]]
-== Glossary
+=== Glossary

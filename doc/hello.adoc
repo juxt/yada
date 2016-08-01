@@ -1,11 +1,11 @@
 [[hello-world]]
-= Hello World!
+== Hello World!
 
-In this chapter we examine the "Hello World!" resource in depth. If you have followed the link:getting-started.html[Getting Started] chapter, you'll be up and running and ready to try the examples yourself, but it's not mandatory.
+In this chapter we examine the "Hello World!" resource in depth. If you have followed the <<getting-started,Getting Started>> chapter, you'll be up and running and ready to try the examples yourself, but it's not mandatory.
 
 Let's look at the route definition in the file `src/edge/hello.clj` (the same one we saw in the Getting Started chapter).
 
-[source]
+[source,clojure]
 ----
 (defn hello-routes [deps]
   ["/hello" (yada/handler "Hello World!\n")])
@@ -19,7 +19,7 @@ Let's focus on this handler. We could have used a standard Ring function `(fn [r
 
 A *resource* is a Clojure map (or more accurately, a Clojure record) that completely describes the methods, properties, representations, security and other miscellaneous properties of a web resource. The reason we can use a string (`Hello World`) here is because [yada]#yada# contains logic to _coerce_ a string into a resource. There are a number of built-in coercions from various Clojure types and of course you can provide your own.
 
-== Examining the response
+=== Examining the response
 
 So we send a request which gets routed to our handler which creates a response. Let's examine this response in more detail, via `curl`. The `-i` option shows us the HTTP headers as well as the body.
 
@@ -105,7 +105,7 @@ Hello World!
 ----
 
 [[a-conditional-request]]
-== A conditional request
+=== A conditional request
 
 In HTTP, a conditional request is one where a user-agent (like a browser) can ask a server for the state of the resource but only if a particular condition holds.
 
@@ -139,7 +139,7 @@ Date: Wed, 22 Jun 2016 16:57:46 GMT
 Notice we also get the same `Vary` and `ETag` headers. These help any proxies between the user-agent and the service properly cache content, and if they would have been produced in a 200 response, then they must also be produced in a 304. (This is the kind of thing that [yada]#yada# takes care of for you, unlike most libraries).
 
 [[content-negotiation]]
-== Content negotiation
+=== Content negotiation
 
 The responses we have received back from our service all contain this curious header called `Vary` set to `accept-charset`. The server is telling us (and any proxies between us) that the representation might vary depending on the charset negotiated. Let's see if we can get our "Hello World!" message returned in other charsets.
 
@@ -207,7 +207,7 @@ Note also that different representations generate different `ETag` values. The e
 
 The negotiation of charsets may be considered by some to be unnecessary given the dominance of UTF-8. That is certainly true for today's modern browsers. However, there are many other types of devices that are being connected to the internet (under the banner 'Internet of Things'). Many of these devices have very tight constraints on processing and memory which prevent them from supporting UTF-8. If we are building a web service, we may want to connect these devices to it in the future.
 
-=== Languages
+==== Languages
 
 Of course it is not just charsets that can be negotiated. Another example is languages. Our "Hello World!" string is in English. Let's provide support for simplified Chinese.
 
@@ -264,7 +264,7 @@ There's a lot more to content negotiation than this simple example can show. It 
 
 
 [[mutation]]
-== Mutation
+=== Mutation
 
 Let's try to overwrite the string by using a `PUT`.
 
@@ -357,7 +357,7 @@ And now let's see if we've managed to change the state of the resource.
 
 [source]
 ----
-curl -i http://localhost:8090/hello-atom
+curl -i http://localhost:3000/hello-atom
 ----
 
 [source,http]
@@ -402,7 +402,7 @@ Date: Tue, 05 Jul 2016 16:10:53 GMT
 We get a 412, which means a pre-condition failed. The pre-condition in question relates to our `If-Match` header value not matching the current value of the atom. This is a very useful result, because it means we can ensure that we don't overwrite someone else's data.
 
 [[a-head-request]]
-== A HEAD request
+=== A HEAD request
 
 There was one more method indicated by the *Allow* header of our `OPTIONS` request, which was `HEAD`. Let's try this now.
 
@@ -418,7 +418,7 @@ curl -i http://localhost:3000/hello -X HEAD
 The response does not have a body, but tells us the headers we would get if we were to try a `GET` request.
 
 [[parameters]]
-== Parameters
+=== Parameters
 
 Often, a resource's state or behavior will depend on parameters in the
 request. Let's say we want to pass a parameter to the resource, via a
@@ -484,7 +484,7 @@ Great!
 As well as query parameters, yada supports path parameters, request headers, form data, cookies and request bodies. You can have optional parameters, in fact, anything that can be expressed in Plumatic Schema, and [yada]#yada# will even coerce parameters to a range of types. For more details, see the link:parameters.html[Parameters] chapter.
 
 [[hello-swagger]]
-== Hello Swagger!
+=== Hello Swagger!
 
 Now we have seen how to build a single web resource, let's see how to build a Swagger description from a collection of web resources.
 
@@ -581,8 +581,16 @@ By the way, if you want to see the Swagger UI, browse to http://localhost:3000/s
 image:hello-swagger.png[Swagger]
 
 [[summary]]
-== Summary
+=== Summary
 
-This has been a long chapter, but we have only covered a simple "Hello World!" example. You should now realise that implementing even a basic example that properly complies with the HTTP standard is a surprisingly tough undertaking. But this simple example demonstrated how a rich and functional HTTP resource was created with a tiny amount of code, and none of the behaviour we have seen is hardcoded or contrived. We have only demonstrated a simple Java string, but yada includes the same support for many other basic types (atoms, Clojure collections, files, directories, Java resources…). But the best thing is you can programmatically create your own resources and types to fit your particular requirements.
+This has been a long chapter, but we have only covered a simple "Hello World!" example.
 
-Without a library like [yada]#yada# we would need to read and understand hundreds of pages of the HTTP RFCs and spend a great deal of extra effort coding up its various aspects. Of course, nobody would bother doing that, but the consequence is that we miss out on the many architectural benefits of HTTP. Client code that access most APIs today cannot make any assumptions that the API complies with the text in the HTTP RFCs, and must therefore rely on detailed knowledge of how the API is written, either through documentation, Swagger definitions, close collaboration between development teams or some other means (trial-and-error). This is a big problem because it causes huge rigidity between our systems.
+You should now realise that implementing even a basic example that properly complies with the HTTP standard is a surprisingly tough undertaking. But this simple example demonstrated how a rich and functional HTTP resource can be created with a tiny amount of code, and none of the behaviour we have seen is hardcoded or contrived. We have only demonstrated a simple Java string, and [yada]#yada# includes similar support for many other basic types (atoms, Clojure collections, files, directories, Java resources…).
+
+But the best thing is you can programmatically create your own resources and types to fit your particular requirements.
+
+Without a library like [yada]#yada# we would need to read and understand hundreds of pages of the HTTP RFCs and spend a great deal of extra effort coding up its various aspects. Of course, nobody would bother doing that, but the consequence is that we miss out on the many architectural benefits of HTTP.
+
+Rarely can client code make any assumptions that the HTTP API it is accessing complies with the text in the HTTP RFCs, and must therefore rely on detailed knowledge of how the API is written, either through documentation, Swagger definitions, close collaboration between development teams or some other means (trial-and-error). This is a problem because it causes rigidity between our systems.
+
+By using [yada]#yada#, we are pushing the responsibility of implementing HTTP correctly away from the programmer and into a library.

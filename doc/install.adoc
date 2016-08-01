@@ -1,5 +1,5 @@
 [[installation]]
-= Installation
+== Installation
 
 [yada]#yada# is a Clojure library and if you are using it directly from a
 Clojure application with a Leiningen `project.clj` file, include the
@@ -7,20 +7,20 @@ following in the file's *:dependencies* section.
 
 [source,clojure]
 ----
-[yada "1.1.27"]
+[yada "1.1.29"]
 [aleph "0.4.1"]
 [bidi "2.0.8"]
 ----
 
 [[setting-up-a-development-environment]]
-== Setting up a development environment
+=== Setting up a development environment
 
 The best way to learn is to experiment with [yada]#yada#, either on its own or
 by using it to build some service you have in mind. Either way you'll
 want to set up a quick development environment.
 
 [[the-easy-way-clone-edge]]
-== The Easy Way: Clone edge
+=== The Easy Way: Clone edge
 
 The quickest and perhaps easiest way to get started is to clone the [yada]#yada#
 branch of JUXT's *edge* repository. This is a continuously improving
@@ -38,12 +38,12 @@ found useful on many projects at JUXT.
 If you're new to Clojure, we recommend learning [yada]#yada# with edge. Not only is it packed full of examples for you to explore, the project can provide a solid foundation for your own projects with an architecture that is proven to scale as your project grows.
 
 [[the-simple-way-construct-your-own]]
-== The Simple Way: Construct your own
+=== The Simple Way: Construct your own
 
 If you prefer to build your own development environment you'll need a few pointers in order to integrate with [yada]#yada#.
 
 [[serving-resources]]
-=== Serving resources
+==== Serving resources
 
 To serve the resources you define with [yada]#yada# you'll need to choose a port and start a web server. Currently, [yada]#yada# provides its own built-in web server (https://github.com/ztellman/aleph[Aleph]), but in the future other web servers will be supported. (For now, please be reassured that Aleph will support many thousands of concurrent connections. Aleph is built on Netty, a very capable platform used by Google, Apple, Facebook and many others to support extreme workloads.)
 
@@ -72,7 +72,7 @@ The `listener` function returns a map. To shutdown the listener, call the 0-arit
 ----
 
 [[creating-resources]]
-=== Creating resources
+==== Creating resources
 
 Resources can be created in the following ways:
 
@@ -81,14 +81,14 @@ Resources can be created in the following ways:
 * A normal Ring handler
 
 [[routing-to-resources]]
-=== Routing to resources
+==== Routing to resources
 
 A handler can be created from a resource by [yada]#yada#'s `handler` function, and this handler can be used anywhere a Ring-compatible function is expected. This way, you can use any routing library you wish, including Compojure.
 
 However, [yada]#yada# and bidi _are_ designed to work together, and there are a number of features that are enabled when they are used together. That's why you can put [yada]#yada# resources in a bidi route structure without turning them into handlers, since bidi knows how to do that already.
 
 [[repl-and-testing]]
-== REPL and Testing
+=== REPL and Testing
 
 The `response-for` function is great for testing the Ring response that would be returned from a [yada]#yada# type or handler.
 

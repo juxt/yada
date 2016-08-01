@@ -1,5 +1,5 @@
 [[methods]]
-= Methods
+== Methods
 
 Methods are defined in the *methods* entry of a resource's
 **resource-model**.
@@ -20,7 +20,7 @@ functions declared in the method's declaration in the
 **resource-model**.
 
 [[method-semantics-by-method]]
-== Method semantics, by method
+=== Method semantics, by method
 
 Each HTTP method has defined semantics. Often these semantics are
 defined in the HTTP standards, other RFCs or, in the case of custom
@@ -34,7 +34,7 @@ supports and your responsibilities should you choose to provide the
 method for a resource.
 
 [[get]]
-== GET
+=== GET
 
 Specify a function in *:response* that will be called during the GET
 method processing.
@@ -47,42 +47,42 @@ It should return the response's body, which should satisfy
 be returned.
 
 [[put]]
-== PUT
+=== PUT
 
 [coming soon]
 
 [[post]]
-== POST
+=== POST
 
 [coming soon]
 
 [[delete]]
-== DELETE
+=== DELETE
 
 [coming soon]
 
 [[head]]
-== HEAD
+=== HEAD
 
 [coming soon]
 
 [[options]]
-== OPTIONS
+=== OPTIONS
 
 [coming soon]
 
 [[trace]]
-== TRACE
+=== TRACE
 
 [coming soon]
 
 [[patch]]
-== PATCH
+=== PATCH
 
 [coming soon]
 
 [[handling-all-methods]]
-== Handling all methods
+=== Handling all methods
 
 If you want to handle all request methods, or a complex set of them, you
 can specify the special keyword `:*` in the methods section of your
@@ -96,13 +96,13 @@ resource model.
 ----
 
 [[custom-methods]]
-== Custom methods
+=== Custom methods
 
 Custom methods can be added by defining new types that extend the
 `yada.methods.Method` protocol.
 
 [[brew]]
-== BREW
+=== BREW
 
 BREW is an example of a custom method you might want to create,
 especially if you are building a networked coffee maker compliant with

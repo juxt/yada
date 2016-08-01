@@ -426,7 +426,6 @@ convenience of terse, expressive short-hand descriptions."}
           Methods
           Responses
           SecurityHeaders
-          ResourceDocumentation
           {(s/optional-key :path-info?) Boolean
            (s/optional-key :sub-resource) (s/=> Resource Context)}
           Logger

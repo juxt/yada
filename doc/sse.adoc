@@ -1,8 +1,8 @@
 [[server-sent-events]]
-= Server Sent Events
+== Server Sent Events
 
 [[introduction]]
-== Introduction
+=== Introduction
 
 *Server Sent Events* (SSE) is a part of the HTML5 generation of
 specifications that describes a capability for delivering events,
@@ -24,7 +24,7 @@ extra to support _web sockets_ beyond that which is provided by the web
 server.
 
 [[sse-with-yada]]
-== SSE with yada
+=== SSE with yada
 
 To create Server Sent Event streams with yada, return a stream of data
 from a response.
