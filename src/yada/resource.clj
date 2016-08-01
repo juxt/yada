@@ -68,6 +68,7 @@
    i/TRACE
    i/method-allowed?
    i/parse-parameters
+   i/capture-proxy-headers
    sec/authenticate
    i/get-properties
    sec/authorize

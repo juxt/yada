@@ -82,6 +82,29 @@
     (assoc ctx :cookies cookies)
     ctx))
 
+(defn capture-proxy-headers [ctx]
+
+  (let [req (:request ctx)
+
+        scheme (or
+                ;; As defined in RFC 7239
+                (get-in req [:headers "forwarded-proto"])
+
+                ;; Unofficial, but used by Apache and NGINX
+                (get-in req [:headers "x-forwarded-proto"])
+
+                ;; Microsoft-specific extension
+                (when (= "on" (get-in req [:headers "front-end-https"]))
+                  :https)
+
+                ;; We fallback to the detected scheme, which is pretty much
+                ;; always http
+                (:scheme req))
+
+        req' (assoc req :scheme (keyword scheme))]
+
+    (assoc ctx :request req')))
+
 (defn parse-parameters
   "Parse request and coerce parameters. Capture cookies."
   [ctx]
