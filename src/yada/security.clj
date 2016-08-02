@@ -175,15 +175,15 @@
 
 (defn security-headers [ctx]
   (let [scheme (-> ctx :request :scheme)
-        https (or (= scheme :https)
-                  (get-in ctx [:request :headers "x-forwarded-for"]))]
+        https? (= scheme :https)]
+
     (cond-> ctx
-      https (assoc-in [:response :headers "strict-transport-security"]
-                      (format
-                       "max-age=%s; includeSubdomains"
-                       (get-in ctx [:strict-transport-security :max-age] 31536000)))
-      https (assoc-in [:response :headers "content-security-policy"]
-                      (get-in ctx [:content-security-policy] "default-src https: data: 'unsafe-inline' 'unsafe-eval'"))
+      https? (assoc-in [:response :headers "strict-transport-security"]
+                       (format
+                        "max-age=%s; includeSubdomains"
+                        (get-in ctx [:strict-transport-security :max-age] 31536000)))
+      https? (assoc-in [:response :headers "content-security-policy"]
+                       (get-in ctx [:content-security-policy] "default-src https: data: 'unsafe-inline' 'unsafe-eval'"))
       true (assoc-in [:response :headers "x-frame-options"]
                      (get ctx :x-frame-options "SAMEORIGIN"))
       true (assoc-in [:response :headers "x-xss-protection"]
