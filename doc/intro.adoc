@@ -17,7 +17,7 @@ when you need it to, to feature-rich secure services that can handle the
 most demanding workloads, while remaining faithful to the HTTP
 standards.
 
-=== Say 'Hello!' to yada!
+=== Say 'Hello!' to [yada]#yada#!
 
 It's quick to get started with [yada]#yada# without knowing how it works - it's easy to get started even if you only have a basic knowledge of Clojure.
 
