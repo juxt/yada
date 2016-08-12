@@ -14,8 +14,8 @@
          (as-handler routes)
          (merge aleph-options {:port (or (:port aleph-options) 0) :raw-stream? true}))]
     {:port (aleph.netty/port server)
-     :close (fn [] (.close server))}))
+     :close (fn [] (.close server))
+     :server server}))
 
 ;; Alias
 (def ^:deprecated server listener)
-
