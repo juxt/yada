@@ -3,28 +3,32 @@
 
 [yada]#yada# is a web library for Clojure that lets you create websites and web APIs.
 
-Most web libraries to the same thing: call your code with some request data and ask you to return a response. This leaves the responsibililty for setting the correct status code and response headers with you, the developer.
+Despite some differences, virtually all web libraries do the same thing: call your code with some request data and ask you to return a response, leaving the bulk of the responsibililty for implementing the HTTP standards on your shoulders, from status codes, response headers and ensuring semantics have been followed properly.
 
-[yada]#yada# is _different_ - rather than leaving all the implementation details to you, it helps you out in _doing the right thing_, setting the correct statuses and headers, and creating services that align better with the HTTP specifications, thereby creating a link:https://www.pandastrike.com/posts/20151019-create-more-web[_better web_].
+[yada]#yada# is *different*. Rather than leaving all the implementation details to you, it helps you out in _doing the right thing_ by the HTTP standards, thereby creating a link:https://www.pandastrike.com/posts/20151019-create-more-web[_better web_].
 
-Using [yada]#yada# for your web project will allow you to finally exploit and benefit from the many outstanding features contained in the design of HTTP, for scale, flexibility, longevity and interoperability.
+It achieves this by providing you with a highly configurable handler that is general enough to use in the vast majority of cases. Rather than _coding_ the handler, the developer only has to _configure_ one. This declarative approach provides greater scope for *accuracy*, *consistency* and *re-use*.
 
-=== [yada]#yada#'s design goals:
+[yada]#yada# represents a break from the traditional yet stale approach of building web backends that can trace its roots all the way back to the days of https://en.wikipedia.org/wiki/Common_Gateway_Interface[Common Gateway Interface]. While this new approach exploits the data-oriented philosophy of Clojure to the full, there's no reason it could not be copied by new web libraries in other languages.
 
-[yada]#yada# is not an experiment. It is designed for production use in demanding and critical web back-ends.
+Using [yada]#yada# for your web project will allow you to finally exploit and benefit from the many features embodied in the outstanding design of HTTP, for *scale*, *flexibility*, *security*, *longevity* and *interoperability*.
+
+.Design goals
+****
+[yada]#yada# is designed to meet the following goals:
 
 - Be easy to use for intermediate Clojure developers
 - Comprehensive compliance with HTTP standards over pragmatism and performance
 - Increase productivity through re-use
 - Handle large workloads with reasonable performance
 - Support multiple architectural styles, including Hypermedia APIs (REST)
+****
 
-[yada]#yada# is sufficiently quick-and-easy for quick prototype work but scales up
-when you need it to, to feature-rich secure services that can handle the
-most demanding workloads, while remaining faithful to the HTTP
-standards.
+[yada]#yada# is not an experiment. It is designed for production use in demanding and critical web back-ends.
 
-Some familiarity with HTTP will help, but as you learn how to wield [yada]#yada# you will also discover and learn more about the HTTP standards as you go.
+[yada]#yada# is sufficiently quick-and-easy for quick prototype work but scales up when you need it to, to feature-rich secure services that can handle the most demanding workloads, while remaining faithful to the HTTP standards.
+
+Some familiarity with HTTP will help you understand [yada]#yada# concepts quicker, but isn't absolutely necessary. As you learn how to wield [yada]#yada# you will also discover and learn more about the HTTP standards as you go.
 
 === Say 'Hello!' to [yada]#yada#!
 
