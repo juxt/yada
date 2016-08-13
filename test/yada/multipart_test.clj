@@ -186,7 +186,11 @@
     (is (= "type" (:type parsed-header)))
     (is (= "bar" (get-in parsed-header [:params "foo"])))
     (is (= "b" (get-in parsed-header [:params "a"])))
-    (is (= "abc" (get-in parsed-header [:params "c"])))))
+    (is (= "abc" (get-in parsed-header [:params "c"]))))
+  (let [parsed-header (parse-content-disposition-header "form-data; name=\"file\"; filename=\"data.csv\"")]
+    (is (= "form-data" (:type parsed-header)))
+    (is (= "file" (get-in parsed-header [:params "name"])))
+    (is (= "data.csv" (get-in parsed-header [:params "filename"])))))
 
 (def image-size 339773)
 

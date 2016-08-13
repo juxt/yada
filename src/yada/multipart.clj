@@ -499,7 +499,7 @@
      :params
      (into {}
            (for [[_ nm v1 v2]
-                 (re-seq (re-pattern (str OWS ";" OWS "([\\w-]+)" OWS "=" OWS "(?:([\\w-]+)|\"([\\w-]+)\")")) params)]
+                 (re-seq (re-pattern (str OWS ";" OWS "([\\w-]+)" OWS "=" OWS "(?:([\\w-]+)|\"([^\"]+)\")")) params)]
              [nm (or v1 v2)]))}))
 
 (defn xf-parse-content-disposition []
