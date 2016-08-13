@@ -213,8 +213,11 @@ convenience of terse, expressive short-hand descriptions."}
 
 (s/defschema Consumer
   "A consumer is a reducing function that is called with the request's
-  body payload chunks"
-  {(s/optional-key :consumer) (s/=> Context Context s/Any)})
+  body payload chunks. Alternately, a resource can define a multipart consumer
+  implementing `yada.multipart/PartConsumer` which will be used for multipart
+  form-data requests."
+  {(s/optional-key :consumer) (s/=> Context Context s/Any)
+   (s/optional-key :part-consumer) s/Any})
 
 (s/defschema MethodParametersCoercionMatchers
   "A map of coercion matchers as required by `schema.coerce/coercer`."
