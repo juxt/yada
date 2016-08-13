@@ -50,8 +50,9 @@
   {:dev {:main yada.dev.main
          :jvm-opts ["-Xms1g" "-Xmx1g"
                     "-server"
-                    "-Dio.netty.leakDetectionLevel=advanced"
-                    "-Dio.netty.allocator.numDirectArenas=0"]
+                    "-Dio.netty.leakDetectionLevel=paranoid"
+                    ;; "-Dio.netty.allocator.numDirectArenas=0"
+                    ]
 
          :pedantic? :abort
 
