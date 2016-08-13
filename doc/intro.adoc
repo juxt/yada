@@ -1,12 +1,19 @@
 [[introduction]]
 == Introduction
 
-[yada]#yada# is a web library written in Clojure that lets you create websites
-and web APIs.
+[yada]#yada# is a web library for Clojure that lets you create websites and web APIs.
 
-Design goals:
+Most web libraries to the same thing: call your code with some request data and ask you to return a response. This leaves the responsibililty for setting the correct status code and response headers with you, the developer.
 
-- Be easy of use for intermediate Clojure developers
+[yada]#yada# is _different_ - rather than leaving all the implementation details to you, it helps you out in _doing the right thing_, setting the correct statuses and headers, and creating services that align better with the HTTP specifications, thereby creating a link:https://www.pandastrike.com/posts/20151019-create-more-web[_better web_].
+
+Using [yada]#yada# for your web project will allow you to finally exploit and benefit from the many outstanding features contained in the design of HTTP, for scale, flexibility, longevity and interoperability.
+
+=== [yada]#yada#'s design goals:
+
+[yada]#yada# is not an experiment. It is designed for production use in demanding and critical web back-ends.
+
+- Be easy to use for intermediate Clojure developers
 - Comprehensive compliance with HTTP standards over pragmatism and performance
 - Increase productivity through re-use
 - Handle large workloads with reasonable performance
@@ -16,6 +23,8 @@ Design goals:
 when you need it to, to feature-rich secure services that can handle the
 most demanding workloads, while remaining faithful to the HTTP
 standards.
+
+Some familiarity with HTTP will help, but as you learn how to wield [yada]#yada# you will also discover and learn more about the HTTP standards as you go.
 
 === Say 'Hello!' to [yada]#yada#!
 
@@ -76,16 +85,23 @@ With [yada]#yada#, we transform a resource into a handler using the `handler` fu
 (yada/handler (yada/resource {…}))
 ----
 
-A handler can be called as a function, with a single argument representing an HTTP **request**. It returns a value representing the corresponding HTTP response. (If you are familiar with Ring, this is the Ring handler, but not one you have to write yourself!)
+A handler can be called as a function, with a single argument representing an HTTP **request**. It returns a value representing the corresponding HTTP response.
+
+NOTE: A [yada]#yada# handler is an instance of a `yada.handler/Handler` record. Since this record satisfies `clojure.lang.IFn`, [yada]#yada# handlers behave just like normal Ring handlers and can be used wherever you might use a Ring handler.
 
 === Serving requests
 
-To use [yada]#yada# to create real responses to real HTTP requests, you need to add [yada]#yada# to a web-server, such as Aleph or Immutant. The web server takes care of the networking and messages of HTTP (RFC 7230), while [yada]#yada# focuses on the semantics and content (starting with RFC 7231).
+To use [yada]#yada# to create real responses to real HTTP requests, you need to add [yada]#yada# to a web-server. The web server takes care of the networking and messages of HTTP (RFC 7230), while [yada]#yada# focuses on the semantics and content (RFC 7231 and upwards).
 
-To write real applications, you also need a router that understands URIs, and [yada]#yada# has some features that are enabled when used with bidi, although there is nothing to stop you using [yada]#yada# with other routing libraries.
+[NOTE]
+--
+Currently, the only web server you can use is link:https://github.com/ztellman/aleph[icon:github[]ztellman/aleph]. This is because [yada]#yada# is built on an asynchronous abstraction provided by link:https://github.com/ztellman/manifold[icon:github[]ztellman/manifold]. However, there is no technical reason why, in future, other web servers can't be wrapped by manifold.
+
+In the meantime, Aleph (which wraps a much bigger library, Netty) provides a very capable and performant server.
+--
+
+To write real applications you also need a router that understands URIs, and [yada]#yada# has some features that are enabled when used with https://github.com/juxt/bidi[icon:github[]juxt/bidi], although there is nothing to stop you using [yada]#yada# with other routing libraries.
 
 === Conclusion
 
-That's [yada]#yada# in a nutshell, but the quickest way to to learn it is to set up an environment and have a play.
-
-The link:{next}[next chapter] explains how to do that.
+That's [yada]#yada# in a nutshell, but the quickest way to to learn it is to set up an environment and play. That's what we'll do in the <<getting-started,next chapter>>.
