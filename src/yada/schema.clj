@@ -425,7 +425,6 @@ convenience of terse, expressive short-hand descriptions."}
           ResourceParameters
           Produces
           Consumes
-          Consumer
           Methods
           Responses
           SecurityHeaders
