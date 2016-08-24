@@ -8,7 +8,9 @@
 .underline { text-decoration: underline; }
 </style>
 <link rel="stylesheet" href="static/css/reveal.css"/>
+
 <link rel="stylesheet" href="static/css/theme/juxt.css" id="theme"/>
+
 <link rel="stylesheet" href="static/css/extra.css"/>
 <link rel="stylesheet" href="static/lib/css/zenburn.css"/>
 <!-- If the query includes 'print-pdf', include the PDF print sheet -->
@@ -25,11 +27,7 @@
 <body>
 <div class="reveal">
 <div class="slides">
-<section id="sec-title-slide">
-<h1>Introduction to <i>yada</i></h1>
-<h2>Malcolm Sparks</h2>
-<h2><a href="mailto:@malcolmsparks">@malcolmsparks</a></h2>
-<h2></h2>
+<section id="sec-title-slide"><h1 class="title">Introduction to <i>yada</i></h1><h2 class="author">Malcolm Sparks</h2><p class="date">Created: 2016-08-24 Wed 19:21</p>
 </section>
 <aside class="notes">
 <p>
@@ -116,7 +114,7 @@ To build HTTP services in Clojure, we use Ring.
 <h2 id="orgheadline5">Ring loves Data!</h2>
 <div class="org-src-container">
 
-<pre><code class="clojure">(def request
+<pre><code class="clojure" >(def request
   {:server-port 443,
    :server-name "www.google.com",
    :remote-addr "218.29.32.10",
@@ -130,7 +128,7 @@ To build HTTP services in Clojure, we use Ring.
 
 <div class="org-src-container">
 
-<pre><code class="clojure">(def response
+<pre><code class="clojure" >(def response
   {:status 200
    :headers {"content-type" "text/plain;charset=utf-8"}
    :body "Hello World!"})
@@ -152,8 +150,8 @@ Compared to the old object-oriented interfaces of Java servlets and co., this is
 <h2 id="orgheadline6">But&#x2026; Ring middleware?</h2>
 <div class="org-src-container">
 
-<pre><code class="clojure">(def api
-  (-&gt; routes
+<pre><code class="clojure" >(def api
+  (-> routes
       wrap-keyword-params
       wrap-params
       wrap-head
@@ -248,7 +246,7 @@ HEAD allows clients to see the headers they would get from a GET request without
 <h2 id="orgheadline10">Example A: wrap-head</h2>
 <div class="org-src-container">
 
-<pre><code class="clojure">(defn head-request
+<pre><code class="clojure" >(defn head-request
   "Turns a HEAD request into a GET."
   {:added "1.2"}
   [request]
@@ -296,7 +294,7 @@ Yes, it's compliant. But it's also inefficient and a waste of resources that cou
 <h2 id="orgheadline11">Example B: Compojure routing</h2>
 <div class="org-src-container">
 
-<pre><code class="clojure">(routes
+<pre><code class="clojure" >(routes
   (GET "/hello" [] (fn [req] "Hello World!"))
   (POST "/hello" [] (fn [req] (launch-missiles!))))
 </code></pre>
@@ -363,7 +361,7 @@ But let's look at Ring's implementation:
 <h2 id="orgheadline13">Example C: wrap-modified</h2>
 <div class="org-src-container">
 
-<pre><code class="clojure">(defn wrap-not-modified
+<pre><code class="clojure" >(defn wrap-not-modified
   "Middleware that returns a 304 Not Modified from the wrapped handler
   if the handler response has an ETag or Last-Modified header, and the
   request has a If-None-Match or If-Modified-Since header that matches
@@ -371,7 +369,7 @@ But let's look at Ring's implementation:
   {:added "1.2"}
   [handler]
   (fn [request]
-    (-&gt; (handler request) ; WAT?
+    (-> (handler request) ; WAT?
         (not-modified-response request))))
 </code></pre>
 </div>
@@ -643,22 +641,22 @@ We can even use functions too. But now, since the yada function can take an opti
 <h2 id="orgheadline24">and so on…</h2>
 <div class="org-src-container">
 
-<pre><code class="clojure">["/talks/" (yada (clojure.java.io/file "talks"))]
+<pre><code class="clojure" >["/talks/" (yada (clojure.java.io/file "talks"))]
 </code></pre>
 </div>
 
 <div class="org-src-container">
 
-<pre class="fragment appear"><code class="clojure">(yada ["A" "B" "C"])
+<pre class="fragment appear"><code class="clojure" >(yada ["A" "B" "C"])
 
 (yada {:do "a deer, a female deer"
        :re "(let's stop this now)"}
 
 (yada (new-template-resource "page.html" {:title "yada"}))
 
-(yada (map-&gt;PostgresTable {:table "ACCOUNTS"}))
+(yada (map->PostgresTable {:table "ACCOUNTS"}))
 
-(-&gt; "Let's go meta!" yada yada yada)
+(-> "Let's go meta!" yada yada yada)
 </code></pre>
 </div>
 
@@ -697,7 +695,7 @@ There are lots of features in yada, and I've still got a long list of things sti
 <h2 id="orgheadline26">Parameter coercions</h2>
 <div class="org-src-container">
 
-<pre><code class="clojure">(properties [_]
+<pre><code class="clojure" >(properties [_]
  {:parameters
   {:get {:path {"dept" String}
          :query {"order" #{:asc :desc}}}
@@ -746,7 +744,7 @@ yada has a comprehensive content negotiation facility built-in, which allows a w
 
 <div class="org-src-container">
 
-<pre><code class="clojure">(properties
+<pre><code class="clojure" >(properties
  [_]
  {:representations
   [{:media-type #{"text/html" "text/plain"}
@@ -772,7 +770,7 @@ For example, it might be that you can serve English and Finnish text in UTF-8 bu
 
 <div class="org-src-container">
 
-<pre><code class="clojure">(properties
+<pre><code class="clojure" >(properties
  [_]
  {:representations
   [{:media-type #{"application/json"
@@ -825,7 +823,7 @@ Describe your whole API in data
 
 <div class="org-src-container">
 
-<pre><code class="clojure">(def api
+<pre><code class="clojure" >(def api
   ["/" {"hello" (yada "Hello World!" {:id :hello})
         "hello-atom" (yada (atom "Hello World!"))}])
 </code></pre>
@@ -849,7 +847,7 @@ Last year, when I saw Tommi's talk in Poland about Swagger, he mentioned that yo
 <h2 id="orgheadline30">Built-in Swagger!</h2>
 <div class="org-src-container">
 
-<pre><code class="clojure">(def api
+<pre><code class="clojure" >(def api
   ["/hello-api"
 
    (yada/swaggered
@@ -897,10 +895,10 @@ Because everything we need is now in a data model, we can easily transform it to
 <h2 id="orgheadline32">Swagger (behind the curtain)</h2>
 <div class="org-src-container">
 
-<pre><code class="clojure">(defn swaggered [info route]
+<pre><code class="clojure" >(defn swaggered [info route]
   (let [spec (merge info
-                    {:paths (-&gt;&gt; route bidi/route-seq …)})]
-    (-&gt;Swaggered (yada (-&gt;SwaggerSpec spec (now))) route)))
+                    {:paths (->> route bidi/route-seq …)})]
+    (->Swaggered (yada (->SwaggerSpec spec (now))) route)))
 </code></pre>
 </div>
 
@@ -922,7 +920,7 @@ Then it builds a bidi tree node, giving it the Swagger specification wrapped as 
 <h2 id="orgheadline33">Swaggered record</h2>
 <div class="org-src-container">
 
-<pre><code class="clojure">(defrecord Swaggered [spec route]
+<pre><code class="clojure" >(defrecord Swaggered [spec route]
 
   bidi.bidi/Matched
   (resolve-handler [this m]
@@ -949,7 +947,7 @@ Here's the code for the bidi tree node. When matching a URI, it checks to see if
 <h2 id="orgheadline34">SwaggerSpec record</h2>
 <div class="org-src-container">
 
-<pre><code class="clojure">(require '[ring.swagger.swagger2 :as rs])
+<pre><code class="clojure" >(require '[ring.swagger.swagger2 :as rs])
 
 (defrecord SwaggerSpec [spec created-at]
   p/Properties
@@ -964,7 +962,7 @@ Here's the code for the bidi tree node. When matching a URI, it checks to see if
   (properties [_ ctx]
     {:last-modified created-at :version spec})
   Get
-  (GET [_ ctx] (-&gt; ctx :properties ::swagger-json)))
+  (GET [_ ctx] (-> ctx :properties ::swagger-json)))
 </code></pre>
 </div>
 
@@ -1002,7 +1000,7 @@ For the actual GET method we pull out the swagger spec, it's still a Clojure map
 <h2 id="orgheadline35">Data transformation</h2>
 <div class="org-src-container">
 
-<pre><code class="clojure">(def api
+<pre><code class="clojure" >(def api
   ["/"
    [["hello" (yada "Hello World!" {:id ::hello})]
     ["hello-atom" (yada (atom "Hello World!"))]]])
@@ -1086,14 +1084,14 @@ And so yada completely supports async, it's built on Zach Tellman's manifold, wh
 <h2 id="orgheadline38">Return a future</h2>
 <div class="org-src-container">
 
-<pre><code class="clojure">;; 'Hello World!' is now stored in a file
+<pre><code class="clojure" >;; 'Hello World!' is now stored in a file
 (yada (fn [ctx] (read "greeting.txt")))
 </code></pre>
 </div>
 
 <div class="org-src-container">
 
-<pre><code class="clojure">;; We're about to do some IO, let's return a future
+<pre><code class="clojure" >;; We're about to do some IO, let's return a future
 (yada (fn [ctx] (future (read "greeting.txt"))))
 </code></pre>
 </div>
@@ -1112,7 +1110,7 @@ It's hard to express how awesome manifold is. Whenever you need to do some I/O i
 <h2 id="orgheadline39">Or a promise</h2>
 <div class="org-src-container">
 
-<pre><code class="clojure">;; Asynchronous GET request with callback
+<pre><code class="clojure" >;; Asynchronous GET request with callback
 (let [p (promise)]
   (http-kit/request
    {:url "www.google.com"}
@@ -1140,7 +1138,7 @@ Here's a full search engine implementation!
 
 <div class="org-src-container">
 
-<pre><code class="clojure">(defrecord ClojureSearchEngine []
+<pre><code class="clojure" >(defrecord ClojureSearchEngine []
   Properties
   (properties [_]
     {:parameters {:get {:query {"q" String}}}})
@@ -1151,7 +1149,7 @@ Here's a full search engine implementation!
           (get-in ctx [:parameters "q"])))))
 
 ;; Bidi!
-["/search" (yada (-&gt;SearchEngine))]
+["/search" (yada (->SearchEngine))]
 </code></pre>
 </div>
 
@@ -1197,9 +1195,9 @@ yada allows you to return deferred values anytime it makes sense to do so, and e
 <h2 id="orgheadline42">Server Sent Events</h2>
 <div class="org-src-container">
 
-<pre><code class="clojure">(defn hello-sse [ch]
+<pre><code class="clojure" >(defn hello-sse [ch]
   (go-loop [t 0]
-    (when (&gt;! ch (format "Hello World! (%d)" t))
+    (when (>! ch (format "Hello World! (%d)" t))
       (&lt;! (timeout 100))
       (recur (inc t))))
   (yada ch))
