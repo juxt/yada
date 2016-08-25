@@ -1,4 +1,3 @@
-[[routing]]
 == Routing
 
 Since the `yada` function returns a Ring-compatible handler, it is
@@ -25,7 +24,6 @@ systems that it is no longer satisfactory to rely on ad-hoc means of
 constructing these URIs, they must be generated from the same tree of
 data that defines the API route structure.
 
-[[declaring-your-website-or-api-as-a-bidiyada-tree]]
 === Declaring your website or API as a bidi/yada tree
 
 A bidi routing model is a hierarchical pattern-matching tree. The tree
@@ -39,7 +37,8 @@ The end result might be a large and deeply nested tree, but one that can
 be manipulated, stored, serialized, distributed and otherwise processed
 as a single dataset.
 
-....
+[source,clojure]
+----
 (require
   [yada.yada :refer [resource]]
   [hiccup.core :refer [html]]
@@ -65,7 +64,7 @@ as a single dataset.
       :produces #{"text/html" "application/json"}}}}]
   …
  ]]
-....
+----
 
 A yada handler (created by yada's `yada` function) and a yada resource
 (created by yada's `resource` constructor function) that extends bidi's
@@ -75,7 +74,6 @@ of an incoming request's URI.
 For a more thorough introduction to bidi, see
 https://github.com/juxt/bidi/README.md.
 
-[[declaring-policies-across-multiple-resources]]
 === Declaring policies across multiple resources
 
 Many web frameworks allow you to set a particular behavioral policy

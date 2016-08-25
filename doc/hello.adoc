@@ -18,7 +18,7 @@ Let's look at the route definition in the file `src/edge/hello.clj` (the same on
 
 In this route structure, any incoming request with a path of `/hello` gets sent to the [yada]#yada# handler defined by `(yada/handler "Hello World!\n")`.
 
-Let's focus on this handler. We could have used a standard Ring function `(fn [req] {...})` here but instead we created one with `yada/handler`, which takes a *resource* and turns it into a handler function.
+Let's focus on this handler. We could have used a standard Ring function `(fn [req] {…})` here but instead we created one with `yada/handler`, which takes a *resource* and turns it into a handler function.
 
 A *resource* is a Clojure map (or more accurately, a Clojure record) that completely describes the methods, properties, representations, security and other miscellaneous properties of a web resource, as data. The reason we can use a string (`"Hello World"`) here is because [yada]#yada# contains logic to _coerce_ a string into a resource.
 
@@ -26,12 +26,14 @@ NOTE: There are a number of built-in coercions from various Clojure types and of
 
 === Examining the response
 
-We now send a request which gets routed to our handler which creates the response. Let's examine this response in more detail, via `curl`. The `-i` option shows us the HTTP headers as well as the body.
+Let's send a request which gets routed to our handler, which creates the response. Let's examine this response in more detail, via *curl*.
 
 [source,curl]
 ----
 curl -i http://localhost:3000/hello
 ----
+
+TIP: The `-i` option to *curl* shows us the HTTP status and response headers as well as the body, which is very useful for debugging. If you ever need to see the request headers too, add `-v`.
 
 The response should be something like following (note that headers may appear in a different order):
 
@@ -90,7 +92,7 @@ Content-Type: text/plain;charset=utf-8
 Vary: accept-charset
 ----
 
-Since the Java platform can encode a string in other charsets, [yada]#yada# adds a _Vary_ header to signal to the user-agent (and proxy caches in between) that the body can change if a request contained a different _Accept-Charset_ header. Java installations support many different charsets, so [yada]#yada# does too.
+Since the Java platform can encode a string to a number of charsets, [yada]#yada# adds a _Vary_ header to signal to the user-agent (and proxy caches in between) that the body can change if a request contained a different _Accept-Charset_ header. Java installations support many different charsets, so [yada]#yada# does too.
 
 Next we are given the length of the body.
 
@@ -117,7 +119,7 @@ A common condition is whether the resource has been modified since a particular 
 
 We can test this by setting the *If-Modified-Since* header in the request.
 
-Here's how we might do this using the curl command.
+Here's how we might do this using the *curl* command.
 
 [source]
 ----
@@ -408,9 +410,11 @@ We get a 412, which means a pre-condition failed. The pre-condition in question 
 
 There was one more method indicated by the *Allow* header of our `OPTIONS` request, which was `HEAD`. Let's try this now.
 
+TIP: Use the option --head to *curl* to tell it to issue a HEAD request (and not to expect a request body).
+
 [source]
 ----
-curl -i http://localhost:3000/hello -X HEAD
+curl -i --head http://localhost:3000/hello
 ----
 
 [source,http]
@@ -516,14 +520,14 @@ This second version uses the Clojure threading macro `->` which wraps the route 
 
 The purpose of `yada/swaggered` is to augment the route structure given to it with a route to `swagger.json`, which responds with a Swagger description of the route structure in JSON. Since [yada]#yada# resources are data maps, this is a relatively simple data transformation of the route structure.
 
-We can test the resource is available at its `/api` location with this `curl` command:
+We can test the resource is available at its `/api` location with *curl*:
 
 [source,curl]
 ----
 curl -i http://localhost:3000/api/hello
 ----
 
-We can also query the Swagger description with this `curl` command:
+We can also query the Swagger description with *curl*:
 
 [source,curl]
 ----

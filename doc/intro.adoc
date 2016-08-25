@@ -91,7 +91,7 @@ With [yada]#yada#, we transform a resource into a handler using the `handler` fu
 
 A handler can be called as a function, with a single argument representing an HTTP **request**. It returns a value representing the corresponding HTTP response.
 
-NOTE: A [yada]#yada# handler is an instance of a `yada.handler/Handler` record. Since this record satisfies `clojure.lang.IFn`, [yada]#yada# handlers behave just like normal Ring handlers and can be used wherever you might use a Ring handler.
+NOTE: A [yada]#yada# handler is an instance of the `yada.handler/Handler` record. Since this record satisfies `clojure.lang.IFn`, [yada]#yada# handlers behave just like normal Ring handlers and can be used wherever you might use a Ring handler.
 
 === Serving requests
 
