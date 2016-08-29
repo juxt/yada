@@ -126,7 +126,7 @@ Content-Type: text/plain; charset=UTF-8
 5
 --Ep2kpEHnLFQ_Zk6_KlJVexP-nMb5kF-5--"))
 
-(defrecord MyPartConsumer []
+(defrecord IntAndStrPartConsumer []
   mp/PartConsumer
   (consume-part [_ state part]
     (update state :parts (fnil conj []) (mp/map->DefaultPart part)))
@@ -135,14 +135,14 @@ Content-Type: text/plain; charset=UTF-8
   (part-coercion-matcher [_]
     ;; Coerce a DefaultPart into the following keys
     (fn [schema]
-      (case schema
-        s/Str (fn [^DefaultPart part]
-                (let [offset (get part :body-offset 0)]
-                  (String. (:bytes part) offset (- (count (:bytes part)) offset))))
-        s/Int (fn [^DefaultPart part]
-                (let [offset (get part :body-offset 0)]
-                  45))
-        nil))
+      (get
+        {s/Str (fn [^DefaultPart part]
+                 (let [offset (get part :body-offset 0)]
+                   (String. (:bytes part) offset (- (count (:bytes part)) offset))))
+         s/Int (fn [^DefaultPart part]
+                 (let [offset (get part :body-offset 0)]
+                   45))}
+        schema))
 
     ;; this is a lookup table of schema->matcher
     ;; matcher takes a defaultpart and returns something that should match the schema
@@ -168,9 +168,19 @@ Content-Type: text/plain; charset=UTF-8
       (catch Exception e
         (is (nil? e)))))
 
+  (testing "int as value using built-in coercion plus custom part consumer"
+    (try
+      (let [result (process-multipart-body
+                     {:parameters    {:body {:foo s/Int}}
+                      :part-consumer (->IntAndStrPartConsumer)}
+                     int-as-value-body)]
+        (is (= {:foo 5} result)))
+      (catch Exception e
+        (is (nil? e)))))
+
   (testing "int as value using hand-wired coercion"
     (try
-      (let [part-consumer (->MyPartConsumer)
+      (let [part-consumer (->IntAndStrPartConsumer)
             result (process-multipart-body
                      {:parameters        {:body {:foo s/Int}}
                       :part-consumer     part-consumer
@@ -179,7 +189,7 @@ Content-Type: text/plain; charset=UTF-8
                                             ;; note comments below, I think this is a bug
                                             (or
                                               (comment not needed as we are inside matcher now
-                                                (when matcher (matcher schema)))
+                                                       (when matcher (matcher schema)))
 
                                               (comment moved this up one)
                                               ((mp/part-coercion-matcher part-consumer) schema)
