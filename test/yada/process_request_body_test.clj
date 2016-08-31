@@ -139,9 +139,7 @@ Content-Type: text/plain; charset=UTF-8
         {s/Str (fn [^DefaultPart part]
                  (let [offset (get part :body-offset 0)]
                    (String. (:bytes part) offset (- (count (:bytes part)) offset))))
-         s/Int (fn [^DefaultPart part]
-                 (let [offset (get part :body-offset 0)]
-                   45))}
+         s/Int (constantly 123456)}
         schema))
 
     ;; this is a lookup table of schema->matcher
@@ -169,14 +167,11 @@ Content-Type: text/plain; charset=UTF-8
         (is (nil? e)))))
 
   (testing "int as value using built-in coercion plus custom part consumer"
-    (try
-      (let [result (process-multipart-body
-                     {:parameters    {:body {:foo s/Int}}
-                      :part-consumer (->IntAndStrPartConsumer)}
-                     int-as-value-body)]
-        (is (= {:foo 5} result)))
-      (catch Exception e
-        (is (nil? e)))))
+    (let [result (process-multipart-body
+                   {:parameters    {:body {:foo s/Int}}
+                    :part-consumer (->IntAndStrPartConsumer)}
+                   int-as-value-body)]
+      (is (= {:foo 123456} result))))
 
   (testing "int as value using hand-wired coercion"
     (try
@@ -199,6 +194,6 @@ Content-Type: text/plain; charset=UTF-8
 
                                               ((rsc/coercer :json) schema)))}}
                      int-as-value-body)]
-        (is (= {:foo 45} result)))
+        (is (= {:foo 123456} result)))
       (catch Exception e
         (is (nil? e))))))
