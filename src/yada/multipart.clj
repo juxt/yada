@@ -257,7 +257,7 @@
         (let [at-boundary?
               (= (seq (:dash-boundary m))
                  (seq (copy-bytes (:window m) 0 (:dash-boundary-size m))))]
-          
+
           (s/put! (:stream m) [(if at-boundary?
                                  {:type :part
                                   :bytes (copy-bytes-after-dash-boundary m 0 (:pos m))
@@ -641,8 +641,8 @@
                             (fn [schema]
                               (or
                                (when matcher (matcher schema))
-                               (coerce/+parameter-key-coercions+ schema)
                                ((part-coercion-matcher part-consumer) schema)
+                               (coerce/+parameter-key-coercions+ schema)
                                ((rsc/coercer :json) schema))))
                    params (coercer fields)]
                (if-not (schema.utils/error? params)
