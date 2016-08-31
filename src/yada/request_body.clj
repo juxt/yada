@@ -9,15 +9,13 @@
    [manifold.deferred :as d]
    [manifold.stream :as s]
    [ring.swagger.coerce :as rsc]
-   [ring.swagger.schema :as rs]
    [ring.util.request :as req]
    [ring.util.codec :as codec]
    [cognitect.transit :as transit]
    [schema.coerce :as sc]
    [schema.utils :refer [error? error-val]]
    [yada.coerce :as coerce]
-   [yada.media-type :as mt]
-   [yada.util :as util]))
+   [yada.media-type :as mt]))
 
 (def application_octet-stream
   (mt/string->media-type "application/octet-stream"))
@@ -97,62 +95,97 @@
 ;; Looking for multipart/form-data? Its defmethod can be found in
 ;; yada.multipart.
 
-(defmethod process-request-body "text/plain"
-  [ctx body-stream media-type & args]
-  (let [body-string (bs/to-string body-stream)]
-    (-> ctx
-        ;; TODO: Only if body parameter, and now coerce too!
-        (assoc-in [:parameters :body] body-string)
-        (assoc-in [:body] body-string))))
-
-(defn assoc-body-if-valid
-  ([ctx schema body]
-   (assoc-body-if-valid ctx schema {} body))
-  ([ctx schema coercion-matcher body]
-   (let [params ((sc/coercer schema coercion-matcher) body)]
-     (if-not (error? params)
-       (assoc-in ctx [:parameters :body] params)
-       (throw (ex-info "Malformed body" {:status 400
-                                         :error  (error-val params)}))))))
-
 (defmacro with-400-maybe [& body]
   `(try
      ~@body
      (catch Exception e#
        (throw (ex-info "Malformed body" {:status 400} e#)))))
 
+(defn coerced-body [body schema schema->matcher]
+  (let [coercer (sc/coercer schema schema->matcher)
+        result (coercer body)]
+    (when (error? result)
+      (throw (ex-info "Malformed body" {:status 400 :error (error-val result)})))
+    result))
+
+(defmulti parse-stream (fn [media-type stream] media-type))
+
+(defmethod parse-stream :default
+  [_ stream]
+  stream)
+
+(defmethod parse-stream "text/plain"
+  [_ stream]
+  (with-400-maybe (bs/to-string stream)))
+
+
+(defmethod process-request-body "text/plain"
+  [ctx body-stream media-type & args]
+  (let [body (parse-stream media-type body-stream)
+        schema (get-in ctx [:resource :methods (:method ctx) :parameters :body])
+        matcher (get-in ctx [:resource :methods (:method ctx) :coercion-matchers :body])
+        schema->matcher (or matcher sc/string-coercion-matcher)
+        coerced-body #(coerced-body body schema schema->matcher)]
+    (cond-> ctx
+            true (assoc-in [:body] body)
+            schema (assoc-in [:parameters :body] (coerced-body)))))
+
+(defmethod parse-stream "application/edn"
+  [_ stream]
+  (with-400-maybe (edn/read-string (bs/to-string stream))))
+
 (defmethod process-request-body "application/edn"
   [ctx body-stream media-type & args]
-  (let [body (with-400-maybe (edn/read-string (bs/to-string body-stream)))
-        schema (get-in ctx [:resource :methods (:method ctx) :parameters :body])]
+  (let [body (parse-stream media-type body-stream)
+        schema (get-in ctx [:resource :methods (:method ctx) :parameters :body])
+        matcher (get-in ctx [:resource :methods (:method ctx) :coercion-matchers :body])
+        schema->matcher (or matcher (constantly nil))
+        coerced-body #(coerced-body body schema schema->matcher)]
     (cond-> ctx
-      true (assoc-in [:body] body)
-      schema (assoc-body-if-valid schema body))))
+            true (assoc-in [:body] body)
+            schema (assoc-in [:parameters :body] (coerced-body)))))
+
+(defmethod parse-stream "application/json"
+  [_ stream]
+  (with-400-maybe (json/decode (bs/to-string stream) keyword)))
 
 (defmethod process-request-body "application/json"
   [ctx body-stream media-type & args]
-  (let [body (with-400-maybe (json/decode (bs/to-string body-stream) keyword))
+  (let [body (parse-stream media-type body-stream)
         schema (get-in ctx [:resource :methods (:method ctx) :parameters :body])
-        matcher (get-in ctx [:resource :methods (:method ctx) :coercion-matchers :body])]
+        matcher (get-in ctx [:resource :methods (:method ctx) :coercion-matchers :body])
+        schema->matcher (or matcher sc/json-coercion-matcher)
+        coerced-body #(coerced-body body schema schema->matcher)]
     (cond-> ctx
-      true (assoc-in [:body] body)
-      schema (assoc-body-if-valid schema (fn [schema]
-                                           (or (when matcher (matcher schema))
-                                               (sc/json-coercion-matcher schema)))
-                                  body))))
+            true (assoc-in [:body] body)
+            schema (assoc-in [:parameters :body] (coerced-body)))))
+
+(defmethod parse-stream "application/transit+json"
+  [_ stream]
+  (with-400-maybe (transit/read (transit/reader (bs/to-input-stream stream) :json))))
 
 (defmethod process-request-body "application/transit+json"
   [ctx body-stream media-type & args]
-  (let [body (with-400-maybe (transit/read (transit/reader (bs/to-input-stream body-stream) :json)))
-        schema (get-in ctx [:resource :methods (:method ctx) :parameters :body])]
+  (let [body (parse-stream media-type body-stream)
+        schema (get-in ctx [:resource :methods (:method ctx) :parameters :body])
+        matcher (get-in ctx [:resource :methods (:method ctx) :coercion-matchers :body])
+        schema->matcher (or matcher (constantly nil))
+        coerced-body #(coerced-body body schema schema->matcher)]
     (cond-> ctx
-      true (assoc-in [:body] body)
-      schema (assoc-body-if-valid schema body))))
+            true (assoc-in [:body] body)
+            schema (assoc-in [:parameters :body] (coerced-body)))))
+
+(defmethod parse-stream "application/transit+msgpack"
+  [_ stream]
+  (with-400-maybe (transit/read (transit/reader (bs/to-input-stream stream) :msgpack))))
 
 (defmethod process-request-body "application/transit+msgpack"
   [ctx body-stream media-type & args]
-  (let [body (with-400-maybe (transit/read (transit/reader (bs/to-input-stream body-stream) :msgpack)))
-        schema (get-in ctx [:resource :methods (:method ctx) :parameters :body])]
+  (let [body (parse-stream media-type body-stream)
+        schema (get-in ctx [:resource :methods (:method ctx) :parameters :body])
+        matcher (get-in ctx [:resource :methods (:method ctx) :coercion-matchers :body])
+        schema->matcher (or matcher (constantly nil))
+        coerced-body #(coerced-body body schema schema->matcher)]
     (cond-> ctx
-      true (assoc-in [:body] body)
-      schema (assoc-body-if-valid schema body))))
+            true (assoc-in [:body] body)
+            schema (assoc-in [:parameters :body] (coerced-body)))))
