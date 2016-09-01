@@ -15,4 +15,7 @@
       "text/html;charset=utf-8;foo=bar" result
       "text/html; charset=utf-8;foo=bar" result
       "text/html; charset=utf-8;   \tfoo=bar" result
-      "image/png;q=0.5" {:name "image/png" :type "image" :subtype "png" :parameters {} :quality 0.5})))
+      "image/png;q=0.5" {:name "image/png" :type "image" :subtype "png" :parameters {} :quality 0.5}
+      "*/*" {:name "*/*" :type "*" :subtype "*" :parameters {} :quality 1.0}
+      "*" {:name "*/*" :type "*" :subtype "*" :parameters {} :quality 1.0}
+      "*; charset=utf-8; q=0.5" {:name "*/*" :type "*" :subtype "*" :parameters {"charset" "utf-8"} :quality 0.5})))

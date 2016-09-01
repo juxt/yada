@@ -25,11 +25,17 @@
                    "(" http-token ")"
                    "((?:" OWS ";" OWS http-token "=" http-token ")*)")))
 
+(def media-type-pattern-no-subtype
+  (re-pattern (str "(\\*)"
+                   "((?:" OWS ";" OWS http-token "=" http-token ")*)")))
+
 ;; TODO: Replace memoize with cache to avoid memory exhaustion attacks
 (memoize
  (defn string->media-type [s]
    (when s
-     (let [g (rest (re-matches media-type-pattern s))
+     (let [g (rest (or (re-matches media-type-pattern s)
+                       (concat (take 2 (re-matches media-type-pattern-no-subtype s))
+                               ["*" (last (re-matches media-type-pattern-no-subtype s))])))
            params (into {} (map vec (map rest (re-seq (re-pattern (str ";" OWS "(" http-token ")=(" http-token ")"))
                                                       (last g)))))]
        (->MediaTypeMap
