@@ -26,32 +26,32 @@
                    "((?:" OWS ";" OWS http-token "=" http-token ")*)")))
 
 ;; TODO: Replace memoize with cache to avoid memory exhaustion attacks
-(memoize
- (defn string->media-type [s]
-   (when s
-     (let [g (rest (re-matches media-type-pattern s))
-           params (into {} (map vec (map rest (re-seq (re-pattern (str ";" OWS "(" http-token ")=(" http-token ")"))
-                                                      (last g)))))]
-       (->MediaTypeMap
-        (str (first g) "/" (second g))
-        (first g)
-        (second g)
-        (dissoc params "q")
-        (if-let [q (get params "q")]
-          (try
-            (Float/parseFloat q)
-            (catch java.lang.NumberFormatException e
-              (float 1.0)))
-          (float 1.0)))))))
+(def string->media-type
+  (memoize
+   (fn [s]
+     (when s
+       (let [g (rest (re-matches media-type-pattern s))
+             params (into {} (map vec (map rest (re-seq (re-pattern (str ";" OWS "(" http-token ")=(" http-token ")"))
+                                                        (last g)))))]
+         (->MediaTypeMap
+          (str (first g) "/" (second g))
+          (first g)
+          (second g)
+          (dissoc params "q")
+          (if-let [q (get params "q")]
+            (try
+              (Float/parseFloat q)
+              (catch java.lang.NumberFormatException e
+                (float 1.0)))
+            (float 1.0))))))))
 
 ;; TODO: Replace memoize with cache to avoid memory exhaustion attacks
-(memoize
- (defn media-type->string [mt]
-   (when mt
-     (assert (instance? MediaTypeMap mt))
-     (.toLowerCase
-      (str (:name mt)
-           (apply str (for [[k v] (:parameters mt)]
-                        (str ";" k "=" v))))))))
-
-
+(def media-type->string
+  (memoize
+   (fn [mt]
+     (when mt
+       (assert (instance? MediaTypeMap mt))
+       (.toLowerCase
+        (str (:name mt)
+             (apply str (for [[k v] (:parameters mt)]
+                          (str ";" k "=" v)))))))))

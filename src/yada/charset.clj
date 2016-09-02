@@ -52,20 +52,21 @@
 ;; Accept-Charset field, then any charsets not explicitly mentioned in
 ;; the field are considered "not acceptable" to the client.
 
-(memoize
- (defn- string->charset* [s]
-   (let [g (rest (re-matches charset-pattern s))]
-     (when (last g)
-       (let [params (into {} (map vec (map rest (re-seq (re-pattern (str ";(" http-token ")=(" http-token ")"))
-                                                        (last g)))))]
-         (->CharsetMap
-          (first g)
-          (if-let [q (get params "q")]
-            (try
-              (Float/parseFloat q)
-              (catch java.lang.NumberFormatException e
-                (float 1.0)))
-            (float 1.0))))))))
+(def string->charset*
+  (memoize
+   (fn [s]
+     (let [g (rest (re-matches charset-pattern s))]
+       (when (last g)
+         (let [params (into {} (map vec (map rest (re-seq (re-pattern (str ";(" http-token ")=(" http-token ")"))
+                                                          (last g)))))]
+           (->CharsetMap
+            (first g)
+            (if-let [q (get params "q")]
+              (try
+                (Float/parseFloat q)
+                (catch java.lang.NumberFormatException e
+                  (float 1.0)))
+              (float 1.0)))))))))
 
 (defn- string->charsetmap [s]
   (string->charset* (str/trim s)))
