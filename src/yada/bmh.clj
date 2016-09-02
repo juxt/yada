@@ -14,7 +14,7 @@
 ;; T[pattern[i]] ← length(pattern) - 1 - i
 ;; return T
 
-(defn- preprocess [pattern]
+(defn- preprocess [^bytes pattern]
   (let [T (byte-array 256)]
     (dotimes [i 255]
       (aset-byte T i (count pattern)))
@@ -39,16 +39,17 @@
 ;;     skip ← skip + T[haystack[skip + length(needle) - 1]]
 ;;   return not-found
 
-(defn search [{:keys [length index pattern]} haystack & [limit]]
+(defn search [{:keys [length ^bytes index ^bytes pattern]} ^bytes haystack & [limit]]
   (let [limit (or limit (count haystack))]
-    (loop [skip 0 founds []]
+    (loop [skip (long 0) founds []]
       (if (>= (- limit skip) length)
         (let [found
               (loop [i (dec length)]
                 (when (= (aget haystack (+ skip i)) (aget pattern i))
                   (if (= i 0) skip (recur (dec i)))))]
-          (recur (+ skip (let [x (aget haystack (+ skip length -1))]
-                           (if (pos? x) (aget index x) length)))
+          (recur (long
+                  (+ skip (let [x (aget haystack (+ skip length -1))]
+                            (if (pos? x) (aget index x) length))))
                  (if found (conj founds found) founds)))
         ;; Return
         founds))))
