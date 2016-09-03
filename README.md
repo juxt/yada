@@ -4,13 +4,10 @@ yada is a web library for Clojure, designed to support the creation of productio
 
 It has the following features:
 
-* Standards-based, comprehensive HTTP coverage
-* Parameter coercion, automatic Swagger support
-* Async foundation based on [manifold](https://github.com/ztellman/manifold)
-* Protocol extensibility, extensible methods and mime-types
-* Built-in Swagger support
-* Many extensible security options
-* Interceptor-chain design
+* Standards-based, comprehensive HTTP coverage (content negotiation, conditional requests, etc.)
+* Parameter validation and coercion, automatic Swagger support
+* Rich extensibility (methods, mime-types, security and more)
+* Asynchronous, efficient interceptor-chain design built on [manifold](https://github.com/ztellman/manifold)
 * Excellent performance, suitable for heavy production workloads
 
 yada is a sibling library to [bidi](http://github.com/juxt/bidi) - whereas bidi is based on _routes as data_, yada is based on _resources as data_.
@@ -31,6 +28,8 @@ Add the following dependency to your
 
 ## Create a yada handler
 
+Typically, yada handlers are created from a configuation expressed in data.
+
 ```clojure
 (require '[yada.yada :as yada])
 
@@ -40,6 +39,8 @@ Add the following dependency to your
       {:produces "text/html"
        :response "<h1>Hello World!</h1>"}}})
 ```
+
+This is a simple example, there are a lot more options in yada than can be expressed here, but the approach is the same. The data configuration can be hand-authored, or generated programmatically leading enabling creation of consisntent APIs at an industrial scale.
 
 ## Dependencies
 
