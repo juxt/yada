@@ -2,9 +2,6 @@
 
 yada is a web library for Clojure, designed to support the creation of production services via HTTP.
 
-yada takes data declarations and produces a sophisticated Ring
-handler.
-
 It has the following features:
 
 * Standards-based, comprehensive HTTP coverage
@@ -31,6 +28,18 @@ Add the following dependency to your
 
 [![Clojars Project](http://clojars.org/yada/latest-version.svg)](http://clojars.org/yada)
 [![Build Status](https://travis-ci.org/juxt/yada.png)](https://travis-ci.org/juxt/yada)
+
+## Create a yada handler
+
+```clojure
+(require '[yada.yada :as yada])
+
+(yada/handler
+  {:methods
+    {:get
+      {:produces "text/html"
+       :response "<h1>Hello World!</h1>"}}})
+```
 
 ## Dependencies
 
