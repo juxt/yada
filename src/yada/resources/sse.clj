@@ -9,7 +9,7 @@
    clojure.core.async.impl.channels
    clojure.core.async.impl.protocols
    manifold.stream.async)
-  (import [clojure.core.async.impl.protocols ReadPort]))
+  (:import [clojure.core.async.impl.protocols ReadPort]))
 
 (extend-protocol ResourceCoercion
   ReadPort
