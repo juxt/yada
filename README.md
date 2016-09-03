@@ -1,16 +1,22 @@
 # yada
 
-yada is a web library for Clojure. It is a sibling library to [bidi](http://github.com/juxt/bidi) - whereas bidi is based on _routes as data_, yada is based on _resources as data_.
+yada is a web library for Clojure, designed to support the creation of production services via HTTP.
 
 yada takes data declarations and produces a sophisticated Ring
 handler.
 
-It has the following features
+It has the following features:
 
-* Comprehensive HTTP coverage
+* Standards-based, comprehensive HTTP coverage
 * Parameter coercion, automatic Swagger support
 * Async foundation based on [manifold](https://github.com/ztellman/manifold)
-* Protocol extensibility
+* Protocol extensibility, extensible methods and mime-types
+* Built-in Swagger support
+* Many extensible security options
+* Interceptor-chain design
+* Excellent performance, suitable for heavy production workloads
+
+yada is a sibling library to [bidi](http://github.com/juxt/bidi) - whereas bidi is based on _routes as data_, yada is based on _resources as data_.
 
 The user-manual for the latest (1.1.x) release is available at
 [https://juxt.pro/yada](https://juxt.pro/yada) and offline (see below).
