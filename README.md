@@ -105,7 +105,7 @@ feedback and suggestions.
 * Thomas van der Veen
 * Leandro Demartini
 * Craig McCraig of the clan McCraig
-* Imre Koszo
+* Imre Kószó
 * Luo Tian
 * Joshua Griffith
 * Joseph Fahey
@@ -117,6 +117,8 @@ feedback and suggestions.
 * Eric Fode
 * Leon Mergen
 * Greg Look
+* Tom Coupland
+* Mikkel Gravgaard
 
 Also, see the dependency list. In particular, yada would certainly not
 exist without the considerable efforts of those behind the following
