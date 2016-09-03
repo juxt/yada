@@ -4,6 +4,7 @@
   (:require
    [clojure.java.io :as io]
    [clojure.string :as str]
+   [clojure.set :as set]
    [clojure.tools.logging :refer :all]
    [byte-streams :as bs]
    [manifold.deferred :as d]
@@ -11,7 +12,9 @@
    clojure.core.async.impl.protocols)
   (:import
    [clojure.core.async.impl.protocols ReadPort]
-   [java.nio ByteBuffer]))
+   [java.nio ByteBuffer]
+   (java.util Map$Entry)
+   (clojure.lang IPersistentVector)))
 
 ;; Old comment :-
 ;; If this is something we can take from, in the core.async
@@ -158,9 +161,104 @@
   [m k]
   (or (get m k)
       (some (fn [[k* v]]
-              (when (and (set? k*) (contains? k* k)) v ))
+              (when (and (set? k*) (contains? k* k)) v))
             m)
       (get m *)))
+
+(defn disjoint*?
+  "Checks that map keys are disjoint. Meaning a given key matches only one mapping in the map."
+  [m]
+  (let [direct (set (filter #(not (set? %)) (keys (dissoc m *))))
+        sets (cons direct (filter set? (keys m)))]
+    (= (reduce + (map count sets))
+       (count (apply set/union sets)))))
+
+(defn- replace-set-key [map old-key new-key val]
+  (let [dis (dissoc map old-key)]
+    (cond
+      (= (count new-key) 0) dis
+      (= (count new-key) 1) (assoc dis (first new-key) val)
+      :else (assoc dis new-key val))))
+
+(defn dissoc*
+  "Like dissoc but keys can be sets and the wildcard '*' and it will
+  ensure that the returned map does not contain a mapping for key when
+  calling get* with the exception of the wildcard.
+
+  A few examples:
+  (dissoc* {200 :a #{400 401} :b * :c} 200) => {#{400 401} :b * :c}
+  (dissoc* {200 :a #{400 401} :b * :c} 400) => {200 :a 401 :b * :c}
+  (dissoc* {200 :a #{400 401} :b * :c} #{200 401}) => {400 :b * :c}"
+  ([map key]
+   (reduce-kv (fn [ret k val]
+                (cond
+                  (= key k) (dissoc ret k)
+                  (and (set? k) (set? key)) (let [d (set/difference k key)]
+                                              (if (< (count d) (count k))
+                                                (replace-set-key ret k d val)
+                                                ret))
+                  (and (set? key) (contains? key k)) (dissoc ret k)
+                  (and (set? k) (contains? k key)) (replace-set-key ret k (disj k key) val)
+                  :else ret))
+              map map))
+  ([map key & ks]
+   (let [ret (dissoc* map key)]
+     (if ks
+       (recur ret (first ks) (next ks))
+       ret))))
+
+(defn assoc*
+  "Like assoc but the keys can be sets and the wildcard '*' "
+  ([map key val]
+   (assoc (dissoc* map key) key val))
+  ([map key val & kvs]
+   (let [ret (assoc* map key val)]
+     (if kvs
+       (if (next kvs)
+         (recur ret (first kvs) (second kvs) (nnext kvs))
+         (throw (IllegalArgumentException.
+                  "assoc* expects even number of arguments after map/vector, found odd number")))
+       ret))))
+
+(defn conj*
+  ([map] map)
+  ([map o]
+   (cond
+     (instance? Map$Entry o) (let [^Map$Entry pair o]
+                               (assoc* map (.getKey pair) (.getValue pair)))
+     (instance? IPersistentVector o) (let [^IPersistentVector vec o]
+                                       (assoc* map (.nth vec 0) (.nth vec 1)))
+     :else (loop [map map
+                  o o]
+             (if (seq o)
+               (let [^Map$Entry pair (first o)]
+                 (recur (assoc* map (.getKey pair) (.getValue pair)) (rest o)))
+               map))))
+  ([map x & xs]
+   (if xs
+     (recur (conj* map x) (first xs) (next xs))
+     (conj* map x))))
+
+(defn merge*
+  "Returns a map that consists of the rest of the maps conj-ed onto
+  the first using conj*.  If a key occurs in more than one map, the mapping from
+  the latter (left-to-right) will be the mapping in the result."
+  [& maps]
+  (when (some identity maps)
+    (reduce #(conj* (or %1 {}) %2) maps)))
+
+(merge)
+
+(defn expand
+  "Expands the set keys and returns a map
+  (expand {#{200 300} :test}) => {200 :test 300 :test}"
+  [map]
+  (-> (reduce-kv (fn [h k v]
+                   (if (set? k)
+                     (reduce #(assoc! %1 %2 v) h k)
+                     (assoc! h k v)))
+                 (transient {}) map)
+      persistent!))
 
 ;; Arity
 
