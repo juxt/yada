@@ -73,7 +73,7 @@ ETag: fa863bd7ff53786d286e4bb3c0134416
 The `Last-Modified` header shows when the string `Hello World!` was created, which happens to be the last time the system was started (or reset). Java strings are immutable, so [yada]#yada# is able to deduce that the
 string's creation date is also the last time it could have been modified.
 
-The entity tag is computed from the value of the `Hello World!` itself. Unlike the `Last-Modified` value, it can survives a reset.
+The entity tag is computed from the value of the `Hello World!` itself. Unlike the `Last-Modified` value, it can survive a reset.
 
 Both `Last-Modified` and `ETag` are used to support HTTP conditional requests and conflict detection when uploading new versions of a resource.
 
