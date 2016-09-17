@@ -202,7 +202,7 @@
             suffix (when f (filename-ext (.getName f)))
             custom-suffix-args (when suffix (get custom-suffices suffix))]
         (cond
-          (nil? f) (resource nil)
+          (nil? f) (as-resource nil)
 
           (.isFile f)
           (resource
