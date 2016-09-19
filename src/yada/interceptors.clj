@@ -219,7 +219,11 @@
             ctx)))
 
       ;; else
-      ctx)))
+      (if (get-in ctx [:resource :methods (:method ctx) :parameters :body])
+        (d/error-deferred
+           (ex-info "No body present but body is expected for request."
+                    {:status 400}))
+        ctx))))
 
 (defn select-representation
   "Proactively negotatiate the best representation for the payload
