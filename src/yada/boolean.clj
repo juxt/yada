@@ -1,6 +1,7 @@
 ;; Copyright © 2015, JUXT LTD.
 
 (ns yada.boolean
+  (:refer-clojure :exclude [boolean?])
   (:require
    [schema.core :as s]))
 
@@ -29,4 +30,3 @@
    boolean? s/Bool
    vector? CompositeExpression
    :else s/Any))
-
