@@ -8,6 +8,7 @@ agnostic to the syntax of shorthand forms, which significantly
 simplifies coding while giving the author of yada resources the
 convenience of terse, expressive short-hand descriptions."}
     yada.schema
+  (:refer-clojure :exclude [boolean?])
   (:require
    [clojure.walk :refer [postwalk]]
    [clojure.set :as set]
