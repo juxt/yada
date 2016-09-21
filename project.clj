@@ -24,9 +24,9 @@
    [prismatic/schema "1.1.1"]
    [potemkin "0.4.3"]
 
-   [org.clojure/core.async "0.2.374"]
+   [org.clojure/core.async "0.2.391"]
    [org.clojure/data.codec "0.1.0"]
-   [org.clojure/tools.reader "1.0.0-beta1"]
+   [org.clojure/tools.reader "1.0.0-beta3"]
 
    ;; Built-in support for Cognitect transit
    [com.cognitect/transit-clj "0.8.285"]
