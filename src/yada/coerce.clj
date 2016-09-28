@@ -62,7 +62,10 @@
   (to-key [o] (to-key (:k o)))
   (to-fn [o] (to-fn (:k o)))
   Keyword
-  (to-key [k] (name k))
+  (to-key [k]
+    (if-let [ns (namespace k)]
+      (str ns "/" (name k))
+      (name k)))
   (to-fn [k] string->keyword)
   String
   (to-key [s] s)
@@ -95,4 +98,3 @@
    (coercion-matcher schema)
    (kw-map-matcher schema)
    (multiple-args-matcher schema)))
-
