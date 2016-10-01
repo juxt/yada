@@ -259,7 +259,7 @@ convenience of terse, expressive short-hand descriptions."}
          NamespacedEntries))
 
 (s/defschema Methods
-  {:methods
+  {(s/optional-key :methods)
    {s/Keyword Method}})
 
 (defprotocol MethodCoercion
@@ -409,24 +409,21 @@ convenience of terse, expressive short-hand descriptions."}
    (s/optional-key :error-interceptor-chain) [s/Any]})
 
 (s/defschema Resource
-  (s/constrained
-   (merge {(s/optional-key :id) s/Any}
-          ResourceDocumentation
-          AccessControl
-          Properties
-          ResourceParameters
-          Produces
-          Consumes
-          Methods
-          Responses
-          SecurityHeaders
-          {(s/optional-key :path-info?) Boolean
-           (s/optional-key :sub-resource) (s/=> Resource Context)}
-          Logger
-          InterceptorChain
-          NamespacedEntries)
-   (fn [v] (not (and (:sub-resource v) (not (:path-info? v)))))
-   "If a sub-resource entry exists then path-info? must be true"))
+  (merge {(s/optional-key :id) s/Any}
+         ResourceDocumentation
+         AccessControl
+         Properties
+         ResourceParameters
+         Produces
+         Consumes
+         Methods
+         Responses
+         SecurityHeaders
+         {(s/optional-key :path-info?) Boolean
+          (s/optional-key :sub-resource) (s/=> Resource Context)}
+         Logger
+         InterceptorChain
+         NamespacedEntries))
 
 (s/defschema ResourceMappings
   (merge PropertiesMappings

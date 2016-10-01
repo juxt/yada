@@ -145,7 +145,7 @@
       (testing "method mappings"
         (let [r (coercer {:get "foo"})]
           (is (error? r))
-          (is (= {:methods 'missing-required-key, :get 'disallowed-key} (:error r))))))))
+          (is (= {:get 'disallowed-key} (:error r))))))))
 
 (deftest authentication-test
   (let [coerce (sc/coercer AccessControl AccessControlMappings)]
