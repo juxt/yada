@@ -95,36 +95,36 @@
   (-> (new-template-resource
        "templates/page.html"
        (fn [ctx]
-         {:homeref (:href (yada/uri-for ctx :yada.dev.docsite/index))
+         {:homeref (yada/href-for ctx :yada.dev.docsite/index)
           :content
           (html
            [:div.container
             [:h2 "Demo: Hello World!"]
             [:ul
-             [:li [:a {:href (:href (yada/uri-for ctx ::hello))} "Hello!"]
+             [:li [:a {:href (yada/href-for ctx ::hello)} "Hello!"]
               " - the simplest possible demo, showing the effect of " [:span.yada "yada"] " on a simple string"]
 
              [:li [:a {:href
                        (format "%s/index.html?url=%s/swagger.json"
-                               (:href (yada/uri-for ctx :swagger-ui))
-                               (:uri (yada/uri-for ctx ::hello-swagger)))}
+                               (yada/href-for ctx :swagger-ui)
+                               (:uri (yada/uri-info ctx ::hello-swagger)))}
                    "Hello Swagger!"]
               " - demonstration of the Swagger interface on a simple string"]
 
-             [:li [:a {:href (:href (yada/uri-for ctx ::hello-atom))} "Hello atom!"]
+             [:li [:a {:href (yada/href-for ctx ::hello-atom)} "Hello atom!"]
               " - demonstrating the use of Clojure's reference types to manage mutable state"]
 
              [:li [:a {:href
                        (format "%s/index.html?url=%s/swagger.json"
-                               (:href (yada/uri-for ctx :swagger-ui))
-                               (:uri (yada/uri-for ctx ::hello-atom-swagger)))}
+                               (yada/href-for ctx :swagger-ui)
+                               (:uri (yada/uri-info ctx ::hello-atom-swagger)))}
                    "Hello Swaggatom!"]
               " - demonstration of the Swagger interface on an atom"]
 
-             [:li [:a {:href (:href (yada/uri-for ctx ::hello-languages))} "Hello languages!"]
+             [:li [:a {:href (yada/href-for ctx ::hello-languages)} "Hello languages!"]
               " - demonstrating language tags"]]
 
-            [:p [:a {:href (:href (yada/uri-for ctx :yada.dev.docsite/index))} "Index"]]])}))
+            [:p [:a {:href (yada/href-for ctx :yada.dev.docsite/index)} "Index"]]])}))
       (assoc :id ::index)
       yada))
 

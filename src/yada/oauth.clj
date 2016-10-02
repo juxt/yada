@@ -19,7 +19,7 @@
    [ring.util.response :as response]
    [schema.core :as s]
    [yada.body :refer [render-error]]
-   [yada.yada :refer [resource uri-for]]
+   [yada.yada :refer [resource uri-info]]
    [yada.security :refer [verify]]))
 
 ;; http://ncona.com/2015/02/consuming-a-google-id-token-from-a-server/
@@ -51,10 +51,10 @@
                           (codec/form-encode
                            (merge
                             {"client_id" client-id
-                             "redirect_uri" (:uri (uri-for ctx redirect-uri))
+                             "redirect_uri" (:uri (uri-info ctx redirect-uri))
                              "scope" scope
                              "state" (jwe/encrypt {:target-uri (or target-uri-override
-                                                                   (when target-uri (:uri (uri-for ctx target-uri)))
+                                                                   (when target-uri (:uri (uri-info ctx target-uri)))
                                                                    "")}
                                                   secret)}
                             (when (= type :google) {"response_type" "code"})))))))]
@@ -190,7 +190,7 @@
                 :form-params {"code" (-> ctx :parameters :query :code)
                               "client_id" client-id
                               "client_secret" client-secret
-                              "redirect_uri" (:uri (uri-for ctx redirect-uri))
+                              "redirect_uri" (:uri (uri-info ctx redirect-uri))
                               "grant_type" "authorization_code"}
                 :throw-exceptions false})
 

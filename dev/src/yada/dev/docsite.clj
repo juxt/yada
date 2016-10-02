@@ -63,35 +63,34 @@
          [:div.container
           [:h2 "Welcome to " [:span.yada "yada"] "!"]
           [:ol
-           [:li [:a {:href (:href
-                            (yada/uri-for ctx ::manual
-                                          ))} "The " [:span.yada "yada"] " manual"]
+           [:li [:a {:href (yada/href-for ctx ::manual)}
+                 "The " [:span.yada "yada"] " manual"]
             " — the single authority on all things " [:span.yada "yada"]]
 
            [:li "Examples — self-contained apps for you to explore"
             [:ul
-             [:li [:a {:href (:href (yada/uri-for ctx :yada.dev.hello/index))} "Hello World!"] " — to introduce " [:span.yada "yada"] " in the proper way"]
+             [:li [:a {:href (yada/href-for ctx :yada.dev.hello/index)} "Hello World!"] " — to introduce " [:span.yada "yada"] " in the proper way"]
 
              [:li
-              [:a {:href (:href (yada/uri-for ctx :phonebook.api/index))}
+              [:a {:href (yada/href-for ctx :phonebook.api/index)}
                "Phonebook"]
               [:a {:href
                    ;; TODO: use bidi's path-for
                    (format "%s/phonebook-swagger.html?url=%s"
-                           (:href (yada/uri-for ctx :swagger-ui))
-                           (:uri (yada/uri-for ctx ::phonebook-swagger-spec))
+                           (yada/href-for ctx :swagger-ui)
+                           (:uri (yada/uri-info ctx ::phonebook-swagger-spec))
 
                            )}
                " (Swagger)"]
               " — to demonstrate custom records implementing standard HTTP methods"]
 
-             [:li [:a {:href (:href (yada/uri-for ctx :yada.dev.security/index))} "Security"] " — to demonstrate authentication and authorization features"]
+             [:li [:a {:href (yada/href-for ctx :yada.dev.security/index)} "Security"] " — to demonstrate authentication and authorization features"]
 
-             [:li [:a {:href (:href (yada/uri-for ctx :yada.dev.async/sse-demo))} "SSE demo"] " — to demonstrate Server Sent Events"]
+             [:li [:a {:href (yada/href-for ctx :yada.dev.async/sse-demo)} "SSE demo"] " — to demonstrate Server Sent Events"]
 
              ]]
 
-           [:li [:a {:href (:href (yada/uri-for ctx :yada.dev.talks/index))} "Talks"]]
+           [:li [:a {:href (yada/href-for ctx :yada.dev.talks/index)} "Talks"]]
 
            [:li "Relevant standards"
             [:ul

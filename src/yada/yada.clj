@@ -22,7 +22,7 @@
 
 (import-vars
  [yada.aleph listener server]
- [yada.context content-type charset language uri-for]
+ [yada.context content-type charset language uri-info url-for path-for href-for scheme-for]
  [yada.handler handler yada]
  [yada.swagger swaggered]
  [yada.redirect redirect]

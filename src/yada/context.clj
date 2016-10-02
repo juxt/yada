@@ -26,7 +26,15 @@
 (defn language [ctx]
   (apply str (interpose "-" (get-in ctx [:response :produces :language :language]))))
 
-(defn uri-for [ctx handler & [options]]
-  (if-let [uri-for (:uri-for ctx)]
-    (uri-for handler options)
-    (throw (ex-info "Context does not contain a :uri-for entry" ctx))))
+(defn uri-info [ctx handler & [options]]
+  (if-let [uri-info (:uri-info ctx)]
+    (uri-info handler options)
+    (throw (ex-info "Context does not contain a :uri-info entry" {:keys (keys ctx)}))))
+
+(def ^:deprecated uri-for uri-info)
+
+(def path-for (comp :path uri-info))
+(def host-for (comp :host uri-info))
+(def scheme-for (comp :scheme uri-info))
+(def href-for (comp :href uri-info))
+(def url-for (comp :uri uri-info))

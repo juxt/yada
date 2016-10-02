@@ -1,13 +1,13 @@
 ;; Copyright © 2015, JUXT LTD.
 
-(defproject yada "1.1.36"
+(defproject yada "1.1.37"
   :description "A powerful Clojure web library, full HTTP, full async"
   :url "http://github.com/juxt/yada"
   :license {:name "The MIT License"
             :url "http://opensource.org/licenses/MIT"}
 
   :dependencies
-  [[bidi "2.0.8" :exclusions [ring/ring-core]]
+  [[bidi "2.0.12" :exclusions [ring/ring-core]]
    [buddy/buddy-sign "0.9.0"]
    [byte-streams "0.2.2"]
    [camel-snake-kebab "0.4.0"]

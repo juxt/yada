@@ -24,7 +24,7 @@
 
        [:tbody
         (for [[id {:keys [surname firstname phone]}] entries
-              :let [href (:href (yada/uri-for ctx :phonebook.api/entry {:route-params {:entry id}}))]]
+              :let [href (yada/href-for ctx :phonebook.api/entry {:route-params {:entry id}})]]
           [:tr
            [:td [:a {:href href} href]]
            [:td surname]

@@ -7,9 +7,9 @@
    [bidi.vhosts :refer [vhosts-model make-handler]]
    [clojure.test :refer :all]
    [ring.mock.request :refer [request]]
-   [yada.yada :refer [uri-for resource]]))
+   [yada.yada :refer [uri-info resource]]))
 
-(deftest uri-for-test
+(deftest uri-info-test
   (let [h
         (make-handler
          (vhosts-model
@@ -21,17 +21,17 @@
                     {:get
                      {:produces "text/plain"
                       :response (fn [ctx]
-                                  (str (:href (uri-for ctx :bar))
+                                  (str (:href (uri-info ctx :bar))
                                        " "
-                                       (:href (uri-for ctx :foobarzip))))}}})]
+                                       (:href (uri-info ctx :foobarzip))))}}})]
                  ["foo/bar/zip"
                   (resource
                    {:id :foobarzip
                     :methods {:get {:produces "text/plain"
                                     :response (fn [ctx]
-                                                (str (:href (uri-for ctx :bar))
+                                                (str (:href (uri-info ctx :bar))
                                                      " "
-                                                     (:href (uri-for ctx :foo))))}}
+                                                     (:href (uri-info ctx :foo))))}}
                     })]
                  ["bar" (resource {:id :bar
                                    :methods {}})]
