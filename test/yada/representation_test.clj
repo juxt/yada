@@ -8,7 +8,8 @@
    [yada.charset :as charset]
    [yada.media-type :as mt]
    [yada.util :refer (parse-csv best best-by http-token OWS)]
-   [yada.representation :as rep]))
+   [yada.representation :as rep]
+   [yada.test :refer [request-for response-for]]))
 
 (defn- get-highest-content-type-quality
   "Given the request and a representation, get the highest possible
@@ -172,6 +173,16 @@
             {:headers {"accept-charset" "us-ascii,Shift_JIS"}}
             {:charset (charset/to-charset-map "utf-8")})
            :rejected))))
+
+(deftest accept-charset-test
+  "Test fix for #126"
+  (is
+   (response-for
+    {:methods
+     {:get
+      {:produces [{:media-type "application/json"}]
+       :response (fn [ctx] "")}}}
+    :get "/" {:headers {"accept-charset" "*"}})))
 
 (deftest parse-encoding-test
   (testing "basic"

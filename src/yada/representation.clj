@@ -99,8 +99,8 @@
             (some? (charset/canonical-name acceptable-charset))
             (= (charset/canonical-name acceptable-charset)
                (charset/canonical-name rep))))
-       (pos? (:quality acceptable-charset))
-       (pos? (:quality rep)))
+       ((fnil pos? 1.0) (:quality acceptable-charset))
+       ((fnil pos? 1.0) (:quality rep)))
 
     [(:quality acceptable-charset) (:quality rep)]))
 
