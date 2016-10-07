@@ -1,6 +1,7 @@
 (ns yada.charset-test
-  (:require [clojure.test :refer :all]
-            [yada.charset :as ch]))
+  (:require
+   [clojure.test :refer :all]
+   [yada.charset :as ch]))
 
 (deftest no-charset-appears-twice-in-platform-charsets
   (let [charset-aliases (map :alias ch/platform-charsets)]
