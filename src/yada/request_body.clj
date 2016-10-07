@@ -101,7 +101,7 @@
 
 (defmethod default-matcher :default [_] (constantly nil))
 
-(defn- coerced! [raw-data schema schema->matcher]
+(defn coerced! [raw-data schema schema->matcher]
   (let [coercer (sc/coercer schema schema->matcher)
         result (coercer raw-data)]
     (when (error? result)
@@ -114,13 +114,13 @@
       {:parsed parsed}
       schema (assoc :coerced (coerced! parsed schema (or matcher (default-matcher media-type)))))))
 
-(defn- body-schema [ctx]
+(defn body-schema [ctx]
   (get-in ctx [:resource :methods (:method ctx) :parameters :body]))
 
-(defn- body-matcher [ctx]
+(defn body-matcher [ctx]
   (get-in ctx [:resource :methods (:method ctx) :coercion-matchers :body]))
 
-(defn- default-process-request-body
+(defn default-process-request-body
   [ctx body-stream media-type & _]
   (let [result (parse-coerce-stream
                  body-stream
