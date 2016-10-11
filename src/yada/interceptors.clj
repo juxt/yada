@@ -449,10 +449,6 @@
 
     (assoc ctx :response response)))
 
-(defrecord Foo [])
-
-(instance? Foo (Exception.))
-
 (defn logging [ctx]
   (or
    (when-let [logger (-> ctx :resource :logger)]
