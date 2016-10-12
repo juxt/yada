@@ -257,7 +257,7 @@
         (let [at-boundary?
               (= (seq (:dash-boundary m))
                  (seq (copy-bytes (:window m) 0 (:dash-boundary-size m))))]
-          
+
           (s/put! (:stream m) [(if at-boundary?
                                  {:type :part
                                   :bytes (copy-bytes-after-dash-boundary m 0 (:pos m))
@@ -646,8 +646,13 @@
                                ((rsc/coercer :json) schema))))
                    params (coercer fields)]
                (if-not (schema.utils/error? params)
-                 (assoc-in ctx [:parameters (if (:form schemas) :form :body)] params)
+                 (-> ctx
+                     (assoc-in [:parameters (if (:form schemas) :form :body)] params)
+                     (assoc :yada.multipart/parts parts))
                  (d/error-deferred (ex-info "Bad form fields"
                                             {:status 400 :error (schema.utils/error-val params)}))))
 
-             :otherwise (assoc ctx :body fields))))))))
+             ;; We add a low-level access to the actual parts (via
+             ;; :yada.multipart/parts) for users with more
+             ;; sophisticated requirements.
+             :otherwise (assoc ctx :body fields :yada.multipart/parts parts))))))))
