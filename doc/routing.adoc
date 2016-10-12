@@ -72,7 +72,7 @@ A yada handler (created by yada's `yada` function) and a yada resource
 of an incoming request's URI.
 
 For a more thorough introduction to bidi, see
-https://github.com/juxt/bidi/README.md.
+https://github.com/juxt/bidi#bidi.
 
 === Declaring policies across multiple resources
 
