@@ -513,12 +513,8 @@
 ;; to plug-in their own support for large http payloads.
 
 (defprotocol PartConsumer
-  (consume-part [_ state part]
-    "Return state with part attached")
-  (start-partial [_ piece]
-    "Return a partial")
-  (part-coercion-matcher [_]
-    "Return a map between a target type and the function that coerces this type into that type"))
+  (consume-part [_ state part] "Return state with part attached")
+  (start-partial [_ piece] "Return a partial"))
 
 (defprotocol Partial
   (continue [_ piece] "Return thyself")
@@ -551,12 +547,7 @@
 (defrecord DefaultPartConsumer []
   PartConsumer
   (consume-part [_ state part] (update state :parts (fnil conj []) (map->DefaultPart part)))
-  (start-partial [_ piece] (->DefaultPartial piece))
-  (part-coercion-matcher [_]
-    ;; Coerce a DefaultPart into the following keys
-    {String (fn [^DefaultPart part]
-              (let [offset (get part :body-offset 0)]
-                (String. (:bytes part) offset (- (count (:bytes part)) offset))))}))
+  (start-partial [_ piece] (->DefaultPartial piece)))
 
 (defn reduce-piece
   "Reducing function for assembling pieces into parts. Seed the reduce
@@ -583,6 +574,30 @@
 ;; Putting it altogether
 
 (def CHUNK-SIZE 16384)
+
+(def default-part-coercion-matcher
+  ;; Coerce a DefaultPart into the following keys
+  {String (fn [^DefaultPart part]
+            (let [offset (get part :body-offset 0)]
+              (String. (:bytes part) offset (- (alength (:bytes part)) offset))))})
+
+(defn assoc-body-parameters [ctx parts-by-name schemas]
+  (let [coercion-matchers (get-in ctx [:resource :methods (:method ctx)
+                                       :coercion-matchers])
+        matcher (or (:form coercion-matchers) (:body coercion-matchers))
+        coercer (sc/coercer
+                 (or (:form schemas) (:body schemas))
+                 (fn [schema]
+                   (or
+                    (when matcher (matcher schema))
+                    (coerce/+parameter-key-coercions+ schema)
+                    ((or coercion-matchers default-part-coercion-matcher) schema)
+                    ((rsc/coercer :json) schema))))
+        params (coercer parts-by-name)]
+    (if-not (schema.utils/error? params)
+      (assoc-in ctx [:parameters (if (:form schemas) :form :body)] params)
+      (d/error-deferred (ex-info "Bad form fields"
+                                 {:status 400 :error (schema.utils/error-val params)})))))
 
 (defmethod process-request-body "multipart/form-data"
   [ctx body-stream media-type & args]
@@ -622,37 +637,51 @@
          ;; As we're multipart/form-data, let's make use of the expected
          ;; Content-Disposition headers.
          (let [schemas (get-in ctx [:resource :methods (:method ctx) :parameters])
-               fields
-               (reduce
-                (fn [acc part] (cond-> acc
-                                 (= (:type part) :part)
-                                 (assoc (get-in part [:content-disposition :params "name"]) part)))
-                {} parts)]
+               parts-by-name (reduce
+                              (fn [acc part] (cond-> acc
+                                               (= (:type part) :part)
+                                               (assoc (get-in part [:content-disposition :params "name"]) part)))
+                              {} parts)]
 
-           (cond
+           (cond-> ctx
              ;; In Swagger 2.0 you can't have both form and body
              ;; parameters, which seems reasonable
              (or (:form schemas) (:body schemas))
-             (let [coercion-matchers (get-in ctx [:resource :methods (:method ctx)
-                                                  :coercion-matchers])
-                   matcher (or (:form coercion-matchers) (:body coercion-matchers))
-                   coercer (sc/coercer
-                            (or (:form schemas) (:body schemas))
-                            (fn [schema]
-                              (or
-                               (when matcher (matcher schema))
-                               (coerce/+parameter-key-coercions+ schema)
-                               ((part-coercion-matcher part-consumer) schema)
-                               ((rsc/coercer :json) schema))))
-                   params (coercer fields)]
-               (if-not (schema.utils/error? params)
-                 (-> ctx
-                     (assoc-in [:parameters (if (:form schemas) :form :body)] params)
-                     (assoc :yada.multipart/parts parts))
-                 (d/error-deferred (ex-info "Bad form fields"
-                                            {:status 400 :error (schema.utils/error-val params)}))))
+             (assoc-body-parameters parts-by-name schemas)
 
              ;; We add a low-level access to the actual parts (via
              ;; :yada.multipart/parts) for users with more
              ;; sophisticated requirements.
-             :otherwise (assoc ctx :body fields :yada.multipart/parts parts))))))))
+             true
+             (assoc
+              :yada.multipart/parts parts
+
+              ;; Deprecated, will be removed in a future release - don't rely on this
+              ;; TODO: Remove
+              :body parts-by-name
+              ))))))))
+
+(defn find-part "Find part by Content-Disposition name parameter" [ctx name]
+  (some->> ctx
+           :yada.multipart/parts
+           (filter (fn [part] (= name (get-in part [:content-disposition :params "name"]))))
+           first))
+
+(defn part-content-type "Return the content type, if specified, of the part"
+  [part]
+  (mt/string->media-type (get-in part [:headers "content-type"])))
+
+(defn part-bytes "Return a copy of the bytes, as a byte-array, of a part."
+  [part]
+  (when part
+    (let [offset (get part :body-offset 0)
+          l (- (alength (:bytes part)) offset)
+          bytes (byte-array l)]
+      (System/arraycopy (:bytes part) offset bytes 0 l)
+      bytes)))
+
+(defn part-string "Return the string body of a part"
+  [part]
+  (when part
+    (let [offset (get part :body-offset 0)]
+      (String. (:bytes part) offset (- (alength (:bytes part)) offset)))))

@@ -9,9 +9,11 @@
    [clojure.pprint :refer [pprint]]
    [manifold.deferred :as d]
    [manifold.stream :as s]
+   [yada.interceptors :as i]
    [yada.util :refer [OWS CRLF]]
    [yada.media-type :as mt]
-   [yada.multipart :refer :all])
+   [yada.multipart :refer :all]
+   [yada.yada :as yada])
   (:import
    [java.io ByteArrayInputStream BufferedReader InputStreamReader]
    [java.nio.charset Charset]))
@@ -259,3 +261,30 @@
       (is (= [:part] (mapv :type parts))))))
 
 
+(deftest convenience-function-test
+  (let [ctx
+        @(let [body (slurp-byte-array (io/resource "yada/multipart-6"))]
+          (let [ctx {:method :post
+                     :request {:headers
+                               {"content-length" (str (alength body))
+                                "content-type" "multipart/form-data; boundary=----WebKitFormBoundaryZ3oJB7WHOBmOjrEi"}
+                               :body (java.io.ByteArrayInputStream. body)}
+                     :resource (yada/resource {:methods
+                                               {:post
+                                                {:consumes "multipart/form-data"
+                                                 ;;:parameters {:body body-schema}
+                                                 :response ""}}})}]
+            (i/process-request-body ctx)))]
+
+    (is (find-part ctx "firstname"))
+    (is (find-part ctx "phone"))
+    (is (not (find-part ctx "dummy")))
+
+    (is (= "text/html" (:name (part-content-type (find-part ctx "firstname")))))
+    (is (= "text/plain" (:name (part-content-type (find-part ctx "phone")))))
+    (is (nil? (part-content-type (find-part ctx "email"))))
+
+    (is (= "<h1>Malcolm</h1>" (part-string (find-part ctx "firstname"))))
+    (is (= "1234" (part-string (find-part ctx "phone"))))
+    (is (= "malcolm@juxt.pro" (part-string (find-part ctx "email"))))
+    (is (nil? (part-string (find-part ctx "dummy"))))))
