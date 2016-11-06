@@ -159,7 +159,7 @@
       (with-400-maybe)))
 
 (defmethod default-matcher "application/json" [_]
-  sc/json-coercion-matcher)
+  (rsc/coercer :json))
 
 (defmethod process-request-body "application/json"
   [& args]
