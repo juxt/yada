@@ -130,7 +130,8 @@
                          rep (rep/select-best-representation
                               (:request ctx)
                               (if custom-response
-                                (or (:produces custom-response) ["text/plain"])
+                                (or (:produces custom-response) [{:media-type "text/plain"
+                                                                  :charset "UTF-8"}])
                                 error-representations)
                               )]
 
