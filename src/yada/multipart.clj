@@ -514,7 +514,7 @@
 
 (defprotocol PartConsumer
   (consume-part [_ state part] "Return state with part attached")
-  (start-partial [_ piece] "Return a partial"))
+  (start-partial [_ state piece] "Return a partial"))
 
 (defprotocol Partial
   (continue [_ piece] "Return thyself")
@@ -547,7 +547,7 @@
 (defrecord DefaultPartConsumer []
   PartConsumer
   (consume-part [_ state part] (update state :parts (fnil conj []) (map->DefaultPart part)))
-  (start-partial [_ piece] (->DefaultPartial piece)))
+  (start-partial [_ state piece] (->DefaultPartial piece)))
 
 (defn reduce-piece
   "Reducing function for assembling pieces into parts. Seed the reduce
@@ -559,7 +559,7 @@
     :preamble-continuation acc
     :preamble-completion acc
     :part (update acc :state (fn [state] (consume-part consumer state piece)))
-    :partial (assoc acc :partial (start-partial consumer piece))
+    :partial (assoc acc :partial (start-partial consumer state piece))
     :partial-continuation (update acc :partial (fn [p] (continue p piece)))
     :partial-completion (-> acc
                             (update :state (fn [s] (if-let [p partial]
