@@ -607,6 +607,7 @@
 (defmethod process-request-body "multipart/form-data"
   [ctx body-stream media-type & args]
   (let [content-type (mt/string->media-type (get-in ctx [:request :headers "content-type"]))
+        request-headers (get-in ctx [:request :headers])
         boundary (get-in content-type [:parameters "boundary"])
         request-buffer-size CHUNK-SIZE ; as Aleph default, TODO: derive this
         window-size (* 4 request-buffer-size)
@@ -622,7 +623,8 @@
             ;; (or part beginning) to have a content-disposition header,
             ;; let's use a transducer to add that info into the part,
             ;; before we hand the part off to the PartConsumer.
-            (s/transform (comp (xf-add-header-info)
+            (s/transform (comp (map #(assoc % :request-headers request-headers))
+                               (xf-add-header-info)
                                (xf-parse-content-disposition)))
             ;; Now we assemble (via reduction) the parts. We pass each
             ;; part (or partial part) to a consumer that assembles and
