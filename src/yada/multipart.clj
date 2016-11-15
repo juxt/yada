@@ -33,7 +33,12 @@
 ;; (backwards from the end of the buffer), rather than comparing each
 ;; byte in turn.
 
-(defn- copy-bytes [source from to]
+(defn- get-bytes #^bytes
+  [part]
+  (:bytes part))
+
+(defn- copy-bytes ^bytes 
+  [source from to]
   (let [len (- to from)]
     (if (neg? len)
       (throw (ex-info (format
@@ -431,7 +436,7 @@
             (d/recur (update-in m [:chunk#] inc)))))
 
        (d/catch clojure.lang.ExceptionInfo
-           (fn [e]
+           (fn [^clojure.lang.ExceptionInfo e]
              (errorf e "Failed: %s" (ex-data e))
              (d/chain
               (s/put! stream [{:type :error :error e :message (.getMessage e) :data (ex-data e)}])
@@ -439,7 +444,7 @@
                 (s/close! stream)))))
 
        (d/catch Throwable
-           (fn [e]
+           (fn [^Throwable e]
              (errorf e "Failed: %s" (ex-data e))
              (d/chain
               (s/put! stream [{:type :error :error e :message (.getMessage e)}])
@@ -578,8 +583,8 @@
 (def default-part-coercion-matcher
   ;; Coerce a DefaultPart into the following keys
   {String (fn [^DefaultPart part]
-            (let [offset (get part :body-offset 0)]
-              (String. (:bytes part) offset (- (alength (:bytes part)) offset))))})
+            (let [^int offset (get part :body-offset 0)]
+              (String. (get-bytes part) offset (- (alength (get-bytes part)) offset))))})
 
 (defn assoc-body-parameters [ctx parts-by-name schemas]
   (let [coercion-matchers (get-in ctx [:resource :methods (:method ctx)
@@ -675,7 +680,7 @@
   [part]
   (when part
     (let [offset (get part :body-offset 0)
-          l (- (alength (:bytes part)) offset)
+          l (- (alength (get-bytes part)) offset)
           bytes (byte-array l)]
       (System/arraycopy (:bytes part) offset bytes 0 l)
       bytes)))
@@ -683,5 +688,5 @@
 (defn part-string "Return the string body of a part"
   [part]
   (when part
-    (let [offset (get part :body-offset 0)]
-      (String. (:bytes part) offset (- (alength (:bytes part)) offset)))))
+    (let [^int offset (get part :body-offset 0)]
+      (String. (get-bytes part) offset (- (alength (get-bytes part)) offset)))))

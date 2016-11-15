@@ -62,7 +62,7 @@
 
 ;; ETags
 
-(defn md5-hash [s]
+(defn md5-hash [^String s]
   (let [digest
         (doto
             (java.security.MessageDigest/getInstance "MD5")
@@ -118,7 +118,7 @@
 
 ;; URLs
 
-(defn as-file [resource]
+(defn as-file [^java.net.URL resource]
   (when resource
     (case (.getProtocol resource)
       "file" (io/file (.getFile resource))
@@ -263,7 +263,7 @@
 ;; Arity
 
 (defn arity [f]
-  (let [m (first (.getDeclaredMethods (class f)))
+  (let [^java.lang.reflect.Method m (first (.getDeclaredMethods (class f)))
         p (.getParameterTypes m)]
     (alength p)))
 
