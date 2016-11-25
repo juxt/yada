@@ -136,6 +136,7 @@ feedback and suggestions.
 * Tom Coupland
 * Mikkel Gravgaard
 * Lucas Lago
+* Johannes Staffans
 
 Also, see the dependency list. In particular, yada would certainly not
 exist without the considerable efforts of those behind the following
