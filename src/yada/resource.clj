@@ -72,6 +72,7 @@
    sec/authenticate
    i/get-properties
    sec/authorize
+   i/process-content-encoding
    i/process-request-body
    i/check-modification-time
    i/select-representation

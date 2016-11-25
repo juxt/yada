@@ -26,8 +26,11 @@
    [yada.request-body :as rb]
    [yada.representation :as rep]
    [yada.schema :as ys]
-   [yada.util :as util])
-  (:import [yada.context Response]))
+   [yada.util :as util]
+   [clojure.java.io :as io])
+  (:import [yada.context Response]
+           [java.io ByteArrayInputStream ByteArrayOutputStream]
+           java.util.zip.GZIPInputStream))
 
 (defn available?
   "Is the service available?"
@@ -177,6 +180,26 @@
            (d/error-deferred
             (ex-info "Properties malformed" {:status 500
                                              :error (:error props)}))))))))
+
+(defn process-content-encoding
+  "Handle Content-Encoding header according to RFC 2616 section 14.11."
+  [{:keys [request] :as ctx}]
+  (let [encoding (get-in request [:headers "content-encoding"] "identity")]
+    (condp = encoding
+      ;; wrap potentially expensive decompression in a future
+      "gzip" (d/future
+               (let [output (ByteArrayOutputStream.)]
+                 (with-open [input (-> request :body GZIPInputStream.)]
+                   (io/copy input output))
+                 (assoc-in ctx [:request :body] (.toByteArray output))))
+
+      "identity" ctx
+
+      (d/error-deferred
+       (ex-info "Unsupported Media Type"
+                {:status 415
+                 :message "The used Content-Encoding is not supported"
+                 :content-encoding encoding})))))
 
 (defn process-request-body
   "Process the request body, if necessary. RFC 7230 section 3.3 states
