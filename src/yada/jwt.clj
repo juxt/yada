@@ -2,8 +2,7 @@
 
 (ns yada.jwt
   (:require
-   [buddy.sign.jwe :as jwe]
-   [buddy.sign.jws :as jws]
+   [buddy.sign.jwt :as jwt]
    [yada.security :refer [verify]])
   (:import [clojure.lang ExceptionInfo]))
 
@@ -13,7 +12,7 @@
   (try
     (let [auth (some->
                 (get-in ctx [:cookies cookie])
-                (jws/unsign secret))]
+                (jwt/unsign secret))]
       auth)
     (catch ExceptionInfo e
       (if-not (= (ex-data e)
