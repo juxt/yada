@@ -7,9 +7,9 @@ following in the file's *:dependencies* section.
 
 [source,clojure]
 ----
-[yada "1.1.44"]
+[yada "1.1.45"]
 [aleph "0.4.1"]
-[bidi "2.0.8"]
+[bidi "2.0.12"]
 ----
 
 [[setting-up-a-development-environment]]
