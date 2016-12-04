@@ -291,11 +291,15 @@
    :id id
    :error error})
 
-(cheshire.generate/add-encoder clojure.lang.ExceptionInfo
+
+(cheshire.generate/add-encoder java.lang.Exception
                                (fn [ei jg]
                                  (cheshire.generate/encode-map
-                                  {:error (str ei)
-                                   :data (pr-str (ex-data ei))} jg)))
+                                  (merge
+                                   {:error (str ei)}
+                                   (when (instance? clojure.lang.ExceptionInfo ei)
+                                     {:data (pr-str (ex-data ei))}))
+                                  jg)))
 
 ;; TODO: Check semantics, is this right? Shouldn't we be encoding to json here?
 (defmethod render-error "application/json"
