@@ -263,9 +263,6 @@
 ;; TODO: Test authentication and security
 ;; TODO: Write a failing test of 'restrict'
 
-;; Blog about resource coercions as being a 'macro' language for data.
-;; How do we 'default' data?
-
 ;; TODO: Test charsets, encodings and languages
 ;; TODO: Test namespaced keywords at all levels
 
