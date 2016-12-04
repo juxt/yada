@@ -182,7 +182,18 @@
      {:get
       {:produces [{:media-type "application/json"}]
        :response (fn [ctx] "")}}}
-    :get "/" {:headers {"accept-charset" "*"}})))
+    :get "/" {:headers {"accept-charset" "*"}}))
+  (testing "#132 fixed"
+    (is
+     (= (:status
+         (response-for
+          {:methods
+           {:get
+            {:produces [{:media-type "text/plain"
+                         }]
+             :response (fn [ctx] "foobar")}}}
+          :get "/" {:headers {"accept-charset" "UTF-8"}}))
+        200))))
 
 (deftest parse-encoding-test
   (testing "basic"

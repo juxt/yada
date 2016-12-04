@@ -116,7 +116,7 @@
 
     :otherwise
     (fn [rep]
-      (best (map (partial charset-acceptable? (or (:charset rep) charset/default-platform-charset)) accepts)))))
+      (best (map (partial charset-acceptable? (or (:charset rep) (charset/to-charset-map charset/default-platform-charset))) accepts)))))
 
 (defn make-charset-quality-assessor
   [req k]
