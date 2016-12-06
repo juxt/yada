@@ -3,14 +3,17 @@
 (ns yada.walk
   (:require
    [clojure.walk :refer [postwalk]])
-  (:import [yada.handler Handler]))
+  (:import [yada.handler Handler]
+           [yada.resource Resource]))
 
 ;; Functions to update inner routes
 
 (defn update-routes [routes f & args]
   (postwalk
    (fn [x]
-     (if (instance? Handler x)
+     (if (or
+          (instance? Handler x)
+          (instance? Resource x))
        (apply f x args)
        x))
    routes))
