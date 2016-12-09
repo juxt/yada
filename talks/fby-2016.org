@@ -11,7 +11,7 @@
 #+REVEAL_MARGIN:        0.0
 #+REVEAL_MIN_SCALE:     1.0
 #+REVEAL_MAX_SCALE:     1.4
-#+REVEAL_THEME:         juxt
+#+REVEAL_THEME:         juxtdark
 #+REVEAL_TRANS:         none
 #+REVEAL_SPEED:         fast
 #+REVEAL_ROOT:          static
