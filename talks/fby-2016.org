@@ -60,12 +60,12 @@ A few weeks ago I purchased one of these Amazon things and in a couple of hours 
 
 - Still far too complex!
 - So much for the developer to do
+- RFC 7230, 7231, 7232, 7233, 7234, 7235...
 - Ambivalent about standards
 - We need a better way!
 
-#+BEGIN_NOTES
-If
 
+#+BEGIN_NOTES
 Here's the request, you figure out the response!
 #+END_NOTES
 
@@ -368,6 +368,7 @@ I asked why. He explained that resources and their names are different concepts 
 - Rate limiting
 - WebDAV
 - TLS and HTTP/2 (server push)
+- ClojureScript?
 
 * Programming the Amazon Echo
 
