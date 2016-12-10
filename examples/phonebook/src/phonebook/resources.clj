@@ -38,7 +38,7 @@
             k {})))}]
 
     :authorization
-    {:roles/methods
+    {:methods
      {:get true
       :post :phonebook/write
       :put :phonebook/write

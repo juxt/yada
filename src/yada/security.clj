@@ -123,10 +123,8 @@
   (when-not-cors-preflight ctx
     (reduce
      (fn [ctx [realm realm-val]]
-       (infof "ctx is %s" ctx)
        (if-let [authorization (:authorization realm-val)]
          (let [credentials (get-in ctx [:authentication realm])]
-
            (let [validation
                  (authorization/validate ctx credentials authorization)]
              (if (nil? validation)

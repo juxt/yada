@@ -37,8 +37,7 @@
     (:scheme authorization)))
 
 (defmethod validate nil [ctx credentials authorization]
-  (if-let [methods (:methods authorization)]
+  (when-let [methods (:methods authorization)]
     (let [pred (get-in authorization [:methods (:method ctx)])]
       (when (allowed? pred ctx (set (:roles credentials)))
-        ctx))
-    ctx))
+        ctx))))
