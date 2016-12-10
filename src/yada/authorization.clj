@@ -15,7 +15,7 @@
 
   nil
   (allowed? [_ _ _] nil)
-  
+
   APersistentVector
   (allowed? [this ctx roles]
     (case (first this)
@@ -32,26 +32,13 @@
   (allowed? [this ctx roles]
     (contains? (set roles) this)))
 
-(defmulti validate (fn [ctx credentials authorization]
-                     (:scheme authorization)))
+(defmulti validate "Return ctx if authorized, otherwise return nil"
+  (fn [ctx credentials authorization]
+    (:scheme authorization)))
 
 (defmethod validate nil [ctx credentials authorization]
   (if-let [methods (:methods authorization)]
     (let [pred (get-in authorization [:methods (:method ctx)])]
-      (if (allowed? pred ctx (set (:roles credentials)))
-        ctx ; allow
-        ;; Reject
-        (if credentials
-          (d/error-deferred
-           (ex-info "Forbidden"
-                    {:status 403   ; or 404 to keep the resource hidden
-                     ;; But allow WWW-Authenticate header in error
-                     :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])}))
-          (d/error-deferred
-           (ex-info "No authorization provided"
-                    {:status 401   ; or 404 to keep the resource hidden
-                     ;; But allow WWW-Authenticate header in error
-                     :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])})))))
-    ctx ; no method restrictions in place
-    ))
-
+      (when (allowed? pred ctx (set (:roles credentials)))
+        ctx))
+    ctx))

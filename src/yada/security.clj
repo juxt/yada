@@ -123,9 +123,25 @@
   (when-not-cors-preflight ctx
     (reduce
      (fn [ctx [realm realm-val]]
+       (infof "ctx is %s" ctx)
        (if-let [authorization (:authorization realm-val)]
          (let [credentials (get-in ctx [:authentication realm])]
-           (authorization/validate ctx credentials authorization))
+
+           (let [validation
+                 (authorization/validate ctx credentials authorization)]
+             (if (nil? validation)
+               (if credentials
+                 (throw
+                  (ex-info "Forbidden"
+                           {:status 403 ; or 404 to keep the resource hidden
+                            ;; But allow WWW-Authenticate header in error
+                            :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])}))
+                 (throw
+                  (ex-info "No authorization provided"
+                           {:status 401 ; or 404 to keep the resource hidden
+                            ;; But allow WWW-Authenticate header in error
+                            :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])})))
+               validation)))
          ctx))
      ctx (get-in ctx [:resource :access-control :realms]))))
 
