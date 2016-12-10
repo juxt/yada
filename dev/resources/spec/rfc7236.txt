@@ -1,0 +1,171 @@
+
+
+
+
+
+
+Internet Engineering Task Force (IETF)                        J. Reschke
+Request for Comments: 7236                                    greenbytes
+Category: Informational                                        June 2014
+ISSN: 2070-1721
+
+
+               Initial Hypertext Transfer Protocol (HTTP)
+                  Authentication Scheme Registrations
+
+Abstract
+
+   This document registers Hypertext Transfer Protocol (HTTP)
+   authentication schemes that have been defined in RFCs before the IANA
+   HTTP Authentication Scheme Registry was established.
+
+Status of This Memo
+
+   This document is not an Internet Standards Track specification; it is
+   published for informational purposes.
+
+   This document is a product of the Internet Engineering Task Force
+   (IETF).  It represents the consensus of the IETF community.  It has
+   received public review and has been approved for publication by the
+   Internet Engineering Steering Group (IESG).  Not all documents
+   approved by the IESG are a candidate for any level of Internet
+   Standard; see Section 2 of RFC 5741.
+
+   Information about the current status of this document, any errata,
+   and how to provide feedback on it may be obtained at
+   http://www.rfc-editor.org/info/rfc7236.
+
+Copyright Notice
+
+   Copyright (c) 2014 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to BCP 78 and the IETF Trust's Legal
+   Provisions Relating to IETF Documents
+   (http://trustee.ietf.org/license-info) in effect on the date of
+   publication of this document.  Please review these documents
+   carefully, as they describe your rights and restrictions with respect
+   to this document.  Code Components extracted from this document must
+   include Simplified BSD License text as described in Section 4.e of
+   the Trust Legal Provisions and are provided without warranty as
+   described in the Simplified BSD License.
+
+
+
+
+
+
+Reschke                       Informational                     [Page 1]
+
+RFC 7236        HTTP Authentication Scheme Registrations       June 2014
+
+
+Table of Contents
+
+   1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . . . 2
+   2.  Security Considerations . . . . . . . . . . . . . . . . . . . . 2
+   3.  IANA Considerations . . . . . . . . . . . . . . . . . . . . . . 2
+   4.  Normative References  . . . . . . . . . . . . . . . . . . . . . 3
+
+1.  Introduction
+
+   This document registers Hypertext Transfer Protocol (HTTP)
+   authentication schemes that have been defined in RFCs before the IANA
+   HTTP Authentication Scheme Registry was established.
+
+2.  Security Considerations
+
+   There are no security considerations related to the registration
+   itself.
+
+   Security considerations applicable to the individual authentication
+   schemes ought to be discussed in the specifications that define them.
+
+3.  IANA Considerations
+
+   The registrations below have been added to the IANA "Hypertext
+   Transfer Protocol (HTTP) Authentication Scheme Registry" at
+   <http://www.iana.org/assignments/http-authschemes> (see Section 5.1
+   of [RFC7235]).
+
+   +----------------+------------+-------------------------------------+
+   | Authentication | Reference  | Notes                               |
+   | Scheme Name    |            |                                     |
+   +----------------+------------+-------------------------------------+
+   | Basic          | [RFC2617], |                                     |
+   |                | Section 2  |                                     |
+   | Bearer         | [RFC6750]  |                                     |
+   | Digest         | [RFC2617], |                                     |
+   |                | Section 3  |                                     |
+   | Negotiate      | [RFC4559], | This authentication scheme violates |
+   |                | Section 3  | both HTTP semantics (being          |
+   |                |            | connection-oriented) and syntax     |
+   |                |            | (use of syntax incompatible with    |
+   |                |            | the WWW-Authenticate and            |
+   |                |            | Authorization header field syntax). |
+   | OAuth          | [RFC5849], |                                     |
+   |                | Section    |                                     |
+   |                | 3.5.1      |                                     |
+   +----------------+------------+-------------------------------------+
+
+
+
+
+Reschke                       Informational                     [Page 2]
+
+RFC 7236        HTTP Authentication Scheme Registrations       June 2014
+
+
+4.  Normative References
+
+   [RFC2617]  Franks, J., Hallam-Baker, P., Hostetler, J., Lawrence, S.,
+              Leach, P., Luotonen, A., and L. Stewart, "HTTP
+              Authentication: Basic and Digest Access Authentication",
+              RFC 2617, June 1999.
+
+   [RFC4559]  Jaganathan, K., Zhu, L., and J. Brezak, "SPNEGO-based
+              Kerberos and NTLM HTTP Authentication in Microsoft
+              Windows", RFC 4559, June 2006.
+
+   [RFC5849]  Hammer-Lahav, E., "The OAuth 1.0 Protocol", RFC 5849,
+              April 2010.
+
+   [RFC6750]  Jones, M. and D. Hardt, "The OAuth 2.0 Authorization
+              Framework: Bearer Token Usage", RFC 6750, October 2012.
+
+   [RFC7235]  Fielding, R., Ed. and J. Reschke, Ed., "Hypertext Transfer
+              Protocol (HTTP/1.1): Authentication", RFC 7235, June 2014.
+
+Author's Address
+
+   Julian F. Reschke
+   greenbytes GmbH
+   Hafenweg 16
+   Muenster, NW  48155
+   Germany
+
+   EMail: julian.reschke@greenbytes.de
+   URI:   http://greenbytes.de/tech/webdav/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Reschke                       Informational                     [Page 3]
+
