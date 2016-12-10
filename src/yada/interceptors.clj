@@ -77,8 +77,7 @@
                :headers {"allow"
                          (str/join ", "
                                    (map (comp (memfn toUpperCase) name)
-                                        (:allowed-methods ctx)))}}))
-    ))
+                                        (:allowed-methods ctx)))}}))))
 
 (defn capture-cookies [ctx]
   (if-let [cookies (cookies/parse-cookies (:request ctx))]
