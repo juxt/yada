@@ -11,6 +11,7 @@
    [yada.representation :as rep]
    [yada.interceptors :as i]
    [yada.security :as sec]
+   [yada.swagger-parameters :as swgparams]
    [yada.schema :as ys]
    [yada.context :refer [content-type]]
    yada.charset
@@ -67,7 +68,7 @@
    i/uri-too-long?
    i/TRACE
    i/method-allowed?
-   i/parse-parameters
+   swgparams/parse-parameters
    i/capture-proxy-headers
    sec/authenticate
    i/get-properties

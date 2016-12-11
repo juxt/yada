@@ -58,39 +58,7 @@
      (infof ":default acc is %s" acc)))
   ctx)
 
-(defmethod process-request-body "application/x-www-form-urlencoded"
-  [ctx body-stream media-type & args]
-  (let [body-string (bs/to-string body-stream)
-        ;; Form and body schemas have to been done at the method level
-        ;; - TODO: Build this contraint in yada.schema.
-        schemas (get-in ctx [:resource :methods (:method ctx) :parameters])
-        matchers (get-in ctx [:resource :methods (:method ctx) :coercion-matchers])
-        coercion-matcher (or (:form matchers) (:body matchers))]
 
-    (cond
-      ;; In Swagger 2.0 you can't have both form and body
-      ;; parameters, which seems reasonable
-      (or (:form schemas) (:body schemas))
-      (let [fields (codec/form-decode
-                    body-string
-                    (req/character-encoding (:request ctx)))
-
-            coercer (sc/coercer
-                     (or (:form schemas) (:body schemas))
-                     (fn [schema]
-                       (or
-                        (when coercion-matcher (coercion-matcher schema))
-                        (coerce/+parameter-key-coercions+ schema)
-                        ((rsc/coercer :json) schema))))
-
-            params (coercer fields)]
-
-        (if-not (error? params)
-          (assoc-in ctx [:parameters (if (:form schemas) :form :body)] params)
-          (d/error-deferred (ex-info "Bad form fields"
-                                     {:status 400 :error (error-val params)}))))
-
-      :otherwise (assoc ctx :body body-string))))
 
 ;; Looking for multipart/form-data? Its defmethod can be found in
 ;; yada.multipart.

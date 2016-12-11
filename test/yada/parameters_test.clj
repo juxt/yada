@@ -4,7 +4,7 @@
   (:require
     [clojure.test :refer :all]
     [schema.core :as s]
-    [yada.interceptors :as i]
+    [yada.swagger-parameters :as swgparams]
     [yada.resource :as r]
     [manifold.deferred :as d])
   (:import (clojure.lang ExceptionInfo IDeref)))
@@ -13,14 +13,14 @@
   (let [resource (r/resource {:parameters {:header {(s/required-key "X-Foo") s/Str
                                                     }}
                               :methods {}})]
-    (let [ctx (i/parse-parameters {:resource resource
-                                   :request {:headers {"X-Foo" "Bar"}}})]
+    (let [ctx (swgparams/parse-parameters {:resource resource
+                                        :request {:headers {"X-Foo" "Bar"}}})]
       (is (= "Bar"
              (get-in ctx [:parameters :header "X-Foo"]) )))))
 
 (defn parse [resource request]
-  (let [ret (i/parse-parameters {:resource (r/resource resource)
-                                 :request request})]
+  (let [ret (swgparams/parse-parameters {:resource (r/resource resource)
+                                      :request request})]
     (if (instance? IDeref ret)
       @ret
       (:parameters ret))))

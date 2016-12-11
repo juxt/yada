@@ -79,10 +79,7 @@
                                    (map (comp (memfn toUpperCase) name)
                                         (:allowed-methods ctx)))}}))))
 
-(defn capture-cookies [ctx]
-  (if-let [cookies (cookies/parse-cookies (:request ctx))]
-    (assoc ctx :cookies cookies)
-    ctx))
+
 
 (defn capture-proxy-headers [ctx]
 
@@ -107,54 +104,7 @@
 
     (assoc ctx :request req')))
 
-(defn parse-parameters
-  "Parse request and coerce parameters. Capture cookies."
-  [ctx]
-  (assert ctx "parse-parameters, ctx is nil!")
 
-  (let [ctx (capture-cookies ctx)
-        method (:method ctx)
-        request (:request ctx)
-        matcher (fn [param-kw]
-                  (get-in ctx [:resource :parameters method :coercion-matchers param-kw]))
-
-        schemas (util/merge-parameters (get-in ctx [:resource :parameters])
-                                       (get-in ctx [:resource :methods method :parameters]))
-
-        ;; TODO: Creating coercers on every request is unnecessary and
-        ;; expensive, should pre-compute them.
-
-        parameters
-        {:path (if-let [schema (:path schemas)]
-                 (rs/coerce schema
-                            (:route-params request)
-                            (fn [schema]
-                              (or (when-let [cm (matcher :query)]
-                                    (cm schema))
-                                  ((rsc/coercer :query) schema))))
-                 (:route-params request))
-         :query (let [qp (:query-params (assoc-query-params request (or (:charset ctx) "UTF-8")))]
-                  (if-let [schema (:query schemas)]
-                    (let [coercion-matcher (matcher :query)
-                          coercer (sc/coercer schema
-                                              (fn [schema]
-                                                (or (when coercion-matcher
-                                                      (coercion-matcher schema))
-                                                    (coerce/+parameter-key-coercions+ schema)
-                                                    ((rsc/coercer :query) schema))))]
-                      (coercer qp))
-                    qp))
-
-         :header (when-let [schema (:header schemas)]
-                   ;; Allow any other headers
-                   (let [coercer (sc/coercer (merge schema {s/Str s/Str}) {})]
-                     (coercer (:headers request))))}]
-
-    (let [errors (filter (comp error? second) parameters)]
-      (if (not-empty errors)
-        (d/error-deferred (ex-info "" {:status 400
-                                       :errors errors}))
-        (assoc ctx :parameters (util/remove-empty-vals parameters))))))
 
 (defn safe-read-content-length [req]
   (let [len (get-in req [:headers "content-length"])]

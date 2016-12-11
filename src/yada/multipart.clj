@@ -12,6 +12,7 @@
    [schema.coerce :as sc]
    [yada.bmh :as bmh]
    [yada.coerce :as coerce]
+   [yada.swagger-parameters :as swgparams]
    [yada.media-type :as mt]
    [yada.request-body :refer [process-request-body]]
    [yada.util :refer [OWS CRLF]])
@@ -37,7 +38,7 @@
   [part]
   (:bytes part))
 
-(defn- copy-bytes ^bytes 
+(defn- copy-bytes ^bytes
   [source from to]
   (let [len (- to from)]
     (if (neg? len)
@@ -595,7 +596,7 @@
                  (fn [schema]
                    (or
                     (when matcher (matcher schema))
-                    (coerce/+parameter-key-coercions+ schema)
+                    (swgparams/+parameter-key-coercions+ schema)
                     ((or coercion-matchers default-part-coercion-matcher) schema)
                     ((rsc/coercer :json) schema))))
         params (coercer parts-by-name)]
