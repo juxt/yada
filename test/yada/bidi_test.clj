@@ -37,5 +37,5 @@
                                    :methods {}})]
                  ["bar/foo" :barfoo]
                  ]]]))]
-    (is (= "bar foo/bar/zip" (b/to-string (:body (deref (h (request :get "/foo")))))))
-    (is (= "../../bar ../../foo" (b/to-string (:body (deref (h (request :get "/foo/bar/zip")))))))))
+    (is (= "bar foo/bar/zip" (some-> (request :get "/foo") h deref :body b/to-string)))
+    (is (= "../../bar ../../foo" (some-> (request :get "/foo/bar/zip") h deref :body b/to-string)))))
