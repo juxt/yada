@@ -5,6 +5,7 @@
   (:require
    [bidi.bidi :as bidi]
    yada.aleph
+   yada.async
    yada.context
    yada.swagger
    yada.redirect

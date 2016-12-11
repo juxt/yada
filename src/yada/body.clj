@@ -2,12 +2,10 @@
 
 (ns yada.body
   (:require
-   [clojure.core.async]
    [clojure.java.io :as io]
    [clojure.pprint :refer [pprint]]
    [clojure.tools.logging :refer :all]
    [clojure.walk :refer [keywordize-keys]]
-   [clojure.core.async :as a]
    [cognitect.transit :as transit]
    [byte-streams :as bs]
    [cheshire.core :as json]
@@ -24,11 +22,8 @@
    [yada.media-type :as mt]
    [yada.util :refer [CRLF]])
   (:import
-   [clojure.core.async Mult]
-   [clojure.core.async.impl.channels ManyToManyChannel]
    [java.io File]
    [java.net URL]
-   [manifold.stream.async CoreAsyncSource]
    [manifold.stream SourceProxy]))
 
 (defprotocol MessageBody
@@ -115,17 +110,6 @@
   java.nio.ByteBuffer
   (to-body [b _] b)
   (content-length [b] (.remaining b))
-
-  Mult
-  (to-body [mlt representation]
-    (let [ch (a/chan 10)]
-      (a/tap mlt ch)
-      (to-body ch representation)))
-  (content-length [_] nil)
-
-  ManyToManyChannel
-  (to-body [ch representation] (render-seq ch representation))
-  (content-length [_] nil)
 
   ;; The default pass-through to the web server
   Object

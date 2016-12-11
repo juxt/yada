@@ -9,8 +9,6 @@
    [manifold.deferred :as d]
    [manifold.stream :as stream]
    [ring.middleware.params :refer [assoc-query-params]]
-   [ring.swagger.coerce :as rsc]
-   [ring.swagger.schema :as rs]
    ring.util.time
    [schema.core :as s]
    [schema.coerce :as sc]
