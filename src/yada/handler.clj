@@ -267,7 +267,7 @@
        req)
      match-context)))
 
-(s/defn new-handler [model :- ys/HandlerModel]
+(s/defn ^:private  new-handler [model :- ys/HandlerModel]
   (map->Handler model))
 
 (defn handler
