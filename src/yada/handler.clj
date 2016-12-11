@@ -19,6 +19,7 @@
    [yada.representation :as rep]
    [yada.resource :as resource :refer [resource as-resource ResourceCoercion]]
    [yada.schema :refer [resource-coercer] :as ys]
+   [yada.swagger-parameters :as swgparams]
    [yada.security :as sec]
    [yada.util :refer [get*]])
   (:import
@@ -80,6 +81,43 @@
 
 (defn set-content-length [ctx]
   (assoc-in ctx [:response :headers "content-length"] (str (body/content-length (get-in ctx [:response :body])))))
+
+(def default-interceptor-chain
+  [i/available?
+   i/known-method?
+   i/uri-too-long?
+   i/TRACE
+   i/method-allowed?
+   swgparams/parse-parameters
+   i/capture-proxy-headers
+   sec/authenticate
+   i/get-properties
+   sec/authorize
+   i/process-content-encoding
+   i/process-request-body
+   i/check-modification-time
+   i/select-representation
+   ;; if-match and if-none-match computes the etag of the selected
+   ;; representations, so needs to be run after select-representation
+   ;; - TODO: Specify dependencies as metadata so we can validate any
+   ;; given interceptor chain
+   i/if-match
+   i/if-none-match
+   i/invoke-method
+   i/get-new-properties
+   i/compute-etag
+   sec/access-control-headers
+   sec/security-headers
+   i/create-response
+   i/logging
+   i/return
+   ])
+
+(def default-error-interceptor-chain
+  [sec/access-control-headers
+   i/create-response
+   i/logging
+   i/return])
 
 (defn- handle-request-with-maybe-subresources [ctx]
   (let [resource (:resource ctx)
@@ -259,8 +297,8 @@
        :resource resource
        :allowed-methods (allowed-methods resource)
        :known-methods (methods/known-methods)
-       :interceptor-chain (:interceptor-chain resource)
-       :error-interceptor-chain (:error-interceptor-chain resource)}))))
+       :interceptor-chain (or (:interceptor-chain resource) default-interceptor-chain)
+       :error-interceptor-chain (or (:error-interceptor-chain resource) default-error-interceptor-chain)}))))
 
 ;; Alias
 (def yada handler)
@@ -297,8 +335,8 @@
                    :resource resource
                    :allowed-methods (allowed-methods resource)
                    :known-methods (methods/known-methods)
-                   :interceptor-chain (:interceptor-chain resource)
-                   :error-interceptor-chain (:error-interceptor-chain resource)}))
+                   :interceptor-chain (or (:interceptor-chain resource) default-interceptor-chain)
+                   :error-interceptor-chain (or (:error-interceptor-chain resource) default-error-interceptor-chain)}))
                 req match-context)))
 
 

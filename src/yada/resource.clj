@@ -2,20 +2,11 @@
 
 (ns yada.resource
   (:require
-   [clojure.tools.logging :refer :all]
    [hiccup.core :refer [html]]
-   [manifold.deferred :as d]
    [schema.core :as s]
-   [schema.coerce :as sc]
    [schema.utils :as su]
-   [yada.representation :as rep]
-   [yada.interceptors :as i]
-   [yada.security :as sec]
-   [yada.swagger-parameters :as swgparams]
    [yada.schema :as ys]
    [yada.context :refer [content-type]]
-   yada.charset
-   yada.media-type
    [yada.util :refer [arity]])
   (:import [yada.charset CharsetMap]
            [yada.media_type MediaTypeMap]
@@ -60,57 +51,12 @@
    CharsetSchemaSet as-set
    StringSet as-set})
 
-;; --
-
-(def default-interceptor-chain
-  [i/available?
-   i/known-method?
-   i/uri-too-long?
-   i/TRACE
-   i/method-allowed?
-   swgparams/parse-parameters
-   i/capture-proxy-headers
-   sec/authenticate
-   i/get-properties
-   sec/authorize
-   i/process-content-encoding
-   i/process-request-body
-   i/check-modification-time
-   i/select-representation
-   ;; if-match and if-none-match computes the etag of the selected
-   ;; representations, so needs to be run after select-representation
-   ;; - TODO: Specify dependencies as metadata so we can validate any
-   ;; given interceptor chain
-   i/if-match
-   i/if-none-match
-   i/invoke-method
-   i/get-new-properties
-   i/compute-etag
-   sec/access-control-headers
-   sec/security-headers
-   i/create-response
-   i/logging
-   i/return
-   ])
-
-(def default-error-interceptor-chain
-  [sec/access-control-headers
-   i/create-response
-   i/logging
-   i/return])
-
-;; --
-
 (defrecord Resource []
   ResourceCoercion
   (as-resource [this] this))
 
 (defn resource [model]
-  (let [r (ys/resource-coercer
-           (merge
-            {:interceptor-chain default-interceptor-chain
-             :error-interceptor-chain default-error-interceptor-chain}
-            model))]
+  (let [r (ys/resource-coercer model)]
     (when (su/error? r) (throw (ex-info "Cannot turn resource-model into resource, because it doesn't conform to a resource-model schema" {:resource-model model :error (:error r)})))
     (map->Resource r)))
 

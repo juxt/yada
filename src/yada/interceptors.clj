@@ -3,31 +3,26 @@
 (ns yada.interceptors
   (:require
    [byte-streams :as bs]
+   [clojure.java.io :as io]
    [clojure.set :as set]
    [clojure.string :as str]
    [clojure.tools.logging :refer :all]
    [manifold.deferred :as d]
    [manifold.stream :as stream]
-   [ring.middleware.params :refer [assoc-query-params]]
-   ring.util.time
-   [schema.core :as s]
-   [schema.coerce :as sc]
    [schema.utils :refer [error?]]
    [yada.body :as body]
    [yada.charset :as charset]
-   [yada.coerce :as coerce]
    [yada.cookies :as cookies]
    [yada.etag :as etag]
    [yada.media-type :as mt]
    [yada.methods :as methods]
-   [yada.request-body :as rb]
    [yada.representation :as rep]
+   [yada.request-body :as rb]
    [yada.schema :as ys]
-   [yada.util :as util]
-   [clojure.java.io :as io])
-  (:import [yada.context Response]
-           [java.io ByteArrayInputStream ByteArrayOutputStream]
-           java.util.zip.GZIPInputStream))
+   [yada.util :as util])
+  (:import
+   [java.io ByteArrayOutputStream]
+   [java.util.zip GZIPInputStream]))
 
 (defn available?
   "Is the service available?"
