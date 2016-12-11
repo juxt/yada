@@ -6,16 +6,12 @@
    [clojure.pprint :refer [pprint]]
    [clojure.tools.logging :refer :all]
    [clojure.walk :refer [keywordize-keys]]
-   [cognitect.transit :as transit]
    [byte-streams :as bs]
-   [cheshire.core :as json]
    [hiccup.core :refer [html h]]
    [hiccup.page :refer [html5 xhtml]]
-   [json-html.core :as jh]
    [manifold.stream :refer [->source transform]]
-   [manifold.stream.async]
    [ring.util.codec :as codec]
-   [ring.util.http-status :refer [status]]
+   [yada.status :refer [status]]
    [schema.core :as s]
    [yada.charset :as charset]
    [yada.journal :as journal]
@@ -124,12 +120,13 @@
 
 (defmethod render-map "text/html"
   [m representation]
-  (-> (html
-       [:head [:style (slurp (io/resource "json.human.css"))]]
-         (jh/edn->html m))
-      (str \newline) ; annoying on the command-line otherwise
-      (to-body representation) ; for string encoding
-      ))
+  (->
+   (html
+    [:body
+     [:pre (with-out-str (pprint m))]])
+   (str \newline) ; annoying on the command-line otherwise
+   (to-body representation) ; for string encoding
+   ))
 
 (defmethod render-seq "text/html"
   [s representation]
@@ -141,49 +138,6 @@
       (str \newline) ; annoying on the command-line otherwise
       (to-body representation) ; for string encoding
       ))
-
-;; application/json
-
-(defmethod render-map "application/json"
-  [m representation]
-  (let [pretty (get-in representation [:media-type :parameters "pretty"])]
-    (str (json/encode m {:pretty pretty}) \newline)))
-
-(defmethod render-seq "application/json"
-  [s representation]
-  (let [pretty (get-in representation [:media-type :parameters "pretty"])]
-    (str (json/encode s {:pretty pretty}) \newline)))
-
-;; application/transit+json
-
-(defn ^:private transit-encode [v type]
-  (let [baos (java.io.ByteArrayOutputStream. 100)]
-    (transit/write (transit/writer baos type) v)
-    (.toByteArray baos)))
-
-(defn ^:private transit-json-encode [v pretty?]
-  (transit-encode v (if pretty? :json-verbose :json)))
-
-(defn ^:private transit-msgpack-encode [v]
-  (transit-encode v :msgpack))
-
-(defmethod render-map "application/transit+json"
-  [m representation]
-  (let [pretty (get-in representation [:media-type :parameters "pretty"])]
-    (transit-json-encode m pretty)))
-
-(defmethod render-seq "application/transit+json"
-  [s representation]
-  (let [pretty (get-in representation [:media-type :parameters "pretty"])]
-    (transit-json-encode s pretty)))
-
-(defmethod render-map "application/transit+msgpack"
-  [m representation]
-  (transit-msgpack-encode m))
-
-(defmethod render-seq "application/transit+msgpack"
-  [s representation]
-  (transit-msgpack-encode s))
 
 ;; application/edn
 
@@ -274,16 +228,6 @@
    :message (get-error-message status)
    :id id
    :error error})
-
-
-(cheshire.generate/add-encoder java.lang.Exception
-                               (fn [ei jg]
-                                 (cheshire.generate/encode-map
-                                  (merge
-                                   {:error (str ei)}
-                                   (when (instance? clojure.lang.ExceptionInfo ei)
-                                     {:data (pr-str (ex-data ei))}))
-                                  jg)))
 
 ;; TODO: Check semantics, is this right? Shouldn't we be encoding to json here?
 (defmethod render-error "application/json"

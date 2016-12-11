@@ -5,13 +5,10 @@
    [byte-streams :as bs]
    [clojure.tools.logging :refer :all]
    [clojure.edn :as edn]
-   [cheshire.core :as json]
    [manifold.deferred :as d]
    [manifold.stream :as s]
-   [ring.swagger.coerce :as rsc]
    [ring.util.request :as req]
    [ring.util.codec :as codec]
-   [cognitect.transit :as transit]
    [schema.coerce :as sc]
    [schema.utils :refer [error? error-val]]
    [yada.coerce :as coerce]
@@ -118,21 +115,6 @@
   [& args]
   (apply default-process-request-body args))
 
-;; application/json
-
-(defmethod parse-stream "application/json"
-  [_ stream]
-  (-> (bs/to-string stream)
-      (json/decode keyword)
-      (with-400-maybe)))
-
-(defmethod default-matcher "application/json" [_]
-  (rsc/coercer :json))
-
-(defmethod process-request-body "application/json"
-  [& args]
-  (apply default-process-request-body args))
-
 ;; application/edn
 
 (defmethod parse-stream "application/edn"
@@ -142,31 +124,5 @@
       (with-400-maybe)))
 
 (defmethod process-request-body "application/edn"
-  [& args]
-  (apply default-process-request-body args))
-
-;; application/transit+json
-
-(defmethod parse-stream "application/transit+json"
-  [_ stream]
-  (-> (bs/to-input-stream stream)
-      (transit/reader :json)
-      (transit/read)
-      (with-400-maybe)))
-
-(defmethod process-request-body "application/transit+json"
-  [& args]
-  (apply default-process-request-body args))
-
-;; application/transit+msgpack
-
-(defmethod parse-stream "application/transit+msgpack"
-  [_ stream]
-  (-> (bs/to-input-stream stream)
-      (transit/reader :msgpack)
-      (transit/read)
-      (with-400-maybe)))
-
-(defmethod process-request-body "application/transit+msgpack"
   [& args]
   (apply default-process-request-body args))

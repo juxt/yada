@@ -7,7 +7,9 @@
    yada.aleph
    yada.async
    yada.context
-   yada.swagger
+   yada.json
+   yada.json-html
+   yada.multipart
    yada.redirect
    yada.resources.atom-resource
    yada.resources.collection-resource
@@ -16,7 +18,9 @@
    yada.resources.string-resource
    yada.resources.url-resource
    yada.resources.sse
+   yada.swagger
    yada.test
+   yada.transit
    yada.util
    yada.wrappers
    [potemkin :refer (import-vars)]))

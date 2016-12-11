@@ -20,7 +20,6 @@
    [yada.etag :as etag]
    [yada.media-type :as mt]
    [yada.methods :as methods]
-   [yada.multipart]
    [yada.request-body :as rb]
    [yada.representation :as rep]
    [yada.schema :as ys]
