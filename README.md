@@ -60,6 +60,12 @@ A project using yada will need to bring in [aleph](https://github.com/ztellman/a
 
 Support for other web-severs, such as undertow, are on the road-map.
 
+## Future compatibility
+
+If you want to ensure that your code will not break with future releases of yada, you should only use functions from the `yada.yada` namespaces.
+
+You are free to use other public functions in yada, but please be warned that these can and do change between releases.
+
 ## Running documentation and examples offline
 
 Although yada is a library, if you clone this repo you can run the documentation and examples from the REPL.
