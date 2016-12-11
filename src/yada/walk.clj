@@ -23,8 +23,11 @@
                  (fn [{:keys [handler args]}]
                    (merge handler m))))
 
-(defn basic-auth [realm auth-fn routes]
+#_(defn basic-auth [routes realm authn-fn authorization ]
   (merge-options
-   {:security {:type :basic :realm realm}
-    :authorization auth-fn}
+   {:access-control
+    {realm {:authentication-schemes
+            [{:scheme "Basic"
+              :verify authn-fn}]
+            :authorization {:methods {:get "secret/view"}}}}}
    routes))
