@@ -8,7 +8,7 @@
 
   :dependencies
   [[org.clojure/clojure "1.8.0"]
-   [yada "1.1.45"
+   [yada "1.1.46"
     :exclusions
     [aleph
      buddy/buddy-sign
