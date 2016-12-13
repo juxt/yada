@@ -66,6 +66,23 @@ If you want to ensure that your code will not break with future releases of yada
 
 You are free to use other public functions in yada, but please be warned that these can and do change between releases.
 
+## Lean yada
+
+By default, yada is batteries-included, bringing in a large number of dependencies.
+
+However, a leaner version of yada is available which cuts out Swagger, swagger-ui, JSON (cheshire), Transit, buddy, core.async, SSE and other fat.
+
+Instead of requiring `yada.yada`, require `yada.yada.lean` but otherwise use yada in the same way.
+
+The following differences apply:
+
+- yada doesn't automatically encode/decode JSON bodies, or render JSON as HTML
+- no parameter validation or coercion
+- no Swagger
+- no SSE (currently)
+- no JWT
+- no Transit
+
 ## Running documentation and examples offline
 
 Although yada is a library, if you clone this repo you can run the documentation and examples from the REPL.
