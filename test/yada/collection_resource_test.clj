@@ -42,13 +42,3 @@
                            {:headers {"if-modified-since" (format-date (to-date (time/now)))}})
             response @(handler request)]
         (is (= 304 (:status response)))))))
-
-
-(let [test-map {:name "Frank"}
-      handler (time/do-at (yesterday) (handler (as-resource test-map)))
-      request (mock/request :get "/")
-      response @(handler request)
-      ]
-  response
-
-  )
