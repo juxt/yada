@@ -67,9 +67,9 @@
 
           [ch.qos.logback/logback-classic "1.1.5"
            :exclusions [org.slf4j/slf4j-api]]
-          [org.slf4j/jul-to-slf4j "1.7.18"]
-          [org.slf4j/jcl-over-slf4j "1.7.18"]
-          [org.slf4j/log4j-over-slf4j "1.7.18"]
+          [org.slf4j/jul-to-slf4j "1.7.22"]
+          [org.slf4j/jcl-over-slf4j "1.7.22"]
+          [org.slf4j/log4j-over-slf4j "1.7.22"]
 
           [com.stuartsierra/component "0.3.1"]
           [org.clojure/tools.namespace "0.2.11"]
