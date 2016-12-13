@@ -1,17 +1,14 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2016, JUXT LTD.
 
-(ns yada.yada
+(ns yada.yada.lean
   (:refer-clojure :exclude [partial])
   (:require
    [bidi.bidi :as bidi]
    yada.aleph
-   yada.async
    yada.context
    [yada.handler :refer [interceptor-chain error-interceptor-chain]]
    [yada.interceptors :as i]
-   yada.json
-   yada.json-html
-   yada.multipart
+   ;; yada.multipart - still depends on swagger :(
    yada.redirect
    yada.resources.atom-resource
    yada.resources.collection-resource
@@ -19,12 +16,9 @@
    yada.resources.file-resource
    yada.resources.string-resource
    yada.resources.url-resource
-   yada.resources.sse
+   ;; yada.resources.sse - requires sse
    [yada.security :as sec]
-   yada.swagger
-   [yada.swagger-parameters :as swgparams]
    yada.test
-   yada.transit
    yada.util
    yada.wrappers
    [potemkin :refer (import-vars)]))
@@ -33,7 +27,6 @@
  [yada.aleph listener server]
  [yada.context content-type charset language uri-info url-for path-for href-for scheme-for]
  [yada.handler handler yada]
- [yada.swagger swaggered]
  [yada.redirect redirect]
  [yada.resource resource as-resource]
  [yada.test request-for response-for]
@@ -48,7 +41,7 @@
    i/uri-too-long?
    i/TRACE
    i/method-allowed?
-   swgparams/parse-parameters
+;;   swgparams/parse-parameters
    i/capture-proxy-headers
    sec/authenticate
    i/get-properties

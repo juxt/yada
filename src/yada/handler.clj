@@ -19,7 +19,6 @@
    [yada.representation :as rep]
    [yada.resource :as resource :refer [resource as-resource ResourceCoercion]]
    [yada.schema :refer [resource-coercer] :as ys]
-   [yada.swagger-parameters :as swgparams]
    [yada.security :as sec]
    [yada.util :refer [get*]])
   (:import
@@ -81,43 +80,6 @@
 
 (defn set-content-length [ctx]
   (assoc-in ctx [:response :headers "content-length"] (str (body/content-length (get-in ctx [:response :body])))))
-
-(def default-interceptor-chain
-  [i/available?
-   i/known-method?
-   i/uri-too-long?
-   i/TRACE
-   i/method-allowed?
-   swgparams/parse-parameters
-   i/capture-proxy-headers
-   sec/authenticate
-   i/get-properties
-   sec/authorize
-   i/process-content-encoding
-   i/process-request-body
-   i/check-modification-time
-   i/select-representation
-   ;; if-match and if-none-match computes the etag of the selected
-   ;; representations, so needs to be run after select-representation
-   ;; - TODO: Specify dependencies as metadata so we can validate any
-   ;; given interceptor chain
-   i/if-match
-   i/if-none-match
-   i/invoke-method
-   i/get-new-properties
-   i/compute-etag
-   sec/access-control-headers
-   sec/security-headers
-   i/create-response
-   i/logging
-   i/return
-   ])
-
-(def default-error-interceptor-chain
-  [sec/access-control-headers
-   i/create-response
-   i/logging
-   i/return])
 
 (defn- handle-request-with-maybe-subresources [ctx]
   (let [resource (:resource ctx)
@@ -270,35 +232,41 @@
 (s/defn ^:private  new-handler [model :- ys/HandlerModel]
   (map->Handler model))
 
+(defmulti interceptor-chain "" (fn [options] (:interceptor-chain options)))
+(defmulti error-interceptor-chain "" (fn [options] (:error-interceptor-chain options)))
+
 (defn handler
   "Create a Ring handler"
-  [resource]
+  ([resource]
+   (handler resource {:interceptor-chain nil
+                      :error-interceptor-chain nil}))
+  ([resource options]
 
-  (when (not (satisfies? ResourceCoercion resource))
-    (throw (ex-info "The argument to the yada function must be a Resource record or something that can be coerced into one (i.e. a type that satisfies yada.protocols/ResourceCoercion)"
-                    {:resource resource})))
+   (when (not (satisfies? ResourceCoercion resource))
+     (throw (ex-info "The argument to the yada function must be a Resource record or something that can be coerced into one (i.e. a type that satisfies yada.protocols/ResourceCoercion)"
+                     {:resource resource})))
 
-  ;; It's possible that we're being called with a resource that already has an error
-  (when (error? resource)
-    (throw (ex-info "yada function is being passed a resource that is an error"
-                    {:error (:error resource)})))
+   ;; It's possible that we're being called with a resource that already has an error
+   (when (error? resource)
+     (throw (ex-info "yada function is being passed a resource that is an error"
+                     {:error (:error resource)})))
 
-  (let [resource (ys/resource-coercer (as-resource resource))]
+   (let [resource (ys/resource-coercer (as-resource resource))]
 
-    (when (error? resource)
-      (throw (ex-info "Resource does not conform to schema"
-                      {:resource resource
-                       :error (:error resource)
-                       :schema ys/Resource})))
+     (when (error? resource)
+       (throw (ex-info "Resource does not conform to schema"
+                       {:resource resource
+                        :error (:error resource)
+                        :schema ys/Resource})))
 
-    (new-handler
-     (merge
-      {:id (get resource :id (java.util.UUID/randomUUID))
-       :resource resource
-       :allowed-methods (allowed-methods resource)
-       :known-methods (methods/known-methods)
-       :interceptor-chain (or (:interceptor-chain resource) default-interceptor-chain)
-       :error-interceptor-chain (or (:error-interceptor-chain resource) default-error-interceptor-chain)}))))
+     (new-handler
+      (merge
+       {:id (get resource :id (java.util.UUID/randomUUID))
+        :resource resource
+        :allowed-methods (allowed-methods resource)
+        :known-methods (methods/known-methods)
+        :interceptor-chain (or (:interceptor-chain resource) (interceptor-chain options))
+        :error-interceptor-chain (or (:error-interceptor-chain resource) (error-interceptor-chain options))})))))
 
 ;; Alias
 (def yada handler)
@@ -335,8 +303,8 @@
                    :resource resource
                    :allowed-methods (allowed-methods resource)
                    :known-methods (methods/known-methods)
-                   :interceptor-chain (or (:interceptor-chain resource) default-interceptor-chain)
-                   :error-interceptor-chain (or (:error-interceptor-chain resource) default-error-interceptor-chain)}))
+                   :interceptor-chain (or (:interceptor-chain resource) (interceptor-chain match-context))
+                   :error-interceptor-chain (or (:error-interceptor-chain resource) (error-interceptor-chain match-context))}))
                 req match-context)))
 
 

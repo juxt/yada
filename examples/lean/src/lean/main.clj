@@ -1,7 +1,7 @@
 ;; Copyright © 2016, JUXT LTD.
 
-(ns edge.main
-  (:require [yada.resource :refer [resource]]))
+(ns lean.main
+  (:require [yada.yada.lean :refer [resource listener]]))
 
 (def svr
   (listener
@@ -9,5 +9,7 @@
          {:methods
           {:get
            {:produces "text/plain"
-            :response "Hello World"}}})]
+            :response "Hello World!"}}})]
    {:port 3000}))
+
+;;((:close svr))
