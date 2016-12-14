@@ -144,7 +144,7 @@
                 (conj [:id ::manual])))]
 
         ["/dir/" (yada (io/file "talks"))]
-        ["/jar" (yada (new-classpath-resource "META-INF/resources/webjars/swagger-ui/2.1.3"))]
+        ["/jar" (yada (new-classpath-resource "META-INF/resources/webjars/swagger-ui/2.2.6"))]
 
         ["/h1.html" (yada [:h1 "Heading"])]
 

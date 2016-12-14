@@ -27,3 +27,4 @@ target/
 /talks/clojutre-2016.tex
 /talks/fby-2016.pdf
 /talks/fby-2016.tex
+/examples/phonebook/.lein-failures
