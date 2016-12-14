@@ -6,6 +6,8 @@
   :license {:name "The MIT License"
             :url "http://opensource.org/licenses/MIT"}
 
+  :exclusions [[org.clojure/clojure]]
+
   :dependencies
   [[bidi "2.0.14" :exclusions [ring/ring-core]]
    [buddy/buddy-sign "1.3.0"]
