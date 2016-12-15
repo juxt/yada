@@ -233,7 +233,18 @@
   (map->Handler model))
 
 (defmulti interceptor-chain "" (fn [options] (:interceptor-chain options)))
+
+(defmethod interceptor-chain :default [options]
+  (if-let [ic (:interceptor-chain options)]
+    (throw (ex-info (format "No default interceptor chain found for %s" ic) options))
+    (throw (ex-info "No default interceptor chain defmethod defined. Have you required yada.yada (or a yada.yada sub-namespace)?" {}))))
+
 (defmulti error-interceptor-chain "" (fn [options] (:error-interceptor-chain options)))
+
+(defmethod error-interceptor-chain :default [options]
+  (if-let [ic (:error-interceptor-chain options)]
+    (throw (ex-info (format "No default error interceptor chain found for %s" ic) options))
+    (throw (ex-info "No default error interceptor chain defmethod defined. Have you required yada.yada (or a yada.yada sub-namespace)?" {}))))
 
 (defn handler
   "Create a Ring handler"
