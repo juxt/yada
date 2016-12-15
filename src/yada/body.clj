@@ -68,8 +68,6 @@
   (content-length [s]
     nil)
 
-
-
   MapBody
   (to-body [mb representation]
     (to-body (:map mb) representation))
@@ -230,6 +228,7 @@
    :error error})
 
 ;; TODO: Check semantics, is this right? Shouldn't we be encoding to json here?
+;; TODO: Move to yada.json
 (defmethod render-error "application/json"
   [status error representation {:keys [id options]}]
   {:status status
@@ -238,6 +237,7 @@
    :error error})
 
 ;; TODO: Check semantics, is this right? Shouldn't we be encoding to transit+json here?
+;; TODO: Move to yada.transit
 (defmethod render-error "application/transit+json"
   [status error representation {:keys [id options]}]
   {:status status
