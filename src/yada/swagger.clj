@@ -4,7 +4,6 @@
   (:require
    [bidi.bidi :refer [Matched resolve-handler unresolve-handler route-seq succeed unmatch-pair segment-regex-group]]
    [bidi.ring :refer [Ring request make-handler]]
-   [camel-snake-kebab.core :as csk]
    [cheshire.core :as json]
    [clj-time.coerce :refer [to-date]]
    [clj-time.core :refer [now]]

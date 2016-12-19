@@ -12,7 +12,6 @@
     :exclusions
     [aleph
      buddy/buddy-sign
-     camel-snake-kebab
      cheshire
      com.cognitect/transit-clj
      ;; hiccup - we need hiccup because of exception formatting

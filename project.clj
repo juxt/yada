@@ -12,7 +12,6 @@
   [[bidi "2.0.14" :exclusions [ring/ring-core]]
    [buddy/buddy-sign "1.3.0"]
    [byte-streams "0.2.2"]
-   [camel-snake-kebab "0.4.0"]
    [cheshire "5.6.3"]
    [clj-time "0.12.2"]
 
