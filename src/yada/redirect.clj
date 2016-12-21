@@ -2,7 +2,8 @@
 
 (ns yada.redirect
   (:require
-   [yada.resource :refer [resource]]))
+   [yada [resource :refer [resource]]
+         [context :refer [uri-for]]]))
 
 (defn redirect
   "Opts can include route-params, query-params and vhost"
@@ -12,7 +13,7 @@
    (resource
     {:produces "text/plain"
      :response (fn [ctx]
-                 (if-let [uri (:uri ((:uri-for ctx) target opts))]
+                 (if-let [uri (:uri ((uri-for ctx) target opts))]
                    (assoc (:response ctx)
                           :status 302
                           :headers {"location" uri})
