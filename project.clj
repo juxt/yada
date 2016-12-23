@@ -102,8 +102,18 @@
           ;; To compare with aleph http client
           [clj-http "3.4.1"]]
 
-         :source-paths ["dev/src"
-                        "examples/phonebook/src"]
+         :source-paths ^:replace ["dev/src"
+                                  "examples/phonebook/src"
+                                  "src"
+                                  "ext/async/src"
+                                  "ext/cheshire/src"
+                                  "ext/json-html/src"
+                                  "ext/jwt/src"
+                                  "ext/multipart/src"
+                                  "ext/oauth2/src"
+                                  "ext/swagger/src"
+                                  "ext/transit/src"
+                                  "ext/yada/src"]
 
          :test-paths ["test"
                       "examples/phonebook/test"]

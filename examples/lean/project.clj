@@ -10,13 +10,12 @@
   [[org.clojure/clojure "1.8.0"]
    [yada "1.1.46"
     :exclusions
-    [aleph
-     buddy/buddy-sign
+    [buddy/buddy-sign
      cheshire
      com.cognitect/transit-clj
      ;; hiccup - we need hiccup because of exception formatting
      json-html
-     manifold
+;;     manifold
      metosin/ring-http-response
      metosin/ring-swagger
      org.clojure/core.async
