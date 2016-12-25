@@ -145,7 +145,7 @@
                               rep (assoc-in [:response :produces] rep)
 
                               (contains? data :body)
-                              (assoc [:response :body] (:body data))
+                              (assoc-in [:response :body] (:body data))
 
                               (and (not (contains? data :body)) (not (:response custom-response)))
                               (standard-error status e rep)

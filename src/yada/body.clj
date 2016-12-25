@@ -57,6 +57,7 @@
   ;; A String is already its own representation, all we must do now is encode it to a char buffer
   (to-body [s representation]
     (encode-message s representation))
+  (content-length [_] nil)
 
   Long
   (to-body [l representation]
@@ -71,27 +72,33 @@
   MapBody
   (to-body [mb representation]
     (to-body (:map mb) representation))
+  (content-length [_] nil)
 
   clojure.lang.APersistentMap
   (to-body [m representation]
     ;; We always try to arrive at a string which is then converted
     (encode-message (render-map m representation) representation))
+  (content-length [_] nil)
 
   clojure.lang.APersistentVector
   (to-body [v representation]
     (encode-message (render-seq v representation) representation))
+  (content-length [_] nil)
 
   clojure.lang.ASeq
   (to-body [v representation]
     (encode-message (render-seq v representation) representation))
+  (content-length [_] nil)
 
   clojure.lang.LazySeq
   (to-body [v representation]
     (encode-message (render-seq v representation) representation))
+  (content-length [_] nil)
 
   java.util.HashSet
   (to-body [v representation]
     (encode-message (render-seq v representation) representation))
+  (content-length [_] nil)
 
   File
   (to-body [f _]

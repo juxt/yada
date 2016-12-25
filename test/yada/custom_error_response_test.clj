@@ -56,3 +56,54 @@
       (catch Exception e
         (let [error-handled? (nil? e)]
           (is error-handled? "clojure.lang.ExceptionInfo not caught by handler"))))))
+
+(deftest custom-error-with-body
+  (testing "GET custom error with response body [text/plain]"
+    (try
+      (let [handler (yada (error-resource :get (ex-info "Oh!" {:status 400
+                                                               :body "error response body"})))
+            response @(handler (request :get "/"))]
+        (is (= 400 (:status response)))
+        (is (= "error response body" (b/to-string (:body response)))))
+      (catch Exception e
+        (let [error-handled? (nil? e)]
+          (is error-handled? "clojure.lang.ExceptionInfo not caught by handler")))))
+
+  (testing "POST custom error with response body [text/plain]"
+    (try
+      (let [handler (yada (error-resource :post (ex-info "Oh!" {:status 400
+                                                                :body "error response body"})))
+            response @(handler (request :post "/"))]
+        (is (= 400 (:status response)))
+        (is (= "error response body" (b/to-string (:body response)))))
+      (catch Exception e
+        (let [error-handled? (nil? e)]
+          (is error-handled? "clojure.lang.ExceptionInfo not caught by handler")))))
+
+  (testing "GET custom error with response body [application/json]"
+    (try
+      (let [resource (error-resource :get (ex-info "Oh!" {:status 400
+                                                          :body {:message "custom error message"}}))
+            resource' (assoc-in resource [:methods :get :produces] "application/json")
+            handler (yada resource')
+            response @(handler (request :get "/"))]
+        (is (= 400 (:status response)))
+        (is (= "application/json" (get-in response [:headers "content-type"])))
+        (is (= "{\"message\":\"custom error message\"}\n" (b/to-string (:body response)))))
+      (catch Exception e
+        (let [error-handled? (nil? e)]
+          (is error-handled? "clojure.lang.ExceptionInfo not caught by handler")))))
+
+  (testing "POST custom error with response body [application/json]"
+    (try
+      (let [resource (error-resource :post (ex-info "Oh!" {:status 400
+                                                          :body {:message "custom error message"}}))
+            resource' (assoc-in resource [:methods :post :produces] "application/json")
+            handler (yada resource')
+            response @(handler (request :post "/"))]
+        (is (= 400 (:status response)))
+        (is (= "application/json" (get-in response [:headers "content-type"])))
+        (is (= "{\"message\":\"custom error message\"}\n" (b/to-string (:body response)))))
+      (catch Exception e
+        (let [error-handled? (nil? e)]
+          (is error-handled? "clojure.lang.ExceptionInfo not caught by handler"))))))
