@@ -40,7 +40,7 @@ Typically, yada handlers are created from a configuation expressed in data.
        :response "<h1>Hello World!</h1>"}}})
 ```
 
-This is a simple example, there are a lot more options in yada than can be expressed here, but the approach is the same. The data configuration can be hand-authored, or generated programmatically leading enabling creation of consisntent APIs at an industrial scale.
+This is a simple example, there are a lot more options in yada than can be expressed here, but the approach is the same. The data configuration can be hand-authored, or generated programmatically leading enabling creation of consistent APIs at an industrial scale.
 
 ## Dependencies
 
