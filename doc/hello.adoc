@@ -327,7 +327,7 @@ Let's try a normal GET.
 
 [source]
 ----
-curl -i http://localhost:3000/hello-atom -X OPTIONS
+curl -i http://localhost:3000/hello-atom
 ----
 
 We can now make another `OPTIONS` request to see whether `PUT` is available, before trying it.
