@@ -12,4 +12,10 @@ link:https://github.com/asciidoctor/asciidoctorj[Asciidoctorj] is used to genera
 
 === PDF
 
-This uses a [LaTeX]#LaTeX# backend.
+The main font is Noto Sans, licensed under the link:http://scripts.sil.org/cms/scripts/page.php?site_id=nrsi&id=OFL[Open Font License].
+
++Monospace+ font is Droid Sans Mono, licensed under the link:https://en.wikipedia.org/wiki/Apache_License[Apache License].
+
+The [yada]#yada# font is based on link:https://fonts.google.com/specimen/Rochester[Rochester] licensed under the link:https://en.wikipedia.org/wiki/Apache_License[Apache License, Version 2.0].
+
+link:http://asciidoctor.org/[Asciidoctor] is used to generate DocBook 5 XML which is output to [LaTeX]#LaTeX# using dblatex.
