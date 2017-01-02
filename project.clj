@@ -4,9 +4,9 @@
 
 (defproject yada/core VERSION
   :description "A powerful Clojure web library, full HTTP, full async"
-  :url "http://github.com/juxt/yada"
+  :url "https://github.com/juxt/yada"
   :license {:name "The MIT License"
-            :url "http://opensource.org/licenses/MIT"}
+            :url "https://opensource.org/licenses/MIT"}
 
   :exclusions [[org.clojure/clojure]]
 
