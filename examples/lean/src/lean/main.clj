@@ -1,7 +1,7 @@
 ;; Copyright © 2016, JUXT LTD.
 
 (ns lean.main
-  (:require [yada.yada.lean :refer [resource listener]]))
+  (:require [yada.yada :refer [resource listener]]))
 
 (def svr
   (listener
