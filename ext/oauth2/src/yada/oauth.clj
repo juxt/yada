@@ -5,8 +5,7 @@
    [aleph.http :as http]
    [buddy.core.hash :as hash]
    [buddy.core.keys :as keys]
-   [buddy.sign.jwe :as jwe]
-   [buddy.sign.jws :as jws]
+   [buddy.sign.jwt :as jwt]
    [byte-streams :as b]
    [cheshire.core :as json]
    [clojure.string :as str]
@@ -53,7 +52,7 @@
                             {"client_id" client-id
                              "redirect_uri" (:uri (uri-info ctx redirect-uri))
                              "scope" scope
-                             "state" (jwe/encrypt {:target-uri (or target-uri-override
+                             "state" (jwt/encrypt {:target-uri (or target-uri-override
                                                                    (when target-uri (:uri (uri-info ctx target-uri)))
                                                                    "")}
                                                   secret)}
@@ -102,7 +101,7 @@
              (str "ERROR: " (-> ctx :parameters :query (get "error_description")))
 
              (let [code (-> ctx :parameters :query :code)
-                   state (jwe/decrypt (-> ctx :parameters :query :state) secret)
+                   state (jwt/decrypt (-> ctx :parameters :query :state) secret)
                    target-uri (:target-uri state)]
 
                ;; Make API calls to GitHub without blocking the request thread
@@ -138,7 +137,7 @@
 
                     ;; TODO: Refresh tokens
                     (let [expires (time/plus (time/now) (or cookie-expiry-period (time/days 30)))
-                          cookie {:value (jwe/encrypt data secret)
+                          cookie {:value (jwt/encrypt data secret)
                                   :expires expires
                                   :http-only true}]
 
@@ -179,7 +178,7 @@
            :code s/Str}}
          :response
          (fn [ctx]
-           (let [state (jwe/decrypt (-> ctx :parameters :query :state) secret)
+           (let [state (jwt/decrypt (-> ctx :parameters :query :state) secret)
                  target-uri (:target-uri state)]
 
              ;; Make API calls to GitHub without blocking the request thread
@@ -218,7 +217,7 @@
 
                     ;; TODO: Refresh tokens
                     (let [expires (time/plus (time/now) (or cookie-expiry-period (time/days 30))) ; TODO parameterize
-                          cookie {:value (jwe/encrypt data secret)
+                          cookie {:value (jwt/encrypt data secret)
                                   :expires expires
                                   :http-only true}]
 
@@ -244,10 +243,10 @@
 
 (defmethod verify :oauth2
   [ctx {:keys [cookie yada.oauth2/secret] :or {cookie "session"} :as scheme}]
-  (when-not secret (throw (ex-info "Buddy JWE decryption requires a secret entry in scheme" {:scheme scheme})))
+  (when-not secret (throw (ex-info "Buddy JWT decryption requires a secret entry in scheme" {:scheme scheme})))
   (try
     (when-let [cookie (get-in ctx [:cookies cookie])]
-      (jwe/decrypt cookie secret))
+      (jwt/decrypt cookie secret))
     (catch clojure.lang.ExceptionInfo e
       (when-not (contains? #{{:type :validation :cause :decryption}
                              {:type :validation :cause :signature}}
