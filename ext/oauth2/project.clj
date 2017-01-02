@@ -1,6 +1,6 @@
 ;; Copyright © 2014-2016, JUXT LTD.
 
-(def VERSION "1.2.0-SNAPSHOT")
+(def VERSION "1.2.0")
 
 (defproject yada/oauth2 VERSION
   :pedantic? :abort

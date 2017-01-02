@@ -20,10 +20,10 @@ The user-manual is also available as an e-book or PDF, at
 
 ## Installation
 
-Add the following dependency to your `project.clj` or `build.boot` file
+Add the following dependency to your `project.clj` or `build.boot` file:
 
-```clojure
-[yada "1.2.0-SNAPSHOT" :classifier "full"]
+```
+[yada "1.2.0"]
 ```
 
 [![Build Status](https://travis-ci.org/juxt/yada.png)](https://travis-ci.org/juxt/yada)
@@ -75,10 +75,10 @@ The following differences apply:
 - no Transit
 
 To use the lean (or any other) variant of yada, specify the
-appropriate classifier in your `project.clj` or `build.boot` file.
+appropriate classifier in your `project.clj` or `build.boot` file:
 
 ```clojure
-[yada "1.1.47" :classifier "lean"]
+[yada/lean "1.2.0"]
 ```
 
 ## Running documentation and examples offline

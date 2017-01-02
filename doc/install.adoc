@@ -7,7 +7,7 @@ following in the file's *:dependencies* section.
 
 [source,clojure]
 ----
-[yada "1.2.0-SNAPSHOT"]
+[yada "1.2.0"]
 [aleph "0.4.1"]
 [bidi "2.0.12"]
 ----
