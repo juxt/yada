@@ -11,6 +11,10 @@
     </xsl:text>
   </xsl:param>
 
+  <!-- Prefer not to make the callout linkends clickable (and thus red
+       too) -->
+  <xsl:param name="callout.linkends.hot" select="'0'"/>
+
   <xsl:template match="phrase[@role='yada']">
     <xsl:text>
       {\fontspec{RochesterYada}[Path=../fonts/,UprightFont=*]\Large yada}
