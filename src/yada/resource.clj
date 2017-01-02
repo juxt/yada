@@ -102,25 +102,3 @@
                                [:div
                                 (for [stl (.getStackTrace e)]
                                   [:p [:tt stl]])]]))])))}}})))
-
-
-
-;; Convenience functions
-
-(defn prepend-interceptor [res & interceptors]
-  (update res
-          :interceptor-chain (partial into (vec interceptors))))
-
-(defn insert-interceptor [res point & interceptors]
-  (update res :interceptor-chain
-          (partial mapcat (fn [i]
-                            (if (= i point)
-                              (concat interceptors [i])
-                              [i])))))
-
-(defn append-interceptor [res point & interceptors]
-  (update res :interceptor-chain
-          (partial mapcat (fn [i]
-                            (if (= i point)
-                              (concat [i] interceptors)
-                              [i])))))

@@ -91,7 +91,7 @@
   [ctx body-stream media-type & args]
   (let [body-string (bs/to-string body-stream)
         ;; Form and body schemas have to been done at the method level
-        ;; - TODO: Build this contraint in yada.schema.
+        ;; - TODO: Build this constraint in yada.schema.
         schemas (get-in ctx [:resource :methods (:method ctx) :parameters])
         matchers (get-in ctx [:resource :methods (:method ctx) :coercion-matchers])
         coercion-matcher (or (:form matchers) (:body matchers))]

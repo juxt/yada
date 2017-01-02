@@ -5,10 +5,8 @@
             [clojure.test :refer :all]
             [manifold.deferred :as d]
             [ring.mock.request :refer [header request]]
-            [cheshire.core :as json]
-            [yada
-             [interceptors :as i]
-             [yada :refer [resource yada]]])
+            [yada.resource :refer [resource]]
+            [yada.handler :refer [handler]])
   (:import java.io.ByteArrayOutputStream
            [java.util.zip GZIPInputStream GZIPOutputStream]))
 
@@ -34,26 +32,26 @@
 
 (deftest content-encoding-test
   (testing "Non-gzipped body"
-    (let [handler  (yada (post-text-plain-resource))
-          content  "test body"
-          response @(handler (-> (request :post "/" content)
-                                 (header "Content-type" "text/plain")))]
+    (let [h (handler (post-text-plain-resource))
+          content "test body"
+          response @(h (-> (request :post "/" content)
+                           (header "Content-type" "text/plain")))]
       (is (= 200 (-> response :status)))
       (is (= "test body" (-> response :body bs/to-string)))))
 
   (testing "Gzipped body"
-    (let [handler  (yada (post-text-plain-resource))
-          content  (to-gzipped-byte-array "test body")
-          response @(handler (-> (request :post "/" content)
-                                 (header "Content-type" "text/plain")
-                                 (header "Content-encoding" "gzip")))]
+    (let [h (handler (post-text-plain-resource))
+          content (to-gzipped-byte-array "test body")
+          response @(h (-> (request :post "/" content)
+                           (header "Content-type" "text/plain")
+                           (header "Content-encoding" "gzip")))]
       (is (= 200 (-> response :status)))
       (is (= "test body" (-> response :body bs/to-string)))))
 
   (testing "Unsupported Content-encoding"
-    (let [handler  (yada (post-text-plain-resource))
-          content  (to-gzipped-byte-array "test body")
-          response @(handler (-> (request :post "/" content)
-                                 (header "Content-type" "text/plain")
-                                 (header "Content-encoding" "deflate")))]
+    (let [h (handler (post-text-plain-resource))
+          content (to-gzipped-byte-array "test body")
+          response @(h (-> (request :post "/" content)
+                           (header "Content-type" "text/plain")
+                           (header "Content-encoding" "deflate")))]
       (is (= 415 (-> response :status))))))

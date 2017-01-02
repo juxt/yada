@@ -14,7 +14,6 @@
    [yada.status :refer [status]]
    [schema.core :as s]
    [yada.charset :as charset]
-   [yada.journal :as journal]
    [yada.media-type :as mt]
    [yada.util :refer [CRLF]])
   (:import
@@ -120,6 +119,20 @@
   nil
   (to-body [_ _] nil)
   (content-length [_] 0))
+
+;; text/plain
+
+(defmethod render-map "text/plain"
+  [m representation]
+  (->
+   (with-out-str (pprint m))
+   (str \newline) ; annoying on the command-line otherwise
+   (to-body representation) ; for string encoding
+   ))
+
+(defmethod render-seq "text/plain"
+  [s representation]
+  (render-map s representation))
 
 ;; text/html
 

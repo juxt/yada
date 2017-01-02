@@ -20,10 +20,12 @@ The user-manual is also available as an e-book or PDF, at
 
 ## Installation
 
-Add the following dependency to your
-`project.clj` file
+Add the following dependency to your `project.clj` or `build.boot` file
 
-[![Clojars Project](http://clojars.org/yada/latest-version.svg)](http://clojars.org/yada)
+```clojure
+[yada "1.2.0-SNAPSHOT" :classifier "full"]
+```
+
 [![Build Status](https://travis-ci.org/juxt/yada.png)](https://travis-ci.org/juxt/yada)
 
 ## Create a yada handler
@@ -48,15 +50,6 @@ yada requires the following :-
 
 - a Java JDK/JRE installation, version 8 or above
 - Clojure 1.8.0
-- Aleph 0.4.1 (provided via a dependency)
-- bidi 2.0.9 or above
-
-A project using yada will need to bring in [aleph](https://github.com/ztellman/aleph), and optionally bidi.
-
-``` clojure
-[aleph "0.4.1"]
-[bidi "2.0.9"]
-```
 
 Support for other web-severs, such as undertow, are on the road-map.
 
@@ -72,8 +65,6 @@ By default, yada is batteries-included, bringing in a large number of dependenci
 
 However, a leaner version of yada is available which cuts out Swagger, swagger-ui, JSON (cheshire), Transit, buddy, core.async, SSE and other fat.
 
-Instead of requiring `yada.yada`, require `yada.yada.lean` but otherwise use yada in the same way.
-
 The following differences apply:
 
 - yada doesn't automatically encode/decode JSON bodies, or render JSON as HTML
@@ -82,6 +73,13 @@ The following differences apply:
 - no SSE (currently)
 - no JWT
 - no Transit
+
+To use the lean (or any other) variant of yada, specify the
+appropriate classifier in your `project.clj` or `build.boot` file.
+
+```clojure
+[yada "1.1.47" :classifier "lean"]
+```
 
 ## Running documentation and examples offline
 

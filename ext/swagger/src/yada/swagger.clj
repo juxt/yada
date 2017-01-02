@@ -11,7 +11,6 @@
    [clojure.pprint :refer [pprint]]
    [clojure.tools.logging :refer :all]
    [hiccup.page :refer [html5]]
-   [json-html.core :as jh]
    [ring.swagger.swagger2 :as rs]
    [ring.swagger.swagger2-schema :as rss]
    [ring.util.response :refer [redirect]]

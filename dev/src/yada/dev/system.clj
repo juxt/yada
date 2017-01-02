@@ -10,52 +10,55 @@
    [clojure.string :as str]
    [clojure.tools.reader.reader-types :refer [indexing-push-back-reader]]
    [com.stuartsierra.component :refer [system-map system-using using]]
-   [modular.bidi :refer [new-router new-web-resources new-archived-web-resources new-redirect]]
-   [yada.dev.docsite :refer [new-docsite]]
-   [yada.dev.talks :refer [new-talks]]
-   [yada.dev.database :refer [new-database]]
-   [yada.dev.server :refer [new-webserver]]
-   [yada.dev.swagger :refer [new-phonebook-swagger-ui-index]]
+   #_[yada.dev.docsite :refer [new-docsite]]
+   #_[yada.dev.talks :refer [new-talks]]
+   #_[yada.dev.database :refer [new-database]]
+   #_[yada.dev.server :refer [new-webserver]]
+   #_[yada.dev.swagger :refer [new-phonebook-swagger-ui-index]]
    [yada.dev.config :as config]
-   [yada.dev.hello :refer [new-hello-world-example]]
-   [yada.dev.security :refer [new-security-examples]]
-   [yada.dev.upload :refer [new-upload-examples]]
-   [yada.dev.async :refer [new-sse-example]]
-   [yada.dev.error-example :refer [new-error-example]]
-   [phonebook.system :refer [new-phonebook]]))
+   #_[yada.dev.hello :refer [new-hello-world-example]]
+   #_[yada.dev.security :refer [new-security-examples]]
+   #_[yada.dev.upload :refer [new-upload-examples]]
+   #_[yada.dev.async :refer [new-sse-example]]
+   #_[yada.dev.error-example :refer [new-error-example]]
 
-(defn database-components [system]
+   [yada.dev.web-server :refer [new-web-server]]
+   )
+  )
+
+
+#_(defn database-components [system]
   (assoc system ::database (new-database)))
 
-(defn docsite-components [system config]
+#_(defn docsite-components [system config]
   (assoc
    system
-   ::docsite (new-docsite :config config)
+   #_::docsite (new-docsite :config config)
 
-   ::security-examples (new-security-examples)
-   ::sse-example (new-sse-example)
-   ::upload-examples (new-upload-examples)
+   #_::security-examples (new-security-examples)
+   #_::sse-example (new-sse-example)
+   #_::upload-examples (new-upload-examples)
 
    ;; TODO: Replace new-web-resources with a yada equivalent
-   ::jquery (new-web-resources
-            :key :jquery
-            :uri-context "/jquery"
-            :resource-prefix "META-INF/resources/webjars/jquery/2.1.3")
+   #_::jquery #_(new-web-resources
+                 :key :jquery
+                 :uri-context "/jquery"
+                 :resource-prefix "META-INF/resources/webjars/jquery/2.1.3")
 
-   ::bootstrap (new-web-resources
-               :key :bootstrap
-               :uri-context "/bootstrap"
-               :resource-prefix "META-INF/resources/webjars/bootstrap/3.3.6")
+   #_::bootstrap #_(new-web-resources
+                :key :bootstrap
+                :uri-context "/bootstrap"
+                :resource-prefix "META-INF/resources/webjars/bootstrap/3.3.6")
 
-   ::web-resources (new-web-resources
-                   :uri-context "/static"
-                   :resource-prefix "static")
+   #_::web-resources #_(new-web-resources
+                    :uri-context "/static"
+                    :resource-prefix "static")
 
-   ::highlight-js-resources
-   (new-archived-web-resources :archive (io/resource "highlight.zip") :uri-context "/hljs/")
+   #_::highlight-js-resources
+   #_(new-archived-web-resources :archive (io/resource "highlight.zip") :uri-context "/hljs/")
    ))
 
-(defn swagger-ui-components [system]
+#_(defn swagger-ui-components [system]
   (assoc system
          ::phonebook-swagger-ui-index
          (new-phonebook-swagger-ui-index)
@@ -65,7 +68,7 @@
           :uri-context "/swagger-ui"
           :resource-prefix "META-INF/resources/webjars/swagger-ui/2.2.6")))
 
-(defn http-server-components [system config]
+#_(defn http-server-components [system config]
   (assoc system
          ::docsite-server
          (new-webserver
@@ -74,21 +77,25 @@
           (-> config :docsite :vhosts))
          ::docsite-router (new-router)))
 
-(defn hello-world-components [system config]
+#_(defn hello-world-components [system config]
   (assoc system ::hello-world (new-hello-world-example config)))
 
-(defn error-components [system]
+#_(defn error-components [system]
   (assoc system ::error-example (new-error-example)))
 
-(defn talks-components [system config]
+#_(defn talks-components [system config]
   (assoc system ::talks (new-talks config)))
 
-(defn phonebook-components [system config]
+#_(defn phonebook-components [system config]
   (assoc system ::phonebook (new-phonebook (:phonebook config))))
 
 (defn new-system-map
   [config]
-  (apply system-map
+  (system-map
+   :web-server (new-web-server config)
+   )
+
+  #_(apply system-map
     (apply concat
       (-> {}
           (database-components)
@@ -104,9 +111,10 @@
 
 (defn new-dependency-map
   []
-  {::docsite-server {:router ::docsite-router
+  {}
+  #_{::docsite-server {:router ::docsite-router
                      :phonebook ::phonebook}
-   ::docsite-router [::phonebook-swagger-ui-index
+     ::docsite-router [::phonebook-swagger-ui-index
                      ::swagger-ui
                      ::hello-world
                      ::sse-example

@@ -2,9 +2,6 @@
 
 (ns yada.handler
   (:require
-   [bidi.bidi :as bidi]
-   [bidi.ring :as br]
-   [bidi.vhosts :as bv]
    [clojure.tools.logging :refer [errorf debugf infof]]
    [manifold.deferred :as d]
    [schema.core :as s]
@@ -22,7 +19,6 @@
    [yada.security :as sec]
    [yada.util :refer [get*]])
   (:import
-   [bidi.vhosts VHostsModel]
    [clojure.lang PersistentVector APersistentMap]
    [yada.resource Resource]
    [yada.methods AnyMethod]))
@@ -61,8 +57,11 @@
 (def error-representations
   (ys/representation-seq
    (ys/representation-set-coercer
-    [{:media-type #{"application/json"
-                    "application/json;pretty=true;q=0.96"
+    ;; JSON is troublesome because of its poor support for
+    ;; serialization of complex types. Need a plugin mechanism now
+    ;; that JSON has been demoted to an extension.
+    [{:media-type #{ ;;"application/json"
+                    ;;"application/json;pretty=true;q=0.96"
                     "text/plain;q=0.9"
                     "text/html;q=0.8"
                     "application/edn;q=0.6"
@@ -84,6 +83,7 @@
 (defn- handle-request-with-maybe-subresources [ctx]
   (let [resource (:resource ctx)
         error-handler default-error-handler]
+
 
     (if
         ;; If the resource provies sub-resources, call its sub-resource
@@ -159,7 +159,7 @@
 
                             ))))))))))
 
-(defn- handle-request
+(defn handle-request
   "Handle Ring request"
   [handler request match-context]
   (let [method (:request-method request)
@@ -195,41 +195,9 @@
                   "application/json"
                   "application/edn;pretty=true"
                   "application/json;pretty=true"}
-      :methods {:get (fn [ctx] (into {} h))}}))
+      :methods {:get (fn [ctx] (into {} h))}})))
 
-  bidi/Matched
-  (resolve-handler [this m]
-    ;; If we represent a collection of resources, let's match and retain
-    ;; the remainder which we place into the request as :path-info (see
-    ;; below).
-    (if (-> this :resource :path-info?)
-      (assoc m :handler this)
-      (bidi/succeed this m)))
-
-  (unresolve-handler [this m]
-    (when
-        (or (= this (:handler m))
-            (when-let [id (:id this)] (= id (:handler m))))
-        ""))
-
-  bidi/RouteSeq
-  (gather [this context]
-    [(bidi/map->Route
-      (merge
-       (assoc context :handler this)
-       (when-let [id (some-> this :resource :id)] {:tag id})))])
-
-  br/Ring
-  (request [this req match-context]
-    (handle-request
-     this
-     (if (and (-> this :resource :path-info?)
-              (not-empty (:remainder match-context)))
-       (assoc req :path-info (:remainder match-context))
-       req)
-     match-context)))
-
-(s/defn ^:private  new-handler [model :- ys/HandlerModel]
+(s/defn new-handler [model :- ys/HandlerModel]
   (map->Handler model))
 
 (defmulti interceptor-chain "" (fn [options] (:interceptor-chain options)))
@@ -286,39 +254,6 @@
 ;; having to create yada handlers. This isn't really necessary but a
 ;; useful convenience to reduce verbosity.
 
-(extend-type Resource
-  bidi/Matched
-  (resolve-handler [resource m]
-    (if (:path-info? resource)
-      (assoc m :handler resource)
-      (bidi/succeed resource m)))
-
-  (unresolve-handler [resource m]
-    (when
-        (or (= resource (:handler m))
-            (when-let [id (:id resource)] (= id (:handler m))))
-        ""))
-
-  bidi/RouteSeq
-  (gather [this context]
-    [(bidi/map->Route
-      (merge
-       (assoc context :handler this)
-       (when-let [id (:id this)] {:tag id})))])
-
-  br/Ring
-  (request [resource req match-context]
-    (br/request (new-handler
-                 (merge
-                  {:id (get resource :id (java.util.UUID/randomUUID))
-                   :resource resource
-                   :allowed-methods (allowed-methods resource)
-                   :known-methods (methods/known-methods)
-                   :interceptor-chain (or (:interceptor-chain resource) (interceptor-chain match-context))
-                   :error-interceptor-chain (or (:error-interceptor-chain resource) (error-interceptor-chain match-context))}))
-                req match-context)))
-
-
 ;; Coercions
 
 (defprotocol HandlerCoercion
@@ -331,9 +266,26 @@
   (as-handler [this] (handler this))
   APersistentMap
   (as-handler [route] (as-handler (resource route)))
-  PersistentVector
-  (as-handler [route] (br/make-handler route))
-  VHostsModel
-  (as-handler [model] (bv/make-handler model))
   Object
   (as-handler [this] (handler this)))
+
+
+;; Convenience functions
+
+(defn prepend-interceptor [res & interceptors]
+  (update res
+          :interceptor-chain (partial into (vec interceptors))))
+
+(defn insert-interceptor [res point & interceptors]
+  (update res :interceptor-chain
+          (partial mapcat (fn [i]
+                            (if (= i point)
+                              (concat interceptors [i])
+                              [i])))))
+
+(defn append-interceptor [res point & interceptors]
+  (update res :interceptor-chain
+          (partial mapcat (fn [i]
+                            (if (= i point)
+                              (concat [i] interceptors)
+                              [i])))))

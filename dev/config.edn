@@ -1,4 +1,6 @@
-{:docsite {:port 8090
+{:listener {:host "http://localhost:8090" :port 8090}
+
+ :docsite {:port 8090
            :vhosts #profile {:dev ["http://localhost:8090"]
                              :local ["http://yada.juxt.pro.local"]
                              :prod ["https://yada.juxt.pro" "http://yada.juxt.pro"]}}

@@ -11,11 +11,11 @@
    [clj-time.coerce :refer (to-date)]
    [ring.mock.request :refer [request]]
    [ring.util.time :refer (format-date)]
-   [yada.yada :as yada :refer [yada]]))
+   [yada.handler :refer [handler]]))
 
 (deftest function-test
   (testing "Producing a Java string implies utf-8 charset"
-    (let [handler (yada (fn [ctx] "Hello World!"))
+    (let [handler (handler (fn [ctx] "Hello World!"))
           request (request :get "/")
           response @(handler request)]
       (is (= 200 (:status response)))

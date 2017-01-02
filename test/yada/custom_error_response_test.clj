@@ -2,7 +2,8 @@
   (:require [clojure.test :refer :all]
             [byte-streams :as b]
             [ring.mock.request :refer [request]]
-            [yada.yada :refer [yada handler resource]]))
+            [yada.handler :refer [handler]]
+            [yada.resource :refer [resource]]))
 
 (defn- error-resource
   [method exception]
@@ -18,8 +19,8 @@
 (deftest custom-error-response-test []
   (testing "GET custom error for java.lang.Exception"
     (try
-      (let [handler (yada (error-resource :get (Exception. "Oh!")))
-            response @(handler (request :get "/"))]
+      (let [h (handler (error-resource :get (Exception. "Oh!")))
+            response @(h (request :get "/"))]
         (is (= 500 (:status response)))
         (is (= "Error" (b/to-string (:body response)))))
       (catch Exception e
@@ -29,8 +30,8 @@
 
   (testing "GET custom error for clojure.lang.ExceptionInfo"
     (try
-      (let [handler (yada (error-resource :get (ex-info "Oh!" {})))
-            response @(handler (request :get "/"))]
+      (let [h (handler (error-resource :get (ex-info "Oh!" {})))
+            response @(h (request :get "/"))]
         (is (= 500 (:status response)))
         (is (= "Error" (b/to-string (:body response)))))
       (catch Exception e
@@ -39,8 +40,8 @@
 
   (testing "POST custom error for java.lang.Exception"
     (try
-      (let [handler (yada (error-resource :post (Exception. "Oh!")))
-            response @(handler (request :post "/"))]
+      (let [h (handler (error-resource :post (Exception. "Oh!")))
+            response @(h (request :post "/"))]
         (is (= 500 (:status response)))
         (is (= "Error" (b/to-string (:body response)))))
       (catch Exception e
@@ -49,8 +50,8 @@
 
   (testing "POST custom error for clojure.lang.ExceptionInfo"
     (try
-      (let [handler (yada (error-resource :post (ex-info "Oh!" {})))
-            response @(handler (request :post "/"))]
+      (let [h (handler (error-resource :post (ex-info "Oh!" {})))
+            response @(h (request :post "/"))]
         (is (= 500 (:status response)))
         (is (= "Error" (b/to-string (:body response)))))
       (catch Exception e

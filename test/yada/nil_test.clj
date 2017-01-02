@@ -4,17 +4,13 @@
   (:require
    [clojure.test :refer :all]
    [ring.mock.request :refer [request]]
-   [yada.yada :as yada :refer [yada]]))
+   [yada.handler :refer [handler]]))
 
 (deftest nil-test
   (testing "A nil resource should yield on nil"
     (doseq [method [:get :post :put]]
-      (let [res (yada nil)]
+      (let [res (handler nil)]
         (try
           @(res (request method "/"))
           (catch clojure.lang.ExceptionInfo e
             (is (= {:error {:status 404}} (ex-data e)))))))))
-
-
-
-

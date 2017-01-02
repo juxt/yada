@@ -26,6 +26,12 @@
 (defn language [ctx]
   (apply str (interpose "-" (get-in ctx [:response :produces :language :language]))))
 
+(defn path-parameter [ctx n]
+  (get-in ctx [:parameters :path n]))
+
+(defn query-parameter [ctx n]
+  (get-in ctx [:parameters :query n]))
+
 (defn uri-info [ctx handler & [options]]
   (if-let [uri-info (:uri-info ctx)]
     (uri-info handler options)

@@ -1,128 +1,74 @@
-;; Copyright © 2015, JUXT LTD.
-
 (ns yada.parameters-test
   (:require
-    [clojure.test :refer :all]
-    [schema.core :as s]
-    [yada.swagger-parameters :as swgparams]
-    [yada.resource :as r]
-    [manifold.deferred :as d])
-  (:import (clojure.lang ExceptionInfo IDeref)))
+   [byte-streams :as bs]
+   [clojure.edn :as edn]
+   [clojure.test :refer :all]
+   [yada.context :as ctx]
+   [yada.resource :refer [resource]]
+   [yada.handler :refer [handler]]
+   [ring.mock.request :as mock]
+   [schema.core :as s]))
 
-(deftest header-test []
-  (let [resource (r/resource {:parameters {:header {(s/required-key "X-Foo") s/Str
-                                                    }}
-                              :methods {}})]
-    (let [ctx (swgparams/parse-parameters {:resource resource
-                                        :request {:headers {"X-Foo" "Bar"}}})]
-      (is (= "Bar"
-             (get-in ctx [:parameters :header "X-Foo"]) )))))
+(s/defschema Transaction
+  {:payee String
+   :description String
+   :amount Double})
 
-(defn parse [resource request]
-  (let [ret (swgparams/parse-parameters {:resource (r/resource resource)
-                                      :request request})]
-    (if (instance? IDeref ret)
-      @ret
-      (:parameters ret))))
+;; Testing <<parameters>> examples in user-manual
 
-(deftest query-test
-  (testing "keyword keys"
-    (is (= {:query {:filter 12}}
-           (parse {:parameters {:query {:filter Long}}
-                   :methods    {}}
-                  {:query-string "filter=12"})))
-    (is (= {:query {:filter "12"}}
-           (parse {:parameters {:query {:filter s/Str}}
-                   :methods    {}}
-                  {:query-string "filter=12"})))
-    (is (= {:query {:filter "12"}}
-           (parse {:parameters {:query {:filter                s/Str
-                                        (s/optional-key :test) Long}}
-                   :methods    {}}
-                  {:query-string "filter=12"})))
-    (is (= {:query {:filter "12"
-                    :test   15}}
-           (parse {:parameters {:query {:filter                s/Str
-                                        (s/optional-key :test) Long}}
-                   :methods    {}}
-                  {:query-string "filter=12&test=15"}))))
-  (testing "string keys"
-    (is (= {:query {"filter" 12}}
-           (parse {:parameters {:query {(s/required-key "filter") Long}}
-                   :methods    {}}
-                  {:query-string "filter=12"})))
-    (is (= {:query {"filter" "12"}}
-           (parse {:parameters {:query {(s/required-key "filter") s/Str
-                                        (s/optional-key "test")   Long}}
-                   :methods    {}}
-                  {:query-string "filter=12"})))
-    (is (= {:query {"filter" "12"
-                    "test"   15}}
-           (parse {:parameters {:query {(s/required-key "filter") s/Str
-                                        (s/optional-key "test")   Long}}
-                   :methods    {}}
-                  {:query-string "filter=12&test=15"}))))
-  (is (thrown? ExceptionInfo
-               (parse {:parameters {:query {:filter Long}}
-                       :methods    {}}
-                      {:query-string "filter=test"})))
-  (testing "schema key"
-    (is (= {:query {:filter          "test"
-                    :order-direction :asc}}
-           (parse {:parameters {:query {:filter          s/Str
-                                        :order-direction (s/enum :asc :desc)
-                                        s/Keyword        Long}}
-                   :methods    {}}
-                  {:query-string "filter=test&order-direction=asc"})))
-    (is (= {:query {:filter          "test"
-                    :order-direction :asc
-                    "age"            "25"}}
-           (parse {:parameters {:query {:filter          s/Str
-                                        :order-direction (s/enum :asc :desc)
-                                        s/Any            s/Any}}
-                   :methods    {}}
-                  {:query-string "filter=test&order-direction=asc&age=25"})))
-    (is (= {:query {:filter          "test"
-                    :order-direction :asc}}
-           (parse {:parameters {:query {:filter                           s/Str
-                                        (s/optional-key :order-direction) (s/enum :asc :desc)
-                                        s/Keyword                         Long}}
-                   :methods    {}}
-                  {:query-string "filter=test&order-direction=asc"})))
-    (is (= {:query {:filter          "test"
-                    :order-direction :asc
-                    :age             12}}
-           (parse {:parameters {:query {:filter                           s/Str
-                                        (s/optional-key :order-direction) (s/enum :asc :desc)
-                                        s/Keyword                         Long}}
-                   :methods    {}}
-                  {:query-string "filter=test&order-direction=asc&age=12"})))
-    (is (= {:query {:filter "test"
-                    :age    12}}
-           (parse {:parameters {:query {:filter                           s/Str
-                                        (s/optional-key :order-direction) (s/enum :asc :desc)
-                                        s/Keyword                         Long}}
-                   :methods    {}}
-                  {:query-string "filter=test&age=12"})))
-    (is (= {:query {14      12
-                    17      88
-                    :filter "test"}}
-           (parse {:parameters {:query {:filter s/Str
-                                        Long    Long}}
-                   :methods    {}}
-                  {:query-string "14=12&filter=test&17=88"})))
-    (is (= {:query {:filter "test"}}
-           (parse {:parameters {:query {:filter s/Str
-                                        Long    Long}}
-                   :methods    {}}
-                  {:query-string "filter=test"})))
-    (is (thrown? ExceptionInfo
-                 (parse {:parameters {:query {:filter s/Str
-                                              Long    Long}}
-                         :methods    {}}
-                        {:query-string "14=12"})))
-    (is (thrown? ExceptionInfo
-                 (parse {:parameters {:query {:filter s/Str
-                                              Long    Long}}
-                         :methods    {}}
-                        {:query-string "filter=test&muh=12"})))))
+(let [res (resource
+       {:parameters {:path {:account Long}}
+        :methods
+        {:get {:produces "application/edn"
+               :parameters {:query {:since String}}
+               :response (fn [ctx] {:message "Parameters"
+                                    :account (ctx/path-parameter ctx :account)
+                                    :since (ctx/query-parameter ctx :since)})}
+         :post {:parameters {:body Transaction}
+                :consumes "application/edn"
+                :produces "application/edn"
+                :response (fn [ctx] {:body (:body ctx)})}}})
+      h (handler res)]
+  (edn/read-string (bs/to-string (:body @(h (assoc (mock/request :get "/accounts/1234/transactions")
+                                                   :route-params {:account "1234"}))))))
+
+(deftest parameters-test
+  (let [res (resource
+             {:parameters {:path {:account Long}}
+              :methods
+              {:get {:produces "application/edn"
+                     :parameters {:query {:since String}}
+                     :response (fn [ctx] {:message "Parameters"
+                                          :account (ctx/path-parameter ctx :account)
+                                          :since (ctx/query-parameter ctx :since)})}
+               :post {:parameters {:body Transaction}
+                      :consumes "application/edn"
+                      :produces "application/edn"
+                      :response (fn [ctx] {:body (:body ctx)})}}})
+        h (handler res)]
+
+    (is res)
+
+    (is (= {:message "Parameters" :account 1234 :since "tuesday"}
+           (edn/read-string (bs/to-string (:body @(h (assoc (mock/request :get "/accounts/1234/transactions?since=tuesday")
+                                                            :route-params {:account "1234"})))))))
+
+    (is (= 400
+           (:status @(h (assoc (mock/request :get "/accounts/1234/transactions")
+                               :route-params {:account "1234"})))))
+
+    (is (= 400 (:status @(h (let [body (pr-str {:payee "me" :description "monies"})]
+                              (assoc-in (mock/request :post "/accounts/1234/transactions" body)
+                                        [:headers "content-type"] "application/edn"))))))
+
+    (is (= 200 (:status @(h (let [body (pr-str {:payee "me" :description "monies" :amount 100.0})]
+                              (-> (mock/request :post "/accounts/1234/transactions" body)
+                                  (assoc :route-params {:account "1234"})
+                                  (assoc-in [:headers "content-type"] "application/edn")))))))
+
+    (is (= {:body {:payee "me", :description "monies", :amount 100.0}}
+           (edn/read-string (bs/to-string (:body @(h (let [body (pr-str {:payee "me" :description "monies" :amount 100.0})]
+                                                       (merge (-> (mock/request :post "/accounts/1234/transactions" body)
+                                                                  (assoc :route-params {:account "1234"}))
+                                                              {:headers {"content-type" "application/edn"
+                                                                         "content-length" (pr-str (count (.getBytes body)))}}))))))))))

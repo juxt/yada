@@ -9,6 +9,7 @@
    [clojure.tools.logging :refer :all]
    [manifold.deferred :as d]
    [manifold.stream :as stream]
+   ring.util.time
    [schema.utils :refer [error?]]
    [yada.body :as body]
    [yada.charset :as charset]
@@ -74,7 +75,6 @@
 
 
 (defn capture-proxy-headers [ctx]
-
   (let [req (:request ctx)
 
         scheme (or

@@ -4,7 +4,6 @@
     yada.test-util
   (:require
    [manifold.stream :as s]
-   [yada.request-body :refer [process-request-body]]
    [byte-streams :as bs]
    [clojure.test :refer [is]]))
 
@@ -14,10 +13,3 @@
 
 (defn to-string [s]
   (bs/convert s String))
-
-(defmacro is-coercing-correctly?
-  [expected value content-type]
-  `(let [expected# ~expected
-         res# (process-request-body {} ~value ~content-type)]
-     (is (= {:body expected#}
-            res#))))

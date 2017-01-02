@@ -11,17 +11,13 @@
    [hiccup.core :refer [html h]]
    [markdown.core :refer [md-to-html-string]]
    [schema.core :as s]
-   [yada.dev.async :as async]
+   [yada.yada :refer [handler resource]]
    [yada.dev.config :as config]
-   [yada.dev.template :refer [new-template-resource]]
    [yada.resources.file-resource :refer [new-directory-resource]]
    [yada.resources.classpath-resource :refer [new-classpath-resource]]
-   [yada.dev.hello :as hello]
-   [yada.schema :as ys]
-   [yada.swagger :as swagger :refer [swaggered]]
-   [yada.yada :as yada :refer [yada resource redirect]])
-  (:import [modular.bidi Router]
-           [com.stuartsierra.component SystemMap]))
+   [yada.schema :as ys])
+  (:import
+   [com.stuartsierra.component SystemMap]))
 
 (def titles
   {2046 "Multipurpose Internet Mail Extensions (MIME) Part Two: Media Types"
@@ -47,63 +43,60 @@
 (defn rfc []
   (fn [req]
     (let [source (io/resource (format "spec/rfc%s.html" (get-in req [:route-params :rfc])))]
-      ((yada source) req))))
+      ((handler source) req))))
 
-(defn index [{:keys [phonebook config]}]
-  (yada
-   (->
-    (new-template-resource
-     "templates/page.html"
-     ;; We delay the model until after the component's start phase
-     ;; because we need the *router.
-     (fn [ctx]
-       {:banner true
-        :content
-        (html
-         [:div.container
-          [:h2 "Welcome to " [:span.yada "yada"] "!"]
-          [:ol
-           [:li [:a {:href (yada/href-for ctx ::manual)}
-                 "The " [:span.yada "yada"] " manual"]
-            " — the single authority on all things " [:span.yada "yada"]]
+(defn index []
+  (handler
+   (resource
+    {:methods
+     {:get
+      {:produces "text/html"
+       :response
+       (fn [ctx]
+         (html
+          [:div.container
+           [:h2 "Welcome to " [:span.yada "yada"] "!"]
+           #_[:ol
+            [:li [:a {:href (yada/href-for ctx ::manual)}
+                  "The " [:span.yada "yada"] " manual"]
+             " — the single authority on all things " [:span.yada "yada"]]
 
-           [:li "Examples — self-contained apps for you to explore"
-            [:ul
-             [:li [:a {:href (yada/href-for ctx :yada.dev.hello/index)} "Hello World!"] " — to introduce " [:span.yada "yada"] " in the proper way"]
+            [:li "Examples — self-contained apps for you to explore"
+             [:ul
+              [:li [:a {:href (yada/href-for ctx :yada.dev.hello/index)} "Hello World!"] " — to introduce " [:span.yada "yada"] " in the proper way"]
 
-             [:li
-              [:a {:href (yada/href-for ctx :phonebook.api/index)}
-               "Phonebook"]
-              [:a {:href
-                   ;; TODO: use bidi's path-for
-                   (format "%s/phonebook-swagger.html?url=%s"
-                           (yada/href-for ctx :swagger-ui)
-                           (:uri (yada/uri-info ctx ::phonebook-swagger-spec))
+              #_[:li
+                 [:a {:href (yada/href-for ctx :phonebook.api/index)}
+                  "Phonebook"]
+                 [:a {:href
+                      ;; TODO: use bidi's path-for
+                      (format "%s/phonebook-swagger.html?url=%s"
+                              (yada/href-for ctx :swagger-ui)
+                              (:uri (yada/uri-info ctx ::phonebook-swagger-spec))
 
-                           )}
-               " (Swagger)"]
-              " — to demonstrate custom records implementing standard HTTP methods"]
+                              )}
+                  " (Swagger)"]
+                 " — to demonstrate custom records implementing standard HTTP methods"]
 
-             [:li [:a {:href (yada/href-for ctx :yada.dev.security/index)} "Security"] " — to demonstrate authentication and authorization features"]
+              [:li [:a {:href (yada/href-for ctx :yada.dev.security/index)} "Security"] " — to demonstrate authentication and authorization features"]
 
-             [:li [:a {:href (yada/href-for ctx :yada.dev.async/sse-demo)} "SSE demo"] " — to demonstrate Server Sent Events"]
+              [:li [:a {:href (yada/href-for ctx :yada.dev.async/sse-demo)} "SSE demo"] " — to demonstrate Server Sent Events"]
 
-             ]]
+              ]]
 
-           [:li [:a {:href (yada/href-for ctx :yada.dev.talks/index)} "Talks"]]
+            [:li [:a {:href (yada/href-for ctx :yada.dev.talks/index)} "Talks"]]
 
-           [:li "Relevant standards"
-            [:ul
-             (for [i (sort (keys titles))]
-               [:li [:a {:href (format "/spec/rfc%d" i)}
-                     (format "RFC %d: %s" i (or (get titles i) ""))]])]]
+            [:li "Relevant standards"
+             [:ul
+              (for [i (sort (keys titles))]
+                [:li [:a {:href (format "/spec/rfc%d" i)}
+                      (format "RFC %d: %s" i (or (get titles i) ""))]])]]
 
-           ]
-          ])}))
-    (assoc :id ::index))))
+            ]
+           ]))}}}
+    )))
 
-(s/defrecord Docsite [phonebook :- SystemMap
-                      config :- config/ConfigSchema]
+#_(s/defrecord Docsite [config :- config/ConfigSchema]
   RouteProvider
   (routes [component]
     (try
@@ -216,7 +209,7 @@
         ["/error" (fn [req] {:status 200 :body (str e)})]
         ))))
 
-(defn new-docsite [& {:as opts}]
+#_(defn new-docsite [& {:as opts}]
   (-> (map->Docsite opts)
       (using [:phonebook])
       ))

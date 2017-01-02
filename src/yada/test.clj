@@ -3,8 +3,6 @@
 (ns yada.test
   (:require
    [byte-streams :as b]
-   [bidi.ring :as br]
-   [bidi.vhosts :as bv]
    [yada.handler :refer [handler as-handler]]
    [yada.resource :refer [resource]]))
 
@@ -37,5 +35,3 @@
          response @(h (request-for method uri options))]
      (cond-> response
        (:body response) (update :body b/to-string)))))
-
-

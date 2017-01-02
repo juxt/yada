@@ -5,7 +5,8 @@
    [clojure.test :refer :all]
    [byte-streams :as b]
    [yada.test :refer [response-for]]
-   [yada.yada :refer [handler resource]]))
+   [yada.handler :refer [handler]]
+   [yada.resource :refer [resource]]))
 
 (deftest byte-array-bodies-test []
   (let [response
@@ -20,5 +21,3 @@
     (is (= (str (count "hi")) (get-in response [:headers "content-length"]) ))))
 
 ;; TODO: Test various body coercions
-
-

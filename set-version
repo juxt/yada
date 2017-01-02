@@ -1,0 +1,3 @@
+#!/bin/bash
+find . -name project.clj -exec sed -i "s/(def VERSION \".*\")/(def VERSION \"$1\")/g" '{}' \;
+sed -i "s/\[yada \".*\"\]/\[yada \"$1\"\]/g" doc/install.adoc

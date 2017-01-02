@@ -4,7 +4,8 @@
   (:require
    [clojure.test :refer :all :exclude [deftest]]
    [schema.test :refer [deftest]]
-   [yada.yada :refer [resource response-for]]))
+   [yada.resource :refer [resource]]
+   [yada.test :refer [response-for]]))
 
 ;; Happy path
 (deftest logging-test
@@ -13,7 +14,7 @@
           res (response-for {:produces "text/plain"
                              :response "hi"
                              :logger (fn [ctx] (reset! a :logged!) nil)})]
-      
+
       (is (= 200 (:status res)))
       (is (= :logged! @a))))
 
@@ -22,10 +23,6 @@
           res (response-for {:produces "text/plain"
                              :response (fn [_] (throw (new Exception "Whoops!")))
                              :logger (fn [ctx] (reset! a :error) nil)})]
-      
+
       (is (= 500 (:status res)))
       (is (= :error @a)))))
-
-
-
-

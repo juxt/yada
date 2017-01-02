@@ -4,8 +4,7 @@
   (:require
    [clojure.java.io :as io]
    [clojure.test :refer :all]
-   [ring.mock.request :refer [request]]
-   [yada.yada :as yada]))
+   [ring.mock.request :refer [request]]))
 
 ;; For now disable TRACE - need to think a better way of returning a d/success from the chain, prior to response formation
 

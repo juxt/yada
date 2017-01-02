@@ -6,7 +6,7 @@
    [clojure.test :refer :all]
    [clojure.java.io :as io]
    [ring.mock.request :as mock]
-   [yada.handler :refer [handler]])
+   [yada.yada :refer [handler]])
   (:import
    [java.io BufferedInputStream]))
 
@@ -17,9 +17,9 @@
 ;; content-length.)
 
 (deftest resource-test
-  (let [resource (io/resource "static/css/fonts.css")
+  (let [resource (io/resource "yada/test.css")
         handler (handler resource)]
-    
+
     (let [response @(handler (mock/request :get "/"))]
       (is (some? response))
       (is (= 200 (:status response)))

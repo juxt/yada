@@ -3,25 +3,16 @@
 (ns yada.dev.config
   (:require
    [schema.core :as s]
-   [aero.core :refer (read-config)]
-   [phonebook.schema :refer [PhonebookEntry Phonebook UserPort]]))
-
-(s/defschema ConfigSchema
-  {:docsite {:port UserPort
-             :vhosts [s/Str]}
-
-   :phonebook {:vhosts [s/Str]
-               :port UserPort
-               :entries Phonebook}})
+   [aero.core :as aero]))
 
 (defn config
   "Return a map of the static configuration used in the component
   constructors."
   [profile]
-  (read-config
-   "dev/config.edn"
-   {:profile profile
-    :schema ConfigSchema}))
+  (aero/read-config "dev/config.edn" {:profile profile}))
 
+(defn get-listener-port [config]
+  (get-in config [:listener :port]))
 
-
+(defn get-host [config]
+  (get-in config [:listener :host]))
