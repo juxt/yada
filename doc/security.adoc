@@ -1,7 +1,7 @@
 [[security]]
 == Security
 
-Built-in to the library, [yada]#yada# offers a complete standards-based set of security features for today's secure applications and content delivery.
+Built-in to the library, [yada]#yada# offers a complete standards-based set of ((security)) features for today's secure applications and content delivery.
 
 [[security-is-part-of-the-resource-not-the-route]]
 === Security is part of the resource, not the route
@@ -102,7 +102,7 @@ tolerated by setting a cookie or other means.
 [[digest-authentication]]
 ==== Digest authentication
 
-[coming soon]
+(coming soon)
 
 [[cookie-authentication]]
 ==== Cookie authentication
@@ -125,7 +125,7 @@ To protect a site with cookies:
 [[jwt-authentication]]
 ==== JWT authentication
 
-[coming soon]
+(coming soon)
 
 [[form-based-logins]]
 ==== Form-based logins
@@ -206,7 +206,7 @@ the POST.
 [[protecting-resources]]
 ==== Protecting resources
 
-[Coming soon]
+(coming soon)
 
 [[logout]]
 ==== Logout
@@ -216,12 +216,12 @@ The recommended way of logging out is to remove the session.
 [[bearer-authentication-oauth2]]
 ==== Bearer authentication (OAuth2)
 
-[coming soon]
+(coming soon)
 
 [[multifactor-authentication]]
 ==== Multifactor authentication
 
-[coming soon]
+(coming soon)
 
 [[authorization]]
 === Authorization

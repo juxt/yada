@@ -52,20 +52,19 @@ Let's start with a simple web-page example.
 
 This is a short-hand for writing [...]
 
-[missing text here]
+(missing text here)
+
 
 `clojure {:produces [{:media-type "text/plain"              :language #{"en" "zh-ch"}              :charset "UTF-8"}             {:media-type "text/plain"              :language "zh-ch"              :charset "Shift_JIS;q=0.9"}]`
 
-[ todo - languages ]
+( todo - languages )
 
-[source,nohighlight]
-----
-curl -i http://localhost:8090/hello-languages -H "Accept-Charset: Shift_JIS" -H
+....
+$ curl -i http://localhost:8090/hello-languages -H "Accept-Charset: Shift_JIS" -H
 "Accept: text/plain" -H "Accept-Language: zh-CH"
-----
+....
 
-[source,http]
-----
+....
 HTTP/1.1 200 OK
 Content-Type: text/plain;charset=shift_jis
 Vary: accept-charset, accept-language, accept
@@ -75,7 +74,7 @@ Date: Mon, 27 Jul 2015 18:38:01 GMT
 Content-Length: 9
 
 ?�D���E!
-----
+....
 
 === Reactive negotiation
 
@@ -87,7 +86,7 @@ definitely on the road-map.)
 
 === The Vary response header
 
-[coming soon]
+(coming soon)
 
 === Body coercion
 
@@ -132,4 +131,4 @@ yourself.
 
 === Consuming content
 
-[coming soon]
+(coming soon)

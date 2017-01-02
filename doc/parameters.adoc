@@ -1,14 +1,13 @@
 [[parameters]]
 == Parameters
 
-As we learned in <<parameters-intro>>, parameters declarations are useful to validate and coerce request parameters, produce 400 status responses on bad requests thereby providing some protection against bad input data.
+As we learned in <<parameters-intro>>, ((parameters)) declarations are useful to validate and coerce request parameters, produce 400 status responses on bad requests thereby providing some protection against bad input data.
 
 Many requests embed parameters in their URIs. For example, let's imagine a URI to access the transactions of a fictitious bank account.
 
-[source,nohighlight]
-----
+....
 https://bigbank.com/accounts/1234/transactions?since=tuesday
-----
+....
 
 There could be 2 parameters here. The first, `1234`, is contained in the
 path `/accounts/1234/transactions`. We call this a **path parameter**.

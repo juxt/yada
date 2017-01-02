@@ -13,25 +13,22 @@ So let's get going!
 
 First let's clone the project and change into its working directory.
 
-[source]
-----
+....
 git clone https://github.com/juxt/edge
 cd edge
-----
+....
 
 === Build & Run
 
 Next we build and run it, in _development_ mode.
 
-[source]
-----
+....
 boot dev
-----
+....
 
 This can take up to a couple of minutes to build and run from scratch so don't worry if you have to wait a bit before you see anything.
 
-[source]
-----
+....
 Starting reload server on ws://localhost:43201
 Writing boot_reload.cljs...
 Writing boot_cljs_repl.cljs...
@@ -40,7 +37,7 @@ Writing boot_cljs_repl.cljs...
 Starting file watcher (CTRL-C to quit)...
 
 Compiling {sass}... 3 changed files.
-----
+....
 
 === Browse
 
@@ -52,28 +49,25 @@ Let's connect a REPL.
 
 Start a new terminal and change into the project's working directory again.
 
-[source]
-----
+....
 cd edge
-----
+....
 
 If the project is still building, wait until you see the following line before trying to connect.
 
-----
+....
 nREPL server started on port 5600 on host 127.0.0.1 - nrepl://127.0.0.1:5600
-----
+....
 
 Connect a client REPL to this JVM like this:
 
-[source]
-----
+....
 boot repl
-----
+....
 
 This should result in something similar to this:
 
-[source]
-----
+....
 REPL-y 0.3.7, nREPL 0.2.12
 Clojure 1.8.0
 OpenJDK 64-Bit Server VM 1.8.0_92-b14
@@ -88,33 +82,30 @@ Find by Name: (find-name "part-of-name-here")
               (user/clojuredocs name-here)
               (user/clojuredocs "ns-here" "name-here")
 user=>
-----
+....
 
 We're going to start changing some of Edge's source code soon, and when we do that we'll type `(reset)` on our REPL. So let's try that now.
 
-[source]
-----
+....
 user=> (reset)
 :reloading (edge.web edge.api edge.server edge.system user)
 :resumed
 user=>
-----
+....
 
 === Test the service
 
 Let's send an HTTP request to the system to check it is working. We can use a browser to visit http://localhost:3000/hello or use `curl` if you have it installed on your system:
 
-[source,curl]
-----
-$ curl http://localhost:3000/hello
-----
+....
+curl http://localhost:3000/hello
+....
 
 The result should be the same:
 
-[source,curl]
-----
+....
 Hello World!
-----
+....
 
 === Locate the source code
 
@@ -122,7 +113,7 @@ Fire up an editor and load up the file `src/edge/hello.clj`.
 
 Locate the function called `hello-routes`. This returns a simple route structure that matches on the URI paths of incoming HTTP requests.
 
-[source]
+[source,clojure]
 ----
 (defn hello-routes [_]
   ["/hello" (yada/handler "Hello World!\n")])
@@ -135,27 +126,24 @@ Make a change to string `"Hello World!"`, for example, change it to `"Hello Wond
 
 Now we've made a change to Edge's source code, we must tell the system to reset. The system will then detect all the code changes and necessary dependencies to reload.
 
-[source]
-----
+....
 user=> (reset)
 :reloading (edge.web edge.api edge.server edge.system user)
 :resumed
 user=>
-----
+....
 
 Let's test the service again:
 
-[source,curl]
-----
+....
 $ curl http://localhost:3000/hello
-----
+....
 
 You should now see that the change has been made:
 
-[source]
-----
+....
 Hello Wonderful World!
-----
+....
 
 Congratulations. You're all up and running with a project built with [yada]#yada#. This will make a great lab to try out your own [yada]#yada# experiments and see what is possible.
 

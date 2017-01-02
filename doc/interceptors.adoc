@@ -7,68 +7,112 @@ resource's interceptor chain can be modified from the defaults.
 [[core-interceptors]]
 === Core interceptors
 
+(coming soon)
+
 [[available]]
 ==== available?
+
+(coming soon)
 
 [[known-method]]
 ==== known-method?
 
+(coming soon)
+
 [[uri-too-long]]
 ==== uri-too-long?
+
+(coming soon)
 
 [[trace]]
 ==== TRACE
 
+(coming soon)
+
 [[method-allowed]]
 ==== method-allowed?
+
+(coming soon)
 
 [[parse-parameters]]
 ==== parse-parameters
 
+(coming soon)
+
 [[authenticate]]
 ==== authenticate
+
+(coming soon)
 
 [[get-properties]]
 ==== get-properties
 
+(coming soon)
+
 [[authorize]]
 ==== authorize
+
+(coming soon)
 
 [[process-request-body]]
 ==== process-request-body
 
+(coming soon)
+
 [[check-modification-time]]
 ==== check-modification-time
+
+(coming soon)
 
 [[select-representation]]
 ==== select-representation
 
+(coming soon)
+
 [[if-match]]
 ==== if-match
+
+(coming soon)
 
 [[if-none-match]]
 ==== if-none-match
 
+(coming soon)
+
 [[invoke-method]]
 ==== invoke-method
+
+(coming soon)
 
 [[get-new-properties]]
 ==== get-new-properties
 
+(coming soon)
+
 [[compute-etag]]
 ==== compute-etag
+
+(coming soon)
 
 [[access-control-headers]]
 ==== access-control-headers
 
+(coming soon)
+
 [[create-response]]
 ==== create-response
+
+(coming soon)
 
 [[logging]]
 ==== logging
 
+(coming soon)
+
 [[return]]
 ==== return
+
+(coming soon)
 
 [[modifying-interceptor-chains]]
 === Modifying interceptor chains

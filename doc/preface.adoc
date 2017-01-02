@@ -1,0 +1,76 @@
+[preface]
+= Preface
+
+State is everywhere. The world is moving and we need to keep up. We
+need our computers to help us stay up-to-date with the latest
+information, chats, trends, stock-prices, news and weather updates,
+and other important stuff.
+
+The web is primarily a means to move state around. You have some state
+here, and you want it over there. Or it's over there, but you want it
+over here.
+
+For two decades or more, the pre-dominant model for web programming
+has ignored state, instead requiring developers to work at the level
+of the HTTP protocol itself.
+
+For example, in Java:
+
+[source,java]
+----
+public void handleRequest(HttpServletRequest request,
+                          HttpServletResponse response)
+{
+    response.setStatus(200);
+}
+----
+
+or in Clojure
+
+[source,clojure]
+----
+(fn [request] {:status 200})
+----
+
+This programming model puts the HTTP request and response at centre
+stage. The concept of state is missing entirely - the resource is seen
+merely as an _operation_ (or set of operations) available for remote
+invocation.
+
+For years, the same RPC-centered approach has been copied by web
+frameworks in many languages, old and new (Python, Ruby, Go,
+Clojure...). It has survived because it's so flexible, as many
+low-level programming models are.
+
+But there are significant downsides to this model too. HTTP is a big
+specification, and it's unreasonable to expect developers to have the
+time to implement all the relevant pieces of it. What's more, many
+developers tend to implement much the same code over and over again, for
+each and every 'operation' they write.
+
+A notable variation on this programming model can be found in Erlang's
+WebMachine and Clojure's Liberator. To a degree, these libraries ease
+the burden on the developer by orchestrating the steps required to build
+a response to a web request. However, developers are still required to
+understand the state transition diagram underlying this orchestration if
+they are to successfully exploit these libraries to the maximum
+extent. Fundamentally, the programming model is the same: the developer
+is still writing code with a view to forming a response at the protocol
+level.
+
+While this model has served as well in the past, there are increasingly
+important reasons why we need an upgrade. Rather than mere playthings,
+HTTP-based APIs are becoming critical components in virtually every
+organisation. With supporting infrastructure such as proxies, API
+gateways and monitoring, there has never been a greater need to improve
+compatibility through better conformance with HTTP standards. Yet many
+APIs today at best ignore, and worst violate many parts of the HTTP
+standard. For ephemeral prototypes, this 'fake it' approach to HTTP is
+acceptable. But HTTP is designed for long-lived systems with lifetimes
+measured in decades, that must cross departmental and even
+organisational boundaries, and adapt to ongoing changes in technology.
+
+It's time for a fresh approach. We need our libraries to do more work
+for us. For this to happen, we need to move from the _de-facto_
+'operational' view of web 'services' to a strong _data-oriented_
+approach, focussing on what a web _resource_ is really about: _state_.

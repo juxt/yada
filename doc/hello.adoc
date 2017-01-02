@@ -28,17 +28,15 @@ NOTE: There are a number of built-in coercions from various Clojure types and of
 
 Let's send a request which gets routed to our handler, which creates the response. Let's examine this response in more detail, via *curl*.
 
-[source,curl]
-----
-curl -i http://localhost:3000/hello
-----
+....
+$ curl -i http://localhost:3000/hello
+....
 
 TIP: The `-i` option to *curl* shows us the HTTP status and response headers as well as the body, which is very useful for debugging. If you ever need to see the request headers too, add `-v`.
 
 The response should be something like following (note that headers may appear in a different order):
 
-[source,http]
-----
+....
 HTTP/1.1 200 OK
 Server: Aleph/0.4.1
 Connection: Keep-Alive
@@ -51,24 +49,22 @@ Content-Length: 23
 X-Frame-Options: SAMEORIGIN
 X-XSS-Protection: 1; mode=block
 X-Content-Type-Options: nosniff
-----
+....
 
 The first three response headers are added by our webserver, Aleph.
 
-[source,http]
-----
+....
 Server: Aleph/0.4.0
 Connection: Keep-Alive
 Date: Fri, 17 Jun 2016 16:44:23 GMT
-----
+....
 
 Next we have another date and a string known as the _entity tag_:
 
-[source,http]
-----
+....
 Last-Modified: Sun, 09 Aug 2015 07:25:10 GMT
 ETag: fa863bd7ff53786d286e4bb3c0134416
-----
+....
 
 The `Last-Modified` header shows when the string `Hello World!` was created, which happens to be the last time the system was started (or reset). Java strings are immutable, so [yada]#yada# is able to deduce that the
 string's creation date is also the last time it could have been modified.
@@ -80,35 +76,31 @@ Both `Last-Modified` and `ETag` are used to support HTTP conditional requests an
 Next we have a header telling us the media-type of the string's
 representation.
 
-[source,http]
-----
+....
 Content-Type: text/plain;charset=utf-8
-----
+....
 
 [yada]#yada# is able to determine that the media-type is text, but without more information it must default to `text/plain`. It can also tell us the charset, which defaults to the default charset of the JVM (almost always `utf-8`)
 
-[source,http]
-----
+....
 Vary: accept-charset
-----
+....
 
 Since the Java platform can encode a string to a number of charsets, [yada]#yada# adds a _Vary_ header to signal to the user-agent (and proxy caches in between) that the body can change if a request contained a different _Accept-Charset_ header. Java installations support many different charsets, so [yada]#yada# does too.
 
 Next we are given the length of the body.
 
-[source,http]
-----
+....
 Content-Length: 13
-----
+....
 
 This value is in bytes, regardless of the charset. It includes the newline.
 
 Finally we see our response body.
 
-[source]
-----
+....
 Hello World!
-----
+....
 
 [[a-conditional-request]]
 === A conditional request
@@ -121,15 +113,13 @@ We can test this by setting the *If-Modified-Since* header in the request.
 
 Here's how we might do this using the *curl* command.
 
-[source]
-----
-curl -i http://localhost:3000/hello -H "If-Modified-Since: Mon, 1 Jan 2525 00:00:00 GMT"
-----
+....
+$ curl -i http://localhost:3000/hello -H "If-Modified-Since: Mon, 1 Jan 2525 00:00:00 GMT"
+....
 
 Of course, nobody will have modified the resource _since_ the year 2525, so we should get a 304 response, telling us we can use our cached copy:
 
-[source]
-----
+....
 HTTP/1.1 304 Not Modified
 X-Frame-Options: SAMEORIGIN
 X-XSS-Protection: 1; mode=block
@@ -140,7 +130,7 @@ ETag: fa863bd7ff53786d286e4bb3c0134416
 Server: Aleph/0.4.1
 Connection: Keep-Alive
 Date: Wed, 22 Jun 2016 16:57:46 GMT
-----
+....
 
 Notice we also get the same `Vary` and `ETag` headers. These help any proxies between the user-agent and the service properly cache content, and if they would have been produced in a 200 response, then they must also be produced in a 304. (This is the kind of thing that [yada]#yada# takes care of for you, unlike most libraries).
 
@@ -151,15 +141,13 @@ The responses we have received back from our service all contain this curious he
 
 Let's try getting the string in UTF16 by telling the server that's the only charset we'll accept:
 
-[source]
-----
+....
 curl -i http://localhost:3000/hello -H "Accept-Charset: UTF-16"
-----
+....
 
 This returns the following:
 
-[source]
-----
+....
 HTTP/1.1 200 OK
 X-Frame-Options: SAMEORIGIN
 X-XSS-Protection: 1; mode=block
@@ -174,38 +162,35 @@ Connection: Keep-Alive
 Date: Mon, 27 Jun 2016 07:45:07 GMT
 
 ��Hello World!
-----
+....
 
 The "Hello World!" message is prepended with 2 bytes called the *Byte Order Mark* (BOM). The length of the string (including the newline) is 13 characters. Since each character here is 2 bytes, that makes 26. The additional of the BOM makes it 28, which is what our `Content-Length` header reports.
 
 A BOM indicates the order that the 2 bytes are transmitted in. In 'big endian' form the most-significant byte is transmitted first. We can tell the service that we only want the big endian form with the following:
 
-[source]
-----
+....
 curl -i http://localhost:3000/hello -H "Accept-Charset: UTF-16BE"
-----
+....
 
 This will now produce the message without the BOM, because it is unnecessary. This means our `Content-Length` will be exactly 13 * 2 = 26.
 
-[source]
-----
+....
 HTTP/1.1 200 OK
 …
 Content-Length: 26
 
 Hello World!
-----
+....
 
 If we were to use UTF-32, which defaults to big-endian, we'll get a Content-Length of 13 * 4 = 52.
 
-[source]
-----
+....
 HTTP/1.1 200 OK
 …
 Content-Length: 52
 
 Hello World!
-----
+....
 
 Note also that different representations generate different `ETag` values. The entity tag is a way of managing a cache of representations, not a cache of resources. Think of the `ETag` value as the key you could use in a key/value store that stored a cache of representations.
 
@@ -240,15 +225,13 @@ This calls for a different implementation:
 
 Let's test this by providing a request header which indicates a preference for simplified Chinese:
 
-[source]
-----
-curl -i http://localhost:3000/hello-language -H "Accept-Language: zh-CH"
-----
+....
+$ curl -i http://localhost:3000/hello-language -H "Accept-Language: zh-CH"
+....
 
 We should get the following response:
 
-[source,http]
-----
+....
 HTTP/1.1 200 OK
 X-Frame-Options: SAMEORIGIN
 X-XSS-Protection: 1; mode=block
@@ -262,7 +245,7 @@ Connection: Keep-Alive
 Date: Mon, 27 Jun 2016 08:20:59 GMT
 
 你好世界
-----
+....
 
 There's a lot more to content negotiation than this simple example can show. It is covered in depth in subsequent chapters.
 
@@ -272,15 +255,13 @@ There's a lot more to content negotiation than this simple example can show. It 
 
 Let's try to overwrite the string by using a `PUT`.
 
-[source]
-----
-curl -i http://localhost:3000/hello -X PUT -d "Hello Wonderful World!%0a"
-----
+....
+$ curl -i http://localhost:3000/hello -X PUT -d "Hello Wonderful World!%0a"
+....
 
 The response is as follows:
 
-[source]
-----
+....
 HTTP/1.1 405 Method Not Allowed
 Allow: GET, HEAD, OPTIONS
 Content-Length: 284
@@ -288,19 +269,17 @@ Content-Type: application/json
 Server: Aleph/0.4.1
 Connection: Keep-Alive
 Date: Mon, 27 Jun 2016 08:56:58 GMT
-----
+....
 
 The response status is `405 Method Not Allowed`, telling us that our request was unacceptable. There is also an *Allow* header, telling us which methods are allowed. One of these methods is OPTIONS, which we could have used to check whether PUT was available without actually attempting it.
 
-[source]
-----
-curl -i http://localhost:3000/hello -X OPTIONS
-----
+....
+$ curl -i http://localhost:3000/hello -X OPTIONS
+....
 
 The response should be:
 
-[source]
-----
+....
 HTTP/1.1 200 OK
 Allow: GET, HEAD, OPTIONS
 Content-Length: 0
@@ -310,7 +289,7 @@ X-Content-Type-Options: nosniff
 Server: Aleph/0.4.1
 Connection: Keep-Alive
 Date: Mon, 27 Jun 2016 09:00:27 GMT
-----
+....
 
 Both the `PUT` and the `OPTIONS` response contain an *Allow* header which tells us that `PUT` isn't possible. This makes sense, because we can't mutate a Java string.
 
@@ -325,20 +304,17 @@ To demonstrate this, try the following with the identifier `http://localhost:300
 
 Let's try a normal GET.
 
-[source]
-----
-curl -i http://localhost:3000/hello-atom
-----
+....
+$ curl -i http://localhost:3000/hello-atom
+....
 
 We can now make another `OPTIONS` request to see whether `PUT` is available, before trying it.
 
-[source]
-----
-curl -i http://localhost:3000/hello-atom -X OPTIONS
-----
+....
+$ curl -i http://localhost:3000/hello-atom -X OPTIONS
+....
 
-[source]
-----
+....
 HTTP/1.1 200 OK
 Allow: GET, DELETE, HEAD, OPTIONS, PUT
 Content-Length: 0
@@ -348,24 +324,21 @@ X-Content-Type-Options: nosniff
 Server: Aleph/0.4.1
 Connection: Keep-Alive
 Date: Tue, 05 Jul 2016 15:41:36 GMT
-----
+....
 
 It is! So let's try it.
 
-[source]
-----
-curl -i http://localhost:3000/hello-atom -X PUT -d "value=Hello Wonderful World!%0a"
-----
+....
+$ curl -i http://localhost:3000/hello-atom -X PUT -d "value=Hello Wonderful World!%0a"
+....
 
 And now let's see if we've managed to change the state of the resource.
 
-[source]
-----
-curl -i http://localhost:3000/hello-atom
-----
+....
+$ curl -i http://localhost:3000/hello-atom
+....
 
-[source,http]
-----
+....
 HTTP/1.1 200 OK
 X-Frame-Options: SAMEORIGIN
 X-XSS-Protection: 1; mode=block
@@ -380,7 +353,7 @@ Connection: Keep-Alive
 Date: Tue, 05 Jul 2016 16:08:35 GMT
 
 Hello Wonderful World!
-----
+....
 
 As long as someone else hasn't sneaked in a different state between your `PUT` and subsequent `GET`, you should see the new state of the resource is "Hello Wonderful World!". Great!
 
@@ -388,20 +361,18 @@ But what if someone _did_ manage to `PUT` their change ahead of yours? Their ver
 
 Let's test this now, using the ETag value we got before we sent our `PUT` request.
 
-[source]
-----
-curl -i http://localhost:3000/hello-atom -X PUT -H "If-Match: fa863bd7ff53786d286e4bb3c0134416" -d "value=Hello Wonderful World!%0a"
-----
+....
+$ curl -i http://localhost:3000/hello-atom -X PUT -H "If-Match: fa863bd7ff53786d286e4bb3c0134416" -d "value=Hello Wonderful World!%0a"
+....
 
-[source]
-----
+....
 HTTP/1.1 412 Precondition Failed
 Content-Length: 196
 Content-Type: application/json
 Server: Aleph/0.4.1
 Connection: Keep-Alive
 Date: Tue, 05 Jul 2016 16:10:53 GMT
-----
+....
 
 We get a 412, which means a pre-condition failed. The pre-condition in question relates to our `If-Match` header value not matching the current value of the atom. This is a very useful result, because it means we can ensure that we don't overwrite someone else's data.
 
@@ -412,18 +383,14 @@ There was one more method indicated by the *Allow* header of our `OPTIONS` reque
 
 TIP: Use the option --head to *curl* to tell it to issue a HEAD request (and not to expect a request body).
 
-[source]
-----
-curl -i --head http://localhost:3000/hello
-----
+....
+$ curl -i --head http://localhost:3000/hello
+....
 
-[source,http]
-----
-----
 
 The response does not have a body, but tells us the headers we would get if we were to try a `GET` request.
 
-[[parameters]]
+[[hello-parameters]]
 === Parameters
 
 Often, a resource's state or behavior will depend on parameters in the
@@ -454,24 +421,21 @@ This declares a resource with a GET method, which responds with a plain-text mes
 
 Let's see this in action, but without a parameter:
 
-[source]
-----
-curl -i http://localhost:3000/hello-parameter
-----
+....
+$ curl -i http://localhost:3000/hello-parameter
+....
 
 Here we get a 400 response. This means we've done something wrong (we've forgotten to add the query parameter).
 
 Now let's add the query parameter to the URI:
 
-[source]
-----
-curl -i http://localhost:3000/hello-parameter?p=Ken
-----
+....
+$ curl -i http://localhost:3000/hello-parameter?p=Ken
+....
 
 This should now get the 200 response we wanted:
 
-[source,http]
-----
+....
 HTTP/1.1 200 OK
 X-Frame-Options: SAMEORIGIN
 X-XSS-Protection: 1; mode=block
@@ -483,7 +447,7 @@ Connection: Keep-Alive
 Date: Tue, 05 Jul 2016 16:23:26 GMT
 
 Hello Ken!
-----
+....
 
 Great!
 
@@ -492,7 +456,7 @@ As well as query parameters, yada supports path parameters, request headers, for
 [[hello-swagger]]
 === Hello Swagger!
 
-Now we have seen how to build a single web resource, let's see how to build a Swagger description from a collection of web resources.
+Now we have seen how to build a single web resource, let's see how to build a ((Swagger)) description from a collection of web resources.
 
 In your editor, switch to `src/edge/server.clj`. This file defines the overall route structure which includes our routes for "Hello World!". This has been included twice, both at the root and under the `/api` path.
 
@@ -522,22 +486,19 @@ The purpose of `yada/swaggered` is to augment the route structure given to it wi
 
 We can test the resource is available at its `/api` location with *curl*:
 
-[source,curl]
-----
-curl -i http://localhost:3000/api/hello
-----
+....
+$ curl -i http://localhost:3000/api/hello
+....
 
 We can also query the Swagger description with *curl*:
 
-[source,curl]
-----
-curl -i http://localhost:3000/api/swagger.json
-----
+....
+$ curl -i http://localhost:3000/api/swagger.json
+....
 
 This time we get a JSON body returned:
 
-[source]
-----
+....
 HTTP/1.1 200 OK
 X-Frame-Options: SAMEORIGIN
 X-XSS-Protection: 1; mode=block
@@ -552,19 +513,17 @@ Connection: Keep-Alive
 Date: Wed, 22 Jun 2016 15:56:25 GMT
 
 {"swagger":"2.0","info":{"title":"Edge API","version":"1.0","description":"An example API"},"produces":["application/json"],"consumes":["application/json"],"paths":{"/hello":{"get":{"produces":["text/plain"],"responses":{"default":{"description":""}}}}},"basePath":"/api","definitions":{}}
-----
+....
 
 Notice we still get a `Vary` header telling us that multiple charsets are available. JSON bodies are available in UTF-16 and UTF-32. Compare this with Clojure's EDN, which is specificed to be UTF-8 only. In fact, [yada]#yada# is happy to produce Swagger definitions in EDN too:
 
-[source,curl]
-----
-curl -i http://localhost:3000/api/swagger.edn
-----
+....
+$ curl -i http://localhost:3000/api/swagger.edn
+....
 
 Note that this time we get no `Vary` header, since there are no charset alternatives.
 
-[source]
-----
+....
 HTTP/1.1 200 OK
 X-Frame-Options: SAMEORIGIN
 X-XSS-Protection: 1; mode=block
@@ -578,7 +537,7 @@ Connection: Keep-Alive
 Date: Wed, 22 Jun 2016 15:59:26 GMT
 
 {:swagger "2.0", :info {:title "Edge API", :version "1.0", :description "An example API"}, :produces ["application/json"], :consumes ["application/json"], :paths {"/hello" {:get {:produces ("text/plain"), :responses {:default {:description ""}}}}}, :basePath "/api", :definitions {}}
-----
+....
 
 It's these little details that [yada]#yada# takes care of for you. There is no trickery involved, it's simply the result of an almost obsessive focus on the relevant web standards. There is nothing special about strings, [yada]#yada# applies the same logic for anything else you ask it to handle. We'll see more in the next chapter.
 

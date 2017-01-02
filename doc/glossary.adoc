@@ -1,0 +1,8 @@
+[[glossary]]
+[glossary]
+== Glossary
+
+Resource::
+    A resource
+Handler::
+    A handler

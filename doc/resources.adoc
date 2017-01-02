@@ -85,6 +85,7 @@ Multiple authentication schemes are supported, such as Basic, JWT and OAuth2.
 
 Access control and security are fully described in the <<security,security chapter>>.
 
+[[properties-intro]]
 ==== Properties
 
 You can define various properties on a resource. These can be thought of as a resource's metadata, information about a resource (rather than the resource's state).
@@ -102,10 +103,12 @@ Certain properties, such as `:exists?` and `:last-modified` are special and used
 
 For example, if you know how to determine the date that your resource was last modified, you should return this date in the `:last-modified` entry of a map containing your resources's properties. Doing so will enable [yada]#yada#'s logic for conditional requests, for instance, allowing it to return `304 Not Modified` responses when appropriate.
 
+More information can be found in <<properties>>.
+
 [[parameters-intro]]
 ==== Parameters
 
-Web requests can contain parameters that can influence the response and yada can capture these. This is especially useful when you are writing APIs.
+Web requests can contain ((parameters)) that can influence the response and yada can capture these. This is especially useful when you are writing APIs.
 
 There are different types of parameters, which you can mix-and-match:
 

@@ -1,0 +1,15 @@
+[[colophon]]
+[colophon]
+== Colophon
+
+This book is authored in link:http://asciidoc.org[AsciiDoc], which is a plain-text format like Markdown. ((AsciiDoc)) has the benefit of being based on the mature DocBook standard.
+
+Sources for this book can be found in the [yada]#yada# repository under the +doc/+ directory. The file +book.adoc+ describes the structure of the book.
+
+=== HTML
+
+link:https://github.com/asciidoctor/asciidoctorj[Asciidoctorj] is used to generate HTML.
+
+=== PDF
+
+This uses a [LaTeX]#LaTeX# backend.

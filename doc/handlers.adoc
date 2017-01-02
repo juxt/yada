@@ -1,4 +1,4 @@
 [[handlers]]
 == Handlers
 
-[coming soon]
+(coming soon)

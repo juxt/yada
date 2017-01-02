@@ -1,0 +1,34 @@
+%%
+%% This style is derived from the docbook one.
+%%
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{yada}[2016/12/29 AsciiDoc DocBook yada customisation]
+%% Just use the original package and pass the options.
+\RequirePackageWithOptions{docbook}
+
+% Sidebar is a boxed minipage that can contain verbatim.
+% Changed shadow box to double box.
+\renewenvironment{sidebar}[1][0.95\textwidth]{
+  \hspace{0mm}\newline%
+  \noindent\begin{Sbox}\begin{minipage}{#1}%
+  \setlength\parskip{\medskipamount}%
+}{
+  \end{minipage}\end{Sbox}\doublebox{\TheSbox}%
+}
+
+% For DocBook literallayout elements, see `./dblatex/dblatex-readme.txt`.
+\usepackage{alltt}
+
+
+% Clojure code highlighting
+\usepackage{clojure}
+
+% From https://michaelfranzl.com/2014/12/10/xelatex-unicode-font-fallback-unsupported-characters/
+\newfontfamily\myregularfont{Noto Sans}
+\newfontfamily\mychinesefont{Noto Sans Mono CJK SC}
+\usepackage[CJK]{ucharclasses}
+\setTransitionsForCJK{\mychinesefont}{\myregularfont}
+
+% Change paper size
+% \usepackage[letterpaper,total={5.25in,8in}, top=1in]{geometry}
+% \usepackage[b5paper,margin=2in]{geometry}

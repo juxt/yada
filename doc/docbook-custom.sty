@@ -1,0 +1,23 @@
+\usepackage{clojure}
+
+% \usepackage{xeCJK}
+% \setCJKmainfont{Noto Sans CJK SC} % for \rmfamily
+
+
+% \fontspec[ Path = fonts/,
+%            UprightFont = RochesterYada
+%          ]{RochesterYada}
+
+\message{Indents}
+%% \cftsetindents{section}{1in}{1in}
+%% \cftsetindents{subsection}{1in}{1in}
+%% \cftsetindents{subsubsection}{1in}{1in}
+%% \cftsetindents{paragraph}{1in}{1in}
+
+% From https://michaelfranzl.com/2014/12/10/xelatex-unicode-font-fallback-unsupported-characters/
+\newfontfamily\myregularfont{Noto Sans}
+\newfontfamily\mychinesefont{Noto Sans Mono CJK SC}
+\usepackage[CJK]{ucharclasses}
+\setTransitionsForCJK{\mychinesefont}{\myregularfont}
+
+\message{Hello Malcolm, end}

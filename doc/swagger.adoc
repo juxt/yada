@@ -1,5 +1,5 @@
 [[swagger]]
-== Swagger
+== ((Swagger))
 
 All yada resources are built on data which can be published in a variety
 of formats. A popular format is Swagger, which allows APIs to be quickly
