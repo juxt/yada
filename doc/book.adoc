@@ -1,5 +1,5 @@
-The yada user-manual
-====================
+The [yada-huge]#yada# user-manual
+==================================
 Malcolm Sparks <malcolm@juxt.pro>
 v1.2.0, January 2017
 :doctype: book

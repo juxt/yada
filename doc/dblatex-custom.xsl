@@ -23,6 +23,12 @@
     </xsl:text>
   </xsl:template>
 
+  <xsl:template match="phrase[@role='yada-huge']">
+    <xsl:text>
+      {\fontspec{RochesterYada}[Path=../fonts/,UprightFont=*]\Huge yada}
+    </xsl:text>
+  </xsl:template>
+
   <xsl:template match="phrase[@role='LaTeX']">
     <xsl:text>\LaTeX\space</xsl:text>
   </xsl:template>
