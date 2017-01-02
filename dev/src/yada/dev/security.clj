@@ -7,8 +7,7 @@
    [bidi.ring :refer [redirect]]
    [bidi.vhosts :refer [uri-for]]
    [buddy.core.hash :as hash]
-   [buddy.sign.jws :as jws]
-   [buddy.sign.jwe :as jwe]
+   [buddy.sign.jwt :as jwt]
    [clojure.java.io :as io]
    [clojure.string :as str]
    [cheshire.core :as json]
@@ -66,7 +65,7 @@
                      (if (= ((juxt :user :password) params)
                             ["scott" "tiger"])
                        (let [expires (time/plus (time/now) (time/minutes 15))
-                             jwt (jws/sign {:user "scott"
+                             jwt (jwt/sign {:user "scott"
                                             :roles ["secret/view"]
                                             :exp expires}
                                            secret)

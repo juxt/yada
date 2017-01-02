@@ -151,7 +151,7 @@ involved:
 [source,clojure]
 ----
 (require
- '[buddy.sign.jws :as jws]
+ '[buddy.sign.jwt :as jwt]
  '[schema.core :as s]
  '[hiccup.core :refer [html])
 
@@ -168,7 +168,7 @@ involved:
          (assoc (:response ctx)
                 :cookies {"session"
                           {:value
-                           (jws/sign {:user user} "lp0fTc2JMtx8")}})
+                           (jwt/sign {:user user} "lp0fTc2JMtx8")}})
          "Try again!")))}
   :get
   {:produces "text/html"
