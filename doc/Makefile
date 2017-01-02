@@ -1,15 +1,15 @@
 .PROXY: clean all
 
-all:	clean book.pdf
+all:	clean yada-manual.pdf
 
-book.pdf:	book.xml *.xsl
+yada-manual.pdf:	yada-manual.xml *.xsl
 	mkdir -p tmp
 	dblatex -s custom.sty -p dblatex-custom.xsl -b xetex -d --tmpdir=tmp $<
 
-book.xml:	*.adoc
+yada-manual.xml:	*.adoc
 	mkdir -p out
-	asciidoctor -b docbook5 book.adoc
+	asciidoctor -b docbook5 yada-manual.adoc
 
 clean:
-	rm -f book.xml book.pdf
+	rm -f yada-manual.xml yada-manual.pdf
 	rm -rf tmp

@@ -1,9 +1,9 @@
-The [yada-huge]#yada# user-manual
-==================================
+The [yada-huge]#yada# manual
+============================
 Malcolm Sparks <malcolm@juxt.pro>
 v1.2.0, January 2017
 :doctype: book
-:description: A user manual explaining yada, an HTTP library for Clojure from JUXT.
+:description: A manual explaining yada, an HTTP library for Clojure from JUXT.
 :source-highlighter: coderay
 :coderay-css: class
 :icons: font

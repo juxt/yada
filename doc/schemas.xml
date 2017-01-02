@@ -1,4 +1,4 @@
 <?xml version="1.0"?>
 <locatingRules xmlns="http://thaiopensource.com/ns/locating-rules/1.0">
-  <uri resource="book.xml" uri="docbookxi.rnc"/>
+  <uri resource="yada-manual.xml" uri="docbookxi.rnc"/>
 </locatingRules>

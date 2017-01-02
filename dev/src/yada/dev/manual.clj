@@ -153,7 +153,7 @@
        :methods
        {:get
         {:produces {:media-type "text/html" :charset "UTF-8"}
-         :response (asciidoc->html (io/file "doc" "book.adoc")
+         :response (asciidoc->html (io/file "doc" "yada-manual.adoc")
                                    {:toc true})}}})]
 
     [["/index.html"]
