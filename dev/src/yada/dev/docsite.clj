@@ -11,7 +11,7 @@
    [hiccup.core :refer [html h]]
    [markdown.core :refer [md-to-html-string]]
    [schema.core :as s]
-   [yada.yada :refer [handler resource]]
+   [yada.yada :refer [handler resource href-for]]
    [yada.dev.config :as config]
    [yada.resources.file-resource :refer [new-directory-resource]]
    [yada.resources.classpath-resource :refer [new-classpath-resource]]
@@ -56,6 +56,9 @@
          (html
           [:div.container
            [:h2 "Welcome to " [:span.yada "yada"] "!"]
+
+           [:p [:a {:href (href-for ctx :yada.dev.manual/manual)} "The yada user manual"]]
+
            #_[:ol
             [:li [:a {:href (yada/href-for ctx ::manual)}
                   "The " [:span.yada "yada"] " manual"]

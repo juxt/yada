@@ -25,7 +25,7 @@
               (yada/listener
                (vhosts-model
                 [(config/get-host config)
-                 ["/index.html" (docsite/index)]
+                 #_["/index.html" (docsite/index)]
 
                  (manual/routes)
                  ["/" (yada/handler (io/file "dev/resources/static"))]

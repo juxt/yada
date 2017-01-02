@@ -2,7 +2,7 @@
 
 (ns yada.dev.manual
   (:require
-   #_[clojure.core.async :as a]
+   [clojure.core.async :as a]
    [camel-snake-kebab.core :refer [->kebab-case-keyword]]
    [clojure.java.io :as io]
    [clojure.tools.logging :refer :all]
@@ -62,12 +62,11 @@
           (process [^Document doc] (generate-favicons)))]
     (.docinfoProcessor jer ^DocinfoProcessor p)))
 
-(defn manual-index-response []
+(defn asciidoc->html [fl {:keys [toc]}]
   (fn [ctx]
     (let [engine (Asciidoctor$Factory/create)
           _ (register-docinfo-processor! engine)
-          dir (io/file "doc")
-          fl (io/file dir "book.adoc")]
+          ]
       (.convertFile
        engine fl
        (..
@@ -88,7 +87,7 @@
         (attributes
          (..
           (org.asciidoctor.AttributesBuilder/attributes)
-          (tableOfContents org.asciidoctor.Placement/LEFT)
+          (tableOfContents (case toc true org.asciidoctor.Placement/LEFT false))
           (imagesDir "img")
           (styleSheetName "juxt.css")
           #_(stylesDir "resources/asciidoctor/stylesheets")
@@ -108,12 +107,12 @@
       ["dir/" (handler (io/file "dev/resources/static"))]
       ["nil" (handler nil)]
       ["dice" (handler #(inc (rand-int 6)))]
-      #_["sse-dice" (let [ch (a/chan 10)]
-                      (a/go-loop []
-                        (when (a/>!! ch (str (inc (rand-int 6))))
-                          (a/<!! (a/timeout 250))
-                          (recur)))
-                      (handler ch))]]]
+      ["sse-dice" (let [ch (a/chan 10)]
+                    (a/go-loop []
+                      (when (a/>!! ch (str (inc (rand-int 6))))
+                        (a/<!! (a/timeout 250))
+                        (recur)))
+                    (handler ch))]]]
     ["/manual/img/"
      (resource
       {:path-info? true
@@ -150,10 +149,21 @@
 
     [["/manual/index.html"]
      (resource
-      {:methods
+      {:id ::manual
+       :methods
        {:get
         {:produces {:media-type "text/html" :charset "UTF-8"}
-         :response (manual-index-response)}}})]
+         :response (asciidoc->html (io/file "doc" "book.adoc")
+                                   {:toc true})}}})]
+
+    [["/index.html"]
+     (resource
+      {:id ::manual
+       :methods
+       {:get
+        {:produces {:media-type "text/html" :charset "UTF-8"}
+         :response (asciidoc->html (io/file "doc" "index.adoc")
+                                   {})}}})]
 
     ["/adoc/"
      (as-resource
