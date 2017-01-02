@@ -98,12 +98,12 @@ To use [yada]#yada# to create real responses to real HTTP requests, you need to 
 
 [NOTE]
 --
-Currently, the only web server you can use is link:https://github.com/ztellman/aleph[icon:github[github-mark,width="10pt"]ztellman/aleph]. This is because [yada]#yada# is built on an asynchronous abstraction provided by link:https://github.com/ztellman/manifold[icon:github[github-mark,width="10pt"]ztellman/manifold]. However, there is no technical reason why, in future, other web servers can't be wrapped by manifold.
+Currently, the only web server you can use is link:https://github.com/ztellman/aleph[icon:github[github,width="12pt"]ztellman/aleph]. This is because [yada]#yada# is built on an asynchronous abstraction provided by link:https://github.com/ztellman/manifold[icon:github[github,width="12pt"]ztellman/manifold]. However, there is no technical reason why, in future, other web servers can't be wrapped by manifold.
 
 In the meantime, Aleph (which wraps a much bigger library, Netty) provides a very capable and performant server.
 --
 
-To write real applications you also need a router that understands URIs, and [yada]#yada# has some features that are enabled when used with https://github.com/juxt/bidi[icon:github[github-mark,width="10pt"]juxt/bidi], although there is nothing to stop you using [yada]#yada# with other routing libraries.
+To write real applications you also need a router that understands URIs, and [yada]#yada# has some features that are enabled when used with https://github.com/juxt/bidi[icon:github[github,width="12pt"]juxt/bidi], although there is nothing to stop you using [yada]#yada# with other routing libraries.
 
 === Conclusion
 
