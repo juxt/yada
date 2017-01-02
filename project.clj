@@ -79,7 +79,7 @@
     :test-paths ["bundles/full/test"]}
 
    :dev
-   [:test
+   [:test ; so we can run the tests from our REPL
     {:jvm-opts
      ["-Xms1g" "-Xmx1g"
       "-server"

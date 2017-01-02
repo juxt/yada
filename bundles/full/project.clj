@@ -17,4 +17,6 @@
                  [yada/oauth2 ~VERSION]
                  [yada/swagger ~VERSION]
                  [yada/transit ~VERSION]
-                 [yada/webjars ~VERSION]])
+                 [yada/webjars ~VERSION]]
+
+  :profiles {:test {:dependencies [[org.webjars/bootstrap "3.3.6"]]}})
