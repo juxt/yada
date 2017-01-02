@@ -1,7 +1,7 @@
 The yada user-manual
 ====================
 Malcolm Sparks <malcolm@juxt.pro>
-v1.1.46, December 2016: Initial PDF from AsciiDoc sources
+v1.2.0, January 2017
 :doctype: book
 :description: A user manual explaining yada, an HTTP library for Clojure from JUXT.
 :source-highlighter: coderay

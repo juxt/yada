@@ -1,0 +1,10 @@
+[yada]#yada#
+============
+Malcolm Sparks <malcolm@juxt.pro>
+v1.2.0, January 2017
+:doctype: article
+:description: A web library for Clojure
+
+Welcome to [yada]#yada#
+
+This is link:manual/index.html[user manual]
