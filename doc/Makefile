@@ -4,7 +4,7 @@ all:	clean yada-manual.pdf
 
 yada-manual.pdf:	yada-manual.xml *.xsl
 	mkdir -p tmp
-	dblatex -s custom.sty -p dblatex-custom.xsl -b xetex -d --tmpdir=tmp $<
+	dblatex -s yada.sty -p dblatex-custom.xsl -b xetex -d --tmpdir=tmp $<
 
 yada-manual.xml:	*.adoc
 	mkdir -p out
