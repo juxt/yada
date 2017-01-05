@@ -67,6 +67,7 @@
     (let [engine (Asciidoctor$Factory/create)
           _ (register-docinfo-processor! engine)
           ]
+      (assert fl)
       (.convertFile
        engine fl
        (..
@@ -136,6 +137,7 @@
                          (let [imgdir (io/file "doc")
                                fl (io/file imgdir (-> ctx :request :path-info))]
                            {:exists? (.exists fl)
+                            :last-modified (.lastModified fl)
                             ::file fl}))
            :produces (fn [ctx] (ext-mime-type (.getName (-> ctx :properties ::file))))
            :methods
@@ -150,11 +152,17 @@
     [["/manual/index.html"]
      (resource
       {:id ::manual
+       :properties
+       (fn [ctx]
+         (let [fl (io/file "doc" "yada-manual.adoc")]
+           {:exists? true
+            :last-modified (apply max (map #(.lastModified %) (filter #(.isFile %) (file-seq (io/file "doc")))))
+            ::file fl}))
        :methods
        {:get
         {:produces {:media-type "text/html" :charset "UTF-8"}
-         :response (asciidoc->html (io/file "doc" "yada-manual.adoc")
-                                   {:toc true})}}})]
+         :response (fn [ctx]
+                     (asciidoc->html (-> ctx :properties ::file) {:toc true}))}}})]
 
     [["/index.html"]
      (resource
@@ -162,8 +170,7 @@
        :methods
        {:get
         {:produces {:media-type "text/html" :charset "UTF-8"}
-         :response (asciidoc->html (io/file "doc" "index.adoc")
-                                   {})}}})]
+         :response (asciidoc->html (io/file "doc" "index.adoc") {})}}})]
 
     ["/adoc/"
      (as-resource
