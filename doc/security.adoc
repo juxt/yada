@@ -173,7 +173,7 @@ involved:
   :get
   {:produces "text/html"
    :response (html
-              [:form
+              [:form {:method :post}
                [:input {:name "user" :type :text}]
                [:input {:name "password" :type :password}]
                [:input {:type :submit}]])}}}
