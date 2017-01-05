@@ -16,9 +16,17 @@
   \end{minipage}\end{Sbox}\doublebox{\TheSbox}%
 }
 
+% Table of Contents customization
+\usepackage[subfigure]{tocloft}
+% Mystery as to why this isn't work!
+\setcounter{tocdepth}{1}
+% To avoid overlapping numbers and text in ToC
+\cftsetindents{chapter}{0mm}{10mm}
+\cftsetindents{section}{0mm}{10mm}
+\cftsetindents{subsection}{0mm}{15mm}
 
-% \usepackage{tocloft}
-% \addtolength{\cftsecnumwidth}{10pt}
+%\setlength{\cftsecnumwidth}{20pt}
+%\addtolength{\cftsecnumwidth}{10pt}
 
 % For DocBook literallayout elements, see `./dblatex/dblatex-readme.txt`.
 \usepackage{alltt}
