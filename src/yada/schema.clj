@@ -25,7 +25,8 @@ convenience of terse, expressive short-hand descriptions."}
   (:import
    [yada.charset CharsetMap]
    [yada.media_type MediaTypeMap]
-   [yada.representation LanguageMap]))
+   [yada.representation LanguageMap]
+   [java.util Date]))
 
 (s/defschema NamespacedKeyword
   (s/constrained s/Keyword namespace))
@@ -193,7 +194,9 @@ convenience of terse, expressive short-hand descriptions."}
 
 (def PropertiesMappings {})
 
-(def PropertiesResultMappings (merge RepresentationSeqMappings))
+(def PropertiesResultMappings {Date #(condp instance? %
+                                       java.lang.Long (Date. %)
+                                       %)})
 
 (def properties-result-coercer (sc/coercer PropertiesResult PropertiesResultMappings))
 
