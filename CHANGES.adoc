@@ -1,0 +1,9 @@
+= Change Log
+
+== [1.2.0]
+
+- Refactored to extract out non-core areas of functionality in `ext/`.
+
+- Alternative APIs now possible - APIs used potemkin to collate vars
+  for public use. The namespace is always `yada.yada` and can be each
+  API can be found under `bundles/`.
