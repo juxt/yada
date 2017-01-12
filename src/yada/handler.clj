@@ -144,12 +144,15 @@
 
                               rep (assoc-in [:response :produces] rep)
 
+                              ;; This primes the body data in case the representation is nil
                               (contains? data :body)
                               (assoc-in [:response :body] (:body data))
 
+                              ;; This could override [:response :body]
                               (and (not (contains? data :body)) (not (:response custom-response)))
                               (standard-error status e rep)
 
+                              ;; This could override [:response :body]
                               (and (not (contains? data :body)) (:response custom-response))
                               (custom-error (:response custom-response) rep)
 
