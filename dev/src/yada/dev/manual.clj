@@ -12,8 +12,8 @@
    [yada.yada :refer [handler resource as-resource]]
    [yada.handler :refer [prepend-interceptor]])
   (:import [org.asciidoctor Asciidoctor$Factory]
-           [org.asciidoctor.ast Document]
-           [org.asciidoctor.extension JavaExtensionRegistry DocinfoProcessor]))
+           [org.asciidoctor.ast Document Block]
+           [org.asciidoctor.extension JavaExtensionRegistry DocinfoProcessor BlockMacroProcessor]))
 
 (defn ->author [author]
   {:first-name (.getFirstName author)
@@ -62,10 +62,35 @@
           (process [^Document doc] (generate-favicons)))]
     (.docinfoProcessor jer ^DocinfoProcessor p)))
 
+(defn- add-link [s]
+  (let [[_ pream rfc postam] (re-matches #"(.*)RFC (\d+)(.*)" s)]
+    (if rfc
+      (format "%s link:/specs/%s.html[RFC %s]%s" pream rfc rfc postam)
+      s)))
+
+(defn register-custom-processor! [engine]
+  (infof "Register clojure processor")
+  (let [jer (.javaExtensionRegistry engine)
+        p ^BlockMacroProcessor
+        (proxy [BlockMacroProcessor] ["custom"]
+          (process [^Block parent target attrs]
+            (.createBlock this parent "pass"
+                          (case target
+                            "specs" (.convert (Asciidoctor$Factory/create)
+                                              (->> "dev/resources/spec/index.adoc"
+                                                   (io/reader)
+                                                   line-seq (map add-link) (interpose "\n") (apply str))
+                                              (new org.asciidoctor.Options)
+                                              ))
+                          attrs)
+            ))]
+    (.blockMacro jer ^BlockMacroProcessor p)))
+
 (defn asciidoc->html [fl {:keys [toc]}]
   (fn [ctx]
     (let [engine (Asciidoctor$Factory/create)
           _ (register-docinfo-processor! engine)
+          _ (register-custom-processor! engine)
           ]
       (assert fl)
       (.convertFile

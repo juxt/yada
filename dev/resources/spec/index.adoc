@@ -1,0 +1,24 @@
+[horizontal]
+RFC 2046:: Multipurpose Internet Mail Extensions (MIME) Part Two: Media Types
+RFC 2183:: Communicating Presentation Information in Internet Messages: The Content-Disposition Header Field
+RFC 4647:: Matching of Language Tags
+RFC 5322:: Internet Message Format
+RFC 6265:: HTTP State Management Mechanism
+RFC 6797:: HTTP Strict Transport Security (HSTS)
+RFC 7230:: Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing
+RFC 7231:: Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content
+RFC 7232:: Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests
+RFC 7233:: Hypertext Transfer Protocol (HTTP/1.1): Range Requests
+RFC 7234:: Hypertext Transfer Protocol (HTTP/1.1): Caching
+RFC 7235:: Hypertext Transfer Protocol (HTTP/1.1): Authentication
+RFC 7236:: Initial Hypertext Transfer Protocol (HTTP) Authentication Scheme Registrations
+RFC 7237:: Initial Hypertext Transfer Protocol (HTTP) Method Registrations
+RFC 7238:: The Hypertext Transfer Protocol Status Code 308 (Permanent Redirect)
+RFC 7239:: Forwarded HTTP Extension
+RFC 7240:: Prefer Header for HTTP
+RFC 7578:: Returning Values from Forms: multipart/form-data
+
+=== Deprecated
+
+[horizontal]
+RFC 2616:: Hypertext Transfer Protocol -- HTTP/1.1

@@ -28,10 +28,27 @@
                  #_["/index.html" (docsite/index)]
 
                  ["/" (yada/redirect ::yada.dev.manual/index)]
-                 (manual/routes)
-                 ["/" (yada/handler (io/file "dev/resources/static"))]
 
-                 ])
+                 (manual/routes)
+
+                 [["/specs/" :rfc ".html"]
+                  (yada/resource
+                   {:parameters {:path {:rfc String}}
+
+                    :properties
+                    (fn [ctx]
+                      (let [f (io/file "dev/resources/spec" (format "rfc%s.html" (-> ctx :parameters :path :rfc)))]
+                        {:exists? (.exists f)
+                         :last-modified (.lastModified f)
+                         ::file f}))
+
+                    :methods
+                    {:get {:produces "text/html"
+                           :response (fn [ctx]
+                                       (-> ctx :properties ::file))}}})]
+
+                 ["/" (yada/handler (io/file "dev/resources/static"))]])
+
                {:port port})]
           (infof "Started web-server on port %s" (:port listener))
           (assoc component :listener listener))
