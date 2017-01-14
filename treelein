@@ -11,6 +11,6 @@ for ext in aleph async bidi json webjars json-html transit jwt multipart oauth2 
     done
 
 # Bundles
-for bundle in full lean; do
+for bundle in default lean; do
     cd bundles/$bundle; lein $*; cd ../..;
     done
