@@ -89,6 +89,7 @@
          (..
           (org.asciidoctor.AttributesBuilder/attributes)
           (tableOfContents (case toc true org.asciidoctor.Placement/LEFT false))
+          (noFooter true)
           (imagesDir "img")
           (styleSheetName "juxt.css")
           #_(stylesDir "resources/asciidoctor/stylesheets")
