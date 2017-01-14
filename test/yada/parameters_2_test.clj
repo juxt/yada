@@ -1,4 +1,4 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 ;; This is an old test against swagger parameters which should work
 ;; against the new non-swagger implementation (I can't see why not

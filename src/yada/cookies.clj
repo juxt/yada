@@ -1,4 +1,4 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (ns ^{:doc
       "Based on an original recipe ring.middleware.cookies, my own

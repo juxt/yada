@@ -1,4 +1,4 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (defproject yada/phonebook "1.1.14"
   :description "A simple example of defining yada resource types"

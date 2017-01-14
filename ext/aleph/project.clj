@@ -1,4 +1,4 @@
-;; Copyright © 2014-2016, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (def VERSION "1.2.0")
 
