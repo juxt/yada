@@ -241,8 +241,9 @@
              [:pre s])))])
 
     [:div
-     [:p.footer [:span.yada
-          [:a {:href "https://yada.juxt.pro"} "yada"]]
+     [:p.footer
+      [:span.yada
+       [:a {:href "https://juxt.pro/yada"} "yada"]]
       " by "
       [:a {:href "https://juxt.pro"} "JUXT"]]]]))
 
