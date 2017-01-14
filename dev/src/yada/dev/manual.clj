@@ -166,7 +166,7 @@
 
     [["/index.html"]
      (resource
-      {:id ::manual
+      {:id ::index
        :methods
        {:get
         {:produces {:media-type "text/html" :charset "UTF-8"}

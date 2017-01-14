@@ -27,6 +27,7 @@
                 [(config/get-host config)
                  #_["/index.html" (docsite/index)]
 
+                 ["/" (yada/redirect ::yada.dev.manual/index)]
                  (manual/routes)
                  ["/" (yada/handler (io/file "dev/resources/static"))]
 
