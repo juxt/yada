@@ -5,6 +5,12 @@ interceptor chain and minimal dependencies.
 
 Other dependencies can be added
 
+## Install
+
+```clojure
+[yada/lean "1.2.0"]
+```
+
 ## Testing
 
 Testing this bundle is done from this directory:
