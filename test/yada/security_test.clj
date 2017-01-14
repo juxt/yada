@@ -2,9 +2,9 @@
 
 (ns yada.security-test
   (:require
-   [yada.test :refer [request-for response-for]]
    [clojure.test :refer :all :exclude [deftest]]
-   [schema.test :refer [deftest]]))
+   [schema.test :refer [deftest]]
+   [yada.test :refer [response-for]]))
 
 (deftest www-authenticate-test
   (testing "www-authenticate header"

@@ -4,15 +4,10 @@
   (:refer-clojure :exclude [methods get])
   (:require
    [clojure.string :as str]
-   [clojure.pprint :refer [pprint]]
-   [clojure.tools.logging :refer :all]
    [manifold.deferred :as d]
-   [yada.body :as body]
    [yada.context :as ctx]
    [yada.util :as util])
-  (:import
-   [yada.context Response]
-   [java.io File]))
+  (:import yada.context.Response))
 
 (defn- zero-content-length
   "Unless status code is 1xx or 204, or method is CONNECT. We don't set

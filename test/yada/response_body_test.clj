@@ -2,11 +2,9 @@
 
 (ns yada.response-body-test
   (:require
-   [clojure.test :refer :all]
    [byte-streams :as b]
-   [yada.test :refer [response-for]]
-   [yada.handler :refer [handler]]
-   [yada.resource :refer [resource]]))
+   [clojure.test :refer :all]
+   [yada.test :refer [response-for]]))
 
 (deftest byte-array-bodies-test []
   (let [response

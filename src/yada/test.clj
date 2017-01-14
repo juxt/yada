@@ -3,8 +3,7 @@
 (ns yada.test
   (:require
    [byte-streams :as b]
-   [yada.handler :refer [handler as-handler]]
-   [yada.resource :refer [resource]]))
+   [yada.handler :refer [as-handler]]))
 
 (defn request-for [method uri options]
   (let [uri (new java.net.URI uri)]

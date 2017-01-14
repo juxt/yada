@@ -3,9 +3,8 @@
 (ns yada.resources.jar-resource
   (:require
    [clojure.java.io :as io]
-   [ring.util.mime-type :refer (ext-mime-type)]
-   [yada.resource :refer [resource as-resource]])
-  (:import [java.util.jar JarFile]))
+   [yada.resource :refer [as-resource resource]])
+  (:import java.util.jar.JarFile))
 
 (defn new-jar-resource [prefix]
   (resource

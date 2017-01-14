@@ -3,16 +3,10 @@
 (ns yada.util
   (:require
    [clojure.java.io :as io]
-   [clojure.string :as str]
    [clojure.set :as set]
-   [clojure.tools.logging :refer :all]
-   [byte-streams :as bs]
-   [manifold.deferred :as d]
-   [manifold.stream :as s])
-  (:import
-   [java.nio ByteBuffer]
-   (java.util Map$Entry)
-   (clojure.lang IPersistentVector)))
+   [clojure.string :as str])
+  (:import clojure.lang.IPersistentVector
+           java.util.Map java.util.Map$Entry))
 
 ;; ------------------------------------------------------------------------
 ;; XML Parsing Transducers

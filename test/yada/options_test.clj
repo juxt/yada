@@ -2,10 +2,7 @@
 
 (ns yada.options-test
   (:require
-   [clojure.java.io :as io]
-   [clojure.test :refer :all]
-   [ring.mock.request :refer [request]]
-   ))
+   [clojure.test :refer :all]))
 
 ;; TODO: OPTIONS needs to be documented and implemented, then re-enable
 ;; these tests

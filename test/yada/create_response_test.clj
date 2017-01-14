@@ -4,8 +4,7 @@
   (:require
    [clojure.test :refer :all :exclude [deftest]]
    [schema.test :refer [deftest]]
-   [yada.interceptors :refer [create-response]]
-   [yada.schema :as ys]))
+   [yada.interceptors :refer [create-response]]))
 
 (deftest cookies-test []
   (testing "that simple values work"
@@ -22,7 +21,3 @@
       (is (=
            ["foo=bar; Path=/abc; HttpOnly"]
            (get-in response [:headers "set-cookie"]))))))
-
-
-
-

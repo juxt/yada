@@ -2,8 +2,6 @@
 
 (ns yada.resources.exception-resource
   (:require
-   [clojure.tools.logging :refer :all]
-   [hiccup.core :refer [html]]
    [yada.body :as body]
    [yada.context :refer [content-type]]
    [yada.resource :refer [resource ResourceCoercion]]))

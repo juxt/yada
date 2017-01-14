@@ -2,16 +2,14 @@
 
 (ns yada.string-resource-test
   (:require
-   [clojure.java.io :as io]
-   [clojure.set :as set]
+   [clj-time.coerce :refer [to-date]]
+   [clj-time.core :as time]
    [clojure.string :as str]
    [clojure.test :refer :all]
-   [clj-time.core :as time]
-   [clj-time.coerce :refer (to-date)]
    [ring.mock.request :refer [request]]
-   [ring.util.time :refer (format-date)]
-   [yada.resource :refer [as-resource]]
-   [yada.handler :refer [handler]]))
+   [ring.util.time :refer [format-date]]
+   [yada.handler :refer [handler]]
+   [yada.resource :refer [as-resource]]))
 
 (deftest string-test
   (testing "Producing a Java string implies utf-8 charset"

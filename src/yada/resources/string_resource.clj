@@ -2,12 +2,10 @@
 
 (ns yada.resources.string-resource
   (:require
-   [clojure.tools.logging :refer :all]
-   [clj-time.core :refer (now)]
-   [clj-time.coerce :refer (to-date)]
+   [clj-time.coerce :refer [to-date]]
+   [clj-time.core :refer [now]]
    [yada.charset :as charset]
-   [yada.resource :refer [resource ResourceCoercion]]
-   [yada.util :refer (md5-hash)]))
+   [yada.resource :refer [resource ResourceCoercion]]))
 
 (extend-protocol ResourceCoercion
   String

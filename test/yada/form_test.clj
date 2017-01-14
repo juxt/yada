@@ -1,11 +1,11 @@
+;; Copyright © 2014-2017, JUXT LTD.
+
 (ns yada.form-test
   (:require
-   [clojure.tools.logging :refer :all]
+   [byte-streams :as bs]
    [clojure.edn :as edn]
    [clojure.test :refer :all]
-   [byte-streams :as bs]
    [ring.mock.request :as mock]
-   [ring.util.codec :as codec]
    [schema.core :as s]
    [yada.handler :refer [handler]]
    [yada.resource :refer [resource]]))

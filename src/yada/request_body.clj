@@ -3,17 +3,16 @@
 (ns yada.request-body
   (:require
    [byte-streams :as bs]
-   [clojure.tools.logging :refer :all]
    [clojure.edn :as edn]
+   [clojure.tools.logging :refer :all]
    [manifold.deferred :as d]
    [manifold.stream :as s]
-   [ring.util.request :as req]
    [ring.util.codec :as codec]
+   [ring.util.request :as req]
    [schema.coerce :as sc]
-   [schema.utils :refer [error? error-val]]
-   [yada.coerce :as coerce]
-   [yada.parameters :refer [+parameter-key-coercions+]]
-   [yada.media-type :as mt]))
+   [schema.utils :refer [error-val error?]]
+   [yada.media-type :as mt]
+   [yada.parameters :refer [+parameter-key-coercions+]]))
 
 (def application_octet-stream
   (mt/string->media-type "application/octet-stream"))

@@ -1,10 +1,9 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.walk
-  (:require
-   [clojure.walk :refer [postwalk]])
-  (:import [yada.handler Handler]
-           [yada.resource Resource]))
+  (:require [clojure.walk :refer [postwalk]])
+  (:import yada.handler.Handler
+           yada.resource.Resource))
 
 ;; Functions to update inner routes
 

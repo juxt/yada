@@ -2,9 +2,9 @@
 
 (ns yada.cookies-coercion-test
   (:require
-   [yada.cookies :refer [cookies-coercer]]
    [clojure.test :refer :all :exclude [deftest]]
-   [schema.test :refer [deftest]]))
+   [schema.test :refer [deftest]]
+   [yada.cookies :refer [cookies-coercer]]))
 
 ;; Based on an original recipe ring.middleware.cookies, my own
 ;; includes chocolate-chip coercions.
@@ -31,6 +31,3 @@
                                    :path "/"
                                    :secure true
                                     :http-only true}})))))
-
-
-

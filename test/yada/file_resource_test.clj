@@ -2,21 +2,16 @@
 
 (ns yada.file-resource-test
   (:require
-   [byte-streams :as bs]
    [clojure.edn :as edn]
    [clojure.java.io :as io]
    [clojure.test :refer :all]
-   [clojure.tools.logging :refer :all]
    [ring.mock.request :refer [request]]
-   [ring.util.time :refer [parse-date format-date]]
+   [ring.util.time :refer [format-date parse-date]]
    [schema.test :as st]
    [yada.handler :refer [handler]]
-   [yada.resource :refer [as-resource]]
-   [yada.resources.file-resource :refer :all]
-   [yada.test-util :refer [to-string]])
-  (:import
-   [java.io File ByteArrayInputStream]
-   [java.util Date]))
+   [yada.resource :refer [as-resource]])
+  (:import [java.io ByteArrayInputStream File]
+           java.util.Date))
 
 (def exists? (memfn exists))
 

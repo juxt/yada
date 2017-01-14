@@ -1,10 +1,11 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.charset
-  (:require [clojure.java.io :as io]
-            [clojure.string :as str]
-            [clojure.xml :as xml]
-            [yada.util :refer :all]))
+  (:require
+   [clojure.java.io :as io]
+   [clojure.string :as str]
+   [clojure.xml :as xml]
+   [yada.util :refer :all]))
 
 ;; TODO: Replace with java.nio.charset.Charset, which contains the same logic
 

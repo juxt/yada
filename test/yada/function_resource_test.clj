@@ -3,14 +3,8 @@
 (ns yada.function-resource-test
   (:require
    [byte-streams :as b]
-   [clojure.java.io :as io]
-   [clojure.set :as set]
-   [clojure.string :as str]
    [clojure.test :refer :all]
-   [clj-time.core :as time]
-   [clj-time.coerce :refer (to-date)]
    [ring.mock.request :refer [request]]
-   [ring.util.time :refer (format-date)]
    [yada.handler :refer [handler]]))
 
 (deftest function-test

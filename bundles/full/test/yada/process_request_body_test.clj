@@ -1,18 +1,19 @@
+;; Copyright © 2014-2017, JUXT LTD.
+
 (ns ^{:author "Imre Koszo"}
-yada.process-request-body-test
-  (:require
-    [clojure.test :refer :all :exclude [deftest]]
-    [cheshire.core :as json]
-    [schema.core :as s]
-    [schema.test :refer [deftest]]
-    [yada.interceptors :as i]
-    [yada.resource :refer [resource]]
-    [yada.request-body :refer [process-request-body]]
-    [byte-streams :as bs]
-    [schema.coerce :as sc]
-    [cognitect.transit :as transit])
-  (:import (clojure.lang ExceptionInfo Keyword)
-           (java.io ByteArrayOutputStream)))
+    yada.process-request-body-test
+    (:require
+     [byte-streams :as bs]
+     [cheshire.core :as json]
+     [clojure.test :refer :all :exclude [deftest]]
+     [cognitect.transit :as transit]
+     [schema.core :as s]
+     [schema.test :refer [deftest]]
+     [yada.interceptors :as i]
+     [yada.request-body :refer [process-request-body]]
+     [yada.resource :refer [resource]])
+    (:import [clojure.lang ExceptionInfo Keyword]
+             java.io.ByteArrayOutputStream))
 
 (defmacro is-coercing-correctly?
   [expected value content-type]

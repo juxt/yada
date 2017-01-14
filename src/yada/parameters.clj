@@ -3,17 +3,14 @@
 (ns yada.parameters
   (:require
    [clj-time.coerce :as time]
-   [clojure.tools.logging :refer :all]
    [manifold.deferred :as d]
    [ring.middleware.params :refer [assoc-query-params]]
-   [schema.core :as s]
    [schema.coerce :as sc]
-   [schema.utils :refer [error? error-val]]
-   [yada.cookies :as cookies]
+   [schema.core :as s]
+   [schema.utils :refer [error?]]
    [yada.util :as util])
-  (:import
-   [schema.core RequiredKey OptionalKey]
-   [clojure.lang Keyword]))
+  (:import clojure.lang.Keyword
+           [schema.core OptionalKey RequiredKey]))
 
 (def +date-coercions+
   {s/Inst (comp time/to-date time/from-string)})

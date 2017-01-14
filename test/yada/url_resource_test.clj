@@ -2,13 +2,11 @@
 
 (ns yada.url-resource-test
   (:require
-   [yada.resources.url-resource :refer :all]
-   [clojure.test :refer :all]
    [clojure.java.io :as io]
+   [clojure.test :refer :all]
    [ring.mock.request :as mock]
    [yada.yada :refer [handler]])
-  (:import
-   [java.io BufferedInputStream]))
+  (:import java.io.BufferedInputStream))
 
 ;; Test a single Java resource. Note that this isn't a particularly useful
 ;; resource, because it contains no knowledge of when it was modified,

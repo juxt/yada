@@ -2,24 +2,17 @@
 
 (ns yada.body
   (:require
+   [byte-streams :as bs]
    [clojure.java.io :as io]
    [clojure.pprint :refer [pprint]]
    [clojure.tools.logging :refer :all]
-   [clojure.walk :refer [keywordize-keys]]
-   [byte-streams :as bs]
-   [hiccup.core :refer [html h]]
-   [hiccup.page :refer [html5 xhtml]]
+   [hiccup.core :refer [html]]
+   [hiccup.page :refer [xhtml]]
    [manifold.stream :refer [->source transform]]
-   [ring.util.codec :as codec]
-   [yada.status :refer [status]]
-   [schema.core :as s]
    [yada.charset :as charset]
-   [yada.media-type :as mt]
+   [yada.status :refer [status]]
    [yada.util :refer [CRLF]])
-  (:import
-   [java.io File]
-   [java.net URL]
-   [manifold.stream SourceProxy]))
+  (:import java.io.File))
 
 (defprotocol MessageBody
   (to-body [resource representation] "Construct the reponse body for the given resource, given the negotiated representation (metadata)")

@@ -2,11 +2,10 @@
 
 (ns yada.resources.collection-resource
   (:require
-   [clojure.tools.logging :refer :all]
-   [clj-time.core :refer [now]]
    [clj-time.coerce :refer [to-date]]
-   [yada.charset :as charset]
+   [clj-time.core :refer [now]]
    [yada.body :refer [as-body]]
+   [yada.charset :as charset]
    [yada.resource :refer [resource ResourceCoercion]])
   (:import [clojure.lang APersistentMap PersistentVector]))
 

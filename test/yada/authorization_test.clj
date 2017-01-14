@@ -3,16 +3,12 @@
 (ns yada.authorization-test
   (:require
    [clojure.test :refer :all :exclude [deftest]]
-   [schema.test :refer [deftest]]
-   [ring.mock.request :refer [request header]]
-   [yada.schema :refer :all]
-   [yada.resource :refer [resource]]
-   [yada.security :refer [verify]]
-   [yada.authorization :refer [validate]]
    [schema.core :as s]
+   [schema.test :refer [deftest]]
+   [yada.authorization :refer [allowed?]]
    [yada.boolean :as b]
-   [yada.test :refer [request-for response-for]]
-   [yada.authorization :refer [allowed?]]))
+   [yada.security :refer [verify]]
+   [yada.test :refer [response-for]]))
 
 (deftest schema-test
   (is

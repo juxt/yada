@@ -1,10 +1,7 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.authorization
-  (:require
-   [manifold.deferred :as d]
-   [clojure.tools.logging :refer :all])
-  (:import [clojure.lang APersistentVector APersistentMap Keyword]))
+  (:import [clojure.lang APersistentMap APersistentVector]))
 
 (defprotocol AuthorizationPredicate
   (allowed? [_ ctx realm] ""))

@@ -2,9 +2,7 @@
 
 (ns yada.consume
   (:require
-   [aleph.netty :refer [release]]
    [byte-streams :as b]
-   [clojure.tools.logging :refer :all]
    [manifold.deferred :as d]
    [manifold.stream :as s]))
 

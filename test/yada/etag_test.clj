@@ -3,11 +3,10 @@
 (ns yada.etag-test
   (:require
    [clojure.test :refer :all]
-   [clojure.tools.logging :refer :all]
    [ring.mock.request :as mock]
+   [yada.handler :refer [handler]]
    [yada.resource :refer [resource]]
-   [yada.test-util :refer [etag?]]
-   [yada.handler :refer [handler]]))
+   [yada.test-util :refer [etag?]]))
 
 ;; ETags -------------------------------------------------------------
 

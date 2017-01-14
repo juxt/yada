@@ -3,13 +3,11 @@
 (ns yada.representation-test
   (:require
    [clojure.test :refer :all]
-   [clojure.string :as str]
    [schema.test :as st]
    [yada.charset :as charset]
    [yada.media-type :as mt]
-   [yada.util :refer (parse-csv best best-by http-token OWS)]
    [yada.representation :as rep]
-   [yada.test :refer [request-for response-for]]))
+   [yada.test :refer [response-for]]))
 
 (defn- get-highest-content-type-quality
   "Given the request and a representation, get the highest possible

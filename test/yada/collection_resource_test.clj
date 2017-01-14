@@ -2,20 +2,14 @@
 
 (ns yada.collection-resource-test
   (:require
-   [clj-time.core :as time]
    [clj-time.coerce :refer [to-date]]
+   [clj-time.core :as time]
    [clojure.edn :as edn]
-   [clojure.java.io :as io]
-   [clojure.set :as set]
    [clojure.test :refer :all]
-   [clojure.tools.logging :refer :all]
-   [clojure.pprint :refer [pprint]]
    [ring.mock.request :as mock]
-   [ring.util.time :refer (parse-date format-date)]
+   [ring.util.time :refer [format-date parse-date]]
    [yada.handler :refer [handler]]
-   [yada.representation :as rep]
-   [yada.resource :refer [as-resource]]
-   [yada.test-util :refer (to-string)]))
+   [yada.test-util :refer [to-string]]))
 
 (defn yesterday []
   (time/minus (time/now) (time/days 1)))

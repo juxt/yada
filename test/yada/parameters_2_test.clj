@@ -6,12 +6,11 @@
 
 (ns yada.parameters-2-test
   (:require
-    [clojure.test :refer :all]
-    [schema.core :as s]
-    [yada.parameters :refer [parse-parameters]]
-    [yada.resource :as r]
-    [manifold.deferred :as d])
-  (:import (clojure.lang ExceptionInfo IDeref)))
+   [clojure.test :refer :all]
+   [schema.core :as s]
+   [yada.parameters :refer [parse-parameters]]
+   [yada.resource :as r])
+  (:import [clojure.lang ExceptionInfo IDeref]))
 
 (deftest header-test []
   (let [resource (r/resource

@@ -3,20 +3,15 @@
 (ns yada.multipart-test
   (:require
    [byte-streams :as b]
-   [clojure.string :as str]
-   [clojure.test :refer :all]
    [clojure.java.io :as io]
-   [clojure.pprint :refer [pprint]]
-   [manifold.deferred :as d]
+   [clojure.test :refer :all]
    [manifold.stream :as s]
    [yada.interceptors :as i]
-   [yada.util :refer [OWS CRLF]]
    [yada.media-type :as mt]
    [yada.multipart :refer :all]
+   [yada.util :refer [CRLF]]
    [yada.yada :as yada])
-  (:import
-   [java.io ByteArrayInputStream BufferedReader InputStreamReader]
-   [java.nio.charset Charset]))
+  (:import java.io.ByteArrayInputStream))
 
 (deftest parse-content-type-header
   (let [content-type "multipart/form-data; boundary=----WebKitFormBoundaryZ3oJB7WHOBmOjrEi"]

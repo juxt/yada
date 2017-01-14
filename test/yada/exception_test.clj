@@ -3,8 +3,7 @@
 (ns yada.exception-test
   (:require
    [clojure.test :refer :all]
-   [yada.test :refer [response-for]]
-   [yada.handler :refer [handler]]))
+   [yada.test :refer [response-for]]))
 
 (deftest exception-test
   (let [resp (response-for (ex-info "Error" {} (ex-info "cause" {})))]

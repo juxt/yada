@@ -1,11 +1,9 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
 (ns ^{:doc "Test utilities"}
-    yada.test-util
+ yada.test-util
   (:require
-   [manifold.stream :as s]
-   [byte-streams :as bs]
-   [clojure.test :refer [is]]))
+   [byte-streams :as bs]))
 
 (defn etag? [etag]
   (and (string? etag)

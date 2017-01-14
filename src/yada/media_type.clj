@@ -3,8 +3,8 @@
 (ns yada.media-type
   (:refer-clojure :exclude [type])
   (:require
-   [yada.util :refer (http-token OWS)]
-   [clojure.tools.logging :refer :all]))
+   [clojure.tools.logging :refer :all]
+   [yada.util :refer [http-token OWS]]))
 
 ;; For implementation efficiency, we keep the parsed versions of media
 ;; types as records rather than encode in Strings which require

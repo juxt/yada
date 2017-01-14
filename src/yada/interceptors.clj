@@ -21,9 +21,8 @@
    [yada.request-body :as rb]
    [yada.schema :as ys]
    [yada.util :as util])
-  (:import
-   [java.io ByteArrayOutputStream]
-   [java.util.zip GZIPInputStream]))
+  (:import java.io.ByteArrayOutputStream
+           java.util.zip.GZIPInputStream))
 
 (defn available?
   "Is the service available?"

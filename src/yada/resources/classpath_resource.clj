@@ -1,8 +1,10 @@
+;; Copyright © 2014-2017, JUXT LTD.
+
 (ns yada.resources.classpath-resource
   (:require
    [clojure.java.io :as io]
    [clojure.string :as str]
-   [yada.resource :refer [resource as-resource]]))
+   [yada.resource :refer [as-resource resource]]))
 
 (defn new-classpath-resource
   "Create a new classpath resource that resolves requests with

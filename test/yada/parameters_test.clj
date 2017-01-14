@@ -1,13 +1,15 @@
+;; Copyright © 2014-2017, JUXT LTD.
+
 (ns yada.parameters-test
   (:require
    [byte-streams :as bs]
    [clojure.edn :as edn]
    [clojure.test :refer :all]
-   [yada.context :as ctx]
-   [yada.resource :refer [resource]]
-   [yada.handler :refer [handler]]
    [ring.mock.request :as mock]
-   [schema.core :as s]))
+   [schema.core :as s]
+   [yada.context :as ctx]
+   [yada.handler :refer [handler]]
+   [yada.resource :refer [resource]]))
 
 (s/defschema Transaction
   {:payee String

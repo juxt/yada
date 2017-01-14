@@ -1,9 +1,11 @@
+;; Copyright © 2014-2017, JUXT LTD.
+
 (ns yada.transit-json-test
-  (:require [clojure.test :refer :all]
-            [schema.core :as s]
-            [byte-streams :as bs]
-            [yada.request-body :refer [process-request-body]]
-            [yada.body :as sut]))
+  (:require
+   [byte-streams :as bs]
+   [clojure.test :refer :all]
+   [yada.body :as sut]
+   [yada.request-body :refer [process-request-body]]))
 
 (defmacro is-coercing-correctly?
   [expected value content-type]

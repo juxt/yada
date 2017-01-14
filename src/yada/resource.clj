@@ -5,12 +5,12 @@
    [hiccup.core :refer [html]]
    [schema.core :as s]
    [schema.utils :as su]
-   [yada.schema :as ys]
    [yada.context :refer [content-type]]
+   [yada.schema :as ys]
    [yada.util :refer [arity]])
-  (:import [yada.charset CharsetMap]
-           [yada.media_type MediaTypeMap]
-           [java.util Date]))
+  (:import java.util.Date
+           yada.charset.CharsetMap
+           yada.media_type.MediaTypeMap))
 
 (defprotocol ResourceCoercion
   (as-resource [_] "Coerce to a resource. Often, resources need to be

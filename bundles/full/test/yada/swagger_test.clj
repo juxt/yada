@@ -1,19 +1,15 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.swagger-test
-  (:require [yada.swagger :refer :all]
-            [clojure.test :refer :all]
-            [yada.yada :refer [as-resource yada resource]]
-            [yada.schema :as ys]
-            [clojure.set :as set]
-            [schema.core :as s]
-            [schema.coerce :as sc]
-            [ring.swagger.swagger2 :as rsw]
-            [ring.swagger.swagger2-schema :as rsws]
-            [bidi.bidi :as bidi]
-            [clojure.walk :refer [postwalk]])
-  (:import (java.util.regex Pattern)
-           (clojure.lang Keyword)))
+  (:require
+   [bidi.bidi :as bidi]
+   [clojure.test :refer :all]
+   [clojure.walk :refer [postwalk]]
+   [schema.core :as s]
+   [yada.swagger :refer :all]
+   [yada.yada :refer [resource yada]])
+  (:import clojure.lang.Keyword
+           java.util.regex.Pattern))
 
 ;; TODO: Build a proper swagger_test suite
 

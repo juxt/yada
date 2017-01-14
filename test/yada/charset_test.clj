@@ -1,3 +1,5 @@
+;; Copyright © 2014-2017, JUXT LTD.
+
 (ns yada.charset-test
   (:require
    [clojure.test :refer :all]

@@ -1,9 +1,11 @@
+;; Copyright © 2014-2017, JUXT LTD.
+
 (ns yada.webjar-resource-test
-  (:require [clojure.test :refer [deftest is testing]]
-            [yada.resources.webjar-resource :refer [new-webjar-resource]]
-            [clojure.java.io :as io]
-            [clojure.java.io :as io]
-            [yada.test :as test]))
+  (:require
+   [clojure.java.io :as io]
+   [clojure.test :refer [deftest is]]
+   [yada.resources.webjar-resource :refer [new-webjar-resource]]
+   [yada.test :as test]))
 
 (deftest bootstrap-test
   (let [expected (slurp (io/resource "META-INF/resources/webjars/bootstrap/3.3.6/less/close.less"))]

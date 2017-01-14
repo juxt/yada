@@ -2,26 +2,21 @@
 
 (ns yada.handler
   (:require
-   [clojure.tools.logging :refer [errorf debugf infof]]
+   [clojure.tools.logging :refer [errorf]]
    [manifold.deferred :as d]
    [schema.core :as s]
    [schema.utils :refer [error?]]
    [yada.body :as body]
-   [clojure.pprint :refer [pprint]]
-   [yada.context :refer [->Response]]
    [yada.charset :as charset]
-   [yada.interceptors :as i]
-   [yada.media-type :as mt]
+   [yada.context :refer [->Response]]
    [yada.methods :as methods]
    [yada.representation :as rep]
-   [yada.resource :as resource :refer [resource as-resource ResourceCoercion]]
-   [yada.schema :refer [resource-coercer] :as ys]
-   [yada.security :as sec]
+   [yada.resource :as resource :refer [as-resource resource ResourceCoercion]]
+   [yada.schema :as ys :refer [resource-coercer]]
    [yada.util :refer [get*]])
-  (:import
-   [clojure.lang PersistentVector APersistentMap]
-   [yada.resource Resource]
-   [yada.methods AnyMethod]))
+  (:import clojure.lang.APersistentMap
+           yada.methods.AnyMethod
+           yada.resource.Resource))
 
 (declare new-handler)
 

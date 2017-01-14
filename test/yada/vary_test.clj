@@ -8,8 +8,7 @@
    [yada.representation :refer [vary]]
    [yada.schema :as ys]
    [yada.util :refer [parse-csv]]
-   [yada.yada :refer [handler as-resource]]
-   yada.resources.string-resource))
+   [yada.yada :refer [as-resource handler]]))
 
 (st/deftest vary-test
   (is (= #{:media-type}

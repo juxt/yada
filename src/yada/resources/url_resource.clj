@@ -2,13 +2,13 @@
 
 (ns yada.resources.url-resource
   (:require
+   [ring.util.mime-type :refer [ext-mime-type]]
    [yada.charset :as charset]
    [yada.resource :refer [resource ResourceCoercion]]
-   [yada.util :refer [as-file]]
-   [ring.util.mime-type :refer (ext-mime-type)])
-  (:import [java.net URL]
-           [java.util Date]
-           [java.io BufferedReader InputStreamReader]))
+   [yada.util :refer [as-file]])
+  (:import [java.io BufferedReader InputStreamReader]
+           java.net.URL
+           java.util.Date))
 
 ;; A UrlResource is a Java resource on the classpath.
 

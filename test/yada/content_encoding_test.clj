@@ -1,14 +1,15 @@
+;; Copyright © 2014-2017, JUXT LTD.
+
 (ns ^{:author "Johannes Staffans"}
  yada.content-encoding-test
   (:require [byte-streams :as bs]
             [clojure.java.io :as io]
             [clojure.test :refer :all]
-            [manifold.deferred :as d]
             [ring.mock.request :refer [header request]]
-            [yada.resource :refer [resource]]
-            [yada.handler :refer [handler]])
+            [yada.handler :refer [handler]]
+            [yada.resource :refer [resource]])
   (:import java.io.ByteArrayOutputStream
-           [java.util.zip GZIPInputStream GZIPOutputStream]))
+           java.util.zip.GZIPOutputStream))
 
 (defn gzip
   [in out]

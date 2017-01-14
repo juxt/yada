@@ -6,7 +6,7 @@
    [ring.mock.request :as mock]
    [schema.test :refer [deftest]]
    [yada.handler :refer [handler]]
-   [yada.resource :refer [resource as-resource]]))
+   [yada.resource :refer [resource]]))
 
 (deftest allow-origin-test
   (testing "No Origin header means no CORS processing at all"

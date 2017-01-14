@@ -1,9 +1,12 @@
+;; Copyright © 2014-2017, JUXT LTD.
+
 (ns yada.custom-error-response-test
-  (:require [clojure.test :refer :all]
-            [byte-streams :as b]
-            [ring.mock.request :refer [request]]
-            [yada.handler :refer [handler]]
-            [yada.resource :refer [resource]]))
+  (:require
+   [byte-streams :as b]
+   [clojure.test :refer :all]
+   [ring.mock.request :refer [request]]
+   [yada.handler :refer [handler]]
+   [yada.resource :refer [resource]]))
 
 (defn- error-resource
   [method exception]

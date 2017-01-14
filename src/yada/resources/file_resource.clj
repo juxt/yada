@@ -5,23 +5,16 @@
    [byte-streams :as bs]
    [clojure.java.io :as io]
    [clojure.string :as str]
-   [clojure.tools.logging :refer :all]
-   [hiccup.core :refer (html h)]
-   [ring.util.mime-type :refer (ext-mime-type)]
-   [ring.util.response :refer (redirect)]
-   [ring.util.time :refer (format-date)]
+   [hiccup.core :refer [html]]
+   [ring.util.mime-type :refer [ext-mime-type]]
    [schema.core :as s]
-   [yada.charset :as charset]
-   [yada.representation :as rep]
-   [yada.resource :refer [resource as-resource ResourceCoercion]]
-   [yada.media-type :as mt]
+   [yada.resource :refer [as-resource resource ResourceCoercion]]
    [yada.schema :refer [Representation]])
-  (:import [java.io File]
-           [java.nio.file Files]
+  (:import java.io.File
            [java.nio.file.attribute PosixFileAttributeView PosixFilePermissions]
-           [java.util Date TimeZone]
-           [java.text SimpleDateFormat]
-           [java.nio.charset Charset]))
+           java.nio.file.Files
+           java.text.SimpleDateFormat
+           [java.util Date TimeZone]))
 
 (defn respond-with-file [ctx file reader]
   ;; The reason to use bs/transfer is to allow an efficient copy of byte buffers

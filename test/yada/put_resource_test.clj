@@ -5,11 +5,9 @@
    [byte-streams :as b]
    [clojure.test :refer :all]
    [ring.mock.request :refer [request]]
-   [clojure.java.io :as io]
-   [manifold.stream :as s]
-   [yada.test-util :refer [to-string]]
    [yada.handler :refer [handler]]
-   [yada.resource :refer [resource]]))
+   [yada.resource :refer [resource]]
+   [yada.test-util :refer [to-string]]))
 
 (defn add-headers [request m]
   (merge-with merge request {:headers m}))

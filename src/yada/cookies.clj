@@ -1,15 +1,14 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
-(ns ^{:doc
-      "Based on an original recipe ring.middleware.cookies, my own
-    includes chocolate-chip coercions."}
+(ns
+    ^{:doc "Based on an original recipe ring.middleware.cookies my own includes chocolate-chip coercions."}
     yada.cookies
-  (:require
-   [clj-time.coerce :as time]
-   [clj-time.format :as tf]
-   [clojure.string :as str]
-   [schema.core :as s]
-   [schema.coerce :as sc]))
+    (:require
+     [clj-time.coerce :as time]
+     [clj-time.format :as tf]
+     [clojure.string :as str]
+     [schema.coerce :as sc]
+     [schema.core :as s]))
 
 (s/defschema Rfc822String (s/pred string?))
 

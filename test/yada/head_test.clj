@@ -2,7 +2,6 @@
 
 (ns yada.head-test
   (:require
-   [clojure.java.io :as io]
    [clojure.test :refer :all]
    [ring.mock.request :refer [request]]
    [yada.handler :refer [handler]]

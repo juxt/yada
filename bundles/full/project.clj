@@ -19,4 +19,5 @@
                  [yada/transit ~VERSION]
                  [yada/webjars ~VERSION]]
 
-  :profiles {:test {:dependencies [[org.webjars/bootstrap "3.3.6"]]}})
+  :profiles {:test {:dependencies [[org.clojure/clojure "1.8.0"]
+                                   [org.webjars/bootstrap "3.3.6"]]}})

@@ -1,32 +1,22 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
-(ns ^{:doc
-      "This namespace provides the coercions to transform a wide
-variety of shorthand descriptions of a resource into a canonical
-resource map. This allows the rest of the yada code-base to remain
-agnostic to the syntax of shorthand forms, which significantly
-simplifies coding while giving the author of yada resources the
-convenience of terse, expressive short-hand descriptions."}
+(ns ^{:doc "This namespace provides the coercions to transform a wide\nvariety of shorthand descriptions of a resource into a canonical\nresource map. This allows the rest of the yada code-base to remain\nagnostic to the syntax of shorthand forms
+which significantly\nsimplifies coding while giving the author of yada resources the\nconvenience of terse
+expressive short-hand descriptions."}
     yada.schema
-  (:refer-clojure :exclude [boolean?])
-  (:require
-   [clojure.walk :refer [postwalk]]
-   [clojure.set :as set]
-   [clojure.tools.logging :refer :all]
-   [yada.boolean :as b :refer [boolean?]]
-   [yada.representation :as rep]
-   [yada.media-type :as mt]
-   [yada.util :refer [disjoint*?]]
-   [schema.core :as s]
-   [schema.coerce :as sc]
-   [schema.utils :refer [error?]]
-   [yada.charset :refer [to-charset-map]]
-   [yada.representation :as rep])
-  (:import
-   [yada.charset CharsetMap]
-   [yada.media_type MediaTypeMap]
-   [yada.representation LanguageMap]
-   [java.util Date]))
+    (:refer-clojure :exclude [boolean?])
+    (:require
+     [schema.coerce :as sc]
+     [schema.core :as s]
+     [schema.utils :refer [error?]]
+     [yada.charset :refer [to-charset-map]]
+     [yada.media-type :as mt]
+     [yada.representation :as rep]
+     [yada.util :refer [disjoint*?]])
+    (:import java.util.Date
+             yada.charset.CharsetMap
+             yada.media_type.MediaTypeMap
+             yada.representation.LanguageMap))
 
 (s/defschema NamespacedKeyword
   (s/constrained s/Keyword namespace))

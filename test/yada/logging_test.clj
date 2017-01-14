@@ -4,7 +4,6 @@
   (:require
    [clojure.test :refer :all :exclude [deftest]]
    [schema.test :refer [deftest]]
-   [yada.resource :refer [resource]]
    [yada.test :refer [response-for]]))
 
 ;; Happy path

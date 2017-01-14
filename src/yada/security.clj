@@ -2,12 +2,9 @@
 
 (ns yada.security
   (:require
-   [byte-streams :as b]
-   [manifold.deferred :as d]
-   [clojure.set :as set]
+   [clojure.data.codec.base64 :as base64]
    [clojure.string :as str]
    [clojure.tools.logging :refer :all]
-   [clojure.data.codec.base64 :as base64]
    [yada.authorization :as authorization]))
 
 (defmulti verify

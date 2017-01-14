@@ -1,9 +1,12 @@
+;; Copyright © 2014-2017, JUXT LTD.
+
 (ns yada.empty-body-test
-  (:require [clojure.test :refer [deftest testing is]]
-            [yada.resource :refer [resource]]
-            [yada.handler :refer [handler]]
-            [schema.core :as sc]
-            [ring.mock.request :as mock]))
+  (:require
+   [clojure.test :refer [deftest is testing]]
+   [ring.mock.request :as mock]
+   [schema.core :as sc]
+   [yada.handler :refer [handler]]
+   [yada.resource :refer [resource]]))
 
 (deftest no-form-body
   (let [resource

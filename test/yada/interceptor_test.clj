@@ -2,9 +2,11 @@
 
 (ns yada.interceptor-test
   (:require
-   [yada.handler :refer [prepend-interceptor insert-interceptor append-interceptor]]
    [clojure.test :refer :all :exclude [deftest]]
-   [schema.test :refer [deftest]]))
+   [schema.test :refer [deftest]]
+   [yada.handler
+    :refer
+    [append-interceptor insert-interceptor prepend-interceptor]]))
 
 (deftest prepend-interceptor-test
   (let [res {:interceptor-chain [:b :c :d :e]}]
