@@ -6,7 +6,7 @@
 lein $*
 
 # Extensions
-for ext in aleph async bidi json webjars json-html transit jwt multipart oauth2 swagger; do
+for ext in aleph aleph-next async bidi json webjars json-html transit jwt multipart oauth2 swagger; do
     cd ext/$ext; lein $*; cd ../..;
     done
 
