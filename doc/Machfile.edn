@@ -1,18 +1,20 @@
 {
  xml {SOURCE "yada-manual.adoc"
-      TARGET "yada-manual.xml"
       BACKEND "docbook5"
-      novelty (mach.core/modified-since TARGET (filter (mach.core/has-suffix ".adoc") (mach.core/files)))
-      update! #$ ["asciidoctor" "-b" BACKEND SOURCE "-o" TARGET]}
+      target "yada-manual.xml"
+      novelty (mach.core/modified-since target (filter (mach.core/has-suffix ".adoc") (mach.core/files)))
+      update! #$ ["asciidoctor" "-b" BACKEND SOURCE "-o" target]}
 
  pdf {DBLATEX "dblatex"
-      TARGET "yada-manual.pdf"
       TMPDIR "target"
       STYLE "yada.sty"
       STYLESHEET "dblatex-custom.xsl"
       BACKEND "xetex"
+      target "yada-manual.pdf"
       depends [xml]
-      novelty (mach.core/modified-since TARGET [#ref [xml TARGET] STYLE STYLESHEET])
-      update! #$ [DBLATEX "-d" "-s" STYLE "-p" STYLESHEET "-b" BACKEND (str "--tmpdir=" TMPDIR) #ref [xml TARGET]]
-      clean #$ ["rm" "-rf" TMPDIR]}
+      novelty (mach.core/modified-since target [#ref [xml target] STYLE STYLESHEET])
+      update! #$ [DBLATEX "-d" "-s" STYLE "-p" STYLESHEET "-b" BACKEND (str "--tmpdir=" TMPDIR) #ref [xml target]]
+      clean! #$ ["rm" "-rf" TMPDIR]}
+
+ clean {depends [pdf:clean]}
  }
