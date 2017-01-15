@@ -58,10 +58,10 @@
 
     :source-paths
     [
-     ;; We use the full bundle, that contains the most
+     ;; We use the 'default' bundle, that contains the most
      ;; test coverage. Tests for other bundles can be
      ;; run from the bundle directory itself.
-     "bundles/full/src"
+     "bundles/default/src"
 
      ;; source directories of dependency modules.
      "ext/aleph/src"
@@ -76,10 +76,10 @@
      "ext/transit/src"
      "ext/webjars/src"]
 
-    :test-paths ["bundles/full/test"]}
+    :test-paths ["bundles/default/test"]}
 
    :dev
-   [:test ; so we can run the tests from our REPL
+   [:test                      ; so we can run the tests from our REPL
     {:jvm-opts
      ["-Xms1g" "-Xmx1g"
       "-server"
