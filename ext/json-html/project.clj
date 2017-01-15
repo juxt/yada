@@ -1,6 +1,6 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
-(def VERSION "1.2.0")
+(def VERSION "1.2.1")
 
 (defproject yada/json-html VERSION
   :pedantic? :abort
