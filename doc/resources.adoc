@@ -90,7 +90,7 @@ Access control and security are fully described in the <<security,security chapt
 
 You can define various properties on a resource. These can be thought of as a resource's metadata, information about a resource (rather than the resource's state).
 
-If is possible to specify a complete map of constant properties, if they are all known prior to a request. This is rare, and usually it's necessary to provide a function that will be called during the processing of a request.
+It is possible to specify a complete map of constant properties, if they are all known prior to a request. This is rare, and usually it's necessary to provide a function that will be called during the processing of a request.
 
 [source,clojure]
 ----
