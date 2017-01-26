@@ -68,20 +68,38 @@ expressive short-hand descriptions."}
     (s/optional-key :encoding) #{String}}
    not-empty))
 
+;; representation-seq & merge-representation are written due to short file
+;; length limits on ecryptfs. Using a pulled out function & nested maps results
+;; in a smaller .class
+;; see: https://github.com/juxt/edge/issues/22
+(defn- merge-representation
+  [media-type charset language encoding]
+  (merge
+   (when media-type {:media-type media-type})
+   (when charset {:charset charset})
+   (when language {:language language})
+   (when encoding {:encoding encoding})))
+
 (defn representation-seq
   "Return a sequence of all possible individual representations from the
   result of coerce-representations."
   [reps]
-  (for [rep reps
-        media-type (or (:media-type rep) [nil])
-        charset (or (:charset rep) [nil])
-        language (or (:language rep) [nil])
-        encoding (or (:encoding rep) [nil])]
-    (merge
-     (when media-type {:media-type media-type})
-     (when charset {:charset charset})
-     (when language {:language language})
-     (when encoding {:encoding encoding}))))
+  (mapcat
+    (fn [rep]
+      (mapcat
+        (fn [media-type]
+          (mapcat
+            (fn [charset]
+              (mapcat
+                (fn [language]
+                  (map
+                    (fn [encoding]
+                      (merge-representation media-type charset language encoding))
+                    (or (:encoding rep) [nil])))
+                (or (:language rep) [nil])))
+            (or (:charset rep) [nil])))
+        (or (:media-type rep) [nil])))
+    reps))
 
 (defprotocol MediaTypeCoercion
   (as-media-type [_] ""))
