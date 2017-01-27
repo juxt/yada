@@ -125,7 +125,7 @@ There are benefits to declaring these parameters explicitly:
 * [yada]#yada# will coerce them to the types you want, so you can avoid writing loads of type-conversion logic in your code
 * [yada]#yada# and other tools can process your declarations independently of your request-processing code, e.g. to generate API documentation
 
-Parameter declaration, validation and coercion is a big topic and fully covered in the <<parameters,parameters chapter>>.
+Parameter declaration, validation and coercion is a big topic and fully covered in the <<parameters-chapter,parameters chapter>>.
 
 ==== Representations
 
