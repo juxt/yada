@@ -6,7 +6,7 @@
    yada.aleph
    yada.bidi
    yada.context
-   [yada.handler :refer [interceptor-chain error-interceptor-chain]]
+   yada.handler
    [yada.interceptors :as i]
    [yada.parameters :refer [parse-parameters]]
    yada.redirect
@@ -25,7 +25,7 @@
 (import-vars
  [yada.aleph listener server]
  [yada.context content-type charset language uri-info url-for path-for href-for scheme-for]
- [yada.handler handler yada]
+ [yada.handler handler yada interceptor-chain error-interceptor-chain]
  [yada.redirect redirect]
  [yada.resource resource as-resource]
  [yada.test request-for response-for]
