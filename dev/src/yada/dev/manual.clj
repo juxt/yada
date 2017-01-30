@@ -116,6 +116,7 @@
           (tableOfContents (case toc true org.asciidoctor.Placement/LEFT false))
           (noFooter true)
           (imagesDir "img")
+          (iconFontCdn (java.net.URI. "/adoc/font-awesome-4.5.0/css/font-awesome.min.css"))
           (styleSheetName "juxt.css")
           #_(stylesDir "resources/asciidoctor/stylesheets")
           (sectionNumbers true))))))))
