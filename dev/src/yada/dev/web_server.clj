@@ -31,13 +31,13 @@
 
                  (manual/routes)
 
-                 [["/specs/" :rfc ".html"]
+                 [["/specs/rfc" :rfcnum]
                   (yada/resource
-                   {:parameters {:path {:rfc String}}
+                   {:parameters {:path {:rfcnum String}}
 
                     :properties
                     (fn [ctx]
-                      (let [f (io/file "dev/resources/spec" (format "rfc%s.html" (-> ctx :parameters :path :rfc)))]
+                      (let [f (io/file "dev/resources/spec" (format "rfc%s.html" (-> ctx :parameters :path :rfcnum)))]
                         {:exists? (.exists f)
                          :last-modified (.lastModified f)
                          ::file f}))

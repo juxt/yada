@@ -65,7 +65,7 @@
 (defn- add-link [s]
   (let [[_ pream rfc postam] (re-matches #"(.*)RFC (\d+)(.*)" s)]
     (if rfc
-      (format "%s link:/specs/%s.html[RFC %s]%s" pream rfc rfc postam)
+      (format "%s link:/specs/rfc%s[RFC %s]%s" pream rfc rfc postam)
       s)))
 
 (defn register-custom-processor! [engine]
