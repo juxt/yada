@@ -23,7 +23,7 @@ All security aspects for a resource are specified in its model's
 
 Let's look at authentication first. Authentication is the process of establishing and verifying the identity and credentials of the user, with reasonable confidence that the user is not an impostor.
 
-In [yada]#yada#, authentication happens after any request parameters have been processed, so if necessary they can be used to establish the identity of the user. However, it is important to remember that authentication happens before the resource's properties have been loaded, since credentials do not have to do with the actual resource. Thus, if the user is not genuine, we might well save a wasted trip to the resource's data-store.
+NOTE: In [yada]#yada#, authentication happens after any request parameters have been processed, so if necessary they can be used to establish the identity of the user. However, it is important to remember that authentication happens before the resource's properties have been loaded, since credentials do not have to do with the actual resource. Thus, if the user is not genuine, we might well save a wasted trip to the resource's data-store.
 
 In HTTP, resources can exist inside a _protection space_ determined by
 one or more __realms__. Each resource declares the realm (or realms) it
@@ -61,7 +61,7 @@ described in https://www.ietf.org/rfc/rfc2617.txt[RFC 2617]
 {:access-control
   {:realm "accounts"
    :scheme "Basic"
-   :verify (fn [[user password]] …}}
+   :verify (fn [[user password]] …)}}
 ----
 
 There are 3 entries here. The first specifies the __realm__, which is
