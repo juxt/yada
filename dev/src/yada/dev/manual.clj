@@ -44,7 +44,7 @@
 (defn generate-favicons []
   (html
    [:link {:rel "icon" :type "image/png" :href "/img/favicon/favicon.png"}]
-   (for [size [16 92 192 32]              ; firefox needs 32x32 last
+   (for [size [16 96 192 32]              ; firefox needs 32x32 last
          :let [s (format "%dx%d" size size)]]
      [:link {:rel "icon" :type "image/png" :href (format "/img/favicon/favicon-%s.png" s) :sizes s}])
 
