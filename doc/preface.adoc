@@ -39,7 +39,7 @@ invocation.
 
 For years, the same RPC-centered approach has been copied by web
 frameworks in many languages, old and new (Python, Ruby, Go,
-Clojure...). It has survived because it's so flexible, as many
+Clojure, Rust...). It has survived because it's so flexible, as many
 low-level programming models are.
 
 But there are significant downsides to this model too. HTTP is a big
@@ -48,7 +48,7 @@ time to implement all the relevant pieces of it. What's more, many
 developers tend to implement much the same code over and over again, for
 each and every 'operation' they write.
 
-A notable variation on this programming model can be found in Erlang's
+A notable departure from this programming model can be found in Erlang's
 WebMachine and Clojure's Liberator. To a degree, these libraries ease
 the burden on the developer by orchestrating the steps required to build
 a response to a web request. However, developers are still required to
@@ -58,17 +58,18 @@ extent. Fundamentally, the programming model is the same: the developer
 is still writing code with a view to forming a response at the protocol
 level.
 
-While this model has served as well in the past, there are increasingly
-important reasons why we need an upgrade. Rather than mere playthings,
-HTTP-based APIs are becoming critical components in virtually every
-organisation. With supporting infrastructure such as proxies, API
-gateways and monitoring, there has never been a greater need to improve
-compatibility through better conformance with HTTP standards. Yet many
-APIs today at best ignore, and worst violate many parts of the HTTP
-standard. For ephemeral prototypes, this 'fake it' approach to HTTP is
-acceptable. But HTTP is designed for long-lived systems with lifetimes
-measured in decades, that must cross departmental and even
-organisational boundaries, and adapt to ongoing changes in technology.
+While this model has served us well in the past, there are
+increasingly important reasons why we need an upgrade. Rather than
+mere playthings, HTTP-based APIs are becoming critical components in
+virtually every organisation. With supporting infrastructure such as
+proxies, API gateways and monitoring, there has never been a greater
+need to improve compatibility through better conformance with HTTP
+standards. Yet many APIs today at best ignored, and worst violate many
+parts of the HTTP standard. For ephemeral prototypes, this casual
+approach to HTTP is acceptable. Yet HTTP is designed for long-lived
+systems with lifetimes measured in decades, that must cross
+departmental and organisational boundaries, while adapting to ongoing
+changes in technology.
 
 It's time for a fresh approach. We need our libraries to do more work
 for us. For this to happen, we need to move from the _de-facto_
