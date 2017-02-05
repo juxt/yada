@@ -171,17 +171,29 @@ expressive short-hand descriptions."}
 
 (s/defschema Context {})
 
+(defn resolve-dynamic
+  "P"
+  [f ctx]
+  (if (fn? f)
+    (f ctx)
+    f))
+
+(defmacro maybe-dynamic
+  "Return a schema that allows for a value to be dynamic, resolved at
+  request-time with resolve-dynamic."
+  [t]
+  `(s/conditional
+    fn? (s/=> ~t Context)
+    :else ~t))
+
 (s/defschema ContextFunction
   (s/=> s/Any Context))
 
 (s/defschema Produces
-  {(s/optional-key :produces) (s/conditional
-                               fn? ContextFunction
-                               :else [Representation])})
+  {(s/optional-key :produces) (maybe-dynamic [Representation])})
+
 (s/defschema Consumes
-  {(s/optional-key :consumes) (s/conditional
-                               fn? ContextFunction
-                               :else [Representation])})
+  {(s/optional-key :consumes) (maybe-dynamic [Representation])})
 
 (s/defschema Response
   {:response ContextFunction})
@@ -192,13 +204,8 @@ expressive short-hand descriptions."}
           (s/optional-key :exists?) s/Bool}
          NamespacedEntries))
 
-(s/defschema PropertiesHandlerFunction
-  (s/=> PropertiesResult Context))
-
 (s/defschema Properties
-  {(s/optional-key :properties) (s/conditional
-                                 fn? PropertiesHandlerFunction
-                                 :else PropertiesResult)})
+  {(s/optional-key :properties) (maybe-dynamic PropertiesResult)})
 
 (def PropertiesMappings {})
 
@@ -320,7 +327,7 @@ expressive short-hand descriptions."}
    NamespacedEntries))
 
 (s/defschema AuthSchemes
-  {(s/optional-key :authentication-schemes) (s/conditional fn? (s/=> [AuthScheme] Context) :else [AuthScheme])})
+  {(s/optional-key :authentication-schemes) (maybe-dynamic [AuthScheme])})
 
 ;; Authorization can contain any content because it is up to the
 ;; authorization interceptor, which is pluggable.
@@ -337,10 +344,10 @@ expressive short-hand descriptions."}
 (s/defschema Cors
   {(s/optional-key :allow-origin) (s/conditional fn? (s/=> (s/conditional ifn? #{s/Str} :else s/Str) Context) :else StringSet)
    (s/optional-key :allow-credentials) s/Bool
-   (s/optional-key :expose-headers) (s/conditional fn? ContextFunction :else Strings)
-   (s/optional-key :max-age) (s/conditional fn? ContextFunction :else s/Int)
-   (s/optional-key :allow-methods) (s/conditional fn? ContextFunction :else Keywords)
-   (s/optional-key :allow-headers) (s/conditional fn? ContextFunction :else Strings)})
+   (s/optional-key :expose-headers) (maybe-dynamic Strings)
+   (s/optional-key :max-age) (maybe-dynamic s/Int)
+   (s/optional-key :allow-methods) (maybe-dynamic Keywords)
+   (s/optional-key :allow-headers) (maybe-dynamic Strings)})
 
 (s/defschema AccessControlValue
   (merge Realms Cors NamespacedEntries))
