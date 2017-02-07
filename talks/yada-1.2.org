@@ -1,0 +1,418 @@
+#+EXPORT_EXCLUDE_TAGS:  noexport
+#+AUTHOR:               Malcolm Sparks
+#+EMAIL:                @malcolmsparks
+#+TITLE:                yada 2.0
+#+SUBTITLE: with some bidi
+#+LANGUAGE:             en
+#+OPTIONS:              toc:nil
+#+OPTIONS:              reveal_center:t reveal_progress:nil reveal_history:t reveal_control:nil
+#+OPTIONS:              reveal_mathjax:nil reveal_rolling_links:nil reveal_keyboard:t reveal_overview:t num:nil
+#+OPTIONS:              width:1600 height:900
+#+REVEAL_HLEVEL:        1
+#+REVEAL_MARGIN:        0.0
+#+REVEAL_MIN_SCALE:     1.0
+#+REVEAL_MAX_SCALE:     1.8
+#+REVEAL_THEME:         juxt-dark
+#+REVEAL_TRANS:         none
+#+REVEAL_SPEED:         fast
+#+REVEAL_ROOT:          static
+#+REVEAL_PLUGINS: (highlight markdown notes pdf)
+#+REVEAL_EXTRA_CSS: static/css/yada-1.2.css
+
+#+BEGIN_NOTES
+yada is revolutionary, and revolutions take time - you've can't stop believing, you must persevere
+#+END_NOTES
+
+* ~yada~ 2.0
+
+* There is no ~yada~ 2.0
+  :PROPERTIES:
+  :reveal_background: #880808
+  :reveal_extra_attr: class="juxt_dark-bg juxt_jumbo"
+  :END:
+
+* Worst. Presentation. Ever.
+
+* Worst. Presentation. Ever. ?
+
+* One more thing...
+
+* ~yada~ 1.2 !
+
+* Yay!
+
+* SemVer
+
+- Rich Hickey talk
+- Datomic Design Principles
+- Zach Oakes
+
+* Don't break compatibility
+
+- Linux (picture of Linus)
+
+* Java compatibility
+
+#+BEGIN_NOTES
+The JDK might have a lot of crap, but it's crap you can depend on!
+
+e.g. java.util.Date
+#+END_NOTES
+
+#+BEGIN_SRC java
+new java.util.Date(12,12,12)
+#+END_SRC
+
+* Lesson for ~yada~: Maintain compatibility at all costs
+
+* But...
+
+* clojure.spec
+
+- Parameter validation
+- ~yada~ resource model
+
+* Potemkin to the rescue
+  :PROPERTIES:
+  :reveal_background: ./static/assets/potemkin.jpg
+  :reveal_background_size: 50%
+  :reveal_extra_attr: class="juxt_hide-heading"
+  :END:
+
+* Potemkin crushes compatibililty problems
+
+* ~yada~ bundles
+
+#+BEGIN_SRC dot :file yada-bundles-1.png :cmdline -Kdot -Tpng
+  digraph Tagging {
+
+          graph [fontname = "helvetica"];
+          node [fontname = "helvetica",shape=oval,label="",width=0.9];
+          edge [fontname = "helvetica"];
+
+          bundle_default [label="yada.yada"];
+
+          bundle_default -> ext_aleph;
+          bundle_default -> ext_bidi;
+          bundle_default -> ext_core;
+          bundle_default -> ext_async;
+          bundle_default -> ext_json;
+          bundle_default -> ext_json_html;
+          bundle_default -> ext_jwt;
+          bundle_default -> ext_multipart;
+          bundle_default -> ext_oauth2;
+          bundle_default -> ext_swagger;
+          bundle_default -> ext_transit;
+          bundle_default -> ext_webjars;
+
+          ext_aleph [label="aleph"];
+          ext_bidi [label="bidi"];
+          ext_core [label="core"];
+          ext_async [label="async"];
+          ext_json [label="json"];
+          ext_json_html [label="json-html"];
+          ext_jwt [label="jwt"];
+          ext_multipart [label="multipart"];
+          ext_oauth2 [label="oauth2"];
+          ext_swagger [label="swagger"];
+          ext_transit [label="transit"];
+          ext_webjars [label="webjars"];
+  }
+#+END_SRC
+
+* ~yada~ bundles
+
+#+BEGIN_SRC dot :file yada-bundles-2.png :cmdline -Kdot -Tpng
+  digraph Tagging {
+
+          graph [fontname = "helvetica"];
+          node [fontname = "helvetica",shape=oval,label="",width=0.9];
+          edge [fontname = "helvetica"];
+
+          bundle_default [label="yada.yada"];
+          bundle_lean [label="yada.lean",color="blue",fontcolor="blue"];
+
+          bundle_default -> ext_aleph;
+          bundle_default -> ext_async;
+          bundle_default -> ext_bidi;
+          bundle_default -> ext_core;
+          bundle_default -> ext_json;
+          bundle_default -> ext_json_html;
+          bundle_default -> ext_jwt;
+          bundle_default -> ext_multipart;
+          bundle_default -> ext_oauth2;
+          bundle_default -> ext_swagger;
+          bundle_default -> ext_transit;
+          bundle_default -> ext_webjars;
+
+          bundle_lean -> ext_aleph [color="blue"];
+          bundle_lean -> ext_bidi [color="blue"];
+          bundle_lean -> ext_core [color="blue"];
+
+          ext_aleph [label="aleph"];
+          ext_async [label="async"];
+          ext_bidi [label="bidi"];
+          ext_core [label="core"];
+          ext_json [label="json"];
+          ext_json_html [label="json-html"];
+          ext_jwt [label="jwt"];
+          ext_multipart [label="multipart"];
+          ext_oauth2 [label="oauth2"];
+          ext_swagger [label="swagger"];
+          ext_transit [label="transit"];
+          ext_webjars [label="webjars"];
+  }
+#+END_SRC
+
+
+* ~yada~ bundles
+
+#+BEGIN_SRC dot :file yada-bundles-3.png :cmdline -Kdot -Tpng
+  digraph Tagging {
+
+          graph [fontname = "helvetica"];
+          node [fontname = "helvetica",shape=oval,label="",width=0.9];
+          edge [fontname = "helvetica"];
+
+          bundle_default [label="yada.yada"];
+          bundle_lean [label="yada.lean",color="blue",fontcolor="blue"];
+          bundle_next [label="yada.next",color="darkgreen",fontcolor="darkgreen"];
+
+          bundle_default -> ext_aleph;
+          bundle_default -> ext_bidi;
+          bundle_default -> ext_core;
+          bundle_default -> ext_async;
+          bundle_default -> ext_json;
+          bundle_default -> ext_json_html;
+          bundle_default -> ext_jwt;
+          bundle_default -> ext_multipart;
+          bundle_default -> ext_oauth2;
+          bundle_default -> ext_swagger;
+          bundle_default -> ext_transit;
+          bundle_default -> ext_webjars;
+
+          bundle_lean -> ext_aleph [color="blue"];
+          bundle_lean -> ext_bidi [color="blue"];
+          bundle_lean -> ext_core [color="blue"];
+
+          bundle_next -> ext_aleph_next [color="darkgreen"];
+          bundle_next -> ext_bidi [color="darkgreen"];
+          bundle_next -> ext_core [color="darkgreen"];
+          bundle_next -> ext_json [color="darkgreen"];
+          bundle_next -> ext_json_html [color="darkgreen"];
+          bundle_next -> ext_multipart [color="darkgreen"];
+          bundle_next -> ext_oauth2 [color="darkgreen"];
+          bundle_next -> ext_transit [color="darkgreen"];
+          bundle_next -> ext_webjars [color="darkgreen"];
+
+          ext_aleph_next [label="aleph-next",color="darkgreen",fontcolor="darkgreen"];
+          ext_bidi [label="bidi"];
+          ext_core [label="core"];
+          ext_aleph [label="aleph"];
+          ext_async [label="async"];
+          ext_json [label="json"];
+          ext_json_html [label="json-html"];
+          ext_jwt [label="jwt"];
+          ext_multipart [label="multipart"];
+          ext_oauth2 [label="oauth2"];
+          ext_swagger [label="swagger"];
+          ext_transit [label="transit"];
+          ext_webjars [label="webjars"];
+  }
+#+END_SRC
+
+
+
+
+
+
+
+
+* A quick history of ~yada~
+
+#+BEGIN_NOTES
+This is for people who have come along who don't know anything about
+yada, to explain yada trying not to bore those who already do!
+#+END_NOTES
+
+* Origins
+
+- Introduced to REST around ~2005
+- Worked on plugboard, a Clojure-port of WebMachine
+- Discovered compojure-rest, and contributed
+- Renamed it Liberator
+- Spoke about it at London's EuroClojure in 2012
+
+* Async curiousity
+
+#+BEGIN_NOTES
+I became async-curious around 2012, particular with David John Hume
+#+END_NOTES
+
+- Gave talk on 'Adventures with core.async' at QCon 2014
+- David John Hume in audience, got chatting afterwards
+- David had a PR prepared to make Liberator fully async - never merged
+
+* 2014 - Reflections on 'On The Market'
+
+- Ring
+- Liberator
+- fnhouse
+- compojure-api
+
+* fnhouse
+
+#+BEGIN_SRC clojure
+(defnk $entries$POST
+  "Add a new entry to the guestbook"
+  {:responses {200 schemas/ClientEntry}}
+  [[:request body :- schemas/EntryData]
+   [:resources guestbook index]]
+  (let [entry-id (swap! index inc)
+        indexed-entry (assoc body :index entry-id)]
+    (swap! guestbook assoc entry-id indexed-entry)
+    {:body indexed-entry}))
+#+END_SRC
+
+* compojure-api
+
+* yada
+
+#+BEGIN_NOTES
+Conquering
+#+END_NOTES
+
+- All the features
+- Including all the (good) features from all other libraries (e.g. Swagger)
+- All of 'new' HTTP
+- Async
+
+* yada: A revolution in design
+
+- Ring (et. alia.): operation model
+- Liberator: execution model
+- yada: resource model
+
+* yada: Live coding
+
+* yada: An example
+
+#+BEGIN_SRC clojure
+  {:access-control
+   {:authentication ...}
+   :methods
+   {:get
+    {:produces [{:media-type "text/html" :charset "UTF-8"}
+                "application/json" "application/edn"]
+     :response (fn [ctx] {:foo :bar})}
+    :put
+    {:consumes "multipart/form-data"
+     :parameters {:form {:foo Keyword}}
+     :response (fn [ctx] ...)}}}
+#+END_SRC
+
+* /Demo/
+
+
+* Wrap up: Advantages of the resource model
+
+- Operations in HTTP are /not/ independent
+- Critical features of HTTP depend on this!
+  - e.g. conditional requests
+
+* ~yada~ Strengths
+
+- Schema-validated resource model
+- Response coercion
+- Security model
+- Async (Netty)
+- Uploads (inc. multipart)
+
+* ~yada~ Challenges
+
+- Documentation
+- Swagger
+- Error handling, stack traces
+- Dev versus Prod
+- Debugging
+
+* Books!
+  :PROPERTIES:
+  :reveal_background: ./static/assets/19.jpg
+  :reveal_background_size: 100%
+  :reveal_extra_attr: class="juxt_dark-bg juxt_hide-heading"
+  :END:
+
+#+BEGIN_NOTES
+"Books! In a fields of knowledge" - An advertisement for the Soviet-era publisher LENGIZ, designed by A.M. Rodchenko and featuring a portrait of Lilya Brik.
+
+Books are important!
+
+Here's how I build the yada book - over Xmas, I wrote a tool to do it! (procrastination)
+#+END_NOTES
+
+
+* /Demo/
+
+* Dev versus Prod
+
+* Debugging
+
+#+BEGIN_NOTES
+TODO: Add liberator debugging diagram
+#+END_NOTES
+
+* Missing pieces (HTTP)
+
+* Reactive negotiation
+
+- 300 Multiple Representations
+
+* Cacheing RFC
+
+- ~yada~ built-in cache
+
+* Range requests
+
+- Partial responses
+
+* Proxy server
+
+* HTTP 2.0
+
+* One more thing...
+
+* 2017: The Year of ClojureScript on the Server
+
+* ~yada~ in ClojureScript?
+
+- Macchiato (@yogthos)
+- planck
+- lumo (cljs on nodejs)
+
+* yada: the revolution so far
+
+- 2014: initiation
+- 2015: development
+- 2016: production - support on the #slack channels
+- 2017: reformation - more fine-tuning
+
+* Thanks!
+  :PROPERTIES:
+  :reveal_background: ./static/assets/leninbye.jpg
+  :reveal_background_size: 100%
+  :reveal_extra_attr: class="juxt_dark-bg juxt_hide-heading"
+  :END:
+
+* Q&A
+
+- Anything you'd like to see in a future ~yada~?
+- Gripes?
+
+* TODO Willy Wonka versus Stalin
+(picture of Stalin)
+I like to think of the yada community as being a true community of equals. Only I get to review the PRs, which I assure you really is a very open and fair process
+
+* TODO Put picture of Linux in
+
+* TODO Illustrate with pictures
