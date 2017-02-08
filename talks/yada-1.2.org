@@ -41,15 +41,22 @@ yada is revolutionary, and revolutions take time - you've can't stop believing, 
 
 * Yay!
 
-* SemVer
+* Long live the revolution
+  :PROPERTIES:
+  :reveal_background: ./static/assets/richrev.jpg
+  :reveal_background_size: 100%
+  :reveal_extra_attr: class="juxt_dark-bg juxt_hide-heading"
+  :END:
 
-- Rich Hickey talk
-- Datomic Design Principles
-- Zach Oakes
 
-* Don't break compatibility
+* Don't break compatibility!
 
-- Linux (picture of Linus)
+#+BEGIN_QUOTE
+"Companies don't want to update their code every time you decide to rename a function in your standard library. Its role in Java's dominance can't be overstated. This culture … made its way into Clojure and ClojureScript, who haven't made breaking changes in the five years I've used them."
+
+
+-- Zach Oakes -- ClojureScript: The industry's favorite functional frontend language -- https://sekao.net/blog/industry.html
+#+END_QUOTE
 
 * Java compatibility
 
@@ -63,7 +70,12 @@ e.g. java.util.Date
 new java.util.Date(12,12,12)
 #+END_SRC
 
-* Lesson for ~yada~: Maintain compatibility at all costs
+* Don't break compatibility!
+  :PROPERTIES:
+  :reveal_background: ./static/assets/angrylinus.png
+  :reveal_background_size: 100%
+  :reveal_extra_attr: class="juxt_dark-bg"
+  :END:
 
 * But...
 
@@ -74,12 +86,33 @@ new java.util.Date(12,12,12)
 
 * Potemkin to the rescue
   :PROPERTIES:
+  :reveal_background: ./static/assets/battleship-potemkin-poster.jpg
+  :reveal_background_size: 100%
+  :reveal_extra_attr: class="juxt_hide-heading"
+  :END:
+
+* Potemkin to the rescue
+  :PROPERTIES:
   :reveal_background: ./static/assets/potemkin.jpg
   :reveal_background_size: 50%
   :reveal_extra_attr: class="juxt_hide-heading"
   :END:
 
+
 * Potemkin crushes compatibililty problems
+
+* ~yada~ API
+
+#+BEGIN_SRC clojure
+  (ns yada
+    (:require [yada.yada :as yada]))
+
+  (yada/yada "yada")
+#+END_SRC
+
+[[./static/assets/marklar.jpg]]
+
+
 
 * ~yada~ bundles
 
@@ -222,10 +255,7 @@ new java.util.Date(12,12,12)
 #+END_SRC
 
 
-
-
-
-
+* /Demo/
 
 
 * A quick history of ~yada~
@@ -250,15 +280,35 @@ I became async-curious around 2012, particular with David John Hume
 #+END_NOTES
 
 - Gave talk on 'Adventures with core.async' at QCon 2014
-- David John Hume in audience, got chatting afterwards
-- David had a PR prepared to make Liberator fully async - never merged
+- David Thomas Hume in audience, got chatting afterwards
+- David had a PR prepared to make Liberator async (not merged)
+
+[[./static/assets/david.jpg]]
 
 * 2014 - Reflections on 'On The Market'
 
-- Ring
-- Liberator
-- fnhouse
+- Ring with Compojure
+- Liberator with bidi
+- (custom) fnhouse
 - compojure-api
+
+* Ring
+
+#+BEGIN_SRC clojure
+(defn handler [request]
+  {:status 200
+   :headers {"Content-Type" "text/html"}
+   :body "<h1>Hello World!!!!!!!!!!!!!!!1</h1>" })
+
+#+END_SRC
+
+* Liberator
+
+#+BEGIN_SRC clojure
+(defresource parameter [txt]
+  :available-media-types ["text/plain"]
+  :handle-ok (fn [_] (format "The text is %s" txt)))
+#+END_SRC
 
 * fnhouse
 
@@ -276,7 +326,21 @@ I became async-curious around 2012, particular with David John Hume
 
 * compojure-api
 
-* yada
+#+BEGIN_SRC clojure
+  (GET "/plus" []
+          :return Total
+          :query-params [x :- Long, y :- Long]
+          :summary "x+y with query-parameters"
+          (ok {:total (+ x y)}))
+
+  (POST "/minus" []
+        :return Total
+        :body-params [x :- Long, y :- Long]
+        :summary "x-y with body-parameters"
+        (ok {:total (- x y)}))
+#+END_SRC
+
+* ~yada~
 
 #+BEGIN_NOTES
 Conquering
@@ -287,15 +351,13 @@ Conquering
 - All of 'new' HTTP
 - Async
 
-* yada: A revolution in design
+* ~yada~: A revolution in HTTP design
 
 - Ring (et. alia.): operation model
 - Liberator: execution model
-- yada: resource model
+- ~yada~: resource model
 
-* yada: Live coding
-
-* yada: An example
+* ~yada~: An example
 
 #+BEGIN_SRC clojure
   {:access-control
@@ -354,7 +416,22 @@ Here's how I build the yada book - over Xmas, I wrote a tool to do it! (procrast
 
 * /Demo/
 
-* Dev versus Prod
+* Documentation
+  :PROPERTIES:
+  :reveal_background: ./static/assets/redbook.jpg
+  :reveal_background_size: 100%
+  :reveal_extra_attr: class="juxt_dark-bg juxt_hide-heading"
+  :END:
+
+
+
+* Profiles
+  :PROPERTIES:
+  :reveal_background: ./static/assets/profiles.jpg
+  :reveal_background_size: 100%
+  :reveal_extra_attr: class="juxt_dark-bg"
+  :END:
+
 
 * Debugging
 
@@ -368,34 +445,42 @@ TODO: Add liberator debugging diagram
 
 - 300 Multiple Representations
 
-* Cacheing RFC
-
-- ~yada~ built-in cache
-
-* Range requests
+* RFC 7233: Range requests
 
 - Partial responses
 
+* RFC 7234: Caching
+
+- ~yada~ built-in cache
+
 * Proxy server
+
+* WebDAV
 
 * HTTP 2.0
 
 * One more thing...
 
 * 2017: The Year of ClojureScript on the Server
+  :PROPERTIES:
+  :reveal_background: ./static/assets/space.jpg
+  :reveal_background_size: 100%
+  :reveal_extra_attr: class="juxt_dark-bg"
+  :END:
+
 
 * ~yada~ in ClojureScript?
 
 - Macchiato (@yogthos)
-- planck
-- lumo (cljs on nodejs)
+- Planck
+- Lumo (cljs on NodeJS)
 
-* yada: the revolution so far
-
-- 2014: initiation
-- 2015: development
-- 2016: production - support on the #slack channels
-- 2017: reformation - more fine-tuning
+* Long live the revolution
+  :PROPERTIES:
+  :reveal_background: ./static/assets/richrev.jpg
+  :reveal_background_size: 100%
+  :reveal_extra_attr: class="juxt_dark-bg juxt_hide-heading"
+  :END:
 
 * Thanks!
   :PROPERTIES:
@@ -408,11 +493,3 @@ TODO: Add liberator debugging diagram
 
 - Anything you'd like to see in a future ~yada~?
 - Gripes?
-
-* TODO Willy Wonka versus Stalin
-(picture of Stalin)
-I like to think of the yada community as being a true community of equals. Only I get to review the PRs, which I assure you really is a very open and fair process
-
-* TODO Put picture of Linux in
-
-* TODO Illustrate with pictures
