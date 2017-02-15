@@ -4,6 +4,7 @@ RFC 2183:: Communicating Presentation Information in Internet Messages: The Cont
 RFC 4647:: Matching of Language Tags
 RFC 5322:: Internet Message Format
 RFC 6265:: HTTP State Management Mechanism
+RFC 6749:: The OAuth 2.0 Authorization Framework
 RFC 6797:: HTTP Strict Transport Security (HSTS)
 RFC 7230:: Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing
 RFC 7231:: Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content
