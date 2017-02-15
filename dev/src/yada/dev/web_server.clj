@@ -8,7 +8,6 @@
    ;; How to switch based on profile?
    [yada.yada :as yada]
 
-   [yada.dev.docsite :as docsite]
    [yada.dev.manual :as manual]
    [yada.dev.config :as config]
    [bidi.vhosts :refer [vhosts-model]]
@@ -25,7 +24,6 @@
               (yada/listener
                (vhosts-model
                 [(config/get-host config)
-                 #_["/index.html" (docsite/index)]
 
                  ["/" (yada/redirect ::yada.dev.manual/index)]
 
