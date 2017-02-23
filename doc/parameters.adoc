@@ -32,8 +32,8 @@ to define this parameter at the __method-level__, and it's only visible
 if the method we declare it with matches the request method.
 
 We declare parameter values using the syntax of
-https://prismatic.com[Prismatic]'s
-https://github.com/prismatic/schema[schema] library. This allows us to
+https://github.com/plumatic[Plumatic]'s
+https://github.com/plumatic/schema[schema] library. This allows us to
 get quite sophisticated in how we define parameters.
 
 [source,clojure]
