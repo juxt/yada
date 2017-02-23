@@ -72,7 +72,7 @@ function) that extends bidi's `Matched` protocol are both able to
 participate in the pattern matching of an incoming request's URI.
 
 For a more thorough introduction to bidi, see
-https://github.com/juxt/bidi/README.md.
+https://github.com/juxt/bidi#bidi.
 
 === Declaring policies across multiple resources
 
