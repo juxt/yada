@@ -11,6 +11,7 @@
    [manifold.stream :as stream]
    ring.util.time
    [schema.utils :refer [error?]]
+   [schema.core :as s]
    [yada.body :as body]
    [yada.charset :as charset]
    [yada.cookies :as cookies]
@@ -182,10 +183,12 @@
             ctx)))
 
       ;; else
-      (if (get-in ctx [:resource :methods (:method ctx) :parameters :body])
-        (d/error-deferred
-           (ex-info "No body present but body is expected for request."
-                    {:status 400}))
+      (if-let [body-schema (get-in ctx [:resource :methods (:method ctx) :parameters :body])]
+        (if (s/check body-schema nil)
+          (d/error-deferred
+             (ex-info "No body present but body is expected for request."
+                      {:status 400}))
+          ctx)
         ctx))))
 
 (defn select-representation
