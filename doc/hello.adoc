@@ -451,7 +451,7 @@ Hello Ken!
 
 Great!
 
-As well as query parameters, yada supports path parameters, request headers, form data, cookies and request bodies. You can have optional parameters, in fact, anything that can be expressed in Plumatic Schema, and [yada]#yada# will even coerce parameters to a range of types. For more details, see the link:parameters.html[Parameters] chapter.
+As well as query parameters, yada supports path parameters, request headers, form data, cookies and request bodies. You can have optional parameters, in fact, anything that can be expressed in Plumatic Schema, and [yada]#yada# will even coerce parameters to a range of types. For more details, see the <<parameters-chapter,parameters chapter>>.
 
 [[hello-swagger]]
 === Hello Swagger!
