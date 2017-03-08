@@ -74,5 +74,7 @@
    (let [webjars (->> (WebJarAssetLocator.)
                       .getWebJars
                       keys
-                      (map (juxt identity #(new-webjar-resource % options))))]
+                      (map (juxt (fn [identifier]
+                                   (str "/" identifier "/"))
+                                 #(new-webjar-resource % options))))]
      ["" webjars])))
