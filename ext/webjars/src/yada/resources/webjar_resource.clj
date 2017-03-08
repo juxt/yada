@@ -61,7 +61,14 @@
                           (as-resource res))))})))
 
 (defn webjars-route-pair
-  ""
+  "Creates webjar resources for all webjars on the active classpath.
+
+  An options map can be provided and will be passed on to the
+  new-webjar-resource call for every webjar.
+
+  Each webjar will be put on a path corresponding to its name. For
+  example, a webjar called \"bootstrap\" will be accessible from the
+  \"/bootstrap/\" path."
   ([] (webjars-route-pair nil))
   ([options]
    (let [webjars (->> (WebJarAssetLocator.)
