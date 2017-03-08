@@ -4,7 +4,7 @@
   (:require
    [clojure.java.io :as io]
    [clojure.test :refer [deftest is]]
-   [yada.resources.webjar-resource :refer [new-webjar-resource]]
+   [yada.resources.webjar-resource :refer [new-webjar-resource webjars-route-pair]]
    [yada.test :as test]))
 
 (deftest bootstrap-test
@@ -15,4 +15,13 @@
                                      :get "/less/"))))
     (is (= expected
            (:body (test/response-for ["" (new-webjar-resource "bootstrap")]
-                                     :get "/less/close.less"))))))
+                                     :get "/less/close.less"))))
+    (is (= 404
+           (:status (test/response-for ["" (new-webjar-resource "bootstrap")]
+                                       :get "/non/existant/path"))))
+    (is (= expected
+           (:body (test/response-for (webjars-route-pair)
+                                     :get "/bootstrap/less/close.less"))))
+    (is (= 404
+           (:status (test/response-for (webjars-route-pair)
+                                       :get "/bootstrap/non/existant/path"))))))
