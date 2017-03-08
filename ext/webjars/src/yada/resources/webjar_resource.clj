@@ -55,8 +55,8 @@
                               files (if (= (last path-info) \/)
                                       (map #(get assets (str path %)) index-files)
                                       (list (get assets path)))
-                              res (first (sequence (comp (map io/resource)
-                                                         (drop-while nil?))
+                              res (first (sequence (comp (drop-while nil?)
+                                                         (map io/resource))
                                                    files))]
                           (as-resource res))))})))
 
