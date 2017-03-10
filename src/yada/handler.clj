@@ -264,6 +264,8 @@
   (as-handler [this] (handler this))
   APersistentMap
   (as-handler [route] (as-handler (resource route)))
+  clojure.lang.Fn
+  (as-handler [this] this)
   Object
   (as-handler [this] (handler this)))
 
