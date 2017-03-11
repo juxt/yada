@@ -12,7 +12,7 @@
       :server-name "localhost"
       :remote-addr "localhost"
       :uri (.getPath uri)
-      :query-string (.getQuery uri)
+      :query-string (.getRawQuery uri)
       :scheme :http
       :request-method method}
      (cond-> options
