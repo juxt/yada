@@ -69,6 +69,12 @@
                             (s/optional-key "test") Long}}
                    :methods {}}
                   {:query-string "filter=12&test=15"}))))
+
+  (testing "%25 is special since it decodes to %"
+    (is (= {:query {"foo" "bar%"}}
+           (parse {}
+                  {:query-string "foo=bar%25"}))))
+
   (is (thrown? ExceptionInfo
                (parse {:parameters {:query {:filter Long}}
                        :methods {}}
