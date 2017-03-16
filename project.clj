@@ -18,7 +18,7 @@
    [hiccup "1.0.5"]
    [manifold "0.1.4"]
    [org.clojure/data.codec "0.1.0"]
-   [org.clojure/tools.reader "1.0.0-beta3"]
+   [org.clojure/tools.reader "1.0.0-beta4"]
    [potemkin "0.4.3"]
    [prismatic/schema "1.1.3"]
    [ring/ring-core "1.6.0-beta6"]]
@@ -46,7 +46,7 @@
      ;; ext dependencies
      [bidi "2.0.16"]
      [aleph "0.4.1" :exclusions [io.aleph/dirigiste]]
-     [org.clojure/core.async "0.2.395"]
+     [org.clojure/core.async "0.3.442"]
      [cheshire "5.6.3"]
      [json-html "0.4.0" :exclusions [hiccups]]
      [buddy/buddy-sign "1.3.0"]
