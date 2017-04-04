@@ -63,6 +63,14 @@ The main reason for giving your resources an identity is for creating hyperlinks
 (yada.yada/path-for ctx :resources/user-profile)
 ----
 
+An example with a parameter:
+
+[source,clojure]
+----
+(yada.yada/path-for ctx :resources/user-profile
+                    {:route-params {:user-id "42"}})
+----
+
 This feature is only available if your resources are declared in a bidi hierarchical route structure. Otherwise, the URL cannot be determined.
 
 ==== Resource description and summary
