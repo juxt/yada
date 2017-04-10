@@ -4,7 +4,9 @@
   (:require
    [clojure.test :refer :all :exclude [deftest]]
    [schema.test :refer [deftest]]
-   [yada.test :refer [response-for]]))
+   [yada.test :refer [response-for]]
+   [yada.test-util :refer [with-level]])
+  (:import (ch.qos.logback.classic Level)))
 
 (deftest www-authenticate-test
   (testing "www-authenticate header"
@@ -27,19 +29,20 @@
       (is (= ["Basic realm=\"default\""] (get-in response [:headers "www-authenticate"])))))
 
   (testing "No www-authenticate header produced for non-string scheme"
-    (let [response
-          (response-for
-           {:access-control
-            {:scheme :custom
-             :verify (constantly nil)
-             :authorization {:methods {:get "secret/view"}}}
-            :methods
-            {:get {:produces "text/plain"
-                   :response (fn [ctx] "secret")}}}
+    (with-level Level/OFF "yada.security"
+     (let [response
+           (response-for
+            {:access-control
+             {:scheme        :custom
+              :verify        (constantly nil)
+              :authorization {:methods {:get "secret/view"}}}
+             :methods
+             {:get {:produces "text/plain"
+                    :response (fn [ctx] "secret")}}}
 
-           :get "/" {})]
-      (is (= 401 (:status response)))
-      (is (nil? (get-in response [:headers "www-authenticate"])))))
+            :get "/" {})]
+       (is (= 401 (:status response)))
+       (is (nil? (get-in response [:headers "www-authenticate"]))))))
 
   (testing "authentication schemes as a function"
     (let [response
