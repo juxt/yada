@@ -42,7 +42,7 @@
              files     (if (= (last path-info) \/)
                          (map #(io/file root-path path %) index-files)
                          (list (io/file root-path path)))
-             res       (first (sequence (comp (map #(.getPath %))
+             res       (first (sequence (comp (map #(.getPath ^java.net.URL %))
                                               (map io/resource)
                                               (drop-while nil?))
                                         files))]

@@ -19,7 +19,7 @@
      {:properties
       (fn [ctx]
         (merge {}
-               (when-let [f (as-file url)]
+               (when-let [f ^java.io.File (as-file url)]
                  (when (.exists f)
                    {:last-modified (Date. (.lastModified f))}))))
 

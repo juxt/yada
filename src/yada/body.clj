@@ -212,7 +212,7 @@
   (some-> status (get code) :description))
 
 (defmethod render-error "text/html"
-  [status error representation {:keys [id options]}]
+  [status ^Throwable error representation {:keys [id options]}]
   (html
    [:head
     [:title "Error"]
@@ -266,7 +266,7 @@
    :error error})
 
 (defmethod render-error "text/plain"
-  [status error representation {:keys [id options]}]
+  [status ^Throwable error representation {:keys [id options]}]
   (if (instance? clojure.lang.ExceptionInfo error)
     ;; TODO: pprint uses Java system property line.separator, consider
     ;; using fip or one that can print CRLF line endings.

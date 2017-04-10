@@ -45,7 +45,7 @@
 
 (def +properties-coercions+
   {Date #(condp instance? %
-           java.lang.Long (Date. %)
+           java.lang.Long (Date. ^Long %)
            %)
    MediaTypeSchemaSet as-set
    CharsetSchemaSet as-set
@@ -78,7 +78,7 @@
                     "application/edn"}
         :methods
         {:* {:response (fn [ctx]
-                         (case ar
+                         (case (int ar)
                            0 (f)
                            1 (f ctx)
                            (apply f ctx (repeat (dec arity) nil)))
@@ -96,9 +96,9 @@
                (html
                 [:body
                  (interpose [:p "Caused by"]
-                            (for [e (take-while some? (iterate (fn [x] (.getCause x)) e))]
+                            (for [e (take-while some? (iterate (fn [^Throwable x] (.getCause x)) e))]
                               [:div
-                               [:h2 "Error: " (.getMessage e)]
+                               [:h2 "Error: " (.getMessage ^Throwable e)]
                                [:div
-                                (for [stl (.getStackTrace e)]
+                                (for [stl (.getStackTrace ^Throwable e)]
                                   [:p [:tt stl]])]]))])))}}})))

@@ -11,8 +11,8 @@
    [yada.resource :refer [as-resource resource ResourceCoercion]]
    [yada.schema :refer [Representation]])
   (:import java.io.File
-           [java.nio.file.attribute PosixFileAttributeView PosixFilePermissions]
-           java.nio.file.Files
+           [java.nio.file.attribute PosixFileAttributeView PosixFilePermissions FileAttributeView]
+           [java.nio.file Files Path]
            java.text.SimpleDateFormat
            [java.util Date TimeZone]))
 
@@ -80,13 +80,13 @@
 (defn with-newline [s]
   (str s \newline))
 
-(defn dir-index [dir content-type]
+(defn dir-index [^File dir content-type]
   (assert content-type)
 
   (case (:name content-type)
     "text/plain"
     (apply str
-           (for [child (sort (.listFiles dir))]
+           (for [^File child (sort (.listFiles dir))]
              (str (.getName child) \newline)))
 
     "text/html"
@@ -112,9 +112,9 @@
               [:th "Last modified"]
               [:th "Name"]]]
             [:tbody
-             (for [child (sort (.listFiles dir))
+             (for [^File child (sort (.listFiles dir))
                    :let [path (.toPath child)
-                         attrs (.readAttributes (Files/getFileAttributeView path PosixFileAttributeView (into-array java.nio.file.LinkOption [])))]]
+                         attrs (.readAttributes ^PosixFileAttributeView (Files/getFileAttributeView path PosixFileAttributeView (into-array java.nio.file.LinkOption [])))]]
                [:tr
                 [:td.monospace (str (if (Files/isDirectory path (into-array java.nio.file.LinkOption [])) "d" "-") (PosixFilePermissions/toString (.permissions attrs)))]
                 [:td
@@ -135,7 +135,7 @@
   [dir ctx]
   {::file dir})
 
-(defn- maybe-redirect-to-index [dir req index-files]
+(defn- maybe-redirect-to-index [^File dir req index-files]
   (when-let [index-file (first (filter (set (seq (.list dir))) index-files))]
     (throw
      (ex-info "Redirect"
@@ -149,22 +149,22 @@
   (as-path [f] (when f (.toPath f)))
   String
   (as-path [s] (when s (as-path (io/file s))))
-  java.nio.file.Path
+  Path
   (as-path [p] p)
   nil
   (as-path [f] nil))
 
-(defn safe-relative-path
+(defn ^Path safe-relative-path
   "Given a parent java.nio.file.Path, return a child that is
   guaranteed not to ascend the parent. This is to ensure access cannot
   be made to files outside of the parent root."
-  [parent ^String path]
-  (let [parent (as-path parent)]
+  [^Path parent ^String path]
+  (let [parent ^Path (as-path parent)]
     (when (and parent path)
-      (let [child (.normalize (.resolve parent path))]
+      (let [child (.normalize ^Path (.resolve parent path))]
         (when (.startsWith child parent) child)))))
 
-(defn safe-relative-file
+(defn ^File safe-relative-file
   [parent ^String path]
   (when-let [path (safe-relative-path parent path)]
     (.toFile path)))

@@ -28,7 +28,7 @@
        (assoc-in ctx [:file] f)))))
 
 
-(defn save-to-file [ctx body-stream f]
+(defn save-to-file [ctx body-stream ^java.io.File f]
   (let [fos (new java.io.FileOutputStream f false)
         fc (.getChannel fos)]
     (d/chain
