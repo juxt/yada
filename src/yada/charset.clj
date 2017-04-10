@@ -22,9 +22,9 @@
      :aliases (sequence (comp (tagp (partial #{:alias :preferred_alias})) text) [rec])}))
 
 (def alias->name
-  (into {} (for [{:keys [name aliases]} index alias (conj aliases name)] [(.toUpperCase alias) name])))
+  (into {} (for [{:keys [name aliases]} index ^String alias (conj aliases name)] [(.toUpperCase alias) name])))
 
-(defn valid-charset? [charset] (contains? alias->name (.toUpperCase charset)))
+(defn valid-charset? [^String charset] (contains? alias->name (.toUpperCase charset)))
 
 (def name->alias
   (into {} (for [{:keys [name preferred-alias]} index] [name (or preferred-alias name)])))
@@ -35,7 +35,7 @@
   (canonical-name [_] "")
   (preferred-alias [_]))
 
-(defrecord CharsetMap [alias quality]
+(defrecord CharsetMap [^String alias quality]
   Charset
   (charset [_] alias)
   (canonical-name [_] (get alias->name (.toUpperCase alias)))

@@ -14,7 +14,7 @@
 (defmethod verify "Basic" [ctx {:keys [verify]}]
 
   (let [auth (get-in ctx [:request :headers "authorization"])
-        cred (and auth (apply str (map char (base64/decode (.getBytes (last (re-find #"^Basic (.*)$" auth)))))))]
+        cred (and auth (apply str (map char (base64/decode (.getBytes ^String (last (re-find #"^Basic (.*)$" auth)))))))]
     (when cred
       (let [[user password] (str/split (str cred) #":" 2)]
         (verify [user password])))))

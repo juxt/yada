@@ -69,7 +69,7 @@
               {:status 405
                :headers {"allow"
                          (str/join ", "
-                                   (map (comp (memfn toUpperCase) name)
+                                   (map (comp (memfn ^String toUpperCase) name)
                                         (:allowed-methods ctx)))}}))))
 
 
@@ -214,9 +214,9 @@
 
 ;; Conditional requests - last modified time
 (defn check-modification-time [ctx]
-  (if-let [last-modified (-> ctx :properties :last-modified)]
+  (if-let [^java.util.Date last-modified (-> ctx :properties :last-modified)]
 
-    (if-let [if-modified-since
+    (if-let [^java.util.Date if-modified-since
              (some-> (:request ctx)
                      (get-in [:headers "if-modified-since"])
                      ring.util.time/parse-date)]

@@ -23,6 +23,8 @@
    [prismatic/schema "1.1.3"]
    [ring/ring-core "1.6.0-beta6"]]
 
+  :global-vars {*warn-on-reflection* true}
+
   :profiles
   {:test
    {

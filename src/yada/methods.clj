@@ -35,7 +35,7 @@
       ;; for (it might be a real arity-exception thrown up by the code
       ;; in question. This should still mean that the code works, but it doesn't seem to.
       (let [ar (util/arity f)]
-        (case ar
+        (case (int ar)
           0 (f)
           (apply f ctx (repeat (dec ar) nil)))))))
 
@@ -66,7 +66,7 @@
   []
   (into {}
         (map
-         (fn [m]
+         (fn [^Class m]
            (let [i (.newInstance m)]
              [(keyword-binding i) i]))
          (extenders Method))))
@@ -390,14 +390,14 @@
   (request [_ ctx]
     (-> ctx
         (assoc-in [:response :headers "allow"]
-                  (str/join ", " (map (comp (memfn toUpperCase) name) (:allowed-methods ctx))))
+                  (str/join ", " (map (comp (memfn ^String toUpperCase) name) (:allowed-methods ctx))))
         (assoc-in [:response :headers "content-length"] (str 0)))))
 
 ;; --------------------------------------------------------------------------------
 
 (deftype TraceMethod [])
 
-(defn to-encoding [s encoding]
+(defn to-encoding [^String s encoding]
   (-> s
       (.getBytes)
       (java.io.ByteArrayInputStream.)
@@ -446,6 +446,6 @@
              {:status 200
               :headers {"content-type" "message/http;charset=utf8"
                         ;; TODO: Whoops! http://mark.koli.ch/remember-kids-an-http-content-length-is-the-number-of-bytes-not-the-number-of-characters
-                        "content-length" (.length body)}
+                        "content-length" (.length ^String body)}
               :body body
               }))))

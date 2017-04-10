@@ -210,7 +210,7 @@ expressive short-hand descriptions."}
 (def PropertiesMappings {})
 
 (def PropertiesResultMappings {Date #(condp instance? %
-                                       java.lang.Long (Date. %)
+                                       Long (Date. ^Long %)
                                        %)})
 
 (def properties-result-coercer (sc/coercer PropertiesResult PropertiesResultMappings))

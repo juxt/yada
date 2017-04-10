@@ -94,7 +94,7 @@
 
 ;; URLs
 
-(defn as-file [^java.net.URL resource]
+(defn ^java.io.File as-file [^java.net.URL resource]
   (when resource
     (case (.getProtocol resource)
       "file" (io/file (.getFile resource))
