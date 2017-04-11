@@ -93,6 +93,8 @@
 
      :plugins [[cider/cider-nrepl "0.14.0"]]
 
+     :global-vars {*warn-on-reflection* true}
+
      :dependencies
      [
       ;; REPL and dev workflow
