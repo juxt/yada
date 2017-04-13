@@ -13,15 +13,29 @@
 
 ;; Outbound
 
+(defn render-map-impl
+  [m representation & [opts]]
+  (let [pretty (get-in representation [:media-type :parameters "pretty"])
+        cheshire-opts (get opts :yada.cheshire)
+        cheshire-opts (cond-> cheshire-opts
+                        pretty (assoc :pretty pretty))]
+    (str (json/encode m cheshire-opts) \newline)))
+
 (defmethod render-map "application/json"
   [m representation]
-  (let [pretty (get-in representation [:media-type :parameters "pretty"])]
-    (str (json/encode m {:pretty pretty}) \newline)))
+  (render-map-impl m representation))
+
+(defn render-seq-impl
+  [s representation & [opts]]
+  (let [pretty (get-in representation [:media-type :parameters "pretty"])
+        cheshire-opts (get opts :yada.cheshire)
+        cheshire-opts (cond-> cheshire-opts
+                        pretty (assoc :pretty pretty))]
+    (str (json/encode s cheshire-opts) \newline)))
 
 (defmethod render-seq "application/json"
   [s representation]
-  (let [pretty (get-in representation [:media-type :parameters "pretty"])]
-    (str (json/encode s {:pretty pretty}) \newline)))
+  (render-seq-impl s representation))
 
 (add-encoder
  java.lang.Exception
