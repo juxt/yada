@@ -1,18 +1,18 @@
 # yada
 
-yada is a web library for Clojure. It is a sibling library to [bidi](http://github.com/juxt/bidi) - whereas bidi is based on _routes as data_, yada is based on _resources as data_.
+yada is a web library for Clojure, designed to support the creation of production services via HTTP.
 
-yada takes data declarations and produces a sophisticated Ring
-handler.
+It has the following features:
 
-It has the following features
+* Standards-based, comprehensive HTTP coverage (content negotiation, conditional requests, etc.)
+* Parameter validation and coercion, automatic Swagger support
+* Rich extensibility (methods, mime-types, security and more)
+* Asynchronous, efficient interceptor-chain design built on [manifold](https://github.com/ztellman/manifold)
+* Excellent performance, suitable for heavy production workloads
 
-* Comprehensive HTTP coverage
-* Parameter coercion, automatic Swagger support
-* Async foundation based on [manifold](https://github.com/ztellman/manifold)
-* Protocol extensibility
+yada is a sibling library to [bidi](http://github.com/juxt/bidi) - whereas bidi is based on _routes as data_, yada is based on _resources as data_.
 
-The user-manual for the latest beta (1.1.x) release is available at
+The user-manual for the latest (1.1.x) release is available at
 [https://juxt.pro/yada](https://juxt.pro/yada) and offline (see below).
 
 The user-manual is also available as an e-book or PDF, at
@@ -25,6 +25,22 @@ Add the following dependency to your
 
 [![Clojars Project](http://clojars.org/yada/latest-version.svg)](http://clojars.org/yada)
 [![Build Status](https://travis-ci.org/juxt/yada.png)](https://travis-ci.org/juxt/yada)
+
+## Create a yada handler
+
+Typically, yada handlers are created from a configuation expressed in data.
+
+```clojure
+(require '[yada.yada :as yada])
+
+(yada/handler
+  {:methods
+    {:get
+      {:produces "text/html"
+       :response "<h1>Hello World!</h1>"}}})
+```
+
+This is a simple example, there are a lot more options in yada than can be expressed here, but the approach is the same. The data configuration can be hand-authored, or generated programmatically leading enabling creation of consisntent APIs at an industrial scale.
 
 ## Dependencies
 
@@ -43,6 +59,29 @@ A project using yada will need to bring in [aleph](https://github.com/ztellman/a
 ```
 
 Support for other web-severs, such as undertow, are on the road-map.
+
+## Future compatibility
+
+If you want to ensure that your code will not break with future releases of yada, you should only use functions from the `yada.yada` namespaces.
+
+You are free to use other public functions in yada, but please be warned that these can and do change between releases.
+
+## Lean yada
+
+By default, yada is batteries-included, bringing in a large number of dependencies.
+
+However, a leaner version of yada is available which cuts out Swagger, swagger-ui, JSON (cheshire), Transit, buddy, core.async, SSE and other fat.
+
+Instead of requiring `yada.yada`, require `yada.yada.lean` but otherwise use yada in the same way.
+
+The following differences apply:
+
+- yada doesn't automatically encode/decode JSON bodies, or render JSON as HTML
+- no parameter validation or coercion
+- no Swagger
+- no SSE (currently)
+- no JWT
+- no Transit
 
 ## Running documentation and examples offline
 
@@ -105,7 +144,7 @@ feedback and suggestions.
 * Thomas van der Veen
 * Leandro Demartini
 * Craig McCraig of the clan McCraig
-* Imre Koszo
+* Imre Kószó
 * Luo Tian
 * Joshua Griffith
 * Joseph Fahey
@@ -115,6 +154,12 @@ feedback and suggestions.
 * Stanislas Nanchen
 * Nicolas Ha
 * Eric Fode
+* Leon Mergen
+* Greg Look
+* Tom Coupland
+* Mikkel Gravgaard
+* Lucas Lago
+* Johannes Staffans
 
 Also, see the dependency list. In particular, yada would certainly not
 exist without the considerable efforts of those behind the following

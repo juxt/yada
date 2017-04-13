@@ -1,0 +1,283 @@
+
+
+
+
+
+
+Internet Engineering Task Force (IETF)                        J. Reschke
+Request for Comments: 7237                                    greenbytes
+Category: Informational                                        June 2014
+ISSN: 2070-1721
+
+
+    Initial Hypertext Transfer Protocol (HTTP) Method Registrations
+
+Abstract
+
+   This document registers those Hypertext Transfer Protocol (HTTP)
+   methods that have been defined in RFCs before the IANA HTTP Method
+   Registry was established.
+
+Status of This Memo
+
+   This document is not an Internet Standards Track specification; it is
+   published for informational purposes.
+
+   This document is a product of the Internet Engineering Task Force
+   (IETF).  It represents the consensus of the IETF community.  It has
+   received public review and has been approved for publication by the
+   Internet Engineering Steering Group (IESG).  Not all documents
+   approved by the IESG are a candidate for any level of Internet
+   Standard; see Section 2 of RFC 5741.
+
+   Information about the current status of this document, any errata,
+   and how to provide feedback on it may be obtained at
+   http://www.rfc-editor.org/info/rfc7237.
+
+Copyright Notice
+
+   Copyright (c) 2014 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to BCP 78 and the IETF Trust's Legal
+   Provisions Relating to IETF Documents
+   (http://trustee.ietf.org/license-info) in effect on the date of
+   publication of this document.  Please review these documents
+   carefully, as they describe your rights and restrictions with respect
+   to this document.  Code Components extracted from this document must
+   include Simplified BSD License text as described in Section 4.e of
+   the Trust Legal Provisions and are provided without warranty as
+   described in the Simplified BSD License.
+
+
+
+
+
+
+
+Reschke                       Informational                     [Page 1]
+
+RFC 7237                HTTP Method Registrations              June 2014
+
+
+Table of Contents
+
+   1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . . . 2
+   2.  Security Considerations . . . . . . . . . . . . . . . . . . . . 2
+   3.  IANA Considerations . . . . . . . . . . . . . . . . . . . . . . 3
+   4.  Normative References  . . . . . . . . . . . . . . . . . . . . . 4
+
+1.  Introduction
+
+   This document registers those Hypertext Transfer Protocol (HTTP)
+   methods that have been defined in RFCs other than [RFC7231] before
+   the IANA HTTP Method Registry was established.
+
+2.  Security Considerations
+
+   There are no security considerations related to the registration
+   itself.
+
+   Security considerations applicable to the individual HTTP methods
+   ought to be discussed in the specifications that define them.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Reschke                       Informational                     [Page 2]
+
+RFC 7237                HTTP Method Registrations              June 2014
+
+
+3.  IANA Considerations
+
+   The table below provides registrations of HTTP method names that have
+   been added to the IANA "Hypertext Transfer Protocol (HTTP) Method
+   Registry" at <http://www.iana.org/assignments/http-methods> (see
+   Section 8.1 of [RFC7231]).
+
+   +-------------------+------+------------+---------------------------+
+   | Method Name       | Safe | Idempotent | Reference                 |
+   +-------------------+------+------------+---------------------------+
+   | ACL               | no   | yes        | [RFC3744], Section 8.1    |
+   | BASELINE-CONTROL  | no   | yes        | [RFC3253], Section 12.6   |
+   | BIND              | no   | yes        | [RFC5842], Section 4      |
+   | CHECKIN           | no   | yes        | [RFC3253], Section 4.4    |
+   |                   |      |            | and [RFC3253], Section    |
+   |                   |      |            | 9.4                       |
+   | CHECKOUT          | no   | yes        | [RFC3253], Section 4.3    |
+   |                   |      |            | and [RFC3253], Section    |
+   |                   |      |            | 8.8                       |
+   | COPY              | no   | yes        | [RFC4918], Section 9.8    |
+   | LABEL             | no   | yes        | [RFC3253], Section 8.2    |
+   | LINK              | no   | yes        | [RFC2068], Section        |
+   |                   |      |            | 19.6.1.2                  |
+   | LOCK              | no   | no         | [RFC4918], Section 9.10   |
+   | MERGE             | no   | yes        | [RFC3253], Section 11.2   |
+   | MKACTIVITY        | no   | yes        | [RFC3253], Section 13.5   |
+   | MKCALENDAR        | no   | yes        | [RFC4791], Section 5.3.1  |
+   | MKCOL             | no   | yes        | [RFC4918], Section 9.3    |
+   | MKREDIRECTREF     | no   | yes        | [RFC4437], Section 6      |
+   | MKWORKSPACE       | no   | yes        | [RFC3253], Section 6.3    |
+   | MOVE              | no   | yes        | [RFC4918], Section 9.9    |
+   | ORDERPATCH        | no   | yes        | [RFC3648], Section 7      |
+   | PATCH             | no   | no         | [RFC5789], Section 2      |
+   | PROPFIND          | yes  | yes        | [RFC4918], Section 9.1    |
+   | PROPPATCH         | no   | yes        | [RFC4918], Section 9.2    |
+   | REBIND            | no   | yes        | [RFC5842], Section 6      |
+   | REPORT            | yes  | yes        | [RFC3253], Section 3.6    |
+   | SEARCH            | yes  | yes        | [RFC5323], Section 2      |
+   | UNBIND            | no   | yes        | [RFC5842], Section 5      |
+   | UNCHECKOUT        | no   | yes        | [RFC3253], Section 4.5    |
+   | UNLINK            | no   | yes        | [RFC2068], Section        |
+   |                   |      |            | 19.6.1.3                  |
+   | UNLOCK            | no   | yes        | [RFC4918], Section 9.11   |
+   | UPDATE            | no   | yes        | [RFC3253], Section 7.1    |
+   | UPDATEREDIRECTREF | no   | yes        | [RFC4437], Section 7      |
+   | VERSION-CONTROL   | no   | yes        | [RFC3253], Section 3.5    |
+   +-------------------+------+------------+---------------------------+
+
+
+
+
+Reschke                       Informational                     [Page 3]
+
+RFC 7237                HTTP Method Registrations              June 2014
+
+
+4.  Normative References
+
+   [RFC2068]  Fielding, R., Gettys, J., Mogul, J., Nielsen, H., and T.
+              Berners-Lee, "Hypertext Transfer Protocol -- HTTP/1.1",
+              RFC 2068, January 1997.
+
+   [RFC3253]  Clemm, G., Amsden, J., Ellison, T., Kaler, C., and J.
+              Whitehead, "Versioning Extensions to WebDAV (Web
+              Distributed Authoring and Versioning)", RFC 3253,
+              March 2002.
+
+   [RFC3648]  Whitehead, J. and J. Reschke, Ed., "Web Distributed
+              Authoring and Versioning (WebDAV) Ordered Collections
+              Protocol", RFC 3648, December 2003.
+
+   [RFC3744]  Clemm, G., Reschke, J., Sedlar, E., and J. Whitehead, "Web
+              Distributed Authoring and Versioning (WebDAV) Access
+              Control Protocol", RFC 3744, May 2004.
+
+   [RFC4437]  Whitehead, J., Clemm, G., and J. Reschke, Ed., "Web
+              Distributed Authoring and Versioning (WebDAV) Redirect
+              Reference Resources", RFC 4437, March 2006.
+
+   [RFC4791]  Daboo, C., Desruisseaux, B., and L. Dusseault,
+              "Calendaring Extensions to WebDAV (CalDAV)", RFC 4791,
+              March 2007.
+
+   [RFC4918]  Dusseault, L., Ed., "HTTP Extensions for Web Distributed
+              Authoring and Versioning (WebDAV)", RFC 4918, June 2007.
+
+   [RFC5323]  Reschke, J., Ed., Reddy, S., Davis, J., and A. Babich,
+              "Web Distributed Authoring and Versioning (WebDAV)
+              SEARCH", RFC 5323, November 2008.
+
+   [RFC5789]  Dusseault, L. and J. Snell, "PATCH Method for HTTP",
+              RFC 5789, March 2010.
+
+   [RFC5842]  Clemm, G., Crawford, J., Reschke, J., Ed., and J.
+              Whitehead, "Binding Extensions to Web Distributed
+              Authoring and Versioning (WebDAV)", RFC 5842, April 2010.
+
+   [RFC7231]  Fielding, R., Ed. and J. Reschke, Ed., "Hypertext Transfer
+              Protocol (HTTP/1.1): Semantics and Content", RFC 7231,
+              June 2014.
+
+
+
+
+
+
+
+Reschke                       Informational                     [Page 4]
+
+RFC 7237                HTTP Method Registrations              June 2014
+
+
+Author's Address
+
+   Julian F. Reschke
+   greenbytes GmbH
+   Hafenweg 16
+   Muenster, NW  48155
+   Germany
+
+   EMail: julian.reschke@greenbytes.de
+   URI:   http://greenbytes.de/tech/webdav/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Reschke                       Informational                     [Page 5]
+

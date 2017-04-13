@@ -763,7 +763,7 @@ yada allows you to return deferred values anytime it makes sense to do so, and e
   (defn hello-sse [ch]
     (go-loop [t 0]
       (when (>! ch (format "Hello World! (%d)" t))
-        (<! (timeout 100))
+        (&lt;! (timeout 100))
         (recur (inc t))))
     (yada ch))
 

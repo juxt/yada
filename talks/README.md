@@ -6,6 +6,7 @@ Here are various yada-based talks
 * [ClojuTRE 2015](clojutre-2015.html) - my first yada talk, a bit dated and describes the olde protocol-based yada.
 * [Skills Matter Clojure eXchange 2015 - Thomas van der Veen](clojurex-2015-thomas.html) - Thomas's talk on creating a phonebook with Compojure
 * [Skills Matter Clojure eXchange 2015 - Malcolm Sparks](clojurex-2015-malcolm.html) - My follow-up to Thomas's talk. Reveals the pure-data yada.
+* [f(by) Minsk 2016 - Malcolm Sparks](fby-2016.html) - Talk about yada at f(by)
 
 ## Building
 

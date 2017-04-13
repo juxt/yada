@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>yada yada yada</title>
+<meta name="author" content="(Malcolm Sparks)"/>
+<style type="text/css">
+.underline { text-decoration: underline; }
+</style>
+<link rel="stylesheet" href="static/css/reveal.css"/>
+
+<link rel="stylesheet" href="static/css/theme/juxt-dark.css" id="theme"/>
+
+<link rel="stylesheet" href="static/css/fby-2016.css"/>
+<link rel="stylesheet" href="static/lib/css/zenburn.css"/>
+<!-- If the query includes 'print-pdf', include the PDF print sheet -->
+<script>
+    if( window.location.search.match( /print-pdf/gi ) ) {
+        var link = document.createElement( 'link' );
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = 'static/css/print/pdf.css';
+        document.getElementsByTagName( 'head' )[0].appendChild( link );
+    }
+</script>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+<section id="sec-title-slide"><h1 class="title">yada yada yada</h1><h2 class="author">Malcolm Sparks</h2><p class="date">Created: 2016-12-10 Sat 08:40</p>
+</section>
+
+<section>
+<section id="slide-orgheadline1">
+<h2 id="orgheadline1">The printing press: 1440</h2>
+
+<div class="figure">
+<p><img src="./static/assets/press.jpg" alt="press.jpg" />
+</p>
+</div>
+
+<aside class="notes">
+<p>
+Around 1440 Gutenberg assembled the printing press.
+</p>
+
+</aside>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline2">
+<h2 id="orgheadline2">The Web: 1990</h2>
+<aside class="notes">
+<p>
+
+</p>
+
+<p>
+From a historical perspective
+</p>
+
+<p>
+DNA?
+The age of the universe?
+HTTP?
+</p>
+
+</aside>
+
+<ul>
+<li>URIs - universal address system for information</li>
+<li>HTTP - universal information retrieval system</li>
+<li>HTML - retrieval and navigation for humans</li>
+
+</ul>
+
+<aside class="notes">
+nil
+</aside>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline3">
+<h2 id="orgheadline3">HTTP: the choice of a new generation</h2>
+
+<div class="figure">
+<p><img src="./static/assets/amazon-echo-dot-white.jpg" alt="amazon-echo-dot-white.jpg" />
+</p>
+</div>
+
+<aside class="notes">
+<p>
+Now the web has become truly industrialized, and mechanized - literally - we are seeing machines talk to other machines using HTTP.
+</p>
+
+<p>
+A few weeks ago I purchased one of these Amazon things and in a couple of hours was able to program it to add some new tricks. We did it as a family programming exercise. Of course, it was simply HTTP POSTS
+</p>
+
+</aside>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline4">
+<h2 id="orgheadline4">Web frameworks</h2>
+<ul>
+<li>Still far too complex!</li>
+<li>So much for the developer to do</li>
+<li>RFC 7230, 7231, 7232, 7233, 7234, 7235&#x2026;</li>
+<li>Ambivalent about standards</li>
+<li>We need a better way!</li>
+
+</ul>
+
+
+<aside class="notes">
+<p>
+Here's the request, you figure out the response!
+</p>
+
+</aside>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline5">
+<h2 id="orgheadline5">WebMachine - a way forward</h2>
+
+<div class="figure">
+<p><img src="./static/assets/http-headers-status-v3.png" alt="http-headers-status-v3.png" />
+</p>
+</div>
+
+<aside class="notes">
+nil
+</aside>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline6">
+<h2 id="orgheadline6"><code>yada</code></h2>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline7">
+<h2 id="orgheadline7"><code>yada</code> is declarative</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure" >(yada/resource
+ {:methods
+  {:get
+   {:produces "text/html"
+    :response
+    (fn [_] "<h1>Hello World!</h1>")}
+   :put
+   {:consumes "application/json"
+    :parameters {:body {:greeting String}}
+    :response (fn [ctx] ...)}}})
+</code></pre>
+</div>
+
+<aside class="notes">
+<p>
+It took a year for this simple idea to dawn on me. The first iteration of yada was actually based on Clojure's records and protocols.
+</p>
+
+<p>
+But what could be simpler than Clojure's maps?
+</p>
+
+<p>
+This is one of the reasons Clojure is so nice.
+</p>
+
+<p>
+If you haven't used Clojure's literal syntax, it's a bit like JSON.
+</p>
+
+<p>
+But I find Clojure's syntax much nicer to type than JSON. JSON forces you to use speech-marks around keys, add commas in the right place, but worst of all, stops you writing comments!
+</p>
+
+<p>
+Clojure's syntax has all the benefits of JSON - you can generate it, manipulate it with your own programs (swagger), you can serialize it so you can send it over the network.
+</p>
+
+<p>
+From this simple declaration we can tell a few things: it produces static HTML.
+</p>
+
+<p>
+There's a lot more you can add to a resource declaration, but there's also some schema behind this, so if you make a mistake and put it something that yada doesn't recognise, it will let you know by failing quickly.
+</p>
+
+</aside>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline8">
+<h2 id="orgheadline8"><code>yada</code> is standards-compliant</h2>
+<ul>
+<li>Response status codes and headers</li>
+<li>Content negotiation</li>
+<li>Conditional requests</li>
+<li>Security</li>
+<li>Much more, and more to come</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline9">
+<h2 id="orgheadline9"><code>yada</code> is linear</h2>
+<p>
+available? → known-method? → uri-too-long? → TRACE → method-allowed? → parse-parameters → capture-proxy-headers → authenticate → get-properties → authorize → process-content-encoding → process-request-body → check-modification-time → select-representation → if-match → if-none-match → invoke-method → get-new-properties → compute-etag → access-control-headers → security-headers → create-response → logging → return
+</p>
+
+<ul>
+<li>State monad (state is known as <i>request context</i>)</li>
+<li>By default, all requests for all routes go through the <i>same</i> chain</li>
+<li>Every interceptor has access to request, whole resource model and any information collected by previous interceptors</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline10">
+<h2 id="orgheadline10">Interceptor</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure" >(defn known-method?
+  [ctx]
+  (if-not (:method-wrapper ctx)
+    (d/error-deferred
+      (ex-info ""
+        {:status 501
+         ::method (:method ctx)}))
+    ctx))
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline11">
+<h2 id="orgheadline11"><code>yada</code> is asynchronous</h2>
+<p>
+available? → known-method? → uri-too-long? → TRACE → method-allowed? → parse-parameters → capture-proxy-headers → authenticate → get-properties → authorize → process-content-encoding → process-request-body → check-modification-time → select-representation → if-match → if-none-match → invoke-method → get-new-properties → compute-etag → access-control-headers → security-headers → create-response → logging → return
+</p>
+
+<ul>
+<li><i>Any</i> interceptor can defer its return value (futures, promises, core.async channels)</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline12">
+<h2 id="orgheadline12"><code>yada</code> is extensible</h2>
+<ul>
+<li>Methods</li>
+<li>Media-types</li>
+<li>Interceptors</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline13">
+<h2 id="orgheadline13">Adding methods</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure" >(extend-protocol Method
+  BrewMethod
+  (keyword-binding [_] :brew)
+  (safe? [_] false)
+  (idempotent? [_] false)
+  (request [_ ctx]
+    ;; Method semantics here
+    ))
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline14">
+<h2 id="orgheadline14">Adding media-types</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure" >(defmethod parse-stream
+  "application/transit+msgpack"
+  [_ stream]
+  (-> (bs/to-input-stream stream)
+      (transit/reader :msgpack)
+      (transit/read)
+      (with-400-maybe)))
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline15">
+<h2 id="orgheadline15"><code>yada</code> is scaleable</h2>
+<ul>
+<li>Built upon <span class="underline">aleph</span> and <span class="underline">netty</span></li>
+
+</ul>
+
+<aside class="notes">
+<p>
+To many tens of thousands, even hundreds of thousands of simultaneous connections
+</p>
+
+</aside>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline16">
+<h2 id="orgheadline16">Content Negotiation</h2>
+<p>
+available? → known-method? → uri-too-long? → TRACE → method-allowed? → parse-parameters → capture-proxy-headers → authenticate → get-properties → authorize → process-content-encoding → process-request-body → check-modification-time → <span class="underline">select-representation</span> → if-match → if-none-match → invoke-method → get-new-properties → compute-etag → access-control-headers → security-headers → create-response → logging → return
+</p>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline17">
+<h2 id="orgheadline17">'Data Macros'</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure" >{:produces "text/html"}
+</code></pre>
+</div>
+
+<p>
+becomes
+</p>
+
+<div class="org-src-container">
+
+<pre><code class="clojure" >{:produces
+ [{:media-type "text/html"}]}
+</code></pre>
+</div>
+
+<ul>
+<li>See <a href="https://juxt.pro/blog/posts/data-macros.html">https://juxt.pro/blog/posts/data-macros.html</a></li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline18">
+<h2 id="orgheadline18">but you can do</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure" >{:produces
+ [{:media-type "text/html"
+   :charset "UTF-8"
+   :language #{"en" "zh-ch;q=0.9"}}
+  {:media-type "text/html"
+   :charset "Shift_JIS"
+   :encoding "gzip"
+   :language "zh-ch;q=0.9"}
+  {:media-type "text/plain"}]}
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline19">
+<h2 id="orgheadline19">Parameter validation</h2>
+<p>
+available? → known-method? → uri-too-long? → TRACE → method-allowed? → <span class="underline">parse-parameters</span> → capture-proxy-headers → authenticate → get-properties → authorize → process-content-encoding → process-request-body → check-modification-time → select-representation → if-match → if-none-match → invoke-method → get-new-properties → compute-etag → access-control-headers → security-headers → create-response → logging → return
+</p>
+
+<ul>
+<li>Attempt to coerce parameters to required types</li>
+<li>If parameters aren't valid, return with a 400</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline20">
+<h2 id="orgheadline20">Parameters</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure" >(yada/resource
+ {:methods
+  {:get
+   {:parameters
+    {:query {:foo s/Inst}
+     :body {:request {:intent {:name s/Str}}}}}}})
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline21">
+<h2 id="orgheadline21">Conditional Requests</h2>
+<p>
+available? → known-method? → uri-too-long? → TRACE → method-allowed? → parse-parameters → capture-proxy-headers → authenticate → <span class="underline">get-properties</span> → authorize → process-content-encoding → process-request-body → <span class="underline">check-modification-time</span> → select-representation → <span class="underline">if-match</span> → <span class="underline">if-none-match</span> → invoke-method → <span class="underline">get-new-properties</span> → <span class="underline">compute-etag</span> → access-control-headers → security-headers → create-response → logging → return
+</p>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline22">
+<h2 id="orgheadline22">Properties</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure" >(extend-protocol yada.resource/ResourceCoercion
+  String
+  (as-resource [s]
+    (resource
+     {:properties {:last-modified (to-date (now))
+                   :version s}
+      :methods
+      {:get
+       {:produces
+        [{:media-type "text/plain"
+          :charset charset/platform-charsets}]
+        :response (fn [ctx] s)}}})))
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline23">
+<h2 id="orgheadline23">Security</h2>
+<p>
+available? → known-method? → uri-too-long? → TRACE → method-allowed? → parse-parameters → capture-proxy-headers → <span class="underline">authenticate</span> → get-properties → <span class="underline">authorize</span> → process-content-encoding → process-request-body → check-modification-time → select-representation → if-match → if-none-match → invoke-method → get-new-properties → compute-etag → <span class="underline">access-control-headers</span> → <span class="underline">security-headers</span> → create-response → logging → return
+</p>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline24">
+<h2 id="orgheadline24">Security</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure" >(yada/resource
+ {:id ::basic-example
+  :access-control
+  {:scheme "Basic"
+   :verify
+   (fn [[user password]]
+     (when (= [user password]
+              ["scott" "tiger"])
+       {:user "scott"
+        :roles #{"secret/view"}}))
+   :authorization
+   {:methods
+    {:get "secret/view"}}}})
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline25">
+<h2 id="orgheadline25">Server sent events</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure" >(yada/resource
+ {:methods
+  {:get {:produces "text/event-stream"
+         :response (chan)}}})
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline26">
+<h2 id="orgheadline26">Uploads</h2>
+<p>
+available? → known-method? → uri-too-long? → TRACE → method-allowed? → parse-parameters → capture-proxy-headers → authenticate → get-properties → authorize → <span class="underline">process-content-encoding</span> → <span class="underline">process-request-body</span> → check-modification-time → select-representation → if-match → if-none-match → invoke-method → get-new-properties → compute-etag → access-control-headers → security-headers → create-response → logging → return
+</p>
+
+<ul>
+<li>Fully asynchronous</li>
+<li>Support for form-data/multipart (~200Mb/s)</li>
+<li>Boyer-Moore-Horspool algorithm (modified for streaming)</li>
+<li>Pluggable handlers</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline27">
+<h2 id="orgheadline27">Error handling</h2>
+<ul>
+<li>Separate (pluggable) error interceptor chain</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline28">
+<h2 id="orgheadline28">Status responses</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure" >(yada/resource
+ {:methods
+  {:get
+   {:response (fn [ctx] nil)}}
+  :responses
+  {404 {:response "Not found"}}})
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline29">
+<h2 id="orgheadline29">Routing</h2>
+<ul>
+<li>Not supported!</li>
+
+</ul>
+
+<blockquote nil>
+<p>
+Routes and Resources should be independent
+&#x2013; Phillip Meier
+</p>
+</blockquote>
+
+<aside class="notes">
+<p>
+About 3 years ago, Billy and I were at EuroClojure in Berlin in 2013 and I about whether he would be adding routing to Liberator, without even hesitating he said no!
+</p>
+
+<p>
+I asked why. He explained that resources and their names are different concepts and shouldn't be mixed.  I slept on this for a couple of months, a process which we call 'Hammock Driven Development'. It worked, over Christmas I had a sudden moment of inspiration, grabbed the nearest computer and typed out the first version of what became bidi.
+</p>
+
+</aside>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline30">
+<h2 id="orgheadline30">bidi</h2>
+<ul>
+<li>A URI router, nothing more</li>
+<li>Recursive pattern matching</li>
+<li>Bidirectional</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline31">
+<h2 id="orgheadline31">bidi example</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure" >["/phonebook" [
+               ["" :index]
+               [["/" :id] :entry]
+              ]]
+</code></pre>
+</div>
+
+<div class="org-src-container">
+
+<pre><code class="clojure" >/phonebook -> :index
+/phonebook/123 -> :entry
+</code></pre>
+</div>
+
+<div class="org-src-container">
+
+<pre><code class="clojure" >:index -> /phonebook
+:entry 123 -> /phonebook/123
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline32">
+<h2 id="orgheadline32"><code>yada</code> is evolving</h2>
+<ul>
+<li>clojure.spec</li>
+<li>Instrumentation and debugging</li>
+<li>Environment profiles</li>
+<li>Range requests &amp; partial content</li>
+<li>Rate limiting</li>
+<li>WebDAV</li>
+<li>TLS and HTTP/2 (server push)</li>
+<li>ClojureScript?</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline33">
+<h2 id="orgheadline33">Programming the Amazon Echo</h2>
+
+<div class="figure">
+<p><img src="./static/assets/code.png" alt="code.png" />
+</p>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline34">
+<h2 id="orgheadline34">Getting started with bidi and <code>yada</code></h2>
+<ul>
+<li>Documentation: <a href="https://juxt.pro/yada">https://juxt.pro/yada</a></li>
+<li>Sample application: <a href="https://github.com/juxt/edge">https://github.com/juxt/edge</a></li>
+
+</ul>
+</section>
+</section>
+</div>
+</div>
+<script src="static/lib/js/head.min.js"></script>
+<script src="static/js/reveal.js"></script>
+
+<script>
+// Full list of configuration options available here:
+// https://github.com/hakimel/reveal.js#configuration
+Reveal.initialize({
+
+controls: false,
+progress: false,
+history: true,
+center: true,
+slideNumber: 'c',
+rollingLinks: false,
+keyboard: true,
+overview: true,
+margin: 0.00,
+minScale: 1.00,
+maxScale: 1.80,
+
+theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+transition: Reveal.getQueryHash().transition || 'none', // default/cube/page/concave/zoom/linear/fade/none
+transitionSpeed: 'fast',
+multiplex: {
+    secret: '', // null if client
+    id: '', // id, obtained from socket.io server
+    url: '' // Location of socket.io server
+},
+
+// Optional libraries used to extend on reveal.js
+dependencies: [
+ { src: 'static/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+ { src: 'static/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+ { src: 'static/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+ { src: 'static/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } },
+]
+});
+</script>
+</body>
+</html>

@@ -1,16 +1,16 @@
 [[security]]
 == Security
 
-Built-in to the library, yada offers a complete standards-based set of security features for today's secure applications and content delivery.
+Built-in to the library, [yada]#yada# offers a complete standards-based set of security features for today's secure applications and content delivery.
 
 [[security-is-part-of-the-resource-not-the-route]]
 === Security is part of the resource, not the route
 
-In yada, resources are self-contained and are individually protected from unauthorized access. We agree with the HTTP standards authors when we consider security to be integral to the definition of the resource itself, and not an extra to be bolted on afterwards. Nor should it be complected with routing. The process of identifying up a resource from its URI is independent of how that resource should behave, and shouldn't be coupled to it.
+In [yada]#yada#, resources are self-contained and are individually protected from unauthorized access. We agree with the HTTP standards authors when we consider security to be integral to the definition of the resource itself, and not an extra to be bolted on afterwards. Nor should it be complected with routing. The process of identifying up a resource from its URI is independent of how that resource should behave, and shouldn't be coupled to it.
 
 Building security into each resource yields other benefits, such as making it easier to test the resource as a unit in isolation of other resources and the router.
 
-As in all other areas, yada aims for 100% compliance with core HTTP standards when it comes to security, notably https://tools.ietf.org/html/rfc7235[RFC 7235]. Also, since HTTP APIs are nowadays used to facilitate transactional integration between systems via the user's browser, it is critically important that yada fully supports systems that offer APIs to other applications, across origins, as standardised by http://www.w3.org/TR/cors/[CORS].
+As in all other areas, [yada]#yada# aims for 100% compliance with core HTTP standards when it comes to security, notably https://tools.ietf.org/html/rfc7235[RFC 7235]. Also, since HTTP APIs are nowadays used to facilitate transactional integration between systems via the user's browser, it is critically important that [yada]#yada# fully supports systems that offer APIs to other applications, across origins, as standardised by http://www.w3.org/TR/cors/[CORS].
 
 [[the-access-control-entry]]
 === The `:access-control` entry
@@ -23,7 +23,7 @@ All security aspects for a resource are specified in its model's
 
 Let's look at authentication first. Authentication is the process of establishing and verifying the identity and credentials of the user, with reasonable confidence that the user is not an impostor.
 
-In yada, authentication happens after any request parameters have been processed, so if necessary they can be used to establish the identity of the user. However, it is important to remember that authentication happens before the resource's properties have been loaded, since credentials do not have to do with the actual resource. Thus, if the user is not genuine, we might well save a wasted trip to the resource's data-store.
+In [yada]#yada#, authentication happens after any request parameters have been processed, so if necessary they can be used to establish the identity of the user. However, it is important to remember that authentication happens before the resource's properties have been loaded, since credentials do not have to do with the actual resource. Thus, if the user is not genuine, we might well save a wasted trip to the resource's data-store.
 
 In HTTP, resources can exist inside a _protection space_ determined by
 one or more __realms__. Each resource declares the realm (or realms) it
@@ -36,7 +36,7 @@ is protected by, as part of the *:access-control* entry of its
 Each realm declares one or more _authentication schemes_ governing how
 requests are authenticated.
 
-yada supports numerous authentication schemes, including custom ones you
+[yada]#yada# supports numerous authentication schemes, including custom ones you
 can provide yourself.
 
 Each scheme has a verifier. Depending on the scheme this is usually a
@@ -187,7 +187,7 @@ We then determine if the user and password are valid (we don't explain
 here how this is done, but assume a `valid-user` function exists that
 can tell us). If the user is valid we associate a new cookie called
 "session" with the response. By starting with the `:response` value of
-the request context, we ensure yada interprets our return value as a
+the request context, we ensure [yada]#yada# interprets our return value as a
 Ring response rather than some other value.
 
 We use Buddy's `sign` function to sign and encoded the cookie's value as
@@ -237,11 +237,11 @@ access control] authorization scheme).
 In either case, we assume that the user has already been authenticated,
 and we are confident that their credentials are genuine.
 
-In yada, authorization happens _after_ the resource's properties have
+In [yada]#yada#, authorization happens _after_ the resource's properties have
 been loaded, because it may be necessary to check some aspect of the
 resource itself as part of the authorization process.
 
-By default, yada will use a declarative role-based authorization scheme.
+By default, [yada]#yada# will use a declarative role-based authorization scheme.
 
 [[default-authorization-scheme]]
 ==== Default authorization scheme
@@ -276,7 +276,7 @@ declarative and easy to extract and process by other tooling.
 
 Of course, authentication information is available in the request
 context when a method is invoked, so any method may apply its own custom
-authorization logic as necessary. However, yada encourages developers to
+authorization logic as necessary. However, [yada]#yada# encourages developers to
 adopt a declarative approach to resources wherever possible, to maximise
 the integration opportunities with other libraries and tools.
 
@@ -290,7 +290,7 @@ First, decide on a keyword that will be used to dispatch your
 authorization function. In this example, we've chosen
 `:my/custom-authorization`.
 
-Now declare the authorization function that will be called by yada
+Now declare the authorization function that will be called by [yada]#yada#
 during request processing. This is a `defmethod`, as follows:
 
 [source,clojure]
@@ -324,7 +324,7 @@ parameters (there are no schema restrictions here).
 [[realms]]
 === Realms
 
-yada supports multiple realms. By default, there is a single realm in
+[yada]#yada# supports multiple realms. By default, there is a single realm in
 operation called "default". However, you can group authentication
 schemes and authorization models in separate realms. Each realm can
 contain multiple authentication schemes (it might be that a realm offers
@@ -342,7 +342,7 @@ a choice of how to authenticate).
 [[cross-origin-resource-sharing-cors]]
 === Cross-Origin Resource Sharing (CORS)
 
-yada fully supports Cross-Origin Resource Sharing (CORS) allowing you to
+[yada]#yada# fully supports Cross-Origin Resource Sharing (CORS) allowing you to
 provide APIs that are accessible from other origins.
 
 For example, you may be creating an API that you wish other websites to
@@ -392,7 +392,7 @@ Defaults to `default-src https: data: 'unsafe-inline' 'unsafe-eval'`.
 [[clickjacking-prevention]]
 === Clickjacking prevention
 
-A browser's iframe can be used for 'click-jacking'. By default yada
+A browser's iframe can be used for 'click-jacking'. By default [yada]#yada#
 tells browsers not to allow this. The default value is `SAMEORIGIN`,
 unless you override it in the resource-model.
 
@@ -404,7 +404,7 @@ unless you override it in the resource-model.
 [[cross-site-scripting-xss-protection]]
 === Cross-site Scripting (XSS) protection
 
-yada also sets the `X-Xss-Protection` response header to
+[yada]#yada# also sets the `X-Xss-Protection` response header to
 `1; mode=block`. This can be overridden in the resource model.
 
 [source,clojure]
@@ -415,11 +415,11 @@ yada also sets the `X-Xss-Protection` response header to
 [[media-type-sniffing-protection]]
 === Media-type sniffing protection
 
-By default, yada sets the `X-Content-Type-Options` response header to
+By default, [yada]#yada# sets the `X-Content-Type-Options` response header to
 `nosniff`. This tells browsers not to try to attempt to determine the
 content-type of the response body.
 
-Since yada sets the `Content-Type` header according to HTTP standards,
+Since [yada]#yada# sets the `Content-Type` header according to HTTP standards,
 there should never be a need for a browser to 'sniff' the response body
 for this information, preventing an attack that might exploit some
 vulnerability in this process.

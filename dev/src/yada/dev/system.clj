@@ -63,7 +63,7 @@
          (new-web-resources
           :key :swagger-ui
           :uri-context "/swagger-ui"
-          :resource-prefix "META-INF/resources/webjars/swagger-ui/2.1.4")))
+          :resource-prefix "META-INF/resources/webjars/swagger-ui/2.2.6")))
 
 (defn http-server-components [system config]
   (assoc system

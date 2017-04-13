@@ -1,0 +1,25 @@
+@import url('extra.css');
+
+#sec-title-slide.present h1.title {
+    font-family: yada;
+    font-size: 4em;
+}
+
+.present pre code {
+    line-height: 1.2em;
+    font-size: 1.6em;
+}
+
+section.juxt_center {
+    text-align: center;
+}
+
+.present h2 code {
+    font-family: yada;
+    font-size: 1.3em;
+}
+
+.present .underline {
+    color: #f7941e;
+    text-decoration: none;
+}

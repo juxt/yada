@@ -10,9 +10,10 @@ WRAPPER = sassc
 	$(WRAPPER) -I ./template $< > $@
 
 ../static/css/theme/juxt.css: ../static/css/theme/base.css
+../static/css/theme/juxt-dark.css: ../static/css/theme/night.css
 
-all:	../static/css/theme/juxt.css
+all:	../static/css/theme/juxt.css ../static/css/theme/juxt-dark.css
 
 clean:
 	rm -f ../static/css/theme/juxt.css
-	rm -f ../static/css/theme/base.css
+	rm -f ../static/css/theme/juxt-dark.css

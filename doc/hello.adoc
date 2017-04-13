@@ -1,32 +1,39 @@
 [[hello-world]]
 == Hello World!
 
-In this chapter we examine the "Hello World!" resource in depth. If you have followed the <<getting-started,Getting Started>> chapter, you'll be up and running and ready to try the examples yourself, but it's not mandatory.
+In this chapter we examine the "Hello World!" resource in depth. If you have followed the <<getting-started,Getting Started>> chapter, you'll be up and running and ready to try the examples yourself, but it's up to you.
 
-Let's look at the route definition in the file `src/edge/hello.clj` (the same one we saw in the Getting Started chapter).
+Let's look at the route definition in the file `src/edge/hello.clj` (the same one we saw in the Getting Started chapter). This function returns a *route structure*. The simplest route structure is a pair of elements contained in a vector.
 
 [source,clojure]
 ----
 (defn hello-routes [deps]
-  ["/hello" (yada/handler "Hello World!\n")])
+  ["/hello" <1>
+   (yada/handler "Hello World!\n") <2>
+   ])
 ----
 
-This function returns a *route structure*. The simplest route structure is a pair of elements contained in a vector. The first element is a path (or pattern) which matches on the URI's path when handling HTTP requests. The second element is often a handler function (but can be a sequence of further pairs).
+<1> The first element is a path (or pattern) which matches on the URI's path when handling HTTP requests.
+<2> The second element is often a handler function (but can be another route structure, recursively).
 
-In this route structure, any incoming request with a path of `/hello` gets send to the [yada]#yada# handler defined by `(yada/handler "Hello World!\n")`.
+In this route structure, any incoming request with a path of `/hello` gets sent to the [yada]#yada# handler defined by `(yada/handler "Hello World!\n")`.
 
-Let's focus on this handler. We could have used a standard Ring function `(fn [req] {...})` here but instead we created one with `yada/handler`, which takes a *resource* and turns it into a handler function.
+Let's focus on this handler. We could have used a standard Ring function `(fn [req] {…})` here but instead we created one with `yada/handler`, which takes a *resource* and turns it into a handler function.
 
-A *resource* is a Clojure map (or more accurately, a Clojure record) that completely describes the methods, properties, representations, security and other miscellaneous properties of a web resource. The reason we can use a string (`Hello World`) here is because [yada]#yada# contains logic to _coerce_ a string into a resource. There are a number of built-in coercions from various Clojure types and of course you can provide your own.
+A *resource* is a Clojure map (or more accurately, a Clojure record) that completely describes the methods, properties, representations, security and other miscellaneous properties of a web resource, as data. The reason we can use a string (`"Hello World"`) here is because [yada]#yada# contains logic to _coerce_ a string into a resource.
+
+NOTE: There are a number of built-in coercions from various Clojure types and of course you can provide your own.
 
 === Examining the response
 
-So we send a request which gets routed to our handler which creates a response. Let's examine this response in more detail, via `curl`. The `-i` option shows us the HTTP headers as well as the body.
+Let's send a request which gets routed to our handler, which creates the response. Let's examine this response in more detail, via *curl*.
 
 [source,curl]
 ----
 curl -i http://localhost:3000/hello
 ----
+
+TIP: The `-i` option to *curl* shows us the HTTP status and response headers as well as the body, which is very useful for debugging. If you ever need to see the request headers too, add `-v`.
 
 The response should be something like following (note that headers may appear in a different order):
 
@@ -66,7 +73,7 @@ ETag: fa863bd7ff53786d286e4bb3c0134416
 The `Last-Modified` header shows when the string `Hello World!` was created, which happens to be the last time the system was started (or reset). Java strings are immutable, so [yada]#yada# is able to deduce that the
 string's creation date is also the last time it could have been modified.
 
-The entity tag is computed from the value of the `Hello World!` itself. Unlike the `Last-Modified` value, it can survives a reset.
+The entity tag is computed from the value of the `Hello World!` itself. Unlike the `Last-Modified` value, it can survive a reset.
 
 Both `Last-Modified` and `ETag` are used to support HTTP conditional requests and conflict detection when uploading new versions of a resource.
 
@@ -78,15 +85,14 @@ representation.
 Content-Type: text/plain;charset=utf-8
 ----
 
-yada is able to determine that the media-type is text, but without more
-information it much default to `text/plain`. It can also tell us the charset, which defaults to the default charset of the JVM (almost always `utf-8`)
+[yada]#yada# is able to determine that the media-type is text, but without more information it must default to `text/plain`. It can also tell us the charset, which defaults to the default charset of the JVM (almost always `utf-8`)
 
 [source,http]
 ----
 Vary: accept-charset
 ----
 
-Since the Java platform can encode a string in other charsets, [yada]#yada# adds a _Vary_ header to signal to the user-agent (and proxy caches in between) that the body can change if a request contained a different _Accept-Charset_ header. Java installations support many different charsets, so [yada]#yada# does too.
+Since the Java platform can encode a string to a number of charsets, [yada]#yada# adds a _Vary_ header to signal to the user-agent (and proxy caches in between) that the body can change if a request contained a different _Accept-Charset_ header. Java installations support many different charsets, so [yada]#yada# does too.
 
 Next we are given the length of the body.
 
@@ -113,7 +119,7 @@ A common condition is whether the resource has been modified since a particular 
 
 We can test this by setting the *If-Modified-Since* header in the request.
 
-Here's how we might do this using the curl command.
+Here's how we might do this using the *curl* command.
 
 [source]
 ----
@@ -143,8 +149,6 @@ Notice we also get the same `Vary` and `ETag` headers. These help any proxies be
 
 The responses we have received back from our service all contain this curious header called `Vary` set to `accept-charset`. The server is telling us (and any proxies between us) that the representation might vary depending on the charset negotiated. Let's see if we can get our "Hello World!" message returned in other charsets.
 
-UTF-16 is a Unicode encoding where every character is encoded in 2 bytes. One reason we might want to use UTF-16 is if we need to know exactly how many bytes a string will take up.
-
 Let's try getting the string in UTF16 by telling the server that's the only charset we'll accept:
 
 [source]
@@ -172,7 +176,7 @@ Date: Mon, 27 Jun 2016 07:45:07 GMT
 ��Hello World!
 ----
 
-The "Hello World!" message is prepended with 2 bytes called the *Byte Order Mark* (BOM). The length of the string (including the newline) is 13 characters. Since each character is 2 bytes, that makes 26. The additional of the BOM makes it 28, which is what our `Content-Length` header reports.
+The "Hello World!" message is prepended with 2 bytes called the *Byte Order Mark* (BOM). The length of the string (including the newline) is 13 characters. Since each character here is 2 bytes, that makes 26. The additional of the BOM makes it 28, which is what our `Content-Length` header reports.
 
 A BOM indicates the order that the 2 bytes are transmitted in. In 'big endian' form the most-significant byte is transmitted first. We can tell the service that we only want the big endian form with the following:
 
@@ -406,9 +410,11 @@ We get a 412, which means a pre-condition failed. The pre-condition in question 
 
 There was one more method indicated by the *Allow* header of our `OPTIONS` request, which was `HEAD`. Let's try this now.
 
+TIP: Use the option --head to *curl* to tell it to issue a HEAD request (and not to expect a request body).
+
 [source]
 ----
-curl -i http://localhost:3000/hello -X HEAD
+curl -i --head http://localhost:3000/hello
 ----
 
 [source,http]
@@ -514,14 +520,14 @@ This second version uses the Clojure threading macro `->` which wraps the route 
 
 The purpose of `yada/swaggered` is to augment the route structure given to it with a route to `swagger.json`, which responds with a Swagger description of the route structure in JSON. Since [yada]#yada# resources are data maps, this is a relatively simple data transformation of the route structure.
 
-We can test the resource is available at its `/api` location with this `curl` command:
+We can test the resource is available at its `/api` location with *curl*:
 
 [source,curl]
 ----
 curl -i http://localhost:3000/api/hello
 ----
 
-We can also query the Swagger description with this `curl` command:
+We can also query the Swagger description with *curl*:
 
 [source,curl]
 ----

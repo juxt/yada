@@ -1,0 +1,15 @@
+This is some preamble
+------WebKitFormBoundaryZ3oJB7WHOBmOjrEi
+Content-Disposition: form-data; name="firstname"
+
+Malcolm
+------WebKitFormBoundaryZ3oJB7WHOBmOjrEi
+Content-Disposition: form-data; name="surname"
+
+Sparks
+------WebKitFormBoundaryZ3oJB7WHOBmOjrEi
+Content-Disposition: form-data; name="phone"
+
+1234
+------WebKitFormBoundaryZ3oJB7WHOBmOjrEi--
+Here is some epilogue

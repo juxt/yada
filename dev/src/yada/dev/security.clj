@@ -77,15 +77,15 @@
                                 :cookies {"session" cookie}
                                 :body (html
                                        [:h1 (format "Hello %s!" (get-in ctx [:parameters :form :user]))]
-                                       [:p [:a {:href (:href (yada/uri-for ctx ::secret))} "secret"]]
-                                       [:p [:a {:href (:href (yada/uri-for ctx ::logout))} "logout"]]
+                                       [:p [:a {:href (yada/href-for ctx ::secret)} "secret"]]
+                                       [:p [:a {:href (yada/href-for ctx ::logout)} "logout"]]
                                        )))
                        (assoc (:response ctx)
                               ;; It's possible the user was already logged in, in which case we log them out
                               :cookies {"session" {:value "" :expires 0}}
                               :body (html [:h1 "Login failed"]
-                                          [:p [:a {:href (:uri (yada/uri-for ctx ::login))} "try again"]]
-                                          [:p [:a {:href (:uri (yada/uri-for ctx ::secret))} "secret"]])))))
+                                          [:p [:a {:href (:uri (yada/uri-info ctx ::login))} "try again"]]
+                                          [:p [:a {:href (:uri (yada/uri-info ctx ::secret))} "secret"]])))))
 
        :consumes "application/x-www-form-urlencoded"
        :produces "text/html"}}})))
@@ -101,7 +101,7 @@
        (-> (new-template-resource
             "templates/page.html"
             (fn [ctx]
-              {:homeref (:href (yada/uri-for ctx :yada.dev.docsite/index))
+              {:homeref (yada/href-for ctx :yada.dev.docsite/index)
                :content
                (html
                 [:div.container
@@ -113,9 +113,9 @@
                                     code"] " for implementation
                                     details."]
                  [:ul
-                  [:li [:a {:href (:href (yada/uri-for ctx ::basic-example))} "Basic"]]
-                  [:li [:a {:href (:href (yada/uri-for ctx ::login))} "Session"]]
-                  [:li [:a {:href (:href (yada/uri-for ctx ::third-party-login-example))} "Third-party login"]]]
+                  [:li [:a {:href (yada/href-for ctx ::basic-example)} "Basic"]]
+                  [:li [:a {:href (yada/href-for ctx ::login)} "Session"]]
+                  [:li [:a {:href (yada/href-for ctx ::third-party-login-example)} "Third-party login"]]]
 
                  [:h4 "Login details for all examples"]
                  [:p "Login with username "
@@ -161,7 +161,7 @@
                                    :cookies {"session" {:value "" :expires 0}}
                                    :body (html
                                           [:h1 "Logged out"]
-                                          [:p [:a {:href (:href (yada/uri-for ctx ::login))} "login"]]))))}}}))
+                                          [:p [:a {:href (yada/href-for ctx ::login)} "login"]]))))}}}))
 
           "/secret.html"
           (yada
@@ -171,7 +171,7 @@
              :methods {:get {:response (fn [ctx]
                                          (html
                                           [:h1 "Seek happiness"]
-                                          [:p [:a {:href (:href (yada/uri-for ctx ::logout))} "logout"]]
+                                          [:p [:a {:href (yada/href-for ctx ::logout)} "logout"]]
                                           ))
                              :produces "text/html"}}
 
@@ -189,14 +189,14 @@
                                           (html
                                            [:h1 "Sorry"]
                                            [:p "You are not authorized yet"]
-                                           [:p "Please " [:a {:href (:href (yada/uri-for ctx ::login))} "login" ]]
+                                           [:p "Please " [:a {:href (yada/href-for ctx ::login)} "login" ]]
                                            ))}
                          403 {:produces "text/html" ;; TODO: If we neglect to put in produces we get an error
                               :response (fn [ctx]
                                           (html
                                            [:h1 "Sorry"]
                                            [:p "Your access is forbidden"]
-                                           [:p "Try another user? " [:a {:href (:href (yada/uri-for ctx ::logout))} "logout" ]]
+                                           [:p "Try another user? " [:a {:href (yada/href-for ctx ::logout)} "logout" ]]
                                            ))}}}))})]
 
       ["/oauth2"
@@ -208,19 +208,19 @@
            (-> (new-template-resource
                 "templates/page.html"
                 (fn [ctx]
-                  {:homeref (:href (yada/uri-for ctx :yada.dev.docsite/index))
+                  {:homeref (yada/href-for ctx :yada.dev.docsite/index)
                    :content
                    (html
                     [:div.container
                      [:h2 "Third-party login"]
                      [:p
                       [:form
-                       {:action (:href (yada/uri-for ctx ::initiate-google))
+                       {:action (yada/href-for ctx ::initiate-google)
                         :method :post}
                        [:input {:type :submit :value "Login via Google"}]]]
                      [:p
                       [:form
-                       {:action (:href (yada/uri-for ctx ::initiate-github))
+                       {:action (yada/href-for ctx ::initiate-github)
                         :method :post}
                        [:input {:type :submit :value "Login via GitHub"}]]]])}))
                (assoc :id ::third-party-login-example))]

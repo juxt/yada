@@ -38,7 +38,7 @@
             k {})))}]
 
     :authorization
-    {:roles/methods
+    {:methods
      {:get true
       :post :phonebook/write
       :put :phonebook/write
@@ -105,7 +105,7 @@
                          :charset "UTF-8"}]
              :response (fn [ctx]
                          (let [id (db/add-entry db (get-in ctx [:parameters :form]))]
-                           (java.net.URI. (:uri (yada/uri-for ctx :phonebook.api/entry {:route-params {:entry id}})))))}}}
+                           (java.net.URI. (yada/url-for ctx :phonebook.api/entry {:route-params {:entry id}}))))}}}
 
     (merge access-control))))
 
@@ -132,8 +132,8 @@
                "text/html"
                (html/entry-html
                 entry
-                {:entry (:path (yada/uri-for ctx :phonebook.api/entry {:route-params {:entry id}}))
-                 :index (:path (yada/uri-for ctx :phonebook.api/index))})
+                {:entry (yada/path-for ctx :phonebook.api/entry {:route-params {:entry id}})
+                 :index (yada/path-for ctx :phonebook.api/index)})
                entry))))}
 
       :put

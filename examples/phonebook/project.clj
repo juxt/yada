@@ -10,7 +10,7 @@
                  [com.stuartsierra/component "0.3.1"]
                  [hiccup "1.0.5"]
                  [org.clojure/tools.namespace "0.2.11"]
-                 [yada "1.1.14"]]
+                 [yada "1.1.46"]]
 
   :pedantic? :abort
 
