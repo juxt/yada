@@ -49,37 +49,36 @@ be returned.
 [[put]]
 === PUT
 
-[coming soon]
+(coming soon)
 
 [[post]]
 === POST
 
-[coming soon]
+(coming soon)
 
 [[delete]]
 === DELETE
 
-[coming soon]
+(coming soon)
 
 [[head]]
 === HEAD
 
-[coming soon]
+(coming soon)
 
 [[options]]
 === OPTIONS
 
-[coming soon]
+(coming soon)
 
-[[trace]]
 === TRACE
 
-[coming soon]
+(coming soon)
 
 [[patch]]
 === PATCH
 
-[coming soon]
+(coming soon)
 
 [[handling-all-methods]]
 === Handling all methods

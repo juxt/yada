@@ -1,14 +1,14 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.resources.url-resource
   (:require
+   [ring.util.mime-type :refer [ext-mime-type]]
    [yada.charset :as charset]
    [yada.resource :refer [resource ResourceCoercion]]
-   [yada.util :refer [as-file]]
-   [ring.util.mime-type :refer (ext-mime-type)])
-  (:import [java.net URL]
-           [java.util Date]
-           [java.io BufferedReader InputStreamReader]))
+   [yada.util :refer [as-file]])
+  (:import [java.io BufferedReader InputStreamReader]
+           java.net.URL
+           java.util.Date))
 
 ;; A UrlResource is a Java resource on the classpath.
 
@@ -19,7 +19,7 @@
      {:properties
       (fn [ctx]
         (merge {}
-               (when-let [f (as-file url)]
+               (when-let [f ^java.io.File (as-file url)]
                  (when (.exists f)
                    {:last-modified (Date. (.lastModified f))}))))
 

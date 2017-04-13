@@ -1,27 +1,20 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.resources.file-resource
   (:require
    [byte-streams :as bs]
    [clojure.java.io :as io]
    [clojure.string :as str]
-   [clojure.tools.logging :refer :all]
-   [hiccup.core :refer (html h)]
-   [ring.util.mime-type :refer (ext-mime-type)]
-   [ring.util.response :refer (redirect)]
-   [ring.util.time :refer (format-date)]
+   [hiccup.core :refer [html]]
+   [ring.util.mime-type :refer [ext-mime-type]]
    [schema.core :as s]
-   [yada.charset :as charset]
-   [yada.representation :as rep]
-   [yada.resource :refer [resource as-resource ResourceCoercion]]
-   [yada.media-type :as mt]
+   [yada.resource :refer [as-resource resource ResourceCoercion]]
    [yada.schema :refer [Representation]])
-  (:import [java.io File]
-           [java.nio.file Files]
-           [java.nio.file.attribute PosixFileAttributeView PosixFilePermissions]
-           [java.util Date TimeZone]
-           [java.text SimpleDateFormat]
-           [java.nio.charset Charset]))
+  (:import java.io.File
+           [java.nio.file.attribute PosixFileAttributeView PosixFilePermissions FileAttributeView]
+           [java.nio.file Files Path]
+           java.text.SimpleDateFormat
+           [java.util Date TimeZone]))
 
 (defn respond-with-file [ctx file reader]
   ;; The reason to use bs/transfer is to allow an efficient copy of byte buffers
@@ -87,13 +80,13 @@
 (defn with-newline [s]
   (str s \newline))
 
-(defn dir-index [dir content-type]
+(defn dir-index [^File dir content-type]
   (assert content-type)
 
   (case (:name content-type)
     "text/plain"
     (apply str
-           (for [child (sort (.listFiles dir))]
+           (for [^File child (sort (.listFiles dir))]
              (str (.getName child) \newline)))
 
     "text/html"
@@ -119,9 +112,9 @@
               [:th "Last modified"]
               [:th "Name"]]]
             [:tbody
-             (for [child (sort (.listFiles dir))
+             (for [^File child (sort (.listFiles dir))
                    :let [path (.toPath child)
-                         attrs (.readAttributes (Files/getFileAttributeView path PosixFileAttributeView (into-array java.nio.file.LinkOption [])))]]
+                         attrs (.readAttributes ^PosixFileAttributeView (Files/getFileAttributeView path PosixFileAttributeView (into-array java.nio.file.LinkOption [])))]]
                [:tr
                 [:td.monospace (str (if (Files/isDirectory path (into-array java.nio.file.LinkOption [])) "d" "-") (PosixFilePermissions/toString (.permissions attrs)))]
                 [:td
@@ -142,7 +135,7 @@
   [dir ctx]
   {::file dir})
 
-(defn- maybe-redirect-to-index [dir req index-files]
+(defn- maybe-redirect-to-index [^File dir req index-files]
   (when-let [index-file (first (filter (set (seq (.list dir))) index-files))]
     (throw
      (ex-info "Redirect"
@@ -156,22 +149,22 @@
   (as-path [f] (when f (.toPath f)))
   String
   (as-path [s] (when s (as-path (io/file s))))
-  java.nio.file.Path
+  Path
   (as-path [p] p)
   nil
   (as-path [f] nil))
 
-(defn safe-relative-path
+(defn ^Path safe-relative-path
   "Given a parent java.nio.file.Path, return a child that is
   guaranteed not to ascend the parent. This is to ensure access cannot
   be made to files outside of the parent root."
-  [parent ^String path]
-  (let [parent (as-path parent)]
+  [^Path parent ^String path]
+  (let [parent ^Path (as-path parent)]
     (when (and parent path)
-      (let [child (.normalize (.resolve parent path))]
+      (let [child (.normalize ^Path (.resolve parent path))]
         (when (.startsWith child parent) child)))))
 
-(defn safe-relative-file
+(defn ^File safe-relative-file
   [parent ^String path]
   (when-let [path (safe-relative-path parent path)]
     (.toFile path)))

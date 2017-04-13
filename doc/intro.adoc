@@ -1,20 +1,20 @@
 [[introduction]]
 == Introduction
 
-[yada]#yada# is a web library for Clojure that lets you create websites and web APIs.
+[yada]#yada# is a web library for ((Clojure)) that lets you define websites and web APIs using data.
 
-Despite some differences, virtually all web libraries do the same thing: call your code with some request data and ask you to return a response, leaving the bulk of the responsibililty for implementing the HTTP standards on your shoulders, from status codes, response headers and ensuring semantics have been followed properly.
+Despite some differences, virtually all web libraries do a similar thing: call your code with some request data and ask you to return a response, leaving the bulk of the responsibililty for implementing the ((HTTP)) standards in your hands: responding with the correct status codes, response headers and ensuring semantics have been followed properly.
 
-[yada]#yada# is *different*. Rather than leaving all the implementation details to you, it helps you out in _doing the right thing_ by the HTTP standards, thereby creating a link:https://www.pandastrike.com/posts/20151019-create-more-web[_better web_].
+[yada]#yada# is *different*. Rather than leaving all the implementation details to you, it helps you out in _doing the right thing_ (according to HTTP standards), thereby creating a _better web_ footnote:[https://www.pandastrike.com/posts/20151019-create-more-web].
 
-It achieves this by providing you with a highly configurable handler that is general enough to use in the vast majority of cases. Rather than _coding_ the handler, the developer only has to _configure_ one. This declarative approach provides greater scope for *accuracy*, *consistency* and *re-use*.
+It achieves this by providing you with a highly-configurable handler that is general enough to use in the vast majority of cases. Rather than _coding_ the handler, the developer only has to _configure_ one. This declarative approach provides greater scope for *accuracy*, *consistency* and *re-use*.
 
-[yada]#yada# represents a break from the traditional yet stale approach of building web backends that can trace its roots all the way back to the days of https://en.wikipedia.org/wiki/Common_Gateway_Interface[Common Gateway Interface]. While this new approach exploits the data-oriented philosophy of Clojure to the full, there's no reason it could not be copied by new web libraries in other languages.
+[yada]#yada# represents a break from the traditional yet stale method of building web backends, an approach that can trace its roots all the way back to the days of https://en.wikipedia.org/wiki/Common_Gateway_Interface[Common Gateway Interface]. While this [yada]#yada#'s data-oriented approach takes full advantage of the data-oriented philosophy of Clojure to the full, there's no reason why this methodology cannot be implemented by new web libraries in other languages.
 
 Using [yada]#yada# for your web project will allow you to finally exploit and benefit from the many features embodied in the outstanding design of HTTP, for *scale*, *flexibility*, *security*, *longevity* and *interoperability*.
 
-.Design goals
-****
+=== Design goals
+
 [yada]#yada# is designed to meet the following goals:
 
 - Be easy to use for intermediate Clojure developers
@@ -22,19 +22,18 @@ Using [yada]#yada# for your web project will allow you to finally exploit and be
 - Increase productivity through re-use
 - Handle large workloads with reasonable performance
 - Support multiple architectural styles, including Hypermedia APIs (REST)
-****
 
-[yada]#yada# is not an experiment. It is designed for production use in demanding and critical web back-ends.
+[yada]#yada# is not an experiment. It is designed for, and has been tested in, production environments.
 
 [yada]#yada# is sufficiently quick-and-easy for quick prototype work but scales up when you need it to, to feature-rich secure services that can handle the most demanding workloads, while remaining faithful to the HTTP standards.
 
 Some familiarity with HTTP will help you understand [yada]#yada# concepts quicker, but isn't absolutely necessary. As you learn how to wield [yada]#yada# you will also discover and learn more about the HTTP standards as you go.
 
-=== Say 'Hello!' to [yada]#yada#!
+=== Say 'Hello!' to [yada-large]#yada#
 
 It's quick to get started with [yada]#yada# without knowing how it works - it's easy to get started even if you only have a basic knowledge of Clojure.
 
-Let's begin with a few examples. The obligatory *Hello World!* example is link:intro-examples/hello[`(yada/handler "Hello World!")`], which responds with a message.
+Let's begin with a few examples. The obligatory *((Hello World!))* example is link:intro-examples/hello[`(yada/handler "Hello World!")`], which responds with a message.
 
 Perhaps you might want to serve a file? That's
 link:intro-examples/index.html[`(yada/handler (new java.io.File "index.html"))`].
@@ -95,16 +94,16 @@ NOTE: A [yada]#yada# handler is an instance of the `yada.handler/Handler` record
 
 === Serving requests
 
-To use [yada]#yada# to create real responses to real HTTP requests, you need to add [yada]#yada# to a web-server. The web server takes care of the networking and messages of HTTP (RFC 7230), while [yada]#yada# focuses on the semantics and content (RFC 7231 and upwards).
+To use [yada]#yada# to create real responses to real HTTP requests, you need to add [yada]#yada# to a web-server. The web server takes care of the networking and messages of HTTP (RFC 7230), while [yada]#yada# focuses on the semantics and content (<<RFC7231>> and upwards).
 
 [NOTE]
 --
-Currently, the only web server you can use is link:https://github.com/ztellman/aleph[icon:github[]ztellman/aleph]. This is because [yada]#yada# is built on an asynchronous abstraction provided by link:https://github.com/ztellman/manifold[icon:github[]ztellman/manifold]. However, there is no technical reason why, in future, other web servers can't be wrapped by manifold.
+Currently, the only web server you can use is link:https://github.com/ztellman/aleph[icon:github[github,width="12pt"]ztellman/aleph]. This is because [yada]#yada# is built on an asynchronous abstraction provided by link:https://github.com/ztellman/manifold[icon:github[github,width="12pt"]ztellman/manifold]. However, there is no technical reason why, in future, other web servers can't be wrapped by manifold.
 
 In the meantime, Aleph (which wraps a much bigger library, Netty) provides a very capable and performant server.
 --
 
-To write real applications you also need a router that understands URIs, and [yada]#yada# has some features that are enabled when used with https://github.com/juxt/bidi[icon:github[]juxt/bidi], although there is nothing to stop you using [yada]#yada# with other routing libraries.
+To write real applications you also need a router that understands URIs, and [yada]#yada# has some features that are enabled when used with https://github.com/juxt/bidi[icon:github[github,width="12pt"]juxt/bidi], although there is nothing to stop you using [yada]#yada# with other routing libraries.
 
 === Conclusion
 

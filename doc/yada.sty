@@ -1,0 +1,54 @@
+%%
+%% This style is derived from the docbook one.
+%%
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{yada}[2016/12/29 AsciiDoc DocBook yada customisation]
+%% Just use the original package and pass the options.
+\RequirePackageWithOptions{docbook}
+
+% Sidebar is a boxed minipage that can contain verbatim.
+% Changed shadow box to double box.
+\renewenvironment{sidebar}[1][0.95\textwidth]{
+  \hspace{0mm}\newline%
+  \noindent\begin{Sbox}\begin{minipage}{#1}%
+  \setlength\parskip{\medskipamount}%
+}{
+  \end{minipage}\end{Sbox}\doublebox{\TheSbox}%
+}
+
+% Table of Contents customization
+\usepackage[subfigure]{tocloft}
+% Mystery as to why this isn't work!
+\setcounter{tocdepth}{1}
+% To avoid overlapping numbers and text in ToC
+\cftsetindents{chapter}{0mm}{10mm}
+\cftsetindents{section}{0mm}{10mm}
+\cftsetindents{subsection}{0mm}{15mm}
+
+%\setlength{\cftsecnumwidth}{20pt}
+%\addtolength{\cftsecnumwidth}{10pt}
+
+% For DocBook literallayout elements, see `./dblatex/dblatex-readme.txt`.
+\usepackage{alltt}
+
+
+% Clojure code highlighting
+\usepackage{clojure}
+
+% From https://michaelfranzl.com/2014/12/10/xelatex-unicode-font-fallback-unsupported-characters/
+\newfontfamily\myregularfont{Noto Sans}
+\newfontfamily\mychinesefont{Noto Sans Mono CJK SC}
+\usepackage[CJK]{ucharclasses}
+\setTransitionsForCJK{\mychinesefont}{\myregularfont}
+
+% Change paper size
+% \usepackage[letterpaper,total={5.25in,8in}, top=1in]{geometry}
+% \usepackage[b5paper,margin=2in]{geometry}
+
+
+% \usepackage{tocloft}
+% \addtolength{\cftsecnumwidth}{16pt}
+
+\lstset{
+  backgroundcolor=\color{white}
+}

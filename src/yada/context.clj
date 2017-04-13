@@ -1,4 +1,4 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.context
   (:require
@@ -25,6 +25,12 @@
 
 (defn language [ctx]
   (apply str (interpose "-" (get-in ctx [:response :produces :language :language]))))
+
+(defn path-parameter [ctx n]
+  (get-in ctx [:parameters :path n]))
+
+(defn query-parameter [ctx n]
+  (get-in ctx [:parameters :query n]))
 
 (defn uri-info [ctx handler & [options]]
   (if-let [uri-info (:uri-info ctx)]

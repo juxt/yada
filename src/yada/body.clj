@@ -1,26 +1,18 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.body
   (:require
+   [byte-streams :as bs]
    [clojure.java.io :as io]
    [clojure.pprint :refer [pprint]]
    [clojure.tools.logging :refer :all]
-   [clojure.walk :refer [keywordize-keys]]
-   [byte-streams :as bs]
-   [hiccup.core :refer [html h]]
-   [hiccup.page :refer [html5 xhtml]]
+   [hiccup.core :refer [html]]
+   [hiccup.page :refer [xhtml]]
    [manifold.stream :refer [->source transform]]
-   [ring.util.codec :as codec]
-   [yada.status :refer [status]]
-   [schema.core :as s]
    [yada.charset :as charset]
-   [yada.journal :as journal]
-   [yada.media-type :as mt]
+   [yada.status :refer [status]]
    [yada.util :refer [CRLF]])
-  (:import
-   [java.io File]
-   [java.net URL]
-   [manifold.stream SourceProxy]))
+  (:import java.io.File))
 
 (defprotocol MessageBody
   (to-body [resource representation] "Construct the reponse body for the given resource, given the negotiated representation (metadata)")
@@ -57,6 +49,7 @@
   ;; A String is already its own representation, all we must do now is encode it to a char buffer
   (to-body [s representation]
     (encode-message s representation))
+  (content-length [_] nil)
 
   Long
   (to-body [l representation]
@@ -68,32 +61,36 @@
   (content-length [s]
     nil)
 
-
-
   MapBody
   (to-body [mb representation]
     (to-body (:map mb) representation))
+  (content-length [_] nil)
 
   clojure.lang.APersistentMap
   (to-body [m representation]
     ;; We always try to arrive at a string which is then converted
     (encode-message (render-map m representation) representation))
+  (content-length [_] nil)
 
   clojure.lang.APersistentVector
   (to-body [v representation]
     (encode-message (render-seq v representation) representation))
+  (content-length [_] nil)
 
   clojure.lang.ASeq
   (to-body [v representation]
     (encode-message (render-seq v representation) representation))
+  (content-length [_] nil)
 
   clojure.lang.LazySeq
   (to-body [v representation]
     (encode-message (render-seq v representation) representation))
+  (content-length [_] nil)
 
   java.util.HashSet
   (to-body [v representation]
     (encode-message (render-seq v representation) representation))
+  (content-length [_] nil)
 
   File
   (to-body [f _]
@@ -115,6 +112,20 @@
   nil
   (to-body [_ _] nil)
   (content-length [_] 0))
+
+;; text/plain
+
+(defmethod render-map "text/plain"
+  [m representation]
+  (->
+   (with-out-str (pprint m))
+   (str \newline) ; annoying on the command-line otherwise
+   (to-body representation) ; for string encoding
+   ))
+
+(defmethod render-seq "text/plain"
+  [s representation]
+  (render-map s representation))
 
 ;; text/html
 
@@ -164,15 +175,21 @@
 
 ;; defaults
 
+;; The error of 'No implementation for render-map for media-type: null, representation is {:representation nil}' is not acceptable in production, so as a workaround we return empty strings for the default renderer. In the future, we have different profiles for dev and prod which logic can use to balance trade-offs (fail-fast versus recover).
 (defmethod render-map :default
   [m representation]
-  (throw (ex-info (format "No implementation for render-map for media-type: %s" (:name (:media-type representation)))
-                  {:representation representation})))
+  (warnf "No implementation for render-map for media-type: %s, representation is %s. Rendering to an empty string."
+         (:name (:media-type representation))
+         {:representation representation})
+  "")
 
 (defmethod render-seq :default
   [m representation]
-  (throw (ex-info (format "No implementation for render-seq for media-type: %s" (:name (:media-type representation)))
-                  {:representation representation})))
+  (warnf "No implementation for render-seq for media-type: %s, representation is %s. Rendering to an empty string."
+         (:name (:media-type representation))
+         {:representation representation})
+  "")
+
 
 
 ;; Errors
@@ -195,7 +212,7 @@
   (some-> status (get code) :description))
 
 (defmethod render-error "text/html"
-  [status error representation {:keys [id options]}]
+  [status ^Throwable error representation {:keys [id options]}]
   (html
    [:head
     [:title "Error"]
@@ -217,8 +234,9 @@
              [:pre s])))])
 
     [:div
-     [:p.footer [:span.yada
-          [:a {:href "https://yada.juxt.pro"} "yada"]]
+     [:p.footer
+      [:span.yada
+       [:a {:href "https://juxt.pro/yada"} "yada"]]
       " by "
       [:a {:href "https://juxt.pro"} "JUXT"]]]]))
 
@@ -230,6 +248,7 @@
    :error error})
 
 ;; TODO: Check semantics, is this right? Shouldn't we be encoding to json here?
+;; TODO: Move to yada.json
 (defmethod render-error "application/json"
   [status error representation {:keys [id options]}]
   {:status status
@@ -238,6 +257,7 @@
    :error error})
 
 ;; TODO: Check semantics, is this right? Shouldn't we be encoding to transit+json here?
+;; TODO: Move to yada.transit
 (defmethod render-error "application/transit+json"
   [status error representation {:keys [id options]}]
   {:status status
@@ -246,7 +266,7 @@
    :error error})
 
 (defmethod render-error "text/plain"
-  [status error representation {:keys [id options]}]
+  [status ^Throwable error representation {:keys [id options]}]
   (if (instance? clojure.lang.ExceptionInfo error)
     ;; TODO: pprint uses Java system property line.separator, consider
     ;; using fip or one that can print CRLF line endings.

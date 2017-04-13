@@ -7,7 +7,7 @@ following in the file's *:dependencies* section.
 
 [source,clojure]
 ----
-[yada "1.1.46"]
+[yada "1.2.1"]
 [aleph "0.4.1"]
 [bidi "2.0.12"]
 ----
@@ -27,10 +27,9 @@ branch of JUXT's *edge* repository. This is a continuously improving
 development environment representing our firm's best advice for building
 Clojure projects.
 
-[source,clojure]
-----
-git clone git@github.com/juxt/edge
-----
+....
+$ git clone git@github.com/juxt/edge
+....
 
 *edge* is opinionated and combines a number of practices that we've
 found useful on many projects at JUXT.

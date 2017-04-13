@@ -1,0 +1,7 @@
+/* swedish sans */
+@font-face {
+  font-family: 'SwedenSans';
+  font-style: normal;
+  font-weight: 400;
+  src: url(/static/fonts/SwedenSans.otf);
+}

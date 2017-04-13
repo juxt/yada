@@ -1,4 +1,4 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.interceptors
   (:require
@@ -9,7 +9,9 @@
    [clojure.tools.logging :refer :all]
    [manifold.deferred :as d]
    [manifold.stream :as stream]
+   ring.util.time
    [schema.utils :refer [error?]]
+   [schema.core :as s]
    [yada.body :as body]
    [yada.charset :as charset]
    [yada.cookies :as cookies]
@@ -20,9 +22,8 @@
    [yada.request-body :as rb]
    [yada.schema :as ys]
    [yada.util :as util])
-  (:import
-   [java.io ByteArrayOutputStream]
-   [java.util.zip GZIPInputStream]))
+  (:import java.io.ByteArrayOutputStream
+           java.util.zip.GZIPInputStream))
 
 (defn available?
   "Is the service available?"
@@ -68,13 +69,12 @@
               {:status 405
                :headers {"allow"
                          (str/join ", "
-                                   (map (comp (memfn toUpperCase) name)
+                                   (map (comp (memfn ^String toUpperCase) name)
                                         (:allowed-methods ctx)))}}))))
 
 
 
 (defn capture-proxy-headers [ctx]
-
   (let [req (:request ctx)
 
         scheme (or
@@ -183,10 +183,12 @@
             ctx)))
 
       ;; else
-      (if (get-in ctx [:resource :methods (:method ctx) :parameters :body])
-        (d/error-deferred
-           (ex-info "No body present but body is expected for request."
-                    {:status 400}))
+      (if-let [body-schema (get-in ctx [:resource :methods (:method ctx) :parameters :body])]
+        (if (s/check body-schema nil)
+          (d/error-deferred
+             (ex-info "No body present but body is expected for request."
+                      {:status 400}))
+          ctx)
         ctx))))
 
 (defn select-representation
@@ -212,9 +214,9 @@
 
 ;; Conditional requests - last modified time
 (defn check-modification-time [ctx]
-  (if-let [last-modified (-> ctx :properties :last-modified)]
+  (if-let [^java.util.Date last-modified (-> ctx :properties :last-modified)]
 
-    (if-let [if-modified-since
+    (if-let [^java.util.Date if-modified-since
              (some-> (:request ctx)
                      (get-in [:headers "if-modified-since"])
                      ring.util.time/parse-date)]

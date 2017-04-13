@@ -1,14 +1,12 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.url-resource-test
   (:require
-   [yada.resources.url-resource :refer :all]
-   [clojure.test :refer :all]
    [clojure.java.io :as io]
+   [clojure.test :refer :all]
    [ring.mock.request :as mock]
-   [yada.handler :refer [handler]])
-  (:import
-   [java.io BufferedInputStream]))
+   [yada.yada :refer [handler]])
+  (:import java.io.BufferedInputStream))
 
 ;; Test a single Java resource. Note that this isn't a particularly useful
 ;; resource, because it contains no knowledge of when it was modified,
@@ -17,9 +15,9 @@
 ;; content-length.)
 
 (deftest resource-test
-  (let [resource (io/resource "static/css/fonts.css")
+  (let [resource (io/resource "yada/test.css")
         handler (handler resource)]
-    
+
     (let [response @(handler (mock/request :get "/"))]
       (is (some? response))
       (is (= 200 (:status response)))

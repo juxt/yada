@@ -1,0 +1,82 @@
+The [yada-huge]#yada# manual
+============================
+Malcolm Sparks <malcolm@juxt.pro>
+v1.2.0, January 2017
+:doctype: book
+:description: A manual explaining yada, an HTTP library for Clojure from JUXT.
+:source-highlighter: coderay
+:coderay-css: class
+:icons: font
+
+include::preface.adoc[]
+
+= Basics
+
+include::intro.adoc[]
+
+include::getting-started.adoc[]
+
+include::hello.adoc[]
+
+include::install.adoc[]
+
+include::resources.adoc[]
+
+include::parameters.adoc[]
+
+include::properties.adoc[]
+
+include::methods.adoc[]
+
+include::representations.adoc[]
+
+include::responses.adoc[]
+
+include::security.adoc[]
+
+include::routing.adoc[]
+
+include::phonebook.adoc[]
+
+include::swagger.adoc[]
+
+= Advanced topics
+
+include::async.adoc[]
+
+include::searchengine.adoc[]
+
+include::sse.adoc[]
+
+include::chatserver.adoc[]
+
+include::requestbodies.adoc[]
+
+include::selfieuploader.adoc[]
+
+include::handlers.adoc[]
+
+include::requestcontext.adoc[]
+
+include::interceptors.adoc[]
+
+include::subresources.adoc[]
+
+include::fileserver.adoc[]
+
+include::testing.adoc[]
+
+= Reference
+
+include::glossary.adoc[]
+
+include::reference.adoc[]
+
+[bibliography]
+== Bibliography
+
+[bibliography]
+- [[[RFC2616]]] HTTP 1.1
+- [[[RFC7231]]] HTTP 1.1 - Semantics and Content
+
+include::colophon.adoc[]

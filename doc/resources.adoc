@@ -63,6 +63,14 @@ The main reason for giving your resources an identity is for creating hyperlinks
 (yada.yada/path-for ctx :resources/user-profile)
 ----
 
+An example with a parameter:
+
+[source,clojure]
+----
+(yada.yada/path-for ctx :resources/user-profile
+                    {:route-params {:user-id "42"}})
+----
+
 This feature is only available if your resources are declared in a bidi hierarchical route structure. Otherwise, the URL cannot be determined.
 
 ==== Resource description and summary
@@ -85,11 +93,12 @@ Multiple authentication schemes are supported, such as Basic, JWT and OAuth2.
 
 Access control and security are fully described in the <<security,security chapter>>.
 
+[[properties-intro]]
 ==== Properties
 
 You can define various properties on a resource. These can be thought of as a resource's metadata, information about a resource (rather than the resource's state).
 
-If is possible to specify a complete map of constant properties, if they are all known prior to a request. This is rare, and usually it's necessary to provide a function that will be called during the processing of a request.
+It is possible to specify a complete map of constant properties, if they are all known prior to a request. This is rare, and usually it's necessary to provide a function that will be called during the processing of a request.
 
 [source,clojure]
 ----
@@ -102,10 +111,12 @@ Certain properties, such as `:exists?` and `:last-modified` are special and used
 
 For example, if you know how to determine the date that your resource was last modified, you should return this date in the `:last-modified` entry of a map containing your resources's properties. Doing so will enable [yada]#yada#'s logic for conditional requests, for instance, allowing it to return `304 Not Modified` responses when appropriate.
 
+More information can be found in <<properties>>.
+
 [[parameters-intro]]
 ==== Parameters
 
-Web requests can contain parameters that can influence the response and yada can capture these. This is especially useful when you are writing APIs.
+Web requests can contain ((parameters)) that can influence the response and yada can capture these. This is especially useful when you are writing APIs.
 
 There are different types of parameters, which you can mix-and-match:
 
@@ -122,7 +133,7 @@ There are benefits to declaring these parameters explicitly:
 * [yada]#yada# will coerce them to the types you want, so you can avoid writing loads of type-conversion logic in your code
 * [yada]#yada# and other tools can process your declarations independently of your request-processing code, e.g. to generate API documentation
 
-Parameter declaration, validation and coercion is a big topic and fully covered in the <<parameters,parameters chapter>>.
+Parameter declaration, validation and coercion is a big topic and fully covered in the <<parameters-chapter,parameters chapter>>.
 
 ==== Representations
 

@@ -1,10 +1,8 @@
-;; Copyright © 2016, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.consume
   (:require
-   [aleph.netty :refer [release]]
    [byte-streams :as b]
-   [clojure.tools.logging :refer :all]
    [manifold.deferred :as d]
    [manifold.stream :as s]))
 
@@ -30,7 +28,7 @@
        (assoc-in ctx [:file] f)))))
 
 
-(defn save-to-file [ctx body-stream f]
+(defn save-to-file [ctx body-stream ^java.io.File f]
   (let [fos (new java.io.FileOutputStream f false)
         fc (.getChannel fos)]
     (d/chain

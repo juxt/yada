@@ -1,14 +1,10 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.resources.atom-resource
   (:require
-   [clojure.tools.logging :refer :all]
-   [clj-time.core :refer [now]]
    [clj-time.coerce :refer [to-date]]
-   [yada.charset :as charset]
-   [yada.methods :as m]
-   [yada.resource :refer [resource as-resource ResourceCoercion]]
-   yada.resources.string-resource))
+   [clj-time.core :refer [now]]
+   [yada.resource :refer [as-resource resource ResourceCoercion]]))
 
 (defn string-atom-resource [*a]
   (let [*last-modified (atom (to-date (now)))

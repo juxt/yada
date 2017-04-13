@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# A script that walks the tree of Leiningen projects and does $* on them
+
+# Core
+lein $*
+
+# Extensions
+for ext in aleph aleph-next async bidi json webjars json-html transit jwt multipart oauth2 swagger; do
+    cd ext/$ext; lein $*; cd ../..;
+    done
+
+# Bundles
+for bundle in default lean; do
+    cd bundles/$bundle; lein $*; cd ../..;
+    done

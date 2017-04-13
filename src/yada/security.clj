@@ -1,13 +1,10 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.security
   (:require
-   [byte-streams :as b]
-   [manifold.deferred :as d]
-   [clojure.set :as set]
+   [clojure.data.codec.base64 :as base64]
    [clojure.string :as str]
    [clojure.tools.logging :refer :all]
-   [clojure.data.codec.base64 :as base64]
    [yada.authorization :as authorization]))
 
 (defmulti verify
@@ -17,7 +14,7 @@
 (defmethod verify "Basic" [ctx {:keys [verify]}]
 
   (let [auth (get-in ctx [:request :headers "authorization"])
-        cred (and auth (apply str (map char (base64/decode (.getBytes (last (re-find #"^Basic (.*)$" auth)))))))]
+        cred (and auth (apply str (map char (base64/decode (.getBytes ^String (last (re-find #"^Basic (.*)$" auth)))))))]
     (when cred
       (let [[user password] (str/split (str cred) #":" 2)]
         (verify [user password])))))

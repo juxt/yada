@@ -1,11 +1,10 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.resources.jar-resource
   (:require
    [clojure.java.io :as io]
-   [ring.util.mime-type :refer (ext-mime-type)]
-   [yada.resource :refer [resource as-resource]])
-  (:import [java.util.jar JarFile]))
+   [yada.resource :refer [as-resource resource]])
+  (:import [java.util.jar JarFile JarEntry]))
 
 (defn new-jar-resource [prefix]
   (resource
@@ -20,7 +19,7 @@
         (cond
           (= (.getProtocol res) "jar")
           (let [[_ jarfile _] (re-matches #"file:(.*)!(.*)" (.getPath res))
-                jarfile (new JarFile jarfile)]
+                jarfile (new JarFile ^String jarfile)]
 
             (let [je (.getEntry jarfile path)]
               (if (.isDirectory je)
@@ -39,13 +38,13 @@
                      [:table
                       [:tbody
                        (let [entries
-                             (sort-by (memfn getName)
-                                      (for [entry (enumeration-seq (.entries jarfile))
+                             (sort-by (memfn ^JarEntry getName)
+                                      (for [^JarEntry entry (enumeration-seq (.entries jarfile))
                                             :let [n (.getName entry)]
                                             :when (and (.startsWith n path)
                                                        (> (count n) (count path)))]
                                         entry))]
-                         (for [i entries
+                         (for [^JarEntry i entries
                                :let [p (subs (.getName i) (count path))]]
                            [:tr
                             [:td [:a {:href p} p]]]))]]]}}})

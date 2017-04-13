@@ -1,12 +1,11 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.authentication-test
   (:require
    [clojure.test :refer :all :exclude [deftest]]
-   [schema.test :refer [deftest]]
-   [ring.mock.request :refer [request header]]
-   [yada.schema :as ys]
    [schema.core :as s]
+   [schema.test :refer [deftest]]
+   [yada.schema :as ys]
    [yada.security :refer [authenticate verify]]))
 
 ;; We create some fictitious schemes, just for testing

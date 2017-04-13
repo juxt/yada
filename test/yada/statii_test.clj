@@ -1,7 +1,9 @@
+;; Copyright © 2014-2017, JUXT LTD.
+
 (ns yada.statii-test
   (:require
    [clojure.test :refer :all]
-   [yada.util :refer [get* dissoc* assoc* conj* merge* disjoint*? expand]]))
+   [yada.util :refer [assoc* conj* disjoint*? dissoc* expand get* merge*]]))
 
 (deftest get*-test
   (let [m {400 :a

@@ -1,12 +1,14 @@
 (ns yada.sub-resources-test
   (:require
    [clojure.test :refer :all]
-   [yada.yada :as yada]))
+   [yada.handler :refer [handler]]
+   [yada.resource :refer [as-resource]]
+   [yada.test :refer [response-for]]))
 
 (deftest schema-test
   (is
-   (yada/resource
-    {:sub-resource (fn [ctx] (yada/as-resource "Hello World!"))}))
+   (handler
+    {:sub-resource (fn [ctx] (as-resource "Hello World!"))}))
   (is
    (= "Hello World!"
-      (:body (yada/response-for {:sub-resource (fn [ctx] (yada/as-resource "Hello World!"))})))))
+      (:body (response-for {:sub-resource (fn [ctx] (as-resource "Hello World!"))})))))

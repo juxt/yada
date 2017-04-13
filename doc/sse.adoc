@@ -1,7 +1,7 @@
 [[server-sent-events]]
 == Server Sent Events
 
-[[introduction]]
+[[sse-introduction]]
 === Introduction
 
 *Server Sent Events* (SSE) is a part of the HTML5 generation of
@@ -19,7 +19,7 @@ HTTP except for the ability for a user agent to use the HTTP protocol to
 initiate a web socket connection. After that, everything is up to
 agreements between the client and server.
 
-Since yada is designed to support HTTP, it does not provide anything
+Since [yada]#yada# is designed to support HTTP, it does not provide anything
 extra to support _web sockets_ beyond that which is provided by the web
 server.
 

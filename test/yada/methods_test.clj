@@ -1,4 +1,4 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.methods-test
   (:require
@@ -8,35 +8,35 @@
    [ring.util.codec :as codec]
    [schema.core :as s]
    [yada.resource :refer [resource]]
-   [yada.yada :as yada :refer [yada]]))
+   [yada.handler :refer [handler]]))
 
 (deftest post-test
-  (let [handler (yada
-                 (resource
-                  {:methods {:post
-                             {:response (fn [ctx]
-                                          (assoc (:response ctx)
-                                                 :status 201
-                                                 :body "foo"))}}}))
-        response @(handler (mock/request :post "/"))]
+  (let [h (handler
+           (resource
+            {:methods {:post
+                       {:response (fn [ctx]
+                                    (assoc (:response ctx)
+                                           :status 201
+                                           :body "foo"))}}}))
+        response @(h (mock/request :post "/"))]
 
     (is (= 201 (:status response) ))
     (is (= "foo" (bs/to-string (:body response))))))
 
 (deftest dynamic-post-test
-  (let [handler (yada
-                 (resource
-                  {:methods {:post {:response (fn [ctx]
-                                                (assoc (:response ctx)
-                                                       :status 201 :body "foo"))}}}))
-        response @(handler (mock/request :post "/"))]
+  (let [h (handler
+           (resource
+            {:methods {:post {:response (fn [ctx]
+                                          (assoc (:response ctx)
+                                                 :status 201 :body "foo"))}}}))
+        response @(h (mock/request :post "/"))]
 
     (is (= 201 (:status response)))
     (is (= "foo" (bs/to-string (:body response))))))
 
 (deftest multiple-headers-test
-  (let [handler
-        (yada
+  (let [h
+        (handler
          (resource
           {:methods
            {:post
@@ -44,13 +44,13 @@
              (fn [ctx]
                (assoc (:response ctx)
                       :status 201 :headers {"set-cookie" ["a" "b"]}))}}}))
-        response @(handler (mock/request :post "/"))]
+        response @(h (mock/request :post "/"))]
     (is (= 201 (:status response)))
     (is (= ["a" "b"] (get-in response [:headers "set-cookie"])))))
 
 (deftest all-methods-test
-  (let [handler
-        (yada
+  (let [h
+        (handler
          (resource
           {:methods
            {:*
@@ -58,7 +58,7 @@
              (fn [ctx]
                (-> ctx :method name)
                )}}}))
-        response @(handler (mock/request :brew "/"))]
+        response @(h (mock/request :brew "/"))]
     (is (= 200 (:status response)))
     (is (= "brew" (bs/to-string (:body response))))))
 

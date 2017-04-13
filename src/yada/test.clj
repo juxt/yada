@@ -1,12 +1,9 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.test
   (:require
    [byte-streams :as b]
-   [bidi.ring :as br]
-   [bidi.vhosts :as bv]
-   [yada.handler :refer [handler as-handler]]
-   [yada.resource :refer [resource]]))
+   [yada.handler :refer [as-handler]]))
 
 (defn request-for [method uri options]
   (let [uri (new java.net.URI uri)]
@@ -15,7 +12,7 @@
       :server-name "localhost"
       :remote-addr "localhost"
       :uri (.getPath uri)
-      :query-string (.getQuery uri)
+      :query-string (.getRawQuery uri)
       :scheme :http
       :request-method method}
      (cond-> options
@@ -37,5 +34,3 @@
          response @(h (request-for method uri options))]
      (cond-> response
        (:body response) (update :body b/to-string)))))
-
-

@@ -1,18 +1,12 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.util
   (:require
    [clojure.java.io :as io]
-   [clojure.string :as str]
    [clojure.set :as set]
-   [clojure.tools.logging :refer :all]
-   [byte-streams :as bs]
-   [manifold.deferred :as d]
-   [manifold.stream :as s])
-  (:import
-   [java.nio ByteBuffer]
-   (java.util Map$Entry)
-   (clojure.lang IPersistentVector)))
+   [clojure.string :as str])
+  (:import clojure.lang.IPersistentVector
+           java.util.Map java.util.Map$Entry))
 
 ;; ------------------------------------------------------------------------
 ;; XML Parsing Transducers
@@ -100,7 +94,7 @@
 
 ;; URLs
 
-(defn as-file [^java.net.URL resource]
+(defn ^java.io.File as-file [^java.net.URL resource]
   (when resource
     (case (.getProtocol resource)
       "file" (io/file (.getFile resource))

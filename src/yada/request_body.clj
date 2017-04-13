@@ -1,18 +1,18 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.request-body
   (:require
    [byte-streams :as bs]
-   [clojure.tools.logging :refer :all]
    [clojure.edn :as edn]
+   [clojure.tools.logging :refer :all]
    [manifold.deferred :as d]
    [manifold.stream :as s]
-   [ring.util.request :as req]
    [ring.util.codec :as codec]
+   [ring.util.request :as req]
    [schema.coerce :as sc]
-   [schema.utils :refer [error? error-val]]
-   [yada.coerce :as coerce]
-   [yada.media-type :as mt]))
+   [schema.utils :refer [error-val error?]]
+   [yada.media-type :as mt]
+   [yada.parameters :refer [+parameter-key-coercions+]]))
 
 (def application_octet-stream
   (mt/string->media-type "application/octet-stream"))
@@ -55,7 +55,31 @@
      (infof ":default acc is %s" acc)))
   ctx)
 
+(defmethod process-request-body "application/x-www-form-urlencoded"
+  [ctx body-stream media-type & args]
+  (let [body-string (bs/to-string body-stream)
+        schemas (get-in ctx [:resource :methods (:method ctx) :parameters])]
 
+    (cond
+      ;; In Swagger 2.0 you can't have both form and body
+      ;; parameters, which seems reasonable
+      (or (:form schemas) (:body schemas))
+      (let [fields (codec/form-decode
+                    body-string
+                    (req/character-encoding (:request ctx)))
+
+            coercer (sc/coercer
+                     (or (:form schemas) (:body schemas))
+                     +parameter-key-coercions+)
+
+            params (coercer fields)]
+
+        (if-not (error? params)
+          (assoc-in ctx [:parameters (if (:form schemas) :form :body)] params)
+          (d/error-deferred (ex-info "Bad form fields"
+                                     {:status 400 :error (error-val params)}))))
+
+      :otherwise (assoc ctx :body body-string))))
 
 ;; Looking for multipart/form-data? Its defmethod can be found in
 ;; yada.multipart.

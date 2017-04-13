@@ -1,12 +1,11 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (ns ^{:doc "Test utilities"}
-    yada.test-util
+ yada.test-util
   (:require
-   [manifold.stream :as s]
-   [yada.request-body :refer [process-request-body]]
-   [byte-streams :as bs]
-   [clojure.test :refer [is]]))
+   [byte-streams :as bs])
+  (:import [ch.qos.logback.classic Logger Level]
+           [org.slf4j LoggerFactory]))
 
 (defn etag? [etag]
   (and (string? etag)
@@ -15,9 +14,13 @@
 (defn to-string [s]
   (bs/convert s String))
 
-(defmacro is-coercing-correctly?
-  [expected value content-type]
-  `(let [expected# ~expected
-         res# (process-request-body {} ~value ~content-type)]
-     (is (= {:body expected#}
-            res#))))
+(defmacro with-level
+  "Sets the logging level for ns to level, while executing body."
+  ;; See http://stackoverflow.com/questions/3837801/how-to-change-root-logging-level-programmatically
+  [level ns & body]
+  `(let [root-logger# ^Logger (LoggerFactory/getLogger ~ns)
+         old-level# (.getLevel root-logger#)]
+     (try
+       (.setLevel root-logger# ~level)
+       ~@body
+       (finally (.setLevel root-logger# old-level#)))))

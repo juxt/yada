@@ -1,4 +1,5 @@
 [[reference]]
+[appendix]
 == Reference
 
 [[resource-model-schema]]
@@ -9,12 +10,12 @@ This is defined in `yada.schema`.
 [[handler-schema]]
 === Handler schema
 
-[coming soon]
+(coming soon)
 
 [[request-context-schema]]
 === Request context schema
 
-[coming soon]
+(coming soon)
 
 [[protocols]]
 === Protocols
@@ -25,7 +26,7 @@ can be extended with these protocols to adapt them to use with yada.
 [[yada.protocols.resourcecoercion]]
 ==== `yada.protocols.ResourceCoercion`
 
-[coming soon]
+(coming soon)
 
 [[yada.methods.method]]
 ==== `yada.methods.Method`
@@ -184,6 +185,3 @@ as `text/html`.
    :custom-suffices {"md" {:representations [{:media-type "text/html"}]
                            :reader markdown-reader}}})
 ----
-
-[[glossary]]
-=== Glossary

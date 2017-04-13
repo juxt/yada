@@ -27,3 +27,11 @@ Rather than hardcode URLs, you can create the correctly URL with yada's `path-fo
 
 (path-for ctx :resources/user-profile)
 ----
+
+An example with a parameter:
+
+[source,clojure]
+----
+(path-for ctx :resources/user-profile
+          {:route-params {:user-id "42"}})
+----

@@ -1,11 +1,10 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.response-body-test
   (:require
-   [clojure.test :refer :all]
    [byte-streams :as b]
-   [yada.test :refer [response-for]]
-   [yada.yada :refer [handler resource]]))
+   [clojure.test :refer :all]
+   [yada.test :refer [response-for]]))
 
 (deftest byte-array-bodies-test []
   (let [response
@@ -20,5 +19,3 @@
     (is (= (str (count "hi")) (get-in response [:headers "content-length"]) ))))
 
 ;; TODO: Test various body coercions
-
-

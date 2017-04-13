@@ -1,9 +1,7 @@
-;; Copyright © 2016, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.resources.exception-resource
   (:require
-   [clojure.tools.logging :refer :all]
-   [hiccup.core :refer [html]]
    [yada.body :as body]
    [yada.context :refer [content-type]]
    [yada.resource :refer [resource ResourceCoercion]]))

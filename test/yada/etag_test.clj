@@ -1,13 +1,12 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.etag-test
   (:require
    [clojure.test :refer :all]
-   [clojure.tools.logging :refer :all]
    [ring.mock.request :as mock]
+   [yada.handler :refer [handler]]
    [yada.resource :refer [resource]]
-   [yada.test-util :refer [etag?]]
-   [yada.yada :as yada :refer [yada]]))
+   [yada.test-util :refer [etag?]]))
 
 ;; ETags -------------------------------------------------------------
 
@@ -18,14 +17,14 @@
     :produces [{:media-type "text/plain"}]
     :methods {:get {:response (fn [ctx] "foo")}
               :post {:response (fn [{:keys [response]}]
-                                (assoc response :version (swap! v inc)))}}}))
+                                 (assoc response :version (swap! v inc)))}}}))
 
 (deftest etag-test
   (testing "etags-identical-for-consecutive-gets"
     (let [v (atom 1)
-          handler (yada (etag-test-resource v))
-          r1 @(handler (mock/request :get "/"))
-          r2 @(handler (mock/request :get "/"))]
+          h (handler (etag-test-resource v))
+          r1 @(h (mock/request :get "/"))
+          r2 @(h (mock/request :get "/"))]
 
       (is (= 200 (:status r1)))
       (is (etag? (get-in r1 [:headers "etag"])))
@@ -38,10 +37,10 @@
 
   (testing "etags-different-after-post"
     (let [v (atom 1)
-          handler (yada (etag-test-resource v))
-          r1 @(handler (mock/request :get "/"))
-          r2 @(handler (mock/request :post "/"))
-          r3 @(handler (mock/request :get "/"))]
+          h (handler (etag-test-resource v))
+          r1 @(h (mock/request :get "/"))
+          r2 @(h (mock/request :post "/"))
+          r3 @(h (mock/request :get "/"))]
 
       (is (= 200 (:status r1)))
       (is (etag? (get-in r1 [:headers "etag"])))
@@ -56,24 +55,24 @@
 
   (testing "post-using-etags"
     (let [v (atom 1)
-          handler (yada (etag-test-resource v))
-          r1 @(handler (mock/request :get "/"))
+          h (handler (etag-test-resource v))
+          r1 @(h (mock/request :get "/"))
           ;; Someone else POSTs, causing the etag given in r1 to become stale
-          r2 @(handler (mock/request :post "/"))]
+          r2 @(h (mock/request :post "/"))]
 
       ;; Sad path - POSTing with a stale etag (from r1)
       (let [etag (get-in r1 [:headers "etag"])]
-        (let [r @(handler (-> (mock/request :post "/")
-                              (update-in [:headers] merge {"if-match" etag})))]
+        (let [r @(h (-> (mock/request :post "/")
+                        (update-in [:headers] merge {"if-match" etag})))]
           (is (= 412 (:status r))))
 
-        (let [r @(handler (-> (mock/request :post "/")
-                              (update-in [:headers] merge {"if-match" (str "abc, " etag ",123")})))]
+        (let [r @(h (-> (mock/request :post "/")
+                        (update-in [:headers] merge {"if-match" (str "abc, " etag ",123")})))]
           (is (= 412 (:status r)))))
 
       ;; Happy path - POSTing from a fresh etag (from r2)
       (let [etag (get-in r2 [:headers "etag"])]
         (is (etag? etag))
-        (let [r @(handler (-> (mock/request :post "/")
-                              (update-in [:headers] merge {"if-match" (str "abc, " etag ",123")})))]
+        (let [r @(h (-> (mock/request :post "/")
+                        (update-in [:headers] merge {"if-match" (str "abc, " etag ",123")})))]
           (is (= 200 (:status r))))))))

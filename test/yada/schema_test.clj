@@ -1,15 +1,15 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.schema-test
   (:require
    [clojure.java.io :as io]
    [clojure.test :refer :all :exclude [deftest]]
-   [yada.media-type :as mt]
-   [yada.schema :refer :all]
-   [schema.core :as s]
    [schema.coerce :as sc]
+   [schema.core :as s]
    [schema.test :refer [deftest]]
-   [schema.utils :refer [error?]]))
+   [schema.utils :refer [error?]]
+   [yada.media-type :as mt]
+   [yada.schema :refer :all]))
 
 (def HTML (mt/string->media-type "text/html"))
 (def JSON (mt/string->media-type "application/json"))

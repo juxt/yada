@@ -1,20 +1,15 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.collection-resource-test
   (:require
-   [clojure.set :as set]
-   [clojure.test :refer :all]
-   [clojure.tools.logging :refer :all]
-   [clojure.pprint :refer [pprint]]
-   [ring.mock.request :as mock]
-   [clojure.java.io :as io]
-   [clj-time.core :as time]
    [clj-time.coerce :refer [to-date]]
-   [ring.util.time :refer (parse-date format-date)]
-   [yada.representation :as rep]
-   [yada.test-util :refer (to-string)]
-   [yada.yada :refer [handler as-resource]]
-   [clojure.edn :as edn]))
+   [clj-time.core :as time]
+   [clojure.edn :as edn]
+   [clojure.test :refer :all]
+   [ring.mock.request :as mock]
+   [ring.util.time :refer [format-date parse-date]]
+   [yada.handler :refer [handler]]
+   [yada.test-util :refer [to-string]]))
 
 (defn yesterday []
   (time/minus (time/now) (time/days 1)))

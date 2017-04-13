@@ -1,37 +1,17 @@
-= The [yada]#yada# manual
+[yada]#yada#
+============
+Malcolm Sparks <malcolm@juxt.pro>
+v1.2.0, January 2017
+:doctype: article
+:description: A web library for Clojure
 
-Here is the complete, authoratitive guide to [yada]#yada#.
+Welcome to [yada]#yada# - a full HTTP library for Clojure
 
-PDF and e-book versions are available at https://leanpub.com/yada.
+== link:manual/index.html[The [yada]#yada# manual]
 
-=== Table of Contents
+The main [yada]#yada# documentation
 
-Here are the chapters:
+== HTTP and related specifications
 
-1. link:intro.html[Introduction] - A beginner's introduction
-1. link:getting-started.html[Getting Started] - Get started with an example project
-1. link:hello.html[Hello World!] - The classic introductory example
-1. link:install.html[Installation] - How to install
-1. link:resources.html[Resources] - A web resource
-1. link:parameters.html[Parameters] - Declaring expected request parameters
-1. link:properties.html[Properties] - Resource metadata
-1. link:methods.html[Methods] - Declaring and implementing a resource's methods
-1. link:representations.html[Representations] - Declaring the data formats used to communicate a resource's state
-1. link:responses.html[Responses] - Responses to a HTTP request
-1. link:security.html[Security] - Authentication, Authorization, OAuth2, CORS, HSTS and more
-1. link:routing.html[Routing] - URIs and how they target resources
-1. link:phonebook.html[Example 2: Phonebook] - Putting it all together in a more comprehensive example
-1. link:swagger.html[Swagger] - Generating a Swagger documentation website for your API
-1. link:async.html[Async] - Exploiting the asynchronous foundations
-1. link:searchengine.html[Example 3: Search engine] - Demonstration of returning deferred values in responses
-1. link:sse.html[Server Sent Events] - Push notification of events to the client with HTML5 Server Sent Events
-1. link:chatserver.html[Example 4: Chat server] - Another example demonstrating Server Sent Events
-1. link:requestbodies.html[Handling request bodies] - Asynchronous processing large bodies in requests
-1. link:selfieuploader.html[Example 5: Selfie uploader] - An example demonstrating request body processing
-1. link:handlers.html[Handlers] - Functions that handle Ring requests
-1. link:requestcontext.html[The Request Context] - Guide to the context that is passed between interceptors, what information it contains and what you can use it for
-1. link:interceptors.html[Interceptors] - Understanding how it works, and how to change it with interceptors and interceptor chains
-1. link:subresources.html[Sub-resources] - Creating resources dynamically at request-time. When you might when to do this and how.
-1. link:fileserver.html[Example 6: File server] - A demonstration of sub-resources
-1. link:testing.html[Testing] - Utilities for testing
-1. link:reference.html[Reference]
+.Specifications
+custom::specs[]

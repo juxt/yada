@@ -1,15 +1,12 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.representation
   (:require
-   [clojure.java.io :as io]
    [clojure.string :as str]
-   [clojure.tools.logging :refer :all]
    [schema.core :as s]
-   [yada.coerce :refer (to-set to-list)]
    [yada.charset :as charset]
    [yada.media-type :as mt]
-   [yada.util :refer (best best-by parse-csv http-token OWS)]))
+   [yada.util :refer [best best-by http-token OWS parse-csv]]))
 
 ;; Proactive negotiation
 

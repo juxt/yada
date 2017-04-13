@@ -1,11 +1,8 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.options-test
   (:require
-   [clojure.java.io :as io]
-   [clojure.test :refer :all]
-   [ring.mock.request :refer [request]]
-   [yada.yada :as yada]))
+   [clojure.test :refer :all]))
 
 ;; TODO: OPTIONS needs to be documented and implemented, then re-enable
 ;; these tests

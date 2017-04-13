@@ -1,0 +1,21 @@
+[[colophon]]
+[colophon]
+== Colophon
+
+This book is authored in link:http://asciidoc.org[AsciiDoc], which is a plain-text format like Markdown. ((AsciiDoc)) has the benefit of being based on the mature DocBook standard.
+
+Sources for this book can be found in the [yada]#yada# repository under the +doc/+ directory. The file +book.adoc+ describes the structure of the book.
+
+=== HTML
+
+link:https://github.com/asciidoctor/asciidoctorj[Asciidoctorj] is used to generate HTML.
+
+=== PDF
+
+The main font is Noto Sans, licensed under the link:http://scripts.sil.org/cms/scripts/page.php?site_id=nrsi&id=OFL[Open Font License].
+
++Monospace+ font is Droid Sans Mono, licensed under the link:https://en.wikipedia.org/wiki/Apache_License[Apache License].
+
+The [yada]#yada# font is based on link:https://fonts.google.com/specimen/Rochester[Rochester] licensed under the link:https://en.wikipedia.org/wiki/Apache_License[Apache License, Version 2.0].
+
+link:http://asciidoctor.org/[Asciidoctor] is used to generate DocBook 5 XML which is output to [LaTeX]#LaTeX# using dblatex.

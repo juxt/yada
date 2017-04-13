@@ -1,16 +1,15 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.string-resource-test
   (:require
-   [clojure.java.io :as io]
-   [clojure.set :as set]
+   [clj-time.coerce :refer [to-date]]
+   [clj-time.core :as time]
    [clojure.string :as str]
    [clojure.test :refer :all]
-   [clj-time.core :as time]
-   [clj-time.coerce :refer (to-date)]
    [ring.mock.request :refer [request]]
-   [ring.util.time :refer (format-date)]
-   [yada.yada :as yada :refer [yada]]))
+   [ring.util.time :refer [format-date]]
+   [yada.handler :refer [handler]]
+   [yada.resource :refer [as-resource]]))
 
 (deftest string-test
   (testing "Producing a Java string implies utf-8 charset"
@@ -22,10 +21,10 @@
     ;; case. We know the Java platform stores Strings as Unicode utf-16, and
     ;; that it can output these strings in utf-8.
     (let [resource "Hello World"
-          handler
-          (yada
+          h
+          (handler
            (merge
-            (yada/as-resource resource)
+            (as-resource resource)
             {:produces {:media-type #{"text/plain"}
                         ;; TODO: See comment above, this
                         ;; should not be necessary, somehow
@@ -33,7 +32,7 @@
                         ;; UTF-8 on strings, not sure how.
                         :charset #{"UTF-8"}}}))
           request (request :get "/")
-          response @(handler request)]
+          response @(h request)]
       (is (= "text/plain;charset=utf-8" (get-in response [:headers "content-type"]))))
 
     ;; TODO: If strings are used, then an explicit charset provided in
@@ -49,9 +48,9 @@
 (deftest hello-world-test
   (testing "hello-world"
     (let [resource "Hello World!"
-          handler (yada resource)
+          h (handler resource)
           request (request :get "/")
-          response @(handler request)]
+          response @(h request)]
 
       (is (= 200 (:status response)))
       (is (= {"content-length" (str (count "Hello World!"))
@@ -63,10 +62,10 @@
     (time/do-at (time/minus (time/now) (time/days 1))
 
                 (let [resource "Hello World!"
-                      handler (yada resource)]
+                      h (handler resource)]
 
                   (let [request (assoc (request :get "/") :id 1)
-                        response @(handler request)]
+                        response @(h request)]
 
                     ;; First request gets a 200
                     (is (= 200 (:status response)))
@@ -74,7 +73,7 @@
 
                   (let [request (merge-with merge (request :get "/")
                                             {:headers {"if-modified-since" (format-date (to-date (time/plus (time/now) (time/hours 1))))}})
-                        response @(handler request)]
+                        response @(h request)]
 
                     (is (= 304 (:status response)))
                     ;; Ensure Vary, Etag is returned, as per RFC 7232 Section 4.1
@@ -83,10 +82,10 @@
 
   (testing "safe-by-default"
     (let [resource "Hello World!"
-          handler (yada/yada resource)]
+          h (handler resource)]
 
       (doseq [method [:put :post :delete]]
-        (let [response @(handler (request method "/"))
+        (let [response @(h (request method "/"))
               allow-header (get-in response [:headers "allow"])]
           (is (= 405 (:status response)))
           (is (not (nil? allow-header)))

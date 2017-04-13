@@ -1,11 +1,10 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.create-response-test
   (:require
    [clojure.test :refer :all :exclude [deftest]]
    [schema.test :refer [deftest]]
-   [yada.interceptors :refer [create-response]]
-   [yada.schema :as ys]))
+   [yada.interceptors :refer [create-response]]))
 
 (deftest cookies-test []
   (testing "that simple values work"
@@ -22,7 +21,3 @@
       (is (=
            ["foo=bar; Path=/abc; HttpOnly"]
            (get-in response [:headers "set-cookie"]))))))
-
-
-
-

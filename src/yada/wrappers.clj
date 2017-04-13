@@ -1,4 +1,6 @@
-;; Copyright © 201^, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
+
+;; TODO: Needed? Check access times on tests
 
 (ns yada.wrappers
   "Augment routing models"
@@ -20,4 +22,3 @@
   [routes & [{:keys [pre post]
               :or {pre identity post identity}}]]
   (postwalk (comp post map->resource pre) routes))
-

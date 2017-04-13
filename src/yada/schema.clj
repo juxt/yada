@@ -1,31 +1,22 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
-(ns ^{:doc
-      "This namespace provides the coercions to transform a wide
-variety of shorthand descriptions of a resource into a canonical
-resource map. This allows the rest of the yada code-base to remain
-agnostic to the syntax of shorthand forms, which significantly
-simplifies coding while giving the author of yada resources the
-convenience of terse, expressive short-hand descriptions."}
+(ns ^{:doc "This namespace provides the coercions to transform a wide\nvariety of shorthand descriptions of a resource into a canonical\nresource map. This allows the rest of the yada code-base to remain\nagnostic to the syntax of shorthand forms
+which significantly\nsimplifies coding while giving the author of yada resources the\nconvenience of terse
+expressive short-hand descriptions."}
     yada.schema
-  (:refer-clojure :exclude [boolean?])
-  (:require
-   [clojure.walk :refer [postwalk]]
-   [clojure.set :as set]
-   [clojure.tools.logging :refer :all]
-   [yada.boolean :as b :refer [boolean?]]
-   [yada.representation :as rep]
-   [yada.media-type :as mt]
-   [yada.util :refer [disjoint*?]]
-   [schema.core :as s]
-   [schema.coerce :as sc]
-   [schema.utils :refer [error?]]
-   [yada.charset :refer [to-charset-map]]
-   [yada.representation :as rep])
-  (:import
-   [yada.charset CharsetMap]
-   [yada.media_type MediaTypeMap]
-   [yada.representation LanguageMap]))
+    (:refer-clojure :exclude [boolean?])
+    (:require
+     [schema.coerce :as sc]
+     [schema.core :as s]
+     [schema.utils :refer [error?]]
+     [yada.charset :refer [to-charset-map]]
+     [yada.media-type :as mt]
+     [yada.representation :as rep]
+     [yada.util :refer [disjoint*?]])
+    (:import java.util.Date
+             yada.charset.CharsetMap
+             yada.media_type.MediaTypeMap
+             yada.representation.LanguageMap))
 
 (s/defschema NamespacedKeyword
   (s/constrained s/Keyword namespace))
@@ -77,20 +68,38 @@ convenience of terse, expressive short-hand descriptions."}
     (s/optional-key :encoding) #{String}}
    not-empty))
 
+;; representation-seq & merge-representation are written due to short file
+;; length limits on ecryptfs. Using a pulled out function & nested maps results
+;; in a smaller .class
+;; see: https://github.com/juxt/edge/issues/22
+(defn- merge-representation
+  [media-type charset language encoding]
+  (merge
+   (when media-type {:media-type media-type})
+   (when charset {:charset charset})
+   (when language {:language language})
+   (when encoding {:encoding encoding})))
+
 (defn representation-seq
   "Return a sequence of all possible individual representations from the
   result of coerce-representations."
   [reps]
-  (for [rep reps
-        media-type (or (:media-type rep) [nil])
-        charset (or (:charset rep) [nil])
-        language (or (:language rep) [nil])
-        encoding (or (:encoding rep) [nil])]
-    (merge
-     (when media-type {:media-type media-type})
-     (when charset {:charset charset})
-     (when language {:language language})
-     (when encoding {:encoding encoding}))))
+  (mapcat
+    (fn [rep]
+      (mapcat
+        (fn [media-type]
+          (mapcat
+            (fn [charset]
+              (mapcat
+                (fn [language]
+                  (map
+                    (fn [encoding]
+                      (merge-representation media-type charset language encoding))
+                    (or (:encoding rep) [nil])))
+                (or (:language rep) [nil])))
+            (or (:charset rep) [nil])))
+        (or (:media-type rep) [nil])))
+    reps))
 
 (defprotocol MediaTypeCoercion
   (as-media-type [_] ""))
@@ -162,17 +171,29 @@ convenience of terse, expressive short-hand descriptions."}
 
 (s/defschema Context {})
 
+(defn resolve-dynamic
+  "P"
+  [f ctx]
+  (if (fn? f)
+    (f ctx)
+    f))
+
+(defmacro maybe-dynamic
+  "Return a schema that allows for a value to be dynamic, resolved at
+  request-time with resolve-dynamic."
+  [t]
+  `(s/conditional
+    fn? (s/=> ~t Context)
+    :else ~t))
+
 (s/defschema ContextFunction
   (s/=> s/Any Context))
 
 (s/defschema Produces
-  {(s/optional-key :produces) (s/conditional
-                               fn? ContextFunction
-                               :else [Representation])})
+  {(s/optional-key :produces) (maybe-dynamic [Representation])})
+
 (s/defschema Consumes
-  {(s/optional-key :consumes) (s/conditional
-                               fn? ContextFunction
-                               :else [Representation])})
+  {(s/optional-key :consumes) (maybe-dynamic [Representation])})
 
 (s/defschema Response
   {:response ContextFunction})
@@ -183,17 +204,14 @@ convenience of terse, expressive short-hand descriptions."}
           (s/optional-key :exists?) s/Bool}
          NamespacedEntries))
 
-(s/defschema PropertiesHandlerFunction
-  (s/=> PropertiesResult Context))
-
 (s/defschema Properties
-  {(s/optional-key :properties) (s/conditional
-                                 fn? PropertiesHandlerFunction
-                                 :else PropertiesResult)})
+  {(s/optional-key :properties) (maybe-dynamic PropertiesResult)})
 
 (def PropertiesMappings {})
 
-(def PropertiesResultMappings (merge RepresentationSeqMappings))
+(def PropertiesResultMappings {Date #(condp instance? %
+                                       Long (Date. ^Long %)
+                                       %)})
 
 (def properties-result-coercer (sc/coercer PropertiesResult PropertiesResultMappings))
 
@@ -309,7 +327,7 @@ convenience of terse, expressive short-hand descriptions."}
    NamespacedEntries))
 
 (s/defschema AuthSchemes
-  {(s/optional-key :authentication-schemes) (s/conditional fn? (s/=> [AuthScheme] Context) :else [AuthScheme])})
+  {(s/optional-key :authentication-schemes) (maybe-dynamic [AuthScheme])})
 
 ;; Authorization can contain any content because it is up to the
 ;; authorization interceptor, which is pluggable.
@@ -326,10 +344,10 @@ convenience of terse, expressive short-hand descriptions."}
 (s/defschema Cors
   {(s/optional-key :allow-origin) (s/conditional fn? (s/=> (s/conditional ifn? #{s/Str} :else s/Str) Context) :else StringSet)
    (s/optional-key :allow-credentials) s/Bool
-   (s/optional-key :expose-headers) (s/conditional fn? ContextFunction :else Strings)
-   (s/optional-key :max-age) (s/conditional fn? ContextFunction :else s/Int)
-   (s/optional-key :allow-methods) (s/conditional fn? ContextFunction :else Keywords)
-   (s/optional-key :allow-headers) (s/conditional fn? ContextFunction :else Strings)})
+   (s/optional-key :expose-headers) (maybe-dynamic Strings)
+   (s/optional-key :max-age) (maybe-dynamic s/Int)
+   (s/optional-key :allow-methods) (maybe-dynamic Keywords)
+   (s/optional-key :allow-headers) (maybe-dynamic Strings)})
 
 (s/defschema AccessControlValue
   (merge Realms Cors NamespacedEntries))

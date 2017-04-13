@@ -1,14 +1,13 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.put-resource-test
   (:require
    [byte-streams :as b]
    [clojure.test :refer :all]
    [ring.mock.request :refer [request]]
-   [clojure.java.io :as io]
-   [manifold.stream :as s]
-   [yada.test-util :refer [to-string]]
-   [yada.yada :refer [yada resource handler]]))
+   [yada.handler :refer [handler]]
+   [yada.resource :refer [resource]]
+   [yada.test-util :refer [to-string]]))
 
 (defn add-headers [request m]
   (merge-with merge request {:headers m}))
@@ -16,8 +15,8 @@
 (deftest put-test
   (testing "string"
     (let [resource (atom "Bradley")
-          handler (yada resource)
-          response @(handler (request :get "/"))
+          h (handler resource)
+          response @(h (request :get "/"))
           headers (:headers response)]
 
       (is (= 200 (:status response)))
@@ -26,15 +25,15 @@
              (select-keys headers ["content-length" "content-type"])))
       (is (= "Bradley" (to-string (:body response))))
 
-      (let [response @(handler (-> (request :put "/" {:value "Chelsea"})))]
+      (let [response @(h (-> (request :put "/" {:value "Chelsea"})))]
         (is (= 204 (:status response)))
         (is (= (contains? (set (keys (:headers response))) "content-type")))
         (is (= (contains? (set (keys (:headers response))) "content-length")))
         (is (nil? (:body response))))
-      
+
       (is (= @resource "Chelsea"))
 
-      (let [response @(handler (request :get "/"))]
+      (let [response @(h (request :get "/"))]
         (is (= 200 (:status response)))
         (is (= {"content-length" (str 7)
                 "content-type" "text/plain;charset=utf-8"}
@@ -42,7 +41,7 @@
         (is (= "Chelsea" (to-string (:body response)))))))
 
   (testing "return response"
-    (let [h (yada (resource {:methods {:put {:response (fn [ctx] (assoc (:response ctx) :body "BODY" :status 200))}}}))
+    (let [h (handler (resource {:methods {:put {:response (fn [ctx] (assoc (:response ctx) :body "BODY" :status 200))}}}))
           response @(h (request :put "/"))]
       (is (= "BODY" (b/to-string (:body response))))
       (is (= 200 (:status response)))))

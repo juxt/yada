@@ -1,10 +1,9 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.exception-test
   (:require
    [clojure.test :refer :all]
-   [yada.test :refer [response-for]]
-   [yada.handler :refer [handler]]))
+   [yada.test :refer [response-for]]))
 
 (deftest exception-test
   (let [resp (response-for (ex-info "Error" {} (ex-info "cause" {})))]

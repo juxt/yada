@@ -1,16 +1,14 @@
-;; Copyright © 2015, JUXT LTD.
+;; Copyright © 2014-2017, JUXT LTD.
 
 (ns yada.vary-test
   (:require
    [clojure.test :refer :all]
-   [clojure.string :as str]
    [ring.mock.request :refer [request]]
    [schema.test :as st]
-   [yada.charset :as charset]
    [yada.representation :refer [vary]]
    [yada.schema :as ys]
    [yada.util :refer [parse-csv]]
-   [yada.yada :as yada :refer [yada]]))
+   [yada.yada :refer [as-resource handler]]))
 
 (st/deftest vary-test
   (is (= #{:media-type}
@@ -34,10 +32,10 @@
 
 (st/deftest vary-header-test []
   (let [resource "Hello World!"
-        handler (yada (merge (yada/as-resource resource)
-                             {:produces #{"text/plain" "text/html"}}))
+        h (handler (merge (as-resource resource)
+                          {:produces #{"text/plain" "text/html"}}))
         request (request :head "/")
-        response @(handler request)
+        response @(h request)
         headers (:headers response)]
     (is (= 200 (:status response)))
     (is (some? (get headers "vary")))
