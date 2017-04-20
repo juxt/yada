@@ -89,7 +89,7 @@
 (defn parse-cookies
   "Parse the cookies from a request map."
   [request]
-  (when-let [cookie (get-in request [:headers "cookie"])]
+  (when-let [cookie (get-in request [:headers "set-cookie"])]
     (->> cookie
          parse-cookie-header
          ((fn [c] (decode-values c)))
