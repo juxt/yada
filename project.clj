@@ -46,7 +46,7 @@
      [org.webjars/bootstrap "3.3.6"]
 
      ;; ext dependencies
-     [bidi "2.0.16"]
+     [bidi "2.0.17"]
      [aleph "0.4.1" :exclusions [io.aleph/dirigiste]]
      [org.clojure/core.async "0.3.442"]
      [cheshire "5.6.3"]
