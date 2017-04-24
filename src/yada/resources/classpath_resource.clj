@@ -31,7 +31,7 @@
    index.html for URL paths like / or foo/."
   ([root-path]
    (new-classpath-resource root-path nil))
-  ([root-path {:keys [index-files]}]
+  ([root-path {:keys [index-files skip-dir?]}]
    (resource
     {:path-info?   true
      :methods      {}
@@ -42,8 +42,12 @@
              files     (if (= (last path-info) \/)
                          (map #(io/file root-path path %) index-files)
                          (list (io/file root-path path)))
-             res       (first (sequence (comp (map #(.getPath ^java.net.URL %))
-                                              (map io/resource)
-                                              (drop-while nil?))
+             remove-dirs (remove #(and % (.isDirectory (io/file %))))
+             transducers (cond-> [(map #(.getPath ^java.io.File %))
+                                  (map io/resource)]
+                           skip-dir? (conj remove-dirs)
+                           true (conj (drop-while nil?)))
+             res       (first (sequence (apply comp
+                                               transducers)
                                         files))]
          (as-resource res)))})))
