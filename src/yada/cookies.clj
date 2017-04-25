@@ -15,7 +15,7 @@
 (s/defschema CookieValue
   {:value s/Str
    (s/optional-key :expires) Rfc822String
-   (s/optional-key :max-age) s/Str ; TODO: support Interval like ring's cookies?
+   (s/optional-key :max-age) (s/either s/Str s/Int) ; TODO: support Interval like ring's cookies?
    (s/optional-key :domain) s/Str
    (s/optional-key :path) s/Str
    (s/optional-key :secure) s/Bool

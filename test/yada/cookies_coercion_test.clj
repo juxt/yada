@@ -17,17 +17,22 @@
     (is (= {"foo" {:value "bar"
                    :expires "Sun, 09 Sep 2001 01:46:40 +0000"}}
            (cookies-coercer {"foo" {:value "bar"
-                                   :expires (java.util.Date. 1000000000000)}}))))
+                                    :expires (java.util.Date. 1000000000000)}}))))
   (testing "full cookie"
-    (is (= {"foo" {:value "bar",
-                   :expires "Sun, 09 Sep 2001 01:46:40 +0000",
-                   :domain "juxt.pro",
-                   :path "/",
-                   :secure true,
-                   :http-only true}}
-           (cookies-coercer {"foo" {:value "bar"
-                                   :expires (java.util.Date. 1000000000000)
-                                   :domain "juxt.pro"
-                                   :path "/"
-                                   :secure true
-                                    :http-only true}})))))
+    (let [cookie {"foo" {:value "bar",
+                         :max-age 0
+                         :expires "Sun, 09 Sep 2001 01:46:40 +0000",
+                         :domain "juxt.pro",
+                         :path "/",
+                         :secure true,
+                         :http-only true}}
+          cookie-max-age-str (assoc-in cookie ["foo" :max-age] "0")]
+      (is (= cookie
+             (cookies-coercer cookie)))
+      (is (= cookie-max-age-str
+             (cookies-coercer cookie-max-age-str))))))
+
+;;;; Scratch
+
+(comment
+  (coercion-test))
