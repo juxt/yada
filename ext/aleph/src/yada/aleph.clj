@@ -3,6 +3,7 @@
 (ns yada.aleph
   (:require
    [aleph.http :as http]
+   [clojure.tools.logging :refer :all]
    [yada.handler :refer [as-handler]]))
 
 (defn listener
@@ -14,7 +15,7 @@
          (as-handler routes)
          (merge aleph-options {:port (or (:port aleph-options) 0) :raw-stream? true}))]
     {:port (aleph.netty/port server)
-     :close (fn [] (.close server))
+     :close (fn [] (.close ^java.io.Closeable server))
      :server server}))
 
 ;; Alias
