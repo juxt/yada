@@ -161,7 +161,7 @@
         allow-origin
         (assoc-in [:response :headers "access-control-allow-origin"] allow-origin)
 
-        (:allow-credentials access-control)
+        (contains? access-control :allow-credentials)
         (assoc-in [:response :headers "access-control-allow-credentials"]
                   (to-header (:allow-credentials access-control)))
 
