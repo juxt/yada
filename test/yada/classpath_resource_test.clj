@@ -28,16 +28,13 @@
           body (:body response)]
       (is (= 200 (:status response)))
       (is (= body "File 1\n"))))
+  ;; I'm not sure if this a feature or a bug
   (testing "Directory from classpath is served"
     (let [resource (new-classpath-resource "static")
           response (get-path resource "/test")
           body (:body response)]
       (is (= 200 (:status response)))
       (is (= "file1.txt\nfile2.txt\n" body))))
-  (testing "Directory is not served when :skip-dir? is true"
-    (let [resource (new-classpath-resource "static" {:skip-dir? true})
-          response (get-path resource "/test2")]
-      (is (= 404 (:status response)))))
   (testing "Non-existent classpath resource yields 404"
     (let [resource (new-classpath-resource "static")
           response (get-path resource "/test/file3.txt")]
