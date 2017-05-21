@@ -196,7 +196,7 @@
       https? (assoc-in [:response :headers "content-security-policy"]
                        (get-in ctx [:content-security-policy] "default-src https: data: 'unsafe-inline' 'unsafe-eval'"))
       true (assoc-in [:response :headers "x-frame-options"]
-                     (get ctx :x-frame-options "SAMEORIGIN"))
+                     (get-in ctx [:resource :x-frame-options] "SAMEORIGIN"))
       true (assoc-in [:response :headers "x-xss-protection"]
                      (get ctx :xss-protection "1; mode=block"))
       true (assoc-in [:response :headers "x-content-type-options"]
