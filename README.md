@@ -158,6 +158,12 @@ feedback and suggestions.
 * Mikkel Gravgaard
 * Lucas Lago
 * Johannes Staffans
+* Michiel Borkent
+* James Laver
+* Marcin Jekot
+* Daniel Compton
+* Yoshito Komatsu
+* Bor Hodošček
 
 Also, see the dependency list. In particular, yada would certainly not
 exist without the considerable efforts of those behind the following
