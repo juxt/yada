@@ -190,8 +190,6 @@
          {:representation representation})
   "")
 
-
-
 ;; Errors
 
 (def ^{:dynamic true
@@ -212,7 +210,7 @@
   (some-> status (get code) :description))
 
 (defmethod render-error "text/html"
-  [status ^Throwable error representation {:keys [id options]}]
+  [status ^Throwable error representation {:keys [id options resource] :as ctx}]
   (html
    [:head
     [:title "Error"]
@@ -225,7 +223,7 @@
     ;; Only
     (when *output-errors*
       [:div
-       (when *output-stack-traces*
+       (when (and (:show-stack-traces? resource) *output-stack-traces*)
          (let [baos (new java.io.ByteArrayOutputStream)
                pw (new java.io.PrintWriter (new java.io.OutputStreamWriter baos))]
            (.printStackTrace error pw)
