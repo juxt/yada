@@ -3,6 +3,9 @@
 (def VERSION "1.2.4")
 
 (defproject yada/json-html VERSION
+  :description "HTML rendering of JSON"
+  :license {:name "The MIT License"
+            :url "https://opensource.org/licenses/MIT"}
   :pedantic? :abort
   :dependencies [[yada/core ~VERSION]
                  [json-html "0.4.0" :exclusions [hiccups]]

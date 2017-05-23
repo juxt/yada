@@ -3,6 +3,9 @@
 (def VERSION "1.2.4")
 
 (defproject yada/next VERSION
+  :description "Experimental 'next' bundle of yada"
+  :license {:name "The MIT License"
+            :url "https://opensource.org/licenses/MIT"}
 
   :pedantic? :abort
 

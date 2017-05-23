@@ -3,6 +3,9 @@
 (def VERSION "1.2.4")
 
 (defproject yada/lean VERSION
+  :description "A stripped-down batteries-not-included bundle of yada"
+  :license {:name "The MIT License"
+            :url "https://opensource.org/licenses/MIT"}
   :pedantic? :abort
   :dependencies [[yada/aleph ~VERSION]
                  [yada/bidi ~VERSION]

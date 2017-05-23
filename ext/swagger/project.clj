@@ -3,6 +3,8 @@
 (def VERSION "1.2.4")
 
 (defproject yada/swagger VERSION
+  :license {:name "The MIT License"
+            :url "https://opensource.org/licenses/MIT"}
   :pedantic? :abort
   :dependencies [[yada/core ~VERSION :exclusions [commons-codec]]
                  [yada/jwt ~VERSION]

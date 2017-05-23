@@ -3,6 +3,9 @@
 (def VERSION "1.2.4")
 
 (defproject yada/bidi VERSION
+  :description "bidi integration with yada"
+  :license {:name "The MIT License"
+            :url "https://opensource.org/licenses/MIT"}
   :pedantic? :abort
   :dependencies [[yada/core ~VERSION]
                  [bidi "2.0.16"]])

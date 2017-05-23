@@ -3,7 +3,9 @@
 (def VERSION "1.2.4")
 
 (defproject yada VERSION
-
+  :description "A complete batteries-included bundle of yada"
+  :license {:name "The MIT License"
+            :url "https://opensource.org/licenses/MIT"}
   :pedantic? :abort
 
   :dependencies [[yada/aleph ~VERSION]

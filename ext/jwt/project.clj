@@ -3,6 +3,9 @@
 (def VERSION "1.2.4")
 
 (defproject yada/jwt VERSION
+  :description "JSON Web Token support"
+  :license {:name "The MIT License"
+            :url "https://opensource.org/licenses/MIT"}
   :pedantic? :abort
   :dependencies [[yada/core ~VERSION]
                  [buddy/buddy-sign "1.3.0"]])

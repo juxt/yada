@@ -3,6 +3,9 @@
 (def VERSION "1.2.4")
 
 (defproject yada/oauth2 VERSION
+  :description "OAuth2 support"
+  :license {:name "The MIT License"
+            :url "https://opensource.org/licenses/MIT"}
   :pedantic? :abort
   :exclusions [commons-codec]
   :dependencies [[yada/core ~VERSION]

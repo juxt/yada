@@ -3,6 +3,9 @@
 (def VERSION "1.2.4")
 
 (defproject yada/aleph VERSION
+  :description "yada integration with Aleph (and Netty)"
+  :license {:name "The MIT License"
+            :url "https://opensource.org/licenses/MIT"}
   :pedantic? :abort
   :dependencies [[aleph "0.4.1" :exclusions [io.aleph/dirigiste]]
                  [yada/core ~VERSION]])

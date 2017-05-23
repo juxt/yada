@@ -3,6 +3,9 @@
 (def VERSION "1.2.4")
 
 (defproject yada/json VERSION
+  :description "Support for application/json media types"
+  :license {:name "The MIT License"
+            :url "https://opensource.org/licenses/MIT"}
   :pedantic? :abort
   :dependencies [[yada/core ~VERSION]
                  [cheshire "5.6.3"]])
