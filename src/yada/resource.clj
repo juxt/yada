@@ -84,6 +84,10 @@
                            (apply f ctx (repeat (dec arity) nil)))
                          )}}})))
 
+  clojure.lang.Var
+  (as-resource [v]
+    (as-resource (deref v)))
+
   Exception
   (as-resource [e]
     (resource
