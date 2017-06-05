@@ -191,13 +191,15 @@
     (cond-> ctx
       https? (assoc-in [:response :headers "strict-transport-security"]
                        (format
-                        "max-age=%s; includeSubdomains"
-                        (get-in ctx [:strict-transport-security :max-age] 31536000)))
-      https? (assoc-in [:response :headers "content-security-policy"]
-                       (get-in ctx [:content-security-policy] "default-src https: data: 'unsafe-inline' 'unsafe-eval'"))
+                         "max-age=%s; includeSubdomains"
+                         (get-in ctx [:strict-transport-security :max-age] 31536000)))
+      (or https? (contains? (:resource ctx) :content-security-policy))
+      (assoc-in [:response :headers "content-security-policy"]
+                (get-in ctx [:resource :content-security-policy]
+                        "default-src https: data: 'unsafe-inline' 'unsafe-eval'"))
       true (assoc-in [:response :headers "x-frame-options"]
-                     (get ctx :x-frame-options "SAMEORIGIN"))
+                     (get-in ctx [:resource :x-frame-options] "SAMEORIGIN"))
       true (assoc-in [:response :headers "x-xss-protection"]
-                     (get ctx :xss-protection "1; mode=block"))
+                     (get-in ctx [:resource :xss-protection] "1; mode=block"))
       true (assoc-in [:response :headers "x-content-type-options"]
                      "nosniff"))))
