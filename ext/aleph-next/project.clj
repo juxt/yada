@@ -1,6 +1,6 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
-(def VERSION "1.2.4")
+(def VERSION "1.2.5")
 
 (defproject yada/aleph-next VERSION
   :description "Experimental use of next version of Aleph"
