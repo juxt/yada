@@ -12,7 +12,9 @@
    [yada.charset :as charset]
    [yada.status :refer [status]]
    [yada.util :refer [CRLF]])
-  (:import java.io.File))
+  (:import
+   [java.io File]
+   [manifold.stream.core IEventSource]))
 
 (defprotocol MessageBody
   (to-body [resource representation] "Construct the reponse body for the given resource, given the negotiated representation (metadata)")
@@ -99,6 +101,10 @@
     ;; the file's initial encoding was. (We can't know this.)
     f)
   (content-length [f] (.length f))
+
+  IEventSource
+  (to-body [ch representation] (render-seq ch representation))
+  (content-length [_] nil)
 
   java.nio.ByteBuffer
   (to-body [b _] b)
