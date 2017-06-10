@@ -22,11 +22,13 @@
                             sink
                             ))}}})]
     ["/sse-body-with-close"
-     (yada/resource {:methods {:get
-                               {:produces "text/event-stream"
-                                :response (fn [ctx]
-                                            (let [source (ms/periodically 400 (fn [] "foo"))
-                                                  sink (ms/stream 10)]
-                                              (ms/on-closed sink (fn [] (println "closed")))
-                                              (ms/connect source sink)
-                                              sink))}}})]]])
+     (yada/resource
+      {:methods
+       {:get
+        {:produces "text/event-stream"
+         :response (fn [ctx]
+                     (let [source (ms/periodically 400 (fn [] "foo"))
+                           sink (ms/stream 10)]
+                       (ms/on-closed sink (fn [] (println "closed")))
+                       (ms/connect source sink)
+                       sink))}}})]]])
