@@ -116,7 +116,7 @@ More information can be found in <<properties>>.
 [[parameters-intro]]
 ==== Parameters
 
-Web requests can contain ((parameters)) that can influence the response and yada can capture these. This is especially useful when you are writing APIs.
+Web requests can contain ((parameters)) that can influence the response and [yada]#yada# can capture these. This is especially useful when you are writing APIs.
 
 There are different types of parameters, which you can mix-and-match:
 
