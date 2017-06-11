@@ -299,7 +299,7 @@ To demonstrate this, try the following with the identifier `http://localhost:300
 
 [source,clojure]
 ----
-(yada/handler (atom "Hello World!\n"))
+(yada/as-resource (atom "Hello World!\n"))
 ----
 
 Let's try a normal GET.
