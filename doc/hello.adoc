@@ -458,7 +458,7 @@ As well as query parameters, yada supports path parameters, request headers, for
 
 Now we have seen how to build a single web resource, let's see how to build a ((Swagger)) description from a collection of web resources.
 
-In your editor, switch to `src/edge/server.clj`. This file defines the overall route structure which includes our routes for "Hello World!". This has been included twice, both at the root and under the `/api` path.
+In your editor, switch to `src/edge/web_server.clj`. This file defines the overall route structure which includes our routes for "Hello World!". This has been included twice, both at the root and under the `/api` path.
 
 This second version uses the Clojure threading macro `->` which wraps the route structure with `yada/swaggered` and gives it a bidi tag (used for generating URIs, we'll use this later).
 
