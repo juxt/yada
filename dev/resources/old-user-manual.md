@@ -571,7 +571,7 @@ The entire data structure can be printed, walked, sequenced, navigated
 with zippers, and otherwise manipulated by a Clojure's wide array of
 functions.
 
-n<include type="note" ref="swagger-implementation"/>
+<include type="note" ref="swagger-implementation"/>
 
 The `swaggered` wrapper introduces a record, `yada.swagger.Swagger`,
 which takes part in bidi's route resolution process (thanks to bidi's protocol-based extensibility).

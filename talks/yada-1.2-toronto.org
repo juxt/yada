@@ -1,0 +1,734 @@
+#+EXPORT_EXCLUDE_TAGS:  noexport
+#+AUTHOR:               by JUXT
+#+EMAIL:                @malcolmsparks
+#+TITLE:                yada 2.0
+#+SUBTITLE: with some bidi
+#+LANGUAGE:             en
+#+OPTIONS:              toc:nil
+#+OPTIONS:              reveal_center:t reveal_progress:nil reveal_history:t reveal_control:nil
+#+OPTIONS:              reveal_mathjax:nil reveal_rolling_links:nil reveal_keyboard:t reveal_overview:t num:nil
+#+OPTIONS:              width:1600 height:900
+#+REVEAL_HLEVEL:        1
+#+REVEAL_MARGIN:        0.0
+#+REVEAL_MIN_SCALE:     1.0
+#+REVEAL_MAX_SCALE:     1.8
+#+REVEAL_THEME:         juxt-dark
+#+REVEAL_TRANS:         none
+#+REVEAL_SPEED:         fast
+#+REVEAL_ROOT:          static
+#+REVEAL_PLUGINS: (highlight markdown notes pdf)
+#+REVEAL_EXTRA_CSS: static/css/yada-1.2.css
+
+#+BEGIN_NOTES
+yada is revolutionary, and revolutions take time - you've can't stop believing, you must persevere
+#+END_NOTES
+
+* There is no ~yada~ 2.0
+  :PROPERTIES:
+  :reveal_background: #880808
+  :reveal_extra_attr: class="juxt_dark-bg juxt_jumbo"
+  :END:
+
+* Long live the revolution
+  :PROPERTIES:
+  :reveal_background: ./static/assets/richrev.jpg
+  :reveal_background_size: 100%
+  :reveal_extra_attr: class="juxt_dark-bg juxt_hide-heading"
+  :END:
+
+* Don't break compatibility!
+
+#+BEGIN_QUOTE
+"Companies don't want to update their code every time you decide to rename a function in your standard library. Its role in Java's dominance can't be overstated. This culture … made its way into Clojure and ClojureScript, who haven't made breaking changes in the five years I've used them."
+
+
+-- Zach Oakes -- ClojureScript: The industry's favorite functional frontend language -- https://sekao.net/blog/industry.html
+#+END_QUOTE
+
+* Java compatibility
+
+#+BEGIN_NOTES
+The JDK might have a lot of crap, but it's crap you can depend on!
+
+e.g. java.util.Date
+#+END_NOTES
+
+#+BEGIN_SRC java
+new java.util.Date(12,12,12)
+#+END_SRC
+
+* But...
+
+* What about?
+
+- The clean new rewrite!
+- Namespaced keys!
+- clojure.spec!
+
+* A compromise...
+
+- Maintain a stable yada 'API' for existing users
+- Allow for new 'bundles' containing alternative yada APIs
+
+* ~yada~ API
+
+#+BEGIN_SRC clojure
+  (ns yada
+    (:require [yada.yada :as yada]))
+
+  ["/yada" (yada/yada "yada")]
+#+END_SRC
+
+[[./static/assets/marklar.jpg]]
+
+* Potemkin to the rescue
+  :PROPERTIES:
+  :reveal_background: ./static/assets/potemkin.jpg
+  :reveal_background_size: 50%
+  :reveal_extra_attr: class="juxt_hide-heading"
+  :END:
+
+* Potemkin provides one more layer of indirection
+  :PROPERTIES:
+  :reveal_extra_attr: class="juxt_hide-heading"
+  :END:
+
+#+BEGIN_QUOTE
+"Computer Science is the belief that all problems can be solved by adding one more layer of indirection" -- Derek deBruler
+#+END_QUOTE
+
+* Potemkin: one more layer of indirection
+
+#+BEGIN_SRC clojure
+  (ns yada.yada
+    (:require
+      [potemkin :refer (import-vars)]
+      [lots of other stuff]))
+
+  (potemkin/import-vars
+   [yada.aleph listener server]
+   [yada.context content-type charset language]
+   [yada.handler handler yada interceptor-chain]
+   [yada.swagger swaggered]
+   [yada.resource resource as-resource])
+#+END_SRC
+
+* ~yada~ extensions & bundles
+
+#+BEGIN_SRC dot :file yada-bundles-1.png :cmdline -Kdot -Tpng
+  digraph Tagging {
+
+          graph [fontname = "helvetica"];
+          node [fontname = "helvetica",shape=oval,label="",width=0.9];
+          edge [fontname = "helvetica"];
+
+          bundle_default [label="default"];
+
+          bundle_default -> ext_aleph;
+          bundle_default -> ext_bidi;
+          bundle_default -> ext_core;
+          bundle_default -> ext_async;
+          bundle_default -> ext_json;
+          bundle_default -> ext_json_html;
+          bundle_default -> ext_jwt;
+          bundle_default -> ext_multipart;
+          bundle_default -> ext_oauth2;
+          bundle_default -> ext_swagger;
+          bundle_default -> ext_transit;
+          bundle_default -> ext_webjars;
+
+          ext_aleph [label="aleph"];
+          ext_bidi [label="bidi"];
+          ext_core [label="core"];
+          ext_async [label="async"];
+          ext_json [label="json"];
+          ext_json_html [label="json-html"];
+          ext_jwt [label="jwt"];
+          ext_multipart [label="multipart"];
+          ext_oauth2 [label="oauth2"];
+          ext_swagger [label="swagger"];
+          ext_transit [label="transit"];
+          ext_webjars [label="webjars"];
+  }
+#+END_SRC
+
+* ~yada~ extensions & bundles
+
+#+BEGIN_SRC dot :file yada-bundles-2.png :cmdline -Kdot -Tpng
+  digraph Tagging {
+
+          graph [fontname = "helvetica"];
+          node [fontname = "helvetica",shape=oval,label="",width=0.9];
+          edge [fontname = "helvetica"];
+
+          bundle_default [label="default"];
+          bundle_lean [label="lean",color="blue",fontcolor="blue"];
+
+          bundle_default -> ext_aleph;
+          bundle_default -> ext_async;
+          bundle_default -> ext_bidi;
+          bundle_default -> ext_core;
+          bundle_default -> ext_json;
+          bundle_default -> ext_json_html;
+          bundle_default -> ext_jwt;
+          bundle_default -> ext_multipart;
+          bundle_default -> ext_oauth2;
+          bundle_default -> ext_swagger;
+          bundle_default -> ext_transit;
+          bundle_default -> ext_webjars;
+
+          bundle_lean -> ext_aleph [color="blue"];
+          bundle_lean -> ext_bidi [color="blue"];
+          bundle_lean -> ext_core [color="blue"];
+
+          ext_aleph [label="aleph"];
+          ext_async [label="async"];
+          ext_bidi [label="bidi"];
+          ext_core [label="core"];
+          ext_json [label="json"];
+          ext_json_html [label="json-html"];
+          ext_jwt [label="jwt"];
+          ext_multipart [label="multipart"];
+          ext_oauth2 [label="oauth2"];
+          ext_swagger [label="swagger"];
+          ext_transit [label="transit"];
+          ext_webjars [label="webjars"];
+  }
+#+END_SRC
+
+
+* ~yada~ extensions & bundles
+
+#+BEGIN_SRC dot :file yada-bundles-3.png :cmdline -Kdot -Tpng
+  digraph Tagging {
+
+          graph [fontname = "helvetica"];
+          node [fontname = "helvetica",shape=oval,label="",width=0.9];
+          edge [fontname = "helvetica"];
+
+          bundle_default [label="default"];
+          bundle_lean [label="lean",color="blue",fontcolor="blue"];
+          bundle_next [label="next",color="darkgreen",fontcolor="darkgreen"];
+
+          bundle_default -> ext_aleph;
+          bundle_default -> ext_bidi;
+          bundle_default -> ext_core;
+          bundle_default -> ext_async;
+          bundle_default -> ext_json;
+          bundle_default -> ext_json_html;
+          bundle_default -> ext_jwt;
+          bundle_default -> ext_multipart;
+          bundle_default -> ext_oauth2;
+          bundle_default -> ext_swagger;
+          bundle_default -> ext_transit;
+          bundle_default -> ext_webjars;
+
+          bundle_lean -> ext_aleph [color="blue"];
+          bundle_lean -> ext_bidi [color="blue"];
+          bundle_lean -> ext_core [color="blue"];
+
+          bundle_next -> ext_aleph_next [color="darkgreen"];
+          bundle_next -> ext_bidi [color="darkgreen"];
+          bundle_next -> ext_core [color="darkgreen"];
+          bundle_next -> ext_json [color="darkgreen"];
+          bundle_next -> ext_json_html [color="darkgreen"];
+          bundle_next -> ext_multipart [color="darkgreen"];
+          bundle_next -> ext_oauth2 [color="darkgreen"];
+          bundle_next -> ext_transit [color="darkgreen"];
+          bundle_next -> ext_webjars [color="darkgreen"];
+
+          ext_aleph_next [label="aleph-next",color="darkgreen",fontcolor="darkgreen"];
+          ext_bidi [label="bidi"];
+          ext_core [label="core"];
+          ext_aleph [label="aleph"];
+          ext_async [label="async"];
+          ext_json [label="json"];
+          ext_json_html [label="json-html"];
+          ext_jwt [label="jwt"];
+          ext_multipart [label="multipart"];
+          ext_oauth2 [label="oauth2"];
+          ext_swagger [label="swagger"];
+          ext_transit [label="transit"];
+          ext_webjars [label="webjars"];
+  }
+#+END_SRC
+
+* API Extensibility
+
+- ~yada~ can move forwards without breaking compatibility (hopefully!)
+- ~yada~ now has a proper extension mechanism for features that fall
+  outside the HTTP specifications.
+
+
+* ~yada~ 1.2 !
+
+* A quick history of ~yada~
+
+#+BEGIN_NOTES
+This is for people who have come along who don't know anything about
+yada, to explain yada trying not to bore those who already do!
+#+END_NOTES
+
+* Origins
+
+- Introduced to REST around ~2005
+- Worked on plugboard, a Clojure-port of WebMachine
+- Discovered compojure-rest, and contributed
+- Renamed it Liberator
+- Spoke about it at London's EuroClojure in 2012
+
+* Async curiosity
+
+#+BEGIN_NOTES
+I became async-curious around 2012, particular with David John Hume
+#+END_NOTES
+
+- Gave talk on 'Adventures with core.async' at QCon 2014
+- David Thomas Hume in audience, got chatting afterwards
+- David had a PR prepared to make Liberator async (not merged)
+
+[[./static/assets/david.jpg]]
+
+* 2014 - Reflections on 'On The Market'
+
+- Ring with Compojure
+- Liberator with bidi
+- (custom) fnhouse
+- compojure-api
+
+* Ring
+
+#+BEGIN_SRC clojure
+(defn handler [request]
+  {:status 200
+   :headers {"Content-Type" "text/html"}
+   :body "<h1>Hello World!!!!!!!!!!!!!!!1</h1>"})
+#+END_SRC
+
+* Liberator
+
+#+BEGIN_SRC clojure
+(defresource parameter [txt]
+  :available-media-types ["text/plain"]
+  :handle-ok (fn [_] (format "The text is %s" txt)))
+#+END_SRC
+
+* fnhouse
+
+#+BEGIN_SRC clojure
+(defnk $entries$POST
+  "Add a new entry to the guestbook"
+  {:responses {200 schemas/ClientEntry}}
+  [[:request body :- schemas/EntryData]
+   [:resources guestbook index]]
+  (let [entry-id (swap! index inc)
+        indexed-entry (assoc body :index entry-id)]
+    (swap! guestbook assoc entry-id indexed-entry)
+    {:body indexed-entry}))
+#+END_SRC
+
+* compojure-api
+
+#+BEGIN_SRC clojure
+  (GET "/plus" []
+          :return Total
+          :query-params [x :- Long, y :- Long]
+          :summary "x+y with query-parameters"
+          (ok {:total (+ x y)}))
+
+  (POST "/minus" []
+        :return Total
+        :body-params [x :- Long, y :- Long]
+        :summary "x-y with body-parameters"
+        (ok {:total (- x y)}))
+#+END_SRC
+
+* ~yada~
+
+- All the features
+- Including all the (good) features from all other libraries (e.g. Swagger)
+- All of 'new' HTTP (httpbis)
+- Async
+
+* ~yada~: A revolution in HTTP library design
+
+- Ring (+ Rack, Servlet, etc.): functional model
+- Liberator (+ WebMachine, etc.): execution model
+- ~yada~: resource model
+
+* What's wrong with Ring?
+
+* Example A: wrap-head
+
+#+BEGIN_SRC clojure
+  (defn head-request
+    "Turns a HEAD request into a GET."
+    {:added "1.2"}
+    [request]
+    (if (= :head (:request-method request))
+      (assoc request :request-method :get)
+      request))
+
+  (defn head-response
+    "Returns a nil body if original request was a HEAD."
+    {:added "1.2"}
+    [response request]
+    (if (and response (= :head (:request-method request)))
+      (assoc response :body nil)
+      response))
+#+END_SRC
+
+#+BEGIN_NOTES
+Here is Ring's middleware implementation of HEAD
+
+In the first function, which processes the request, we take a HEAD request and turn it into a GET request. OK.
+
+In the second function, we process the response. We replace the body with nil.
+
+Q. Can anyone see anything sub-optimal here?
+
+Yes, it's compliant. But it's also inefficient and a waste of resources that could be precious to you.
+
+#+END_NOTES
+
+* Example B: Compojure routing
+
+#+BEGIN_SRC clojure
+  (routes
+    (GET "/hello" [] (fn [req] "Hello World!"))
+    (POST "/hello" [] (fn [req] (launch-missiles!))))
+#+END_SRC
+
+- Q. Which HTTP status do we get from this Ring handler if we send a =PUT= request to =/hello=?
+- Q. Which HTTP status /should/ we get?
+
+#+BEGIN_NOTES
+Let's move on to my second example. Here we have 2 functions, composed together. They happen to be Compojure macros rather than Ring middleware, but they illustrate exactly the same problem.
+
+So question 1: Which HTTP status do we get from this Ring handler if we send a =PUT= to =/hello=? (wait for answer) Right, a 404. And a bonus question for the HTTP nerds here ... (click next slide) ...  which HTTP status **should** we get? Anyone? Yes, that's right: a 405.
+
+In fact, the modularity of this design, causes us a problem. The fact that the GET and POST operations are ignorant of each other's existence, and that the composed function has no knowledge of the nature of the functions it is composing, means that we cannot know to send a 405 rather than a 404.
+#+END_NOTES
+
+* Example C: wrap-modified
+  :PROPERTIES:
+  :reveal_extra_attr: class="juxt_spec"
+  :END:
+
+#+BEGIN_QUOTE
+*5.2.  Conditionals*
+
+   The HTTP conditional request header fields [RFC7232] allow a client
+   to place a precondition on the state of the target resource, so that
+   the action corresponding to the method semantics will *not* be applied
+   if the precondition evaluates to false.
+
+― RFC 7231
+#+END_QUOTE
+
+#+BEGIN_NOTES
+For my final example, this is Ring's implementation of conditional requests. Again, let's remind ourselves what a conditional request is. The point of a conditional request is to avoid the waste of constructing state that the client already has. It's part of HTTP's ability to scale services to, well, 'web-scale'.
+
+But let's look at Ring's implementation:
+#+END_NOTES
+
+* Example C: wrap-modified
+
+#+BEGIN_SRC clojure
+  (defn wrap-not-modified
+    "Middleware that returns a 304 Not Modified from the wrapped handler
+    if the handler response has an ETag or Last-Modified header, and the
+    request has a If-None-Match or If-Modified-Since header that matches
+    the response."
+    {:added "1.2"}
+    [handler]
+    (fn [request]
+      (-> (handler request) ; WAT?
+          (not-modified-response request))))
+#+END_SRC
+
+#+BEGIN_NOTES
+Here we see that the entire response is created /before/ any predicate is evaluated. This is a 'smoke-and-mirrors' approach to HTTP compliance.
+
+But is it a question of improving Ring middleware functions. I don't think so. Because it's not really the fault of any single Ring middleware, because the Ring middleware has very little to go on, it has no clues as to what the function it is wrapping actually does, the function is just a function. We can't tell anything about it, not even how many arguments it takes! Or we can do is apply it.
+
+#+END_NOTES
+
+
+* Ring cannot implement HTTP properly due to data blindness
+
+* ~yada~: resources as /data/
+
+#+BEGIN_SRC clojure
+  {:access-control
+   {:authentication ...}
+   :methods
+   {:get
+    {:produces [{:media-type "text/html" :charset "UTF-8"}
+                "application/json" "application/edn"]
+     :response (fn [ctx] {:foo :bar})}
+    :put
+    {:consumes "multipart/form-data"
+     :parameters {:form {:foo Keyword}}
+     :response (fn [ctx] ...)}}}
+#+END_SRC
+
+* Advantages of the resource model
+
+- Operations in HTTP are /not/ independent
+- Critical features of HTTP depend on this!
+  - e.g. conditional requests
+
+* Integration with bidi
+
+- Target a resource's id
+- Place resources in route structures
+- Relative links
+- Routing-info injected into request
+
+* Integration with bidi
+
+#+BEGIN_SRC clojure
+  [["/accounts/" :accno]
+   (yada/resource {:id :account})]
+
+  ["/my-account"
+   (yada/redirect :account
+                  {:route-params {:accno "1234"}})]
+#+END_SRC
+
+* Integration with bidi
+
+#+BEGIN_SRC clojure
+  (yada/resource
+   {:methods
+    {:get
+     {:response
+      (fn [ctx]
+        (java.net.URI.
+         (yada/href-for
+          ctx :account
+          {:route-params
+           {:accno
+            (get-in ctx [:authentication "default"
+                         :account-id])}})))}}})
+#+END_SRC
+
+* ~yada~ content negotiation
+
+- Declarative (optionally dynamic) server-provided representations
+- Negotiables
+  - Media types
+  - Charsets
+  - Languages
+  - Encodings (partially)
+- Parameters and q-values
+- Proper headers
+  - Vary, ETags, 300 Multiple Representations
+- Enables media-types
+  - Hypermedia
+  - API versioning
+
+* ~yada~ request parameter coercion
+
+- Parameter declarations (query, path, header, cookie, form, body)
+- Forced 400 (Client Error) on validation error
+- Coercion of parameters to declared types:
+
+#+BEGIN_SRC clojure
+{:parameters {:query {:id UUID :from Date}}}
+#+END_SRC
+
+* ~yada~ response body coercion
+
+#+BEGIN_SRC clojure
+  (yada/resource
+   {:methods
+    {:get
+     {:produces #{"text/html" "application/json"}
+      :response {:just :an :ordinary :map}}}})
+#+END_SRC
+
+* ~yada~ resource coercion
+
+#+BEGIN_SRC clojure
+(yada "yada")
+
+(yada {:do "a deer, a female deer"
+       :re "(let's stop this now)"})
+
+(yada (new-template-resource
+        "page.html" {:title "yada"}))
+
+(yada (map->PostgresTable {:table "ACCOUNTS"}))
+
+(-> "Let's go meta!" yada yada yada)
+#+END_SRC
+
+* ~yada~ security
+
+- Authentication (multiple schemes)
+- Authorization
+- Multiple realms
+- OAuth2
+- HSTS security headers
+- CORS
+- Forthcoming blog-series
+
+* ~yada~ async
+
+- Server Sent Events
+
+#+BEGIN_SRC clojure
+  (yada/resource
+   {:methods
+    {:get
+     {:produces "text/event-stream"
+      :response (chan)}}})
+
+#+END_SRC
+
+* ~yada~ async
+
+#+BEGIN_SRC clojure
+  {:parameters {:get {:query {"q" String}}}
+   :methods
+   {:get
+    {:response
+     (fn [ctx]
+       (http/get
+        (str "https://www.google.com/q=clojure+"
+             (get-in ctx
+             [:parameters :query "q"]))))}}}
+#+END_SRC
+
+
+* ~yada~ async
+
+- Return futures, promises, streams, channels…
+- d/chain
+- (Credit to ztellman's manifold)
+
+* ~yada~ methods & headers
+
+- OPTIONS, HEAD, TRACE, BREW
+- Custom methods
+- Method semantics
+
+* ~yada~ flexibility
+
+- Interceptor chains
+- Possible to mutate per-resource and per-request
+
+* ~yada~ challenges
+
+- Documentation
+- Swagger
+- Error handling, stack traces
+- Dev versus Prod
+- Debugging
+- Security!
+
+* Books!
+  :PROPERTIES:
+  :reveal_background: ./static/assets/19.jpg
+  :reveal_background_size: 100%
+  :reveal_extra_attr: class="juxt_dark-bg juxt_hide-heading"
+  :END:
+
+#+BEGIN_NOTES
+"Books! In a fields of knowledge" - An advertisement for the Soviet-era publisher LENGIZ, designed by A.M. Rodchenko and featuring a portrait of Lilya Brik.
+
+Books are important!
+
+Here's how I build the yada book - over Xmas, I wrote a tool to do it! (procrastination)
+#+END_NOTES
+
+* /Demo/
+
+* Documentation
+  :PROPERTIES:
+  :reveal_background: ./static/assets/redbook.jpg
+  :reveal_background_size: 100%
+  :reveal_extra_attr: class="juxt_dark-bg juxt_hide-heading"
+  :END:
+
+* Profiles
+  :PROPERTIES:
+  :reveal_background: ./static/assets/profiles.jpg
+  :reveal_background_size: 100%
+  :reveal_extra_attr: class="juxt_dark-bg"
+  :END:
+
+* Debugging
+
+#+BEGIN_NOTES
+TODO: Add liberator debugging diagram
+#+END_NOTES
+
+* Missing pieces (HTTP)
+
+- Reactive negotiation
+  - 300 Multiple Representations
+- RFC 7233: Range requests
+  - Partial responses
+- Content encodings (gzip, deflate)
+
+* WebDAV
+
+* Reverse proxy functionality
+
+- TLS termination
+- U2F yubikey support
+- HTTP 2.0 server-push
+- Cacheing (RFC 7234)
+- Compression (gzip encoding)
+
+* API 'Gateway'
+
+- Rate limiting
+- Load balancing
+- Analytics
+- API distribution
+
+* Reflections
+
+* ~yada~ has broadly met its initial goals, but more to be done.
+* Tension between static and dynamic (Swagger prefers static, but REST is /definitely/ dynamic!)
+* HTTP is /not/ modular, too many interconnections!
+* Security is becoming increasingly critical.
+
+* One more thing...
+
+* 2017: The Year of ClojureScript on the Server
+  :PROPERTIES:
+  :reveal_background: ./static/assets/space.jpg
+  :reveal_background_size: 100%
+  :reveal_extra_attr: class="juxt_dark-bg"
+  :END:
+
+* ~yada~ in ClojureScript?
+
+- Planck/Lumo (cljs on WebKit/NodeJS)
+- Macchiato (@yogthos)
+- Mach (4s ~yada~ startup)
+- AWS Lambda
+
+* Long live the revolution
+  :PROPERTIES:
+  :reveal_background: ./static/assets/leninbye.jpg
+  :reveal_background_size: 100%
+  :reveal_extra_attr: class="juxt_dark-bg juxt_hide-heading"
+  :END:
+
+* Thanks!
+  :PROPERTIES:
+  :reveal_background: ./static/assets/richrev.jpg
+  :reveal_background_size: 100%
+  :reveal_extra_attr: class="juxt_dark-bg juxt_hide-heading"
+  :END:
+
+* Q&A
+
+- Anything you'd like to see added?
+- Gripes?

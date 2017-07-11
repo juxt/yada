@@ -266,6 +266,9 @@
   (as-handler [route] (as-handler (resource route)))
   clojure.lang.Fn
   (as-handler [this] this)
+  clojure.lang.Var
+  (as-handler [this]
+    (as-handler (deref this)))
   Object
   (as-handler [this] (handler this)))
 

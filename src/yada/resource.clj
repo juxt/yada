@@ -5,12 +5,14 @@
    [hiccup.core :refer [html]]
    [schema.core :as s]
    [schema.utils :as su]
+   [yada.charset :as charset]
    [yada.context :refer [content-type]]
    [yada.schema :as ys]
    [yada.util :refer [arity]])
   (:import java.util.Date
            yada.charset.CharsetMap
-           yada.media_type.MediaTypeMap))
+           yada.media_type.MediaTypeMap
+           [manifold.stream.core IEventSource]))
 
 (defprotocol ResourceCoercion
   (as-resource [_] "Coerce to a resource. Often, resources need to be
@@ -83,6 +85,17 @@
                            1 (f ctx)
                            (apply f ctx (repeat (dec arity) nil)))
                          )}}})))
+
+  clojure.lang.Var
+  (as-resource [v]
+    (as-resource (deref v)))
+
+  IEventSource
+  (as-resource [source]
+    (resource
+     {:produces [{:media-type "text/event-stream"
+                  :charset charset/platform-charsets}]
+      :methods {:get {:response (fn [ctx] source)}}}))
 
   Exception
   (as-resource [e]

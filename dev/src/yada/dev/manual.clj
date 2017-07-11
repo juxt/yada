@@ -141,6 +141,7 @@
                         (a/<!! (a/timeout 250))
                         (recur)))
                     (handler ch))]]]
+
     ["/manual/img/"
      (resource
       {:path-info? true

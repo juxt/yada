@@ -9,6 +9,11 @@ body {
     font-size: 4em;
 }
 
+li code {
+    font-family: yada !important;
+    font-size: 1.3em !important;
+}
+
 .present pre code {
     line-height: 1.2em;
     font-size: 1.6em;

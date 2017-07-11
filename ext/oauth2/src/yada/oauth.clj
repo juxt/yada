@@ -237,9 +237,7 @@
                                         :otherwise
                                         (render-error 500 error (-> ctx :response :produces) ctx)
                                         #_(str "An error occured:" (pr-str error))
-                                        )
-
-                                      ))}}}))))
+                                        )))}}}))))
 
 (defmethod verify :oauth2
   [ctx {:keys [cookie yada.oauth2/secret] :or {cookie "session"} :as scheme}]

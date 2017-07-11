@@ -426,6 +426,15 @@ expressive short-hand descriptions."}
   {(s/optional-key :interceptor-chain) [s/Any]
    (s/optional-key :error-interceptor-chain) [s/Any]})
 
+;; These are recommended defaults for this bundle.
+;; Consider merging with your resource models.
+(def policies
+  {:dev {:show-stack-traces? true}
+   :prod {:show-stack-traces? false}})
+
+(s/defschema Policies
+  {(s/optional-key :show-stack-traces?) s/Bool})
+
 (s/defschema Resource
   (merge {(s/optional-key :id) s/Any}
          ResourceDocumentation
@@ -441,6 +450,7 @@ expressive short-hand descriptions."}
           (s/optional-key :sub-resource) (s/=> Resource Context)}
          Logger
          InterceptorChain
+         Policies
          NamespacedEntries))
 
 (s/defschema ResourceMappings
@@ -453,11 +463,11 @@ expressive short-hand descriptions."}
   (sc/coercer Resource
               (merge ResourceMappings
                      {Resource (fn [m]
-                                 (let [r (:response m)]
-                                   (cond-> m
+                                 (let [r (:response m)
+                                       policies (get policies (get m :profile :dev))]
+                                   (cond-> (merge policies m)
                                      r (assoc-in [:methods :get :response] r)
-                                     true (dissoc :response))))})))
-
+                                     true (dissoc :response :profile))))})))
 
 ;; Handler ---------------------------------------------------------
 

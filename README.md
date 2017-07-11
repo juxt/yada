@@ -12,7 +12,7 @@ It has the following features:
 
 yada is a sibling library to [bidi](http://github.com/juxt/bidi) - whereas bidi is based on _routes as data_, yada is based on _resources as data_.
 
-The user-manual for the latest (1.1.x) release is available at
+The user-manual for the latest (1.x) release is available at
 [https://juxt.pro/yada](https://juxt.pro/yada) and offline (see below).
 
 The user-manual is also available as an e-book or PDF, at
@@ -23,7 +23,7 @@ The user-manual is also available as an e-book or PDF, at
 Add the following dependency to your `project.clj` or `build.boot` file:
 
 ```
-[yada "1.2.1"]
+[yada "1.2.6"]
 ```
 
 [![Build Status](https://travis-ci.org/juxt/yada.png)](https://travis-ci.org/juxt/yada)
@@ -78,7 +78,7 @@ To use the lean (or any other) variant of yada, specify the
 appropriate classifier in your `project.clj` or `build.boot` file:
 
 ```clojure
-[yada/lean "1.2.1"]
+[yada/lean "1.2.6"]
 ```
 
 ## Running documentation and examples offline
@@ -158,6 +158,12 @@ feedback and suggestions.
 * Mikkel Gravgaard
 * Lucas Lago
 * Johannes Staffans
+* Michiel Borkent
+* James Laver
+* Marcin Jekot
+* Daniel Compton
+* Yoshito Komatsu
+* Bor Hodošček
 
 Also, see the dependency list. In particular, yada would certainly not
 exist without the considerable efforts of those behind the following

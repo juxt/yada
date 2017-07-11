@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>yada 2.0</title>
+<meta name="author" content="(by JUXT)"/>
+<style type="text/css">
+.underline { text-decoration: underline; }
+</style>
+<link rel="stylesheet" href="static/css/reveal.css"/>
+
+<link rel="stylesheet" href="static/css/theme/juxt-dark.css" id="theme"/>
+
+<link rel="stylesheet" href="static/css/yada-1.2.css"/>
+<link rel="stylesheet" href="static/lib/css/zenburn.css"/>
+<!-- If the query includes 'print-pdf', include the PDF print sheet -->
+<script>
+    if( window.location.search.match( /print-pdf/gi ) ) {
+        var link = document.createElement( 'link' );
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = 'static/css/print/pdf.css';
+        document.getElementsByTagName( 'head' )[0].appendChild( link );
+    }
+</script>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+<section id="sec-title-slide"><h1 class="title">yada 2.0</h1><h2 class="author">by JUXT</h2><p class="date">Created: 2017-05-16 Tue 23:30</p>
+</section>
+<aside class="notes">
+<p>
+yada is revolutionary, and revolutions take time - you've can't stop believing, you must persevere
+</p>
+
+</aside>
+
+<section>
+<section id="slide-orgheadline1" data-background="#880808" class="juxt_dark-bg juxt_jumbo">
+<h2 id="orgheadline1">There is no <code>yada</code> 2.0</h2>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline2" data-background="./static/assets/richrev.jpg" data-background-size="100%" class="juxt_dark-bg juxt_hide-heading">
+<h2 id="orgheadline2">Long live the revolution</h2>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline3">
+<h2 id="orgheadline3">Don't break compatibility!</h2>
+<blockquote nil>
+<p>
+"Companies don't want to update their code every time you decide to rename a function in your standard library. Its role in Java's dominance can't be overstated. This culture … made its way into Clojure and ClojureScript, who haven't made breaking changes in the five years I've used them."
+</p>
+
+
+<p>
+&#x2013; Zach Oakes &#x2013; ClojureScript: The industry's favorite functional frontend language &#x2013; <a href="https://sekao.net/blog/industry.html">https://sekao.net/blog/industry.html</a>
+</p>
+</blockquote>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline4">
+<h2 id="orgheadline4">Java compatibility</h2>
+<aside class="notes">
+<p>
+The JDK might have a lot of crap, but it's crap you can depend on!
+</p>
+
+<p>
+e.g. java.util.Date
+</p>
+
+</aside>
+
+<div class="org-src-container">
+
+<pre><code class="java" >new java.util.Date(12,12,12)
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline5">
+<h2 id="orgheadline5">But&#x2026;</h2>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline6">
+<h2 id="orgheadline6">What about?</h2>
+<ul>
+<li>The clean new rewrite!</li>
+<li>Namespaced keys!</li>
+<li>clojure.spec!</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline7">
+<h2 id="orgheadline7">A compromise&#x2026;</h2>
+<ul>
+<li>Maintain a stable yada 'API' for existing users</li>
+<li>Allow for new 'bundles' containing alternative yada APIs</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline8">
+<h2 id="orgheadline8"><code>yada</code> API</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure" >(ns yada
+  (:require [yada.yada :as yada]))
+
+["/yada" (yada/yada "yada")]
+</code></pre>
+</div>
+
+
+<div class="figure">
+<p><img src="./static/assets/marklar.jpg" alt="marklar.jpg" />
+</p>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline9" data-background="./static/assets/potemkin.jpg" data-background-size="50%" class="juxt_hide-heading">
+<h2 id="orgheadline9">Potemkin to the rescue</h2>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline10" class="juxt_hide-heading">
+<h2 id="orgheadline10">Potemkin provides one more layer of indirection</h2>
+<blockquote nil>
+<p>
+"Computer Science is the belief that all problems can be solved by adding one more layer of indirection" &#x2013; Derek deBruler
+</p>
+</blockquote>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline11">
+<h2 id="orgheadline11">Potemkin: one more layer of indirection</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure" >(ns yada.yada
+  (:require
+    [potemkin :refer (import-vars)]
+    [lots of other stuff]))
+
+(potemkin/import-vars
+ [yada.aleph listener server]
+ [yada.context content-type charset language]
+ [yada.handler handler yada interceptor-chain]
+ [yada.swagger swaggered]
+ [yada.resource resource as-resource])
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline12">
+<h2 id="orgheadline12"><code>yada</code> extensions &amp; bundles</h2>
+
+<div class="figure">
+<p><img src="yada-bundles-1.png" alt="yada-bundles-1.png" />
+</p>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline13">
+<h2 id="orgheadline13"><code>yada</code> extensions &amp; bundles</h2>
+
+<div class="figure">
+<p><img src="yada-bundles-2.png" alt="yada-bundles-2.png" />
+</p>
+</div>
+
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline14">
+<h2 id="orgheadline14"><code>yada</code> extensions &amp; bundles</h2>
+
+<div class="figure">
+<p><img src="yada-bundles-3.png" alt="yada-bundles-3.png" />
+</p>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline15">
+<h2 id="orgheadline15">API Extensibility</h2>
+<ul>
+<li><code>yada</code> can move forwards without breaking compatibility (hopefully!)</li>
+<li><code>yada</code> now has a proper extension mechanism for features that fall
+outside the HTTP specifications.</li>
+
+</ul>
+
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline16">
+<h2 id="orgheadline16"><code>yada</code> 1.2 !</h2>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline17">
+<h2 id="orgheadline17">A quick history of <code>yada</code></h2>
+<aside class="notes">
+<p>
+This is for people who have come along who don't know anything about
+yada, to explain yada trying not to bore those who already do!
+</p>
+
+</aside>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline18">
+<h2 id="orgheadline18">Origins</h2>
+<ul>
+<li>Introduced to REST around ~2005</li>
+<li>Worked on plugboard, a Clojure-port of WebMachine</li>
+<li>Discovered compojure-rest, and contributed</li>
+<li>Renamed it Liberator</li>
+<li>Spoke about it at London's EuroClojure in 2012</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline19">
+<h2 id="orgheadline19">Async curiosity</h2>
+<aside class="notes">
+<p>
+I became async-curious around 2012, particular with David John Hume
+</p>
+
+</aside>
+
+<ul>
+<li>Gave talk on 'Adventures with core.async' at QCon 2014</li>
+<li>David Thomas Hume in audience, got chatting afterwards</li>
+<li>David had a PR prepared to make Liberator async (not merged)</li>
+
+</ul>
+
+
+<div class="figure">
+<p><img src="./static/assets/david.jpg" alt="david.jpg" />
+</p>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline20">
+<h2 id="orgheadline20">2014 - Reflections on 'On The Market'</h2>
+<ul>
+<li>Ring with Compojure</li>
+<li>Liberator with bidi</li>
+<li>(custom) fnhouse</li>
+<li>compojure-api</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline21">
+<h2 id="orgheadline21">Ring</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure" >(defn handler [request]
+  {:status 200
+   :headers {"Content-Type" "text/html"}
+   :body "<h1>Hello World!!!!!!!!!!!!!!!1</h1>"})
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline22">
+<h2 id="orgheadline22">Liberator</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure" >(defresource parameter [txt]
+  :available-media-types ["text/plain"]
+  :handle-ok (fn [_] (format "The text is %s" txt)))
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline23">
+<h2 id="orgheadline23">fnhouse</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure" >(defnk $entries$POST
+  "Add a new entry to the guestbook"
+  {:responses {200 schemas/ClientEntry}}
+  [[:request body :- schemas/EntryData]
+   [:resources guestbook index]]
+  (let [entry-id (swap! index inc)
+        indexed-entry (assoc body :index entry-id)]
+    (swap! guestbook assoc entry-id indexed-entry)
+    {:body indexed-entry}))
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline24">
+<h2 id="orgheadline24">compojure-api</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure" >(GET "/plus" []
+        :return Total
+        :query-params [x :- Long, y :- Long]
+        :summary "x+y with query-parameters"
+        (ok {:total (+ x y)}))
+
+(POST "/minus" []
+      :return Total
+      :body-params [x :- Long, y :- Long]
+      :summary "x-y with body-parameters"
+      (ok {:total (- x y)}))
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline25">
+<h2 id="orgheadline25"><code>yada</code></h2>
+<ul>
+<li>All the features</li>
+<li>Including all the (good) features from all other libraries (e.g. Swagger)</li>
+<li>All of 'new' HTTP (httpbis)</li>
+<li>Async</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline26">
+<h2 id="orgheadline26"><code>yada</code>: A revolution in HTTP library design</h2>
+<ul>
+<li>Ring (+ Rack, Servlet, etc.): functional model</li>
+<li>Liberator (+ WebMachine, etc.): execution model</li>
+<li><code>yada</code>: resource model</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline27">
+<h2 id="orgheadline27">What's wrong with Ring?</h2>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline28">
+<h2 id="orgheadline28">Example A: wrap-head</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure" >(defn head-request
+  "Turns a HEAD request into a GET."
+  {:added "1.2"}
+  [request]
+  (if (= :head (:request-method request))
+    (assoc request :request-method :get)
+    request))
+
+(defn head-response
+  "Returns a nil body if original request was a HEAD."
+  {:added "1.2"}
+  [response request]
+  (if (and response (= :head (:request-method request)))
+    (assoc response :body nil)
+    response))
+</code></pre>
+</div>
+
+<aside class="notes">
+<p>
+Here is Ring's middleware implementation of HEAD
+</p>
+
+<p>
+In the first function, which processes the request, we take a HEAD request and turn it into a GET request. OK.
+</p>
+
+<p>
+In the second function, we process the response. We replace the body with nil.
+</p>
+
+<p>
+Q. Can anyone see anything sub-optimal here?
+</p>
+
+<p>
+Yes, it's compliant. But it's also inefficient and a waste of resources that could be precious to you.
+</p>
+
+</aside>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline29">
+<h2 id="orgheadline29">Example B: Compojure routing</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure" >(routes
+  (GET "/hello" [] (fn [req] "Hello World!"))
+  (POST "/hello" [] (fn [req] (launch-missiles!))))
+</code></pre>
+</div>
+
+<ul>
+<li>Q. Which HTTP status do we get from this Ring handler if we send a <code>PUT</code> request to <code>/hello</code>?</li>
+<li>Q. Which HTTP status <i>should</i> we get?</li>
+
+</ul>
+
+<aside class="notes">
+<p>
+Let's move on to my second example. Here we have 2 functions, composed together. They happen to be Compojure macros rather than Ring middleware, but they illustrate exactly the same problem.
+</p>
+
+<p>
+So question 1: Which HTTP status do we get from this Ring handler if we send a <code>PUT</code> to <code>/hello</code>? (wait for answer) Right, a 404. And a bonus question for the HTTP nerds here &#x2026; (click next slide) &#x2026;  which HTTP status <b><b>should</b></b> we get? Anyone? Yes, that's right: a 405.
+</p>
+
+<p>
+In fact, the modularity of this design, causes us a problem. The fact that the GET and POST operations are ignorant of each other's existence, and that the composed function has no knowledge of the nature of the functions it is composing, means that we cannot know to send a 405 rather than a 404.
+</p>
+
+</aside>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline30" class="juxt_spec">
+<h2 id="orgheadline30">Example C: wrap-modified</h2>
+<blockquote nil>
+<p>
+<b>5.2.  Conditionals</b>
+</p>
+
+<p>
+The HTTP conditional request header fields [RFC7232] allow a client
+to place a precondition on the state of the target resource, so that
+the action corresponding to the method semantics will <b>not</b> be applied
+if the precondition evaluates to false.
+</p>
+
+<p>
+― RFC 7231
+</p>
+</blockquote>
+
+<aside class="notes">
+<p>
+For my final example, this is Ring's implementation of conditional requests. Again, let's remind ourselves what a conditional request is. The point of a conditional request is to avoid the waste of constructing state that the client already has. It's part of HTTP's ability to scale services to, well, 'web-scale'.
+</p>
+
+<p>
+But let's look at Ring's implementation:
+</p>
+
+</aside>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline31">
+<h2 id="orgheadline31">Example C: wrap-modified</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure" >(defn wrap-not-modified
+  "Middleware that returns a 304 Not Modified from the wrapped handler
+  if the handler response has an ETag or Last-Modified header, and the
+  request has a If-None-Match or If-Modified-Since header that matches
+  the response."
+  {:added "1.2"}
+  [handler]
+  (fn [request]
+    (-> (handler request) ; WAT?
+        (not-modified-response request))))
+</code></pre>
+</div>
+
+<aside class="notes">
+<p>
+Here we see that the entire response is created <i>before</i> any predicate is evaluated. This is a 'smoke-and-mirrors' approach to HTTP compliance.
+</p>
+
+<p>
+But is it a question of improving Ring middleware functions. I don't think so. Because it's not really the fault of any single Ring middleware, because the Ring middleware has very little to go on, it has no clues as to what the function it is wrapping actually does, the function is just a function. We can't tell anything about it, not even how many arguments it takes! Or we can do is apply it.
+</p>
+
+</aside>
+
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline32">
+<h2 id="orgheadline32">Ring cannot implement HTTP properly due to data blindness</h2>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline33">
+<h2 id="orgheadline33"><code>yada</code>: resources as <i>data</i></h2>
+<div class="org-src-container">
+
+<pre><code class="clojure" >{:access-control
+ {:authentication ...}
+ :methods
+ {:get
+  {:produces [{:media-type "text/html" :charset "UTF-8"}
+              "application/json" "application/edn"]
+   :response (fn [ctx] {:foo :bar})}
+  :put
+  {:consumes "multipart/form-data"
+   :parameters {:form {:foo Keyword}}
+   :response (fn [ctx] ...)}}}
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline34">
+<h2 id="orgheadline34">Advantages of the resource model</h2>
+<ul>
+<li>Operations in HTTP are <i>not</i> independent</li>
+<li>Critical features of HTTP depend on this!
+<ul>
+<li>e.g. conditional requests</li>
+
+</ul></li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline35">
+<h2 id="orgheadline35">Integration with bidi</h2>
+<ul>
+<li>Target a resource's id</li>
+<li>Place resources in route structures</li>
+<li>Relative links</li>
+<li>Routing-info injected into request</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline36">
+<h2 id="orgheadline36">Integration with bidi</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure" >[["/accounts/" :accno]
+ (yada/resource {:id :account})]
+
+["/my-account"
+ (yada/redirect :account
+                {:route-params {:accno "1234"}})]
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline37">
+<h2 id="orgheadline37">Integration with bidi</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure" >(yada/resource
+ {:methods
+  {:get
+   {:response
+    (fn [ctx]
+      (java.net.URI.
+       (yada/href-for
+        ctx :account
+        {:route-params
+         {:accno
+          (get-in ctx [:authentication "default"
+                       :account-id])}})))}}})
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline38">
+<h2 id="orgheadline38"><code>yada</code> content negotiation</h2>
+<ul>
+<li>Declarative (optionally dynamic) server-provided representations</li>
+<li>Negotiables
+<ul>
+<li>Media types</li>
+<li>Charsets</li>
+<li>Languages</li>
+<li>Encodings (partially)</li>
+
+</ul></li>
+<li>Parameters and q-values</li>
+<li>Proper headers
+<ul>
+<li>Vary, ETags, 300 Multiple Representations</li>
+
+</ul></li>
+<li>Enables media-types
+<ul>
+<li>Hypermedia</li>
+<li>API versioning</li>
+
+</ul></li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline39">
+<h2 id="orgheadline39"><code>yada</code> request parameter coercion</h2>
+<ul>
+<li>Parameter declarations (query, path, header, cookie, form, body)</li>
+<li>Forced 400 (Client Error) on validation error</li>
+<li>Coercion of parameters to declared types:</li>
+
+</ul>
+
+<div class="org-src-container">
+
+<pre><code class="clojure" >{:parameters {:query {:id UUID :from Date}}}
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline40">
+<h2 id="orgheadline40"><code>yada</code> response body coercion</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure" >(yada/resource
+ {:methods
+  {:get
+   {:produces #{"text/html" "application/json"}
+    :response {:just :an :ordinary :map}}}})
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline41">
+<h2 id="orgheadline41"><code>yada</code> resource coercion</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure" >(yada "yada")
+
+(yada {:do "a deer, a female deer"
+       :re "(let's stop this now)"})
+
+(yada (new-template-resource
+        "page.html" {:title "yada"}))
+
+(yada (map->PostgresTable {:table "ACCOUNTS"}))
+
+(-> "Let's go meta!" yada yada yada)
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline42">
+<h2 id="orgheadline42"><code>yada</code> security</h2>
+<ul>
+<li>Authentication (multiple schemes)</li>
+<li>Authorization</li>
+<li>Multiple realms</li>
+<li>OAuth2</li>
+<li>HSTS security headers</li>
+<li>CORS</li>
+<li>Forthcoming blog-series</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline43">
+<h2 id="orgheadline43"><code>yada</code> async</h2>
+<ul>
+<li>Server Sent Events</li>
+
+</ul>
+
+<div class="org-src-container">
+
+<pre><code class="clojure" >(yada/resource
+ {:methods
+  {:get
+   {:produces "text/event-stream"
+    :response (chan)}}})
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline44">
+<h2 id="orgheadline44"><code>yada</code> async</h2>
+<div class="org-src-container">
+
+<pre><code class="clojure" >{:parameters {:get {:query {"q" String}}}
+ :methods
+ {:get
+  {:response
+   (fn [ctx]
+     (http/get
+      (str "https://www.google.com/q=clojure+"
+           (get-in ctx
+           [:parameters :query "q"]))))}}}
+</code></pre>
+</div>
+
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline45">
+<h2 id="orgheadline45"><code>yada</code> async</h2>
+<ul>
+<li>Return futures, promises, streams, channels…</li>
+<li>d/chain</li>
+<li>(Credit to ztellman's manifold)</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline46">
+<h2 id="orgheadline46"><code>yada</code> methods &amp; headers</h2>
+<ul>
+<li>OPTIONS, HEAD, TRACE, BREW</li>
+<li>Custom methods</li>
+<li>Method semantics</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline47">
+<h2 id="orgheadline47"><code>yada</code> flexibility</h2>
+<ul>
+<li>Interceptor chains</li>
+<li>Possible to mutate per-resource and per-request</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline48">
+<h2 id="orgheadline48"><code>yada</code> challenges</h2>
+<ul>
+<li>Documentation</li>
+<li>Swagger</li>
+<li>Error handling, stack traces</li>
+<li>Dev versus Prod</li>
+<li>Debugging</li>
+<li>Security!</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline49" data-background="./static/assets/19.jpg" data-background-size="100%" class="juxt_dark-bg juxt_hide-heading">
+<h2 id="orgheadline49">Books!</h2>
+<aside class="notes">
+<p>
+"Books! In a fields of knowledge" - An advertisement for the Soviet-era publisher LENGIZ, designed by A.M. Rodchenko and featuring a portrait of Lilya Brik.
+</p>
+
+<p>
+Books are important!
+</p>
+
+<p>
+Here's how I build the yada book - over Xmas, I wrote a tool to do it! (procrastination)
+</p>
+
+</aside>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline50">
+<h2 id="orgheadline50"><i>Demo</i></h2>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline51" data-background="./static/assets/redbook.jpg" data-background-size="100%" class="juxt_dark-bg juxt_hide-heading">
+<h2 id="orgheadline51">Documentation</h2>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline52" data-background="./static/assets/profiles.jpg" data-background-size="100%" class="juxt_dark-bg">
+<h2 id="orgheadline52">Profiles</h2>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline53">
+<h2 id="orgheadline53">Debugging</h2>
+<aside class="notes">
+<p>
+TODO: Add liberator debugging diagram
+</p>
+
+</aside>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline54">
+<h2 id="orgheadline54">Missing pieces (HTTP)</h2>
+<ul>
+<li>Reactive negotiation
+<ul>
+<li>300 Multiple Representations</li>
+
+</ul></li>
+<li>RFC 7233: Range requests
+<ul>
+<li>Partial responses</li>
+
+</ul></li>
+<li>Content encodings (gzip, deflate)</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline55">
+<h2 id="orgheadline55">WebDAV</h2>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline56">
+<h2 id="orgheadline56">Reverse proxy functionality</h2>
+<ul>
+<li>TLS termination</li>
+<li>U2F yubikey support</li>
+<li>HTTP 2.0 server-push</li>
+<li>Cacheing (RFC 7234)</li>
+<li>Compression (gzip encoding)</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline57">
+<h2 id="orgheadline57">API 'Gateway'</h2>
+<ul>
+<li>Rate limiting</li>
+<li>Load balancing</li>
+<li>Analytics</li>
+<li>API distribution</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline58">
+<h2 id="orgheadline58">Reflections</h2>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline59">
+<h2 id="orgheadline59"><code>yada</code> has broadly met its initial goals, but more to be done.</h2>
+</section>
+</section>
+<section>
+<section id="slide-orgheadline60">
+<h2 id="orgheadline60">Tension between static and dynamic (Swagger prefers static, but REST is <i>definitely</i> dynamic!)</h2>
+</section>
+</section>
+<section>
+<section id="slide-orgheadline61">
+<h2 id="orgheadline61">HTTP is <i>not</i> modular, too many interconnections!</h2>
+</section>
+</section>
+<section>
+<section id="slide-orgheadline62">
+<h2 id="orgheadline62">Security is becoming increasingly critical.</h2>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline63">
+<h2 id="orgheadline63">One more thing&#x2026;</h2>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline64" data-background="./static/assets/space.jpg" data-background-size="100%" class="juxt_dark-bg">
+<h2 id="orgheadline64">2017: The Year of ClojureScript on the Server</h2>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline65">
+<h2 id="orgheadline65"><code>yada</code> in ClojureScript?</h2>
+<ul>
+<li>Planck/Lumo (cljs on WebKit/NodeJS)</li>
+<li>Macchiato (@yogthos)</li>
+<li>Mach (4s <code>yada</code> startup)</li>
+<li>AWS Lambda</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline66" data-background="./static/assets/leninbye.jpg" data-background-size="100%" class="juxt_dark-bg juxt_hide-heading">
+<h2 id="orgheadline66">Long live the revolution</h2>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline67" data-background="./static/assets/richrev.jpg" data-background-size="100%" class="juxt_dark-bg juxt_hide-heading">
+<h2 id="orgheadline67">Thanks!</h2>
+
+</section>
+</section>
+<section>
+<section id="slide-orgheadline68">
+<h2 id="orgheadline68">Q&amp;A</h2>
+<ul>
+<li>Anything you'd like to see added?</li>
+<li>Gripes?</li>
+
+</ul>
+</section>
+</section>
+</div>
+</div>
+<script src="static/lib/js/head.min.js"></script>
+<script src="static/js/reveal.js"></script>
+
+<script>
+// Full list of configuration options available here:
+// https://github.com/hakimel/reveal.js#configuration
+Reveal.initialize({
+
+controls: false,
+progress: false,
+history: true,
+center: true,
+slideNumber: 'c',
+rollingLinks: false,
+keyboard: true,
+overview: true,
+margin: 0.00,
+minScale: 1.00,
+maxScale: 1.80,
+
+theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+transition: Reveal.getQueryHash().transition || 'none', // default/cube/page/concave/zoom/linear/fade/none
+transitionSpeed: 'fast',
+multiplex: {
+    secret: '', // null if client
+    id: '', // id, obtained from socket.io server
+    url: '' // Location of socket.io server
+},
+
+// Optional libraries used to extend on reveal.js
+dependencies: [
+ { src: 'static/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+ { src: 'static/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+ { src: 'static/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+ { src: 'static/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } },
+]
+});
+</script>
+</body>
+</html>

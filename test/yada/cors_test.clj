@@ -56,3 +56,33 @@
                        (update :headers conj ["origin" "http://acme.ro"])))]
       (is (not (contains? (set (keys (:headers resp))) "access-control-allow-origin")))
       )))
+
+
+(deftest allow-credentials-test
+  (testing "Not setting allow credentials"
+    (let [res (resource {:methods {:get "Hello"}
+                         :access-control {:allow-origin "*"}})
+          h (handler res)
+          resp @(h (-> (mock/request :get "/")
+                       (update :headers conj ["origin" "http://localhost"])))]
+      (is (not (contains? (set (keys (:headers resp))) "access-control-allow-credentials")))))
+
+  (testing "Setting allow credentials to true"
+    (let [res (resource {:methods {:get "Hello"}
+                         :access-control {:allow-origin "*"
+                                          :allow-credentials true}})
+          h (handler res)
+          resp @(h (-> (mock/request :get "/")
+                       (update :headers conj ["origin" "http://localhost"])))]
+      (is (contains? (set (keys (:headers resp))) "access-control-allow-credentials"))
+      (is (= "true" (get-in resp [:headers "access-control-allow-credentials"])))))
+
+  (testing "Setting allow credentials to false"
+    (let [res (resource {:methods {:get "Hello"}
+                         :access-control {:allow-origin "*"
+                                          :allow-credentials false}})
+          h (handler res)
+          resp @(h (-> (mock/request :get "/")
+                       (update :headers conj ["origin" "http://localhost"])))]
+      (is (contains? (set (keys (:headers resp))) "access-control-allow-credentials"))
+      (is (= "false" (get-in resp [:headers "access-control-allow-credentials"]))))))

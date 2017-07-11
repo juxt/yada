@@ -1,9 +1,11 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
-(def VERSION "1.2.1")
+(def VERSION "1.2.6")
 
 (defproject yada VERSION
-
+  :description "A complete batteries-included bundle of yada"
+  :license {:name "The MIT License"
+            :url "https://opensource.org/licenses/MIT"}
   :pedantic? :abort
 
   :dependencies [[yada/aleph ~VERSION]

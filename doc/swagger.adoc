@@ -131,6 +131,16 @@ specification you want to browse.
 Advanced users: For an example of custom Swagger UI configuration see
 `dev/resources/swagger/phonebook-swagger.html` for an example.
 
+=== Resource options
+
+Resources accept the following Swagger options. These options will also affect the Swagger UI.
+
+- `:swagger/tags` for logical grouping of operations, e.g. `["users"]`
+- `:swagger/summary` and `:swagger/description` for documentation of operations
+
+These options can be provided at the resource's top level and can be
+overriden per method.
+
 === Swagger and REST
 
 In some sense Swagger definitions compete with REST as an architecture. Where REST encourages self-describing APIs, Swagger tends towards well-documented APIs. REST APIs are particularly well suited to fluid public APIs which can support gradual evolution and a diverse and potentially unknown set of clients. In contrast, Swagger APIs and suited to fixed private APIs inside a single organisation of between multiple collaborating parties.

@@ -243,7 +243,7 @@
   (testing "no methods, just a response"
     (let [r (resource-coercer {:response "Hello"})]
       (is (not (error? r)))
-      (is (nil? (s/check Methods r)))
+      (is (nil? (s/check Methods (select-keys r [:methods]))))
       (let [f (get-in r [:methods :get :response])]
         (is (= "Hello" (f nil))))))
 

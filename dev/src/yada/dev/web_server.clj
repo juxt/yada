@@ -9,6 +9,7 @@
    [yada.yada :as yada]
 
    [yada.dev.manual :as manual]
+   [yada.dev.examples :as examples]
    [yada.dev.config :as config]
    [bidi.vhosts :refer [vhosts-model]]
    [clojure.java.io :as io]))
@@ -28,6 +29,7 @@
                  ["/" (yada/redirect ::yada.dev.manual/index)]
 
                  (manual/routes)
+                 (examples/routes)
 
                  [["/specs/rfc" :rfcnum]
                   (yada/resource
