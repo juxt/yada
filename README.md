@@ -124,6 +124,22 @@ tests pass prior to submission.
 $ lein test
 ```
 
+If you want to build and test your own version of yada, you need to be aware how to locally install your own version. Since yada is broken into multiple Maven jars, each with their own version declaration, there is a script that allows you to set the version to whatever you need it to be.
+
+```
+$ ./set-version 1.3.0-MS-SNAPSHOT
+```
+
+Rather than use `lein install`, you should replace `lein` with `./treelein`.
+
+For example:
+
+```
+$ ./treelein install
+```
+
+This will install all the yada jars into your local Maven repository.
+
 ## Acknowledgments
 
 Thanks to the following people for inspiration, contributions,
