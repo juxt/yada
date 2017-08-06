@@ -124,7 +124,7 @@
          (let [credentials (get-in ctx [:authentication realm])]
            (let [validation
                  (authorization/validate ctx credentials authorization)]
-             (if (nil? validation)
+             (if (or (nil? validation) (false? validation))
                (if credentials
                  (throw
                   (ex-info "Forbidden"
@@ -139,6 +139,7 @@
                validation)))
          ctx))
      ctx (get-in ctx [:resource :access-control :realms]))))
+
 
 (defn to-header [v]
   (if (coll? v)
