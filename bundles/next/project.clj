@@ -1,6 +1,6 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
-(def VERSION "1.2.6")
+(def VERSION "1.2.7")
 
 (defproject yada/next VERSION
   :description "Experimental 'next' bundle of yada"
