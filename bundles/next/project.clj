@@ -9,7 +9,7 @@
 
   :pedantic? :abort
 
-  :dependencies [[yada/aleph-next ~VERSION]
+  :dependencies [[yada/aleph ~VERSION]
                  [yada/bidi ~VERSION]
                  [yada/core ~VERSION]
                  [yada/json ~VERSION]

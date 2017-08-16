@@ -16,7 +16,7 @@
   [[byte-streams "0.2.2"]
    [clj-time "0.12.2"]
    [hiccup "1.0.5"]
-   [manifold "0.1.4"]
+   [manifold "0.1.6"]
    [org.clojure/data.codec "0.1.0"]
    [org.clojure/tools.reader "1.0.0-beta4"]
    [potemkin "0.4.3"]
