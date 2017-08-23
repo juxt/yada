@@ -1,5 +1,13 @@
 = Change Log
 
+== [1.2.9]
+
+- Breaking change: Removed feature where response functions could be
+  any arity. They must now be a single arity (taking the request
+  context). This was removed because when there is an ArityException
+  in user code it was being masked by this catch handler logic. Please
+  ensure your response functions are single arity.
+
 == [1.2.0]
 
 - Refactored to extract out non-core areas of functionality in `ext/`.
