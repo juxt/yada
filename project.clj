@@ -1,6 +1,6 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
-(def VERSION "1.2.8")
+(def VERSION "1.2.9-SNAPSHOT")
 
 (defproject yada/core VERSION
   :description "A powerful Clojure web library, full HTTP, full async"
@@ -10,7 +10,8 @@
 
   :exclusions [[org.clojure/clojure]]
 
-  :pedantic? :abort
+;; Disabled due to CIDER issue
+;;  :pedantic? :abort
 
   :dependencies
   [[byte-streams "0.2.2"]
