@@ -20,6 +20,18 @@
                     (mock/content-type "application/x-www-form-urlencoded"))]
         (is (= (:status @(handler req)) 400))))))
 
+(deftest no-form-parameters
+  (let [resource
+        (resource {:consumes [{:media-type #{"application/x-www-form-urlencoded"}}]
+                   :methods {:post {:parameters {:form {:foo sc/Int}}
+                                    :response (fn [ctx] "OK")}}})
+        handler (handler resource)]
+
+    (testing "no form body gives 400 issue #110"
+      (let [req (-> (mock/request :post "/" "")
+                    (mock/content-type "application/x-www-form-urlencoded"))]
+        (is (= (:status @(handler req)) 400))))))
+
 (deftest no-edn-body
   (let [resource
         (resource {:consumes [{:media-type #{"application/edn"}}]
