@@ -6,7 +6,8 @@
    [clojure.set :as set]
    [clojure.string :as str])
   (:import clojure.lang.IPersistentVector
-           java.util.Map java.util.Map$Entry))
+           java.util.Map java.util.Map$Entry
+           java.net.URI))
 
 ;; ------------------------------------------------------------------------
 ;; XML Parsing Transducers
@@ -125,10 +126,21 @@
 (defn get-host-origin [req]
   (str (name (:scheme req)) "://"  (get-in req [:headers "host"])))
 
+(defn get-referer-origin [req]
+  (if-some [referer (some-> (get-in req [:headers "referer"]) (java.net.URI.))]
+    (str (.getScheme referer) "://" (.getAuthority referer))))
+
 (defn same-origin? [req]
   (let [host (get-host-origin req)
-        origin (get-in req [:headers "origin"])]
-    (= host origin)))
+        origin (get-in req [:headers "origin"])
+        referer (get-referer-origin req)]
+    ;; Not all browsers send the origin header.
+    ;; Under some circumstances browsers may not send
+    ;; the referer header either.
+    (cond
+      (some? origin) (= host origin)
+      (some? referer) (= host referer)
+      :else false)))
 
 ;; Get from maps that allow for key 'sets' and wildcards
 
