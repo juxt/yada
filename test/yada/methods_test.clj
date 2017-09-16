@@ -8,7 +8,9 @@
    [ring.util.codec :as codec]
    [schema.core :as s]
    [yada.resource :refer [resource]]
-   [yada.handler :refer [handler]]))
+   [yada.handler :refer [handler]]
+   [juxt.iota :refer [given]])
+  (:import (java.net URI)))
 
 (deftest post-test
   (let [h (handler
@@ -20,8 +22,43 @@
                                            :body "foo"))}}}))
         response @(h (mock/request :post "/"))]
 
-    (is (= 201 (:status response) ))
+    (is (= 201 (:status response)))
     (is (= "foo" (bs/to-string (:body response))))))
+
+(deftest post-uri-test
+  (let [h (handler
+           (resource
+            {:methods {:post
+                       {:response (fn [ctx]
+                                    (URI. "http://localhost/new"))}}}))]
+    (testing "same origin"
+      (testing "no origin header"
+        (given @(h (-> (mock/request :post "/")
+                       (mock/header "referer" "http://localhost/some/other")))
+               :status := 303
+               [:headers "location"] := "http://localhost/new"))
+      (testing "origin header"
+        (given @(h (-> (mock/request :post "/")
+                       (mock/header "origin" "http://localhost")
+                       (mock/header "referer" "http://localhost/some/other")))
+               :status := 303
+               [:headers "location"] := "http://localhost/new")))
+    (testing "cross origin"
+      (testing "no headers"
+        (given @(h (mock/request :post "/"))
+               :status := 201
+               [:headers "location"] := "http://localhost/new"))
+      (testing "referer header"
+        (given @(h (-> (mock/request :post "/")
+                       (mock/header "referer" "http://example.com/some/other")))
+               :status := 201
+               [:headers "location"] := "http://localhost/new"))
+      (testing "origin header"
+        (given @(h (-> (mock/request :post "/")
+                       (mock/header "origin" "http://example.com")
+                       (mock/header "referer" "http://example.com/some/other")))
+               :status := 201
+               [:headers "location"] := "http://localhost/new")))))
 
 (deftest dynamic-post-test
   (let [h (handler
@@ -69,11 +106,11 @@
 #_(require 'yada.resources.string-resource)
 
 #_(deftest allowed-methods-test
-  (testing "methods-deduced"
-    (are [r e] (= (:allowed-methods (yada r)) e)
-      nil #{:get :head :options}
-      "Hello" #{:get :head :options}
-      (reify Get (GET [_ _] "foo")) #{:get :head :options}
-      (reify
-        Get (GET [_ _] "foo")
-        Post (POST [_ _] "bar")) #{:get :post :head :options})))
+    (testing "methods-deduced"
+      (are [r e] (= (:allowed-methods (yada r)) e)
+        nil #{:get :head :options}
+        "Hello" #{:get :head :options}
+        (reify Get (GET [_ _] "foo")) #{:get :head :options}
+        (reify
+          Get (GET [_ _] "foo")
+          Post (POST [_ _] "bar")) #{:get :post :head :options})))

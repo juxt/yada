@@ -42,6 +42,7 @@
 
      ;; Testing
      [ring/ring-mock "0.3.0"]
+     [juxt/iota "0.2.3"]
 
      ;; webjars testing needs this in the path
      [org.webjars/bootstrap "3.3.6"]
