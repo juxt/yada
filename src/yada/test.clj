@@ -3,7 +3,9 @@
 (ns yada.test
   (:require
    [byte-streams :as b]
-   [yada.handler :refer [as-handler]]))
+   [yada.handler :refer [as-handler]]
+   [bidi.vhosts :refer [vhosts-model]]
+   [yada.aleph :as aleph]))
 
 (defn request-for [method uri options]
   (let [uri (new java.net.URI uri)]
@@ -34,3 +36,16 @@
          response @(h (request-for method uri options))]
      (cond-> response
        (:body response) (update :body b/to-string)))))
+
+(defmacro with-aleph
+  "Runs resource in aleph and defines url for use in body"
+  [url-bind resource & body]
+  `(let [resource# ~resource
+         vmodel# (vhosts-model [:* ["/" resource#]])
+         listener# (aleph/listener vmodel#)
+         port# (:port listener#)
+         close# (:close listener#)
+         ~url-bind (str "http://localhost:" port#)]
+     (try
+       ~@body
+       (finally (close#)))))
