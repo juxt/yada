@@ -5,7 +5,9 @@
    [clojure.test :refer :all]
    [schema.test :as st]
    [yada.yada :as yada]
-   [yada.resources.classpath-resource :refer [new-classpath-resource]]))
+   [yada.resources.classpath-resource :refer [new-classpath-resource]]
+   [yada.test :refer [with-aleph]]
+   [aleph.http :as http]))
 
 (defn get-path [resource path]
   (yada/response-for ["" resource]
@@ -13,12 +15,14 @@
                      path))
 
 (st/deftest classpath-resource-test
+
   (testing "File from classpath is served"
     (let [resource (new-classpath-resource "static")
           response (get-path resource "/test/file1.txt")
           body (:body response)]
       (is (= 200 (:status response)))
       (is (= body "File 1\n"))))
+
   (testing "Index file is served"
     (let [resource (new-classpath-resource
                     "static"
@@ -28,6 +32,7 @@
           body (:body response)]
       (is (= 200 (:status response)))
       (is (= body "File 1\n"))))
+
   ;; I'm not sure if this a feature or a bug
   (testing "Directory from classpath is served"
     (let [resource (new-classpath-resource "static")
@@ -35,9 +40,18 @@
           body (:body response)]
       (is (= 200 (:status response)))
       (is (= "file1.txt\nfile2.txt\n" body))))
+
   (testing "Non-existent classpath resource yields 404"
     (let [resource (new-classpath-resource "static")
           response (get-path resource "/test/file3.txt")]
+      (is (= 404 (:status response)))))
+
+  (testing "Path with multiple leading slashes returns 404 instead of 500"
+    (let [resource (new-classpath-resource "static")
+          response (with-aleph url
+                     resource
+                     @(http/get (str url "//foo")
+                                {:throw-exceptions false}))]
       (is (= 404 (:status response))))))
 
 ;;;; Scratch
