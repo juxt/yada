@@ -1,6 +1,6 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
-(def VERSION "1.2.9")
+(def VERSION "1.2.10")
 
 (defproject yada/core VERSION
   :description "A powerful Clojure web library, full HTTP, full async"
@@ -48,7 +48,7 @@
      [org.webjars/bootstrap "3.3.6"]
 
      ;; ext dependencies
-     [bidi "2.0.17"]
+     [bidi "2.1.3"]
      [aleph "0.4.1" :exclusions [io.aleph/dirigiste]]
      [org.clojure/core.async "0.3.442"]
      [cheshire "5.6.3"]

@@ -1,6 +1,6 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
-(def VERSION "1.2.9")
+(def VERSION "1.2.10")
 
 (defproject yada/bidi VERSION
   :description "bidi integration with yada"
