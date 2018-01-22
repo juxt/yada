@@ -42,6 +42,7 @@
      [camel-snake-kebab "0.4.0"]
      [org.asciidoctor/asciidoctorj "1.6.0-alpha.3"]
      [markdown-clj "0.9.91"]
+     [juxt/iota "0.2.3" :scope "test"]
 
      ]
 

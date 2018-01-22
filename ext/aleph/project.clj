@@ -7,5 +7,5 @@
   :license {:name "The MIT License"
             :url "https://opensource.org/licenses/MIT"}
   :pedantic? :abort
-  :dependencies [[aleph "0.4.3" :exclusions [io.aleph/dirigiste]]
+  :dependencies [[aleph "0.4.3" :exclusions [io.aleph/dirigiste byte-streams manifold riddley]]
                  [yada/core ~VERSION]])
