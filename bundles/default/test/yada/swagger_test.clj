@@ -20,7 +20,7 @@
   (postwalk
     (fn [item]
       (if (and (instance? Pattern item)
-               (= (.pattern item) (.pattern pattern)))
+               (= (.pattern ^Pattern item) (.pattern ^Pattern pattern)))
         pattern
         item))
     form))

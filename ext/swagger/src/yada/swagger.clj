@@ -99,9 +99,9 @@
                                          (into {})))
                        swagger-walk-fn (fn [val]
                                          (if (and (instance? IMapEntry val)
-                                                  (keyword? (.key val))
-                                                  (= "swagger" (namespace (.key val))))
-                                           [(-> val .key name keyword) (.val val)]
+                                                  (keyword? (.key ^IMapEntry val))
+                                                  (= "swagger" (namespace (.key ^IMapEntry val))))
+                                           [(-> ^IMapEntry val .key name keyword) (.val ^IMapEntry val)]
                                            val))
 
                        parameters (-> parameters
@@ -192,7 +192,7 @@
           (= (:remainder m) "/swagger.html")
           (succeed this (assoc m :remainder "" :type "text/html"))
 
-          (.startsWith (:remainder m) "/swagger")
+          (.startsWith ^String (:remainder m) "/swagger")
           {:handler this
            :ui true
            :remainder (subs (:remainder m) (count "/swagger"))}
