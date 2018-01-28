@@ -30,7 +30,7 @@
   {:test
    {
     :dependencies
-    [[org.clojure/clojure "1.8.0"]
+    [[org.clojure/clojure "1.9.0"]
 
      ;; Logging
      [org.clojure/tools.logging "0.3.1"]
