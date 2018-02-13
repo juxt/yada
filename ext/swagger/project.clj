@@ -11,5 +11,5 @@
                  [yada/bidi ~VERSION]
                  [yada/webjars ~VERSION]
                  [metosin/ring-swagger "0.22.12" :exclusions [org.clojure/clojure]]
-                 [org.webjars/swagger-ui "3.9.3"]]
+                 [org.webjars/swagger-ui "2.2.6"]]
   )
