@@ -159,7 +159,6 @@
     (if (or (get-in request [:headers "transfer-encoding"])
             (and content-length (pos? content-length)))
       (let [content-type (mt/string->media-type (get-in request [:headers "content-type"]))
-            content-length (safe-read-content-length request)
             consumes-mt (set (map (comp :name :media-type)
                                   (concat (get-in ctx [:resource :methods (:method ctx) :consumes])
                                           (get-in ctx [:resource :consumes]))))]
@@ -171,16 +170,10 @@
                      :message "Method does not declare that it consumes this content-type"
                      :consumes consumes-mt
                      :content-type content-type}))
-          (if (and content-length (pos? content-length))
-            (if-let [consumer (get-in ctx [:resource :methods (:method ctx) :consumer])]
-              (consumer ctx content-type
-                        (:body request))
-
-              (rb/process-request-body
-               ctx
-               (stream/map bs/to-byte-array (bs/to-byte-buffers (:body request)))
-               (:name content-type)))
-            ctx)))
+          (rb/process-request-body
+           ctx
+           (stream/map bs/to-byte-array (bs/to-byte-buffers (:body request)))
+           (:name content-type))))
 
       ;; else
       (if-let [body-schema (get-in ctx [:resource :methods (:method ctx) :parameters :body])]
