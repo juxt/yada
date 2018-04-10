@@ -49,7 +49,7 @@
 
      ;; ext dependencies
      [bidi "2.1.3"]
-     [aleph "0.4.3" :exclusions [io.aleph/dirigiste]]
+     [aleph "0.4.4" :exclusions [io.aleph/dirigiste]]
      [org.clojure/core.async "0.3.442"]
      [cheshire "5.6.3"]
      [json-html "0.4.0" :exclusions [hiccups]]
