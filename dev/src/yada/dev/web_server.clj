@@ -26,7 +26,7 @@
                (vhosts-model
                 [(config/get-host config)
 
-                 ["/" (yada/redirect ::yada.dev.manual/index)]
+                 ["/" (yada/redirect ::manual/index)]
 
                  (manual/routes)
                  (examples/routes)
