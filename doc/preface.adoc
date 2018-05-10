@@ -64,7 +64,7 @@ mere playthings, HTTP-based APIs are becoming critical components in
 virtually every organisation. With supporting infrastructure such as
 proxies, API gateways and monitoring, there has never been a greater
 need to improve compatibility through better conformance with HTTP
-standards. Yet many APIs today at best ignored, and worst violate many
+standards. Yet many APIs today at best ignore, and at worst violate many
 parts of the HTTP standard. For ephemeral prototypes, this casual
 approach to HTTP is acceptable. Yet HTTP is designed for long-lived
 systems with lifetimes measured in decades, that must cross
