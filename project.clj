@@ -58,7 +58,7 @@
      [metosin/ring-swagger "0.22.12" :exclusions [org.clojure/clojure]]
      [org.webjars/swagger-ui "2.2.6"]
      [com.cognitect/transit-clj "0.8.297"]
-     [org.webjars/webjars-locator "0.32"]]
+     [org.webjars/webjars-locator "0.34"]]
 
     :source-paths
     [
