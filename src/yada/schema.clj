@@ -226,7 +226,8 @@ expressive short-hand descriptions."}
 
 (s/defschema MethodDocumentation
   (merge CommonDocumentation
-         {(s/optional-key :responses) {Statii (merge {:description String}
+         {(s/optional-key :responses) {Statii (merge {:description             String
+                                                      (s/optional-key :schema) s/Any}
                                                      NamespacedEntries)}}))
 
 (s/defschema MethodParameters
