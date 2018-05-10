@@ -53,18 +53,18 @@ the vector-of-vectors syntax in place of a usual handler.
 The `swaggered` function can be used to further wrap the route
 structure.
 
-This function takes 2 arguments. The first argument is a 'base template'
-map which contains all the static data that should appear in the spec.
-such as the Swagger service meta-data. The second argument is simply the
-bidi routing tree containing your yada resources. The data contained in
-both the routing tree and the resources themselves is used to construct
-the specification.
+This function takes 2 arguments. The first argument is simply the
+bidi routing tree containing your yada resources. The second argument 
+is a 'base template' map which contains all the static data that should
+appear in the spec, such as the Swagger service meta-data. The data 
+contained in both the routing tree and the resources themselves is used 
+to construct the specification.
 
 For example, let's take the bidi routing tree below:
 
 [source,clojure]
 ----
-(require '[yada.swagger :refer [swaggered]]')
+(require '[yada.swagger :refer [swaggered]])
 
 ["/api"
  (swaggered
@@ -143,7 +143,7 @@ overriden per method.
 
 === Swagger and REST
 
-In some sense Swagger definitions compete with REST as an architecture. Where REST encourages self-describing APIs, Swagger tends towards well-documented APIs. REST APIs are particularly well suited to fluid public APIs which can support gradual evolution and a diverse and potentially unknown set of clients. In contrast, Swagger APIs and suited to fixed private APIs inside a single organisation of between multiple collaborating parties.
+In some sense Swagger definitions compete with REST as an architecture. Where REST encourages self-describing APIs, Swagger tends towards well-documented APIs. REST APIs are particularly well suited to fluid public APIs which can support gradual evolution and a diverse and potentially unknown set of clients. In contrast, Swagger APIs and suited to fixed private APIs inside a single organisation or between multiple collaborating parties.
 
 === Data descriptions of APIs
 
