@@ -15,7 +15,7 @@ First let's clone the project and change into its working directory.
 
 ....
 git clone https://github.com/juxt/edge
-cd edge
+cd edge/app
 ....
 
 === Build & Run
@@ -23,74 +23,48 @@ cd edge
 Next we build and run it, in _development_ mode.
 
 ....
-boot dev
+clojure -A:dev:build:dev/rebel
 ....
 
 This can take up to a couple of minutes to build and run from scratch so don't worry if you have to wait a bit before you see anything.
 
 ....
-Starting reload server on ws://localhost:43201
-Writing boot_reload.cljs...
-Writing boot_cljs_repl.cljs...
-09:13:50.368 [clojure-agent-send-off-pool-0] INFO  edge.server - Started web-server on port 3000
+[Edge] Starting nREPL server
+[Edge] nREPL client can be connected to port 5600
+[Rebel readline] Type :repl/help for online help info
+[Edge] Loading Clojure code, please wait...
+Figwheel: Starting server at http://0.0.0.0:3449
+Figwheel: Watching build - main
+Compiling "target/public/edge.js" from ("/home/username/Projects/clj/edge/app/dev" "/home/username/Projects/clj/edge/app/test" "/home/username/Projects/clj/edge/app/aliases/rebel" "/home/username/Projects/clj/edge/app/src" "/home/username/Projects/clj/edge/app/sass" "/home/username/Projects/clj/edge/app/resources" "/home/username/Projects/clj/edge/app/assets" "/home/username/.gitlibs/libs/io.dominic/krei.alpha/02d0675365d76e81cd2392e7f397e6f278e2a118/src")...
+Successfully compiled "target/public/edge.js" in 3.472 seconds.
+Figwheel: Starting CSS Watcher for paths  ["target"]
+[Edge] Now enter (go) to start the dev system
+dev=> 
+....
 
-Starting file watcher (CTRL-C to quit)...
+=== Start the Server
+At the 'dev=>' prompt enter '(go)' to start a server listening by default on port 3000.
 
-Compiling {sass}... 3 changed files.
+....
+dev=> (go)
+[Edge] Website can be browsed at http://localhost:3000/
+[Edge] Now make code changes, then enter (reset) here
+:started
 ....
 
 === Browse
 
 Fire up a browser and browse to http://localhost:3000/hello. You should see a simple `Hello World` message.
 
-=== Connect a REPL
-
-Let's connect a REPL.
-
-Start a new terminal and change into the project's working directory again.
-
-....
-cd edge
-....
-
-If the project is still building, wait until you see the following line before trying to connect.
-
-....
-nREPL server started on port 5600 on host 127.0.0.1 - nrepl://127.0.0.1:5600
-....
-
-Connect a client REPL to this JVM like this:
-
-....
-boot repl
-....
-
-This should result in something similar to this:
-
-....
-REPL-y 0.3.7, nREPL 0.2.12
-Clojure 1.8.0
-OpenJDK 64-Bit Server VM 1.8.0_92-b14
-        Exit: Control+D or (exit) or (quit)
-    Commands: (user/help)
-        Docs: (doc function-name-here)
-              (find-doc "part-of-name-here")
-Find by Name: (find-name "part-of-name-here")
-      Source: (source function-name-here)
-     Javadoc: (javadoc java-object-or-class-here)
-    Examples from clojuredocs.org: [clojuredocs or cdoc]
-              (user/clojuredocs name-here)
-              (user/clojuredocs "ns-here" "name-here")
-user=>
-....
+=== Working with the REPL
 
 We're going to start changing some of Edge's source code soon, and when we do that we'll type `(reset)` on our REPL. So let's try that now.
 
 ....
-user=> (reset)
-:reloading (edge.web edge.api edge.server edge.system user)
+dev=> (reset)
+:reloading (io.dominic.krei.alpha.impl.util io.dominic.krei.alpha.core edge.phonebook.db edge.lacinia edge.phonebook-app edge.selmer edge.test.system edge.phonebook edge.sources edge.hello edge.examples edge.web-server edge.system edge.examples-test edge.system-test edge.main dev user io.dominic.krei.alpha.main edge.rebel.main edge.api-test)
 :resumed
-user=>
+dev=>
 ....
 
 === Test the service
@@ -127,10 +101,10 @@ Make a change to string `"Hello World!"`, for example, change it to `"Hello Wond
 Now we've made a change to Edge's source code, we must tell the system to reset. The system will then detect all the code changes and necessary dependencies to reload.
 
 ....
-user=> (reset)
-:reloading (edge.web edge.api edge.server edge.system user)
+dev=> (reset)
+:reloading (io.dominic.krei.alpha.impl.util io.dominic.krei.alpha.core edge.phonebook.db edge.lacinia edge.phonebook-app edge.selmer edge.test.system edge.phonebook edge.sources edge.hello edge.examples edge.web-server edge.system edge.examples-test edge.system-test edge.main dev user io.dominic.krei.alpha.main edge.rebel.main edge.api-test)
 :resumed
-user=>
+dev=>
 ....
 
 Let's test the service again:
