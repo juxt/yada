@@ -182,6 +182,11 @@ feedback and suggestions.
 * Bor Hodošček
 * Ivar Refsdal
 * Josh Graham
+* Joshua Ballanco
+* Steven Harms
+* Ryan Smith
+* Alexis Lee
+
 
 Also, see the dependency list. In particular, yada would certainly not
 exist without the considerable efforts of those behind the following
