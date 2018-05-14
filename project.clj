@@ -53,7 +53,7 @@
      [org.clojure/core.async "0.3.442"]
      [cheshire "5.6.3"]
      [json-html "0.4.0" :exclusions [hiccups]]
-     [buddy/buddy-sign "1.3.0"]
+     [buddy/buddy-sign "2.2.0"]
      [commons-codec "1.10"]
      [metosin/ring-swagger "0.22.12" :exclusions [org.clojure/clojure]]
      [org.webjars/swagger-ui "2.2.6"]
