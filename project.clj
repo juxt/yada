@@ -22,7 +22,7 @@
    [org.clojure/tools.reader "1.0.0-beta4"]
    [potemkin "0.4.3"]
    [prismatic/schema "1.1.3"]
-   [ring/ring-core "1.6.0-beta6"]]
+   [ring/ring-core "1.6.3"]]
 
   :global-vars {*warn-on-reflection* true}
 
