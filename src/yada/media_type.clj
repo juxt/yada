@@ -29,27 +29,45 @@
   (re-pattern (str "(\\*)"
                    "((?:" OWS ";" OWS http-token "=" http-token ")*)")))
 
+(def parameter-pattern
+  (re-pattern (str ";" OWS "(" http-token ")=(" http-token ")")))
+
+(defn- match-media-type
+  [s]
+  (next (re-matches media-type-pattern s)))
+
+(defn- match-media-type-no-subtype
+  [s]
+  (when-let [match (re-matches media-type-pattern-no-subtype s)]
+    (next (concat (take 2 match)
+                  ["*" (last match)]))))
+
+(defn- parse-media-type-parameters
+  [parameters]
+  (->> (re-seq parameter-pattern parameters)
+       (map rest)
+       (map vec)
+       (into {})))
+
 ;; TODO: Replace memoize with cache to avoid memory exhaustion attacks
 (def string->media-type
   (memoize
    (fn [s]
      (when s
-       (let [g (rest (or (re-matches media-type-pattern s)
-                         (concat (take 2 (re-matches media-type-pattern-no-subtype s))
-                                 ["*" (last (re-matches media-type-pattern-no-subtype s))])))
-             params (into {} (map vec (map rest (re-seq (re-pattern (str ";" OWS "(" http-token ")=(" http-token ")"))
-                                                        (last g)))))]
-         (->MediaTypeMap
-          (str (first g) "/" (second g))
-          (first g)
-          (second g)
-          (dissoc params "q")
-          (if-let [q (get params "q")]
-            (try
-              (Float/parseFloat q)
-              (catch java.lang.NumberFormatException e
-                (float 1.0)))
-            (float 1.0))))))))
+       (when-let [[type subtype :as media-type-parts] (or (match-media-type s)
+                                                          (match-media-type-no-subtype s))]
+         (let [parameters (parse-media-type-parameters (last media-type-parts))]
+           (->MediaTypeMap
+            (str type "/" subtype)
+            type
+            subtype
+            (dissoc parameters "q")
+            (if-let [q (get parameters "q")]
+              (try
+                (Float/parseFloat q)
+                (catch java.lang.NumberFormatException e
+                  (float 1.0)))
+              (float 1.0)))))))))
 
 ;; TODO: Replace memoize with cache to avoid memory exhaustion attacks
 (def media-type->string
