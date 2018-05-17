@@ -6,6 +6,7 @@
    [clojure.java.io :as io]
    [clojure.test :refer :all]
    [manifold.stream :as s]
+   [schema.core :as schema]
    [yada.interceptors :as i]
    [yada.media-type :as mt]
    [yada.multipart :refer :all]
@@ -283,3 +284,24 @@
     (is (= "1234" (part-string (find-part ctx "phone"))))
     (is (= "malcolm@juxt.pro" (part-string (find-part ctx "email"))))
     (is (nil? (part-string (find-part ctx "dummy"))))))
+
+(deftest schema-test
+  (let [good-schema {:firstname schema/Str
+                     :phone schema/Str
+                     :email schema/Str}
+        bad-schema {:this-is-wrong schema/Int}
+        request-with-schema (fn [schema]
+                              (let [body (slurp-byte-array (io/resource "yada/multipart-6"))]
+                                (let [ctx {:method :post
+                                           :request {:headers
+                                                     {"content-length" (str (alength ^bytes body))
+                                                      "content-type" "multipart/form-data; boundary=----WebKitFormBoundaryZ3oJB7WHOBmOjrEi"}
+                                                     :body (java.io.ByteArrayInputStream. body)}
+                                           :resource (yada/resource {:methods
+                                                                     {:post
+                                                                      {:consumes "multipart/form-data"
+                                                                       :parameters {:form schema}
+                                                                       :response ""}}})}]
+                                  @(i/process-request-body ctx))))]
+    (is (contains? (request-with-schema good-schema) :parameters))
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo #"Bad form fields" (request-with-schema bad-schema)))))
