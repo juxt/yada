@@ -1,6 +1,6 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
-(def VERSION "1.2.12")
+(def VERSION "1.2.13")
 
 (defproject yada/core VERSION
   :description "A powerful Clojure web library, full HTTP, full async"
@@ -10,18 +10,17 @@
 
   :exclusions [[org.clojure/clojure]]
 
-;; Disabled due to CIDER issue
-;;  :pedantic? :abort
+  :pedantic? :abort
 
   :dependencies
   [[byte-streams "0.2.4-alpha4"]
-   [clj-time "0.12.2"]
+   [clj-time "0.14.2"]
    [hiccup "1.0.5"]
    [manifold "0.1.7-alpha5"]
    [org.clojure/data.codec "0.1.0"]
    [org.clojure/tools.reader "1.0.0-beta4"]
-   [potemkin "0.4.3"]
-   [prismatic/schema "1.1.3"]
+   [potemkin "0.4.4"]
+   [prismatic/schema "1.1.7"]
    [ring/ring-core "1.6.3"]]
 
   :global-vars {*warn-on-reflection* true}
@@ -51,14 +50,17 @@
      [bidi "2.1.3"]
      [aleph "0.4.4" :exclusions [io.aleph/dirigiste]]
      [org.clojure/core.async "0.3.442"]
-     [cheshire "5.6.3"]
+     [cheshire "5.8.0" :exclusions [com.fasterxml.jackson.core/jackson-core]]
      [json-html "0.4.0" :exclusions [hiccups]]
      [buddy/buddy-sign "2.2.0"]
      [commons-codec "1.10"]
-     [metosin/ring-swagger "0.22.12" :exclusions [org.clojure/clojure]]
+     [metosin/ring-swagger "0.26.0" :exclusions [org.clojure/clojure]]
      [org.webjars/swagger-ui "2.2.6"]
-     [com.cognitect/transit-clj "0.8.297"]
-     [org.webjars/webjars-locator "0.34"]]
+     [com.cognitect/transit-clj "0.8.297" :exclusions [com.fasterxml.jackson.core/jackson-core]]
+     [org.webjars/webjars-locator "0.34" :exclusions [com.fasterxml.jackson.core/jackson-core]]
+     ;; Required because of above exclusions
+     [com.fasterxml.jackson.core/jackson-core "2.9.0"]]
+
 
     :source-paths
     [

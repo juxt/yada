@@ -1,6 +1,6 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
-(def VERSION "1.2.12")
+(def VERSION "1.2.13")
 
 (defproject yada/json VERSION
   :description "Support for application/json media types"
@@ -8,4 +8,4 @@
             :url "https://opensource.org/licenses/MIT"}
   :pedantic? :abort
   :dependencies [[yada/core ~VERSION]
-                 [cheshire "5.6.3"]])
+                 [cheshire "5.8.0"]])
