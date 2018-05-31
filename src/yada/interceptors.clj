@@ -171,16 +171,14 @@
                      :message "Method does not declare that it consumes this content-type"
                      :consumes consumes-mt
                      :content-type content-type}))
-          (if (and content-length (pos? content-length))
-            (if-let [consumer (get-in ctx [:resource :methods (:method ctx) :consumer])]
-              (consumer ctx content-type
-                        (:body request))
+          (if-let [consumer (get-in ctx [:resource :methods (:method ctx) :consumer])]
+            (consumer ctx content-type
+                      (:body request))
 
-              (rb/process-request-body
-               ctx
-               (stream/map bs/to-byte-array (bs/to-byte-buffers (:body request)))
-               (:name content-type)))
-            ctx)))
+            (rb/process-request-body
+             ctx
+             (stream/map bs/to-byte-array (bs/to-byte-buffers (:body request)))
+             (:name content-type)))))
 
       ;; else
       (if-let [body-schema (get-in ctx [:resource :methods (:method ctx) :parameters :body])]
