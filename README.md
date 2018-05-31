@@ -26,7 +26,7 @@ Add the following dependency to your `project.clj` or `build.boot` file:
 [yada "1.2.13"]
 ```
 
-[![Build Status](https://travis-ci.org/juxt/yada.png)](https://travis-ci.org/juxt/yada)
+[![Build Status](https://travis-ci.org/juxt/yada.svg?branch=master)](https://travis-ci.org/juxt/yada.svg?branch=master)
 
 ## Create a yada handler
 
