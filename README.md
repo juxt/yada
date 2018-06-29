@@ -23,10 +23,10 @@ The user-manual is also available as an e-book or PDF, at
 Add the following dependency to your `project.clj` or `build.boot` file:
 
 ```
-[yada "1.2.6"]
+[yada "1.2.13"]
 ```
 
-[![Build Status](https://travis-ci.org/juxt/yada.png)](https://travis-ci.org/juxt/yada)
+[![Build Status](https://travis-ci.org/juxt/yada.svg?branch=master)](https://travis-ci.org/juxt/yada.svg?branch=master)
 
 ## Create a yada handler
 
@@ -78,7 +78,7 @@ To use the lean (or any other) variant of yada, specify the
 appropriate classifier in your `project.clj` or `build.boot` file:
 
 ```clojure
-[yada/lean "1.2.6"]
+[yada/lean "1.2.13"]
 ```
 
 ## Running documentation and examples offline
@@ -124,6 +124,22 @@ tests pass prior to submission.
 $ lein test
 ```
 
+If you want to build and test your own version of yada, you need to be aware how to locally install your own version. Since yada is broken into multiple Maven jars, each with their own version declaration, there is a script that allows you to set the version to whatever you need it to be.
+
+```
+$ ./set-version 1.3.0-MS-SNAPSHOT
+```
+
+Rather than use `lein install`, you should replace `lein` with `./treelein`.
+
+For example:
+
+```
+$ ./treelein install
+```
+
+This will install all the yada jars into your local Maven repository.
+
 ## Acknowledgments
 
 Thanks to the following people for inspiration, contributions,
@@ -164,6 +180,13 @@ feedback and suggestions.
 * Daniel Compton
 * Yoshito Komatsu
 * Bor Hodošček
+* Ivar Refsdal
+* Josh Graham
+* Joshua Ballanco
+* Steven Harms
+* Ryan Smith
+* Alexis Lee
+
 
 Also, see the dependency list. In particular, yada would certainly not
 exist without the considerable efforts of those behind the following

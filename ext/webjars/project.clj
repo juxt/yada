@@ -1,6 +1,6 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
-(def VERSION "1.2.6")
+(def VERSION "1.2.13")
 
 (defproject yada/webjars VERSION
   :description "Support for webjars"
@@ -8,4 +8,7 @@
             :url "https://opensource.org/licenses/MIT"}
   :pedantic? :abort
   :dependencies [[yada/core ~VERSION]
-                 [org.webjars/webjars-locator "0.32"]])
+                 [org.webjars/webjars-locator "0.34"
+                  ;; webjars-locator-core-0.35 brings in an
+                  ;; out-of-date jackson-core
+                  :exclusions [com.fasterxml.jackson.core/jackson-core]]])

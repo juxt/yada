@@ -6,11 +6,15 @@
 lein $*
 
 # Extensions
-for ext in aleph aleph-next async bidi json webjars json-html transit jwt multipart oauth2 swagger; do
+for ext in aleph async bidi json webjars json-html transit jwt multipart oauth2 swagger; do
+    echo ------------------------------------------------------------------------
+    echo Extension: $ext
     cd ext/$ext; lein $*; cd ../..;
     done
 
 # Bundles
 for bundle in default lean; do
+    echo ------------------------------------------------------------------------
+    echo Bundle: $bundle
     cd bundles/$bundle; lein $*; cd ../..;
     done

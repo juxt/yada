@@ -1,6 +1,6 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
-(def VERSION "1.2.6")
+(def VERSION "1.2.13")
 
 (defproject yada/swagger VERSION
   :license {:name "The MIT License"
@@ -10,6 +10,5 @@
                  [yada/jwt ~VERSION]
                  [yada/bidi ~VERSION]
                  [yada/webjars ~VERSION]
-                 [metosin/ring-swagger "0.22.12" :exclusions [org.clojure/clojure]]
-                 [org.webjars/swagger-ui "2.2.6"]]
-  )
+                 [metosin/ring-swagger "0.26.0" :exclusions [org.clojure/clojure]]
+                 [org.webjars/swagger-ui "2.2.6"]])

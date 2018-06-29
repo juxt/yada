@@ -1,6 +1,6 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
-(def VERSION "1.2.6")
+(def VERSION "1.2.13")
 
 (defproject yada/core VERSION
   :description "A powerful Clojure web library, full HTTP, full async"
@@ -13,15 +13,15 @@
   :pedantic? :abort
 
   :dependencies
-  [[byte-streams "0.2.2"]
-   [clj-time "0.12.2"]
+  [[byte-streams "0.2.4-alpha4"]
+   [clj-time "0.14.2"]
    [hiccup "1.0.5"]
-   [manifold "0.1.4"]
+   [manifold "0.1.7-alpha5"]
    [org.clojure/data.codec "0.1.0"]
    [org.clojure/tools.reader "1.0.0-beta4"]
-   [potemkin "0.4.3"]
-   [prismatic/schema "1.1.3"]
-   [ring/ring-core "1.6.0-beta6"]]
+   [potemkin "0.4.4"]
+   [prismatic/schema "1.1.7"]
+   [ring/ring-core "1.6.3"]]
 
   :global-vars {*warn-on-reflection* true}
 
@@ -29,7 +29,7 @@
   {:test
    {
     :dependencies
-    [[org.clojure/clojure "1.8.0"]
+    [[org.clojure/clojure "1.9.0"]
 
      ;; Logging
      [org.clojure/tools.logging "0.3.1"]
@@ -41,22 +41,26 @@
 
      ;; Testing
      [ring/ring-mock "0.3.0"]
+     [juxt/iota "0.2.3"]
 
      ;; webjars testing needs this in the path
      [org.webjars/bootstrap "3.3.6"]
 
      ;; ext dependencies
-     [bidi "2.0.17"]
-     [aleph "0.4.1" :exclusions [io.aleph/dirigiste]]
+     [bidi "2.1.3"]
+     [aleph "0.4.4" :exclusions [io.aleph/dirigiste]]
      [org.clojure/core.async "0.3.442"]
-     [cheshire "5.6.3"]
+     [cheshire "5.8.0" :exclusions [com.fasterxml.jackson.core/jackson-core]]
      [json-html "0.4.0" :exclusions [hiccups]]
-     [buddy/buddy-sign "1.3.0"]
+     [buddy/buddy-sign "2.2.0"]
      [commons-codec "1.10"]
-     [metosin/ring-swagger "0.22.12" :exclusions [org.clojure/clojure]]
+     [metosin/ring-swagger "0.26.0" :exclusions [org.clojure/clojure]]
      [org.webjars/swagger-ui "2.2.6"]
-     [com.cognitect/transit-clj "0.8.297"]
-     [org.webjars/webjars-locator "0.32"]]
+     [com.cognitect/transit-clj "0.8.297" :exclusions [com.fasterxml.jackson.core/jackson-core]]
+     [org.webjars/webjars-locator "0.34" :exclusions [com.fasterxml.jackson.core/jackson-core]]
+     ;; Required because of above exclusions
+     [com.fasterxml.jackson.core/jackson-core "2.9.0"]]
+
 
     :source-paths
     [
@@ -90,8 +94,6 @@
 
      :repl-options {:init-ns user
                     :welcome (println "Type (dev) to start")}
-
-     :plugins [[cider/cider-nrepl "0.14.0"]]
 
      :global-vars {*warn-on-reflection* true}
 

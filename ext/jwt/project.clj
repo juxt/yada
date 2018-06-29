@@ -1,6 +1,6 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
-(def VERSION "1.2.6")
+(def VERSION "1.2.13")
 
 (defproject yada/jwt VERSION
   :description "JSON Web Token support"
@@ -8,4 +8,4 @@
             :url "https://opensource.org/licenses/MIT"}
   :pedantic? :abort
   :dependencies [[yada/core ~VERSION]
-                 [buddy/buddy-sign "1.3.0"]])
+                 [buddy/buddy-sign "2.2.0"]])

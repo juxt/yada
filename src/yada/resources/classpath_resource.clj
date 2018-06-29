@@ -30,7 +30,7 @@
      :sub-resource
      (fn [ctx]
        (let [path-info (-> ctx :request :path-info)
-             path      (str/replace path-info #"^/" "")
+             path      (str/replace path-info #"^/*" "")
              files     (if (= (last path-info) \/)
                          ;; FIXME This does not work on a Windows system (needs "/" instead of "\")
                          (map #(io/file root-path path %) index-files)

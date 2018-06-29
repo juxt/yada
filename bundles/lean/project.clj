@@ -1,6 +1,6 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
-(def VERSION "1.2.6")
+(def VERSION "1.2.13")
 
 (defproject yada/lean VERSION
   :description "A stripped-down batteries-not-included bundle of yada"
@@ -42,6 +42,7 @@
      [camel-snake-kebab "0.4.0"]
      [org.asciidoctor/asciidoctorj "1.6.0-alpha.3"]
      [markdown-clj "0.9.91"]
+     [juxt/iota "0.2.3" :scope "test"]
 
      ]
 

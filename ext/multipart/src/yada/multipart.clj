@@ -651,23 +651,21 @@
                                                (assoc (get-in part [:content-disposition :params "name"]) part)))
                               {} parts)]
 
-           (cond-> ctx
-             ;; In Swagger 2.0 you can't have both form and body
-             ;; parameters, which seems reasonable
-             (or (:form schemas) (:body schemas))
-             (assoc-body-parameters parts-by-name schemas)
-
+           (cond->
              ;; We add a low-level access to the actual parts (via
              ;; :yada.multipart/parts) for users with more
              ;; sophisticated requirements.
-             true
-             (assoc
-              :yada.multipart/parts parts
+             (assoc ctx
+               :yada.multipart/parts parts
 
-              ;; Deprecated, will be removed in a future release - don't rely on this
-              ;; TODO: Remove
-              :body parts-by-name
-              ))))))))
+               ;; Deprecated, will be removed in a future release - don't rely on this
+               ;; TODO: Remove
+               :body parts-by-name)
+
+             ;; In Swagger 2.0 you can't have both form and body
+             ;; parameters, which seems reasonable
+             (or (:form schemas) (:body schemas))
+             (assoc-body-parameters parts-by-name schemas))))))))
 
 (defn find-part "Find part by Content-Disposition name parameter" [ctx name]
   (some->> ctx

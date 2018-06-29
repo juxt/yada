@@ -6,6 +6,7 @@
    [clojure.java.io :as io]
    [clojure.test :refer :all]
    [manifold.stream :as s]
+   [schema.core :as schema]
    [yada.interceptors :as i]
    [yada.media-type :as mt]
    [yada.multipart :refer :all]
@@ -66,7 +67,7 @@
   "Return a transducer that replaces a :bytes entry byte-array with a String."
   []
   (map (fn [m] (-> m
-                  (assoc :content (if-let [b (:bytes m)] (String. b "US-ASCII") "[no bytes]"))
+                  (assoc :content (if-let [b (:bytes m)] (String. ^bytes b "US-ASCII") "[no bytes]"))
                   (dissoc :bytes)))))
 
 (defn get-parts [{:keys [boundary window-size chunk-size] :as spec}]
@@ -136,7 +137,7 @@
                  s/->source
                  (parse-multipart boundary window-size chunk-size)
                  (s/map (fn [m] (-> m
-                                    (assoc :content (if-let [b (:bytes m)] (String. b) "[no bytes]"))
+                                    (assoc :content (if-let [b (:bytes m)] (String. ^bytes b) "[no bytes]"))
                                     (dissoc :bytes :debug))))
                  s/stream->seq
                  (reduce assemble []))]
@@ -158,7 +159,7 @@
             (->> (s/->source (to-chunks (slurp-byte-array (io/resource "yada/multipart-2")) chunk-size))
                  (parse-multipart boundary window-size chunk-size)
                  (s/map (fn [m] (-> m
-                                    (assoc :content (if-let [b (:bytes m)] (String. b) "[no bytes]"))
+                                    (assoc :content (if-let [b (:bytes m)] (String. ^bytes b) "[no bytes]"))
                                     (dissoc :bytes :debug))))
                  s/stream->seq
                  (reduce assemble []))]
@@ -261,7 +262,7 @@
         @(let [body (slurp-byte-array (io/resource "yada/multipart-6"))]
           (let [ctx {:method :post
                      :request {:headers
-                               {"content-length" (str (alength body))
+                               {"content-length" (str (alength ^bytes body))
                                 "content-type" "multipart/form-data; boundary=----WebKitFormBoundaryZ3oJB7WHOBmOjrEi"}
                                :body (java.io.ByteArrayInputStream. body)}
                      :resource (yada/resource {:methods
@@ -283,3 +284,24 @@
     (is (= "1234" (part-string (find-part ctx "phone"))))
     (is (= "malcolm@juxt.pro" (part-string (find-part ctx "email"))))
     (is (nil? (part-string (find-part ctx "dummy"))))))
+
+(deftest schema-test
+  (let [good-schema {:firstname schema/Str
+                     :phone schema/Str
+                     :email schema/Str}
+        bad-schema {:this-is-wrong schema/Int}
+        request-with-schema (fn [schema]
+                              (let [body (slurp-byte-array (io/resource "yada/multipart-6"))]
+                                (let [ctx {:method :post
+                                           :request {:headers
+                                                     {"content-length" (str (alength ^bytes body))
+                                                      "content-type" "multipart/form-data; boundary=----WebKitFormBoundaryZ3oJB7WHOBmOjrEi"}
+                                                     :body (java.io.ByteArrayInputStream. body)}
+                                           :resource (yada/resource {:methods
+                                                                     {:post
+                                                                      {:consumes "multipart/form-data"
+                                                                       :parameters {:form schema}
+                                                                       :response ""}}})}]
+                                  @(i/process-request-body ctx))))]
+    (is (contains? (request-with-schema good-schema) :parameters))
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo #"Bad form fields" (request-with-schema bad-schema)))))

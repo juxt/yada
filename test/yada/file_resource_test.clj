@@ -13,7 +13,8 @@
   (:import [java.io ByteArrayInputStream File]
            java.util.Date))
 
-(def exists? (memfn exists))
+(defn exists? [x]
+  (.exists ^java.io.File x))
 
 #_(deftest legal-name-test
     (are [x] (not (#'legal-name x))
