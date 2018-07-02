@@ -23,14 +23,14 @@
   (re-pattern (str "(" http-token ")"
                    "/"
                    "(" http-token ")"
-                   "((?:" OWS ";" OWS http-token "=" http-token ")*)")))
+                   "((?:" OWS ";" OWS http-token "=(?:(?:" http-token ")|\"(?:" http-token ")\"))*)")))
 
 (def media-type-pattern-no-subtype
   (re-pattern (str "(\\*)"
-                   "((?:" OWS ";" OWS http-token "=" http-token ")*)")))
+                   "((?:" OWS ";" OWS http-token "=(?:(?:" http-token ")|\"(?:" http-token ")\"))*)")))
 
 (def parameter-pattern
-  (re-pattern (str ";" OWS "(" http-token ")=(" http-token ")")))
+  (re-pattern (str ";" OWS "(" http-token ")=(?:(" http-token ")|\"(" http-token ")\")")))
 
 (defn- match-media-type
   [s]
@@ -46,16 +46,19 @@
   [parameters]
   (->> (re-seq parameter-pattern parameters)
        (map rest)
+       (map (partial filter some?))
        (map vec)
        (into {})))
 
 ;; TODO: Replace memoize with cache to avoid memory exhaustion attacks
 (def string->media-type
-  (memoize
+  ;;(memoize
    (fn [s]
      (when s
+       (println "Parsing:"  s)
        (when-let [[type subtype :as media-type-parts] (or (match-media-type s)
                                                           (match-media-type-no-subtype s))]
+         (println media-type-parts)
          (let [parameters (parse-media-type-parameters (last media-type-parts))]
            (->MediaTypeMap
             (str type "/" subtype)
@@ -67,7 +70,7 @@
                 (Float/parseFloat q)
                 (catch java.lang.NumberFormatException e
                   (float 1.0)))
-              (float 1.0)))))))))
+              (float 1.0))))))))
 
 ;; TODO: Replace memoize with cache to avoid memory exhaustion attacks
 (def media-type->string
