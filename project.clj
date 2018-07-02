@@ -10,7 +10,7 @@
 
   :exclusions [[org.clojure/clojure]]
 
-;;  :pedantic? :abort
+  :pedantic? :abort
 
   :dependencies
   [[byte-streams "0.2.4-alpha4"]
