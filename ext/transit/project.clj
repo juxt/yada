@@ -1,6 +1,6 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
-(def VERSION "1.2.13")
+(def VERSION "1.2.14-SNAPSHOT")
 
 (defproject yada/transit VERSION
   :description "Support for transit media-types"
