@@ -26,7 +26,7 @@
 
      ;; REPL and dev workflow
      [org.clojure/tools.namespace "0.2.11"]
-     [org.clojure/tools.nrepl "0.2.12"]
+     [org.clojure/tools.nrepl "0.2.13"]
      [com.stuartsierra/component "0.3.2"]
      [aero "1.0.1"]
 

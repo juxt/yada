@@ -10,7 +10,9 @@
 
   :exclusions [[org.clojure/clojure]]
 
-  :pedantic? :abort
+  ;; See https://github.com/clojure-emacs/cider/issues/2110.
+  ;; Re-enable when new Leiningen is released: 2.8.2 or later.
+  ;;:pedantic? :abort
 
   :dependencies
   [[byte-streams "0.2.4-alpha4"]
@@ -101,7 +103,7 @@
      [
       ;; REPL and dev workflow
       [org.clojure/tools.namespace "0.2.11"]
-      [org.clojure/tools.nrepl "0.2.12"]
+      [org.clojure/tools.nrepl "0.2.13"]
       [com.stuartsierra/component "0.3.2"]
       [aero "1.0.1"]
 
