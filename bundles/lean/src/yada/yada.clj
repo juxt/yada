@@ -14,6 +14,7 @@
    yada.resources.collection-resource
    yada.resources.exception-resource
    yada.resources.file-resource
+   yada.resources.resources-resource
    yada.resources.string-resource
    yada.resources.url-resource
    [yada.security :as sec]
