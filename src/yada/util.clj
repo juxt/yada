@@ -35,7 +35,7 @@
 
 (def CRLF "\r\n")
 (def OWS #"[ \t]*")
-(def http-token #"[!#$%&'*+-\.\^_`|~\p{Alnum}]+")
+(def http-token #"[:!#$%&'*+-\.\^_`|~\p{Alnum}]+")
 
 ;; ETags
 

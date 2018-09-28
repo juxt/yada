@@ -23,4 +23,14 @@
         "image/png;q=0.5" {:name "image/png" :type "image" :subtype "png" :parameters {} :quality 0.5}
         "*/*" {:name "*/*" :type "*" :subtype "*" :parameters {} :quality 1.0}
         "*" {:name "*/*" :type "*" :subtype "*" :parameters {} :quality 1.0}
-        "*; charset=utf-8; q=0.5" {:name "*/*" :type "*" :subtype "*" :parameters {"charset" "utf-8"} :quality 0.5}))))
+        "*; charset=utf-8; q=0.5" {:name "*/*" :type "*" :subtype "*" :parameters {"charset" "utf-8"} :quality 0.5}
+        "multipart/form-data; boundary=--------------------------166365206743450200466801" {:name "multipart/form-data" 
+                                                                                            :type "multipart" 
+                                                                                            :subtype "form-data"
+                                                                                            :parameters {"boundary" "--------------------------166365206743450200466801"}
+                                                                                            :quality 1.0}
+        "multipart/form-data; boundary=\"uuid:7bb7d4c2-122d-4708-9273-158cf3b7003b\"" {:name "multipart/form-data" 
+                                                                                       :type "multipart" 
+                                                                                       :subtype "form-data"
+                                                                                       :parameters {"boundary" "uuid:7bb7d4c2-122d-4708-9273-158cf3b7003b"}
+                                                                                       :quality 1.0}))))

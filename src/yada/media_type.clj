@@ -23,14 +23,14 @@
   (re-pattern (str "(" http-token ")"
                    "/"
                    "(" http-token ")"
-                   "((?:" OWS ";" OWS http-token "=" http-token ")*)")))
+                   "((?:" OWS ";" OWS http-token "=(?:(?:" http-token ")|\"(?:" http-token ")\"))*)")))
 
 (def media-type-pattern-no-subtype
   (re-pattern (str "(\\*)"
-                   "((?:" OWS ";" OWS http-token "=" http-token ")*)")))
+                   "((?:" OWS ";" OWS http-token "=(?:(?:" http-token ")|\"(?:" http-token ")\"))*)")))
 
 (def parameter-pattern
-  (re-pattern (str ";" OWS "(" http-token ")=(" http-token ")")))
+  (re-pattern (str ";" OWS "(" http-token ")=(?:(" http-token ")|\"(" http-token ")\")")))
 
 (defn- match-media-type
   [s]
@@ -46,6 +46,7 @@
   [parameters]
   (->> (re-seq parameter-pattern parameters)
        (map rest)
+       (map (partial filter some?))
        (map vec)
        (into {})))
 
