@@ -235,8 +235,6 @@
   (when (some identity maps)
     (reduce #(conj* (or %1 {}) %2) maps)))
 
-(merge)
-
 (defn expand
   "Expands the set keys and returns a map
   (expand {#{200 300} :test}) => {200 :test 300 :test}"
