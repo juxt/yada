@@ -3,22 +3,16 @@
 
 In this chapter we examine the "Hello World!" resource in depth. If you have followed the <<getting-started,Getting Started>> chapter, you'll be up and running and ready to try the examples yourself, but it's up to you.
 
-Let's look at the route definition in the file `src/edge/hello.clj` (the same one we saw in the Getting Started chapter). This function returns a *route structure*. The simplest route structure is a pair of elements contained in a vector.
+Let's look at the route definition in the file `src/yada/manual/app/foo.clj` (the same one we saw in the Getting Started chapter). This function returns a *yada resource*.
 
 [source,clojure]
 ----
-(defn hello-routes [deps]
-  ["/hello" <1>
-   (yada/handler "Hello World!\n") <2>
-   ])
+(defn string-resource
+  [x]
+  (yada/as-resource x))
 ----
 
-<1> The first element is a path (or pattern) which matches on the URI's path when handling HTTP requests.
-<2> The second element is often a handler function (but can be another route structure, recursively).
-
-In this route structure, any incoming request with a path of `/hello` gets sent to the [yada]#yada# handler defined by `(yada/handler "Hello World!\n")`.
-
-Let's focus on this handler. We could have used a standard Ring function `(fn [req] {…})` here but instead we created one with `yada/handler`, which takes a *resource* and turns it into a handler function.
+Any incoming request which is directed to this *resource* gets sent to the [yada]#yada# handler defined by `(yada/start-server)` when it encounters a *resource*.
 
 A *resource* is a Clojure map (or more accurately, a Clojure record) that completely describes the methods, properties, representations, security and other miscellaneous properties of a web resource, as data. The reason we can use a string (`"Hello World"`) here is because [yada]#yada# contains logic to _coerce_ a string into a resource.
 
@@ -29,7 +23,7 @@ NOTE: There are a number of built-in coercions from various Clojure types and of
 Let's send a request which gets routed to our handler, which creates the response. Let's examine this response in more detail, via *curl*.
 
 ....
-$ curl -i http://localhost:3000/hello
+$ curl -i http://localhost:3000/
 ....
 
 TIP: The `-i` option to *curl* shows us the HTTP status and response headers as well as the body, which is very useful for debugging. If you ever need to see the request headers too, add `-v`.
@@ -66,10 +60,10 @@ Last-Modified: Sun, 09 Aug 2015 07:25:10 GMT
 ETag: fa863bd7ff53786d286e4bb3c0134416
 ....
 
-The `Last-Modified` header shows when the string `Hello World!` was created, which happens to be the last time the system was started (or reset). Java strings are immutable, so [yada]#yada# is able to deduce that the
+The `Last-Modified` header shows when the string `Hello Wonderful World!` was created, which happens to be the last time the system was started (or reset). Java strings are immutable, so [yada]#yada# is able to deduce that the
 string's creation date is also the last time it could have been modified.
 
-The entity tag is computed from the value of the `Hello World!` itself. Unlike the `Last-Modified` value, it can survive a reset.
+The entity tag is computed from the value of the `Hello Wonderful World!` itself. Unlike the `Last-Modified` value, it can survive a reset.
 
 Both `Last-Modified` and `ETag` are used to support HTTP conditional requests and conflict detection when uploading new versions of a resource.
 
@@ -99,7 +93,7 @@ This value is in bytes, regardless of the charset. It includes the newline.
 Finally we see our response body.
 
 ....
-Hello World!
+Hello Wonderful World!
 ....
 
 [[a-conditional-request]]
@@ -114,7 +108,7 @@ We can test this by setting the *If-Modified-Since* header in the request.
 Here's how we might do this using the *curl* command.
 
 ....
-$ curl -i http://localhost:3000/hello -H "If-Modified-Since: Mon, 1 Jan 2525 00:00:00 GMT"
+$ curl -i http://localhost:3000/ -H "If-Modified-Since: Mon, 1 Jan 2525 00:00:00 GMT"
 ....
 
 Of course, nobody will have modified the resource _since_ the year 2525, so we should get a 304 response, telling us we can use our cached copy:
@@ -142,7 +136,7 @@ The responses we have received back from our service all contain this curious he
 Let's try getting the string in UTF16 by telling the server that's the only charset we'll accept:
 
 ....
-curl -i http://localhost:3000/hello -H "Accept-Charset: UTF-16"
+curl -i http://localhost:3000/ -H "Accept-Charset: UTF-16"
 ....
 
 This returns the following:
@@ -169,7 +163,7 @@ The "Hello World!" message is prepended with 2 bytes called the *Byte Order Mark
 A BOM indicates the order that the 2 bytes are transmitted in. In 'big endian' form the most-significant byte is transmitted first. We can tell the service that we only want the big endian form with the following:
 
 ....
-curl -i http://localhost:3000/hello -H "Accept-Charset: UTF-16BE"
+curl -i http://localhost:3000/ -H "Accept-Charset: UTF-16BE"
 ....
 
 This will now produce the message without the BOM, because it is unnecessary. This means our `Content-Length` will be exactly 13 * 2 = 26.
@@ -205,23 +199,52 @@ This calls for a different implementation:
 [source,clojure]
 ----
 (defn hello-language []
-  ["/hello-language"
-   (yada/resource <1>
+  (yada/resource ; <1>
     {:methods
-     {:get <2>
+     {:get ; <2>
       {:produces
        {:media-type "text/plain"
-        :language #{"en" "zh-ch;q=0.9"}} <3>
+        :language #{"en" "zh-ch;q=0.9"}} ; <3>
        :response
-       #(case (yada/language %) <4>
+       #(case (yada/language %) ; <4>
           "zh-ch" "你好世界\n"
-          "en" "Hello World!\n")}}})])
+          "en" "Hello World!\n")}}}))
+
+; <5>
+(defmethod ig/init-key ::hello-language
+  [_ _]
+  (hello-language))
 ----
 
 <1> Using the `yada/resource` function to create a custom resource
 <2> The resource has a single method, GET
 <3> English is preferred, but Simplified Chinese is available too
 <4> This is a function that is given a *context* as the first argument. The `yada/language` convenience function pulls out the negotiated language from this context
+<5> Integrate this yada resource with integrant, our system manager.
+
+We also need to update our config.edn to serve this new path.
+
+[source,clojure]
+----
+:yada.manual.app.foo/hello-language nil ; <1>
+:edge.bidi.ig/vhost [["http://localhost:3000"
+                      [""
+                       [["/" #ig/ref :yada.manual.app.foo/string]
+                        ; <2>
+                        ["/hello-language" #ig/ref :yada.manual.app.foo/hello-language]]]]]
+----
+
+<1> Initialise our hello-language component
+<2> Refer to our new resource under the `"/hello-language"` route.  Our route is a pair in a vector of `[<path>, <resource>]`.
+
+This is the last time we'll bother you with this, but you need to tell Clojure to reload your code changes.
+Open your REPL and enter `(reset)`.
+
+....
+dev=> (reset)
+:reloading (yada.manual.app.foo)
+:resumed
+....
 
 Let's test this by providing a request header which indicates a preference for simplified Chinese:
 
@@ -256,7 +279,7 @@ There's a lot more to content negotiation than this simple example can show. It 
 Let's try to overwrite the string by using a `PUT`.
 
 ....
-$ curl -i http://localhost:3000/hello -X PUT -d "Hello Wonderful World!%0a"
+$ curl -i http://localhost:3000/ -X PUT -d "Hello Wonderful World!%0a"
 ....
 
 The response is as follows:
@@ -274,7 +297,7 @@ Date: Mon, 27 Jun 2016 08:56:58 GMT
 The response status is `405 Method Not Allowed`, telling us that our request was unacceptable. There is also an *Allow* header, telling us which methods are allowed. One of these methods is OPTIONS, which we could have used to check whether PUT was available without actually attempting it.
 
 ....
-$ curl -i http://localhost:3000/hello -X OPTIONS
+$ curl -i http://localhost:3000/ -X OPTIONS
 ....
 
 The response should be:
@@ -384,7 +407,7 @@ There was one more method indicated by the *Allow* header of our `OPTIONS` reque
 TIP: Use the option --head to *curl* to tell it to issue a HEAD request (and not to expect a request body).
 
 ....
-$ curl -i --head http://localhost:3000/hello
+$ curl -i --head http://localhost:3000/
 ....
 
 
@@ -453,8 +476,14 @@ Great!
 
 As well as query parameters, yada supports path parameters, request headers, form data, cookies and request bodies. You can have optional parameters, in fact, anything that can be expressed in Plumatic Schema, and [yada]#yada# will even coerce parameters to a range of types. For more details, see the <<parameters-chapter,parameters chapter>>.
 
+////
 [[hello-swagger]]
 === Hello Swagger!
+
+[WARNING]
+====
+Swagger is not set up this easily in edge any more, this section is out of date.
+====
 
 Now we have seen how to build a single web resource, let's see how to build a ((Swagger)) description from a collection of web resources.
 
@@ -544,6 +573,7 @@ It's these little details that [yada]#yada# takes care of for you. There is no t
 By the way, if you want to see the Swagger UI, browse to http://localhost:3000/swagger/?url=http://localhost:3000/api/swagger.json
 
 image:hello-swagger.png[Swagger]
+////
 
 [[summary]]
 === Summary
