@@ -11,19 +11,16 @@
   "Multimethod that allows new schemes to be added."
   (fn [ctx {:keys [scheme]}] scheme) :default ::default)
 
-(defmethod verify "Basic" [ctx {:keys [verify]}]
 
-  (let [auth (get-in ctx [:request :headers "authorization"])
-        cred (and auth (apply str (map char (base64/decode (.getBytes ^String (last (re-find #"^Basic (.*)$" auth)))))))]
+;; tag::verify-basic[]
+(defmethod verify "Basic" [ctx {:keys [verify]}] ; <1>
+  (let [auth (get-in ctx [:request :headers "authorization"]) ; <2>
+        cred (and auth (apply str (map char (base64/decode (.getBytes ^String (last (re-find #"^Basic (.*)$" auth)))))))] ; <3>
     (when cred
       (let [[user password] (str/split (str cred) #":" 2)]
-        (verify [user password])))))
-
-#_(defmethod verify :cookie [ctx {:keys [verify cookie]}]
-
-  (get-in ctx [:cookies cookie])
-
-  )
+        (verify [user password]) ; <4>
+        ))))
+;; end::verify-basic[]
 
 ;; A nil scheme is simply one that does not use any of the built-in
 ;; algorithms for IANA registered auth-schemes at
@@ -93,10 +90,30 @@
        ;; the same way we do for the built-in role-based
        ;; authorization.
        (let [authentication-schemes (call-fn-maybe authentication-schemes ctx)
-             credentials (some (partial verify ctx) authentication-schemes)]
+
+
+             credentials
+             (some
+              (fn [scheme]
+                ;; For each authentication scheme, call the
+                ;; authenticate function can. If one doesn't exist,
+                ;; then we dispatch to the verify multimethod.
+                (cond
+                  (:authenticate scheme) ((:authenticate scheme) ctx)
+                  (:scheme scheme) (verify ctx scheme)
+                  :else
+                  (throw (ex-info "Authentication scheme does not support authentication" {:scheme scheme}))))
+              authentication-schemes)]
+
+         ;; TODO: Shouldn't it be possible to return credentials as a
+         ;; (manifold) deferred value?
 
          (if credentials
            (assoc-in ctx [:authentication realm] credentials)
+           ;; This branch will lead to a 401, let's prompt the user
+           ;; agent for which authentication scheme(s) we'd like them
+           ;; to provide credentials for, via the WWW-Authenticate
+           ;; response header.
            (let [vs (filter some?
                             (for [{:keys [scheme]} authentication-schemes]
                               (when (string? scheme)

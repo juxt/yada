@@ -324,7 +324,10 @@ expressive short-hand descriptions."}
 (def AuthScheme
   (merge
    {(s/optional-key :scheme) (s/cond-pre s/Keyword s/Str)
-    (s/optional-key :verify) s/Any}
+    ;; used by Basic authentication, sort-of deprecated
+    (s/optional-key :verify) s/Any
+    ;; low-level override
+    (s/optional-key :authenticate) ContextFunction}
    NamespacedEntries))
 
 (s/defschema AuthSchemes
@@ -374,10 +377,10 @@ expressive short-hand descriptions."}
        (-> x
            ;; Merge everything we want to KEEP from the realm
            (merge {:realms {(or (:realm x) "default")
-                            (select-keys x [:authentication-schemes :verify :scheme :authorization])}})
+                            (select-keys x [:authentication-schemes :verify :scheme :authenticate :authorization])}})
            ;; Remove anything we want to REMOVE from the rest of the
            ;; access-control definition
-           (dissoc :realm :scheme :verify :authentication-schemes :authorization))
+           (dissoc :realm :scheme :verify :authenticate :authentication-schemes :authorization))
        x))})
 
 (def SingleSchemeMapping
@@ -387,9 +390,9 @@ expressive short-hand descriptions."}
        (-> x
            ;; Merge in a :authentication-schemes entry with a single
            ;; scheme containing the :scheme and :verify entries
-           (merge {:authentication-schemes [(select-keys x [:scheme :verify])]})
+           (merge {:authentication-schemes [(select-keys x [:scheme :verify :authenticate])]})
            ;; Remove the :scheme and :verify keys
-           (dissoc :scheme :verify))
+           (dissoc :scheme :verify :authenticate))
        x))})
 
 (def HeaderMappings

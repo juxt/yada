@@ -34,7 +34,11 @@
     (:scheme authorization)))
 
 (defmethod validate nil [ctx credentials authorization]
-  (when-let [methods (:methods authorization)]
-    (let [pred (get-in authorization [:methods (:method ctx)])]
-      (when (allowed? pred ctx (set (:roles credentials)))
-        ctx))))
+  (if-let [f (:validate authorization)]
+    ;; If there is a function under :validate then call it
+    (f ctx credentials)
+    ;; Default methods/roles authorization
+    (when-let [methods (:methods authorization)]
+      (let [pred (get-in authorization [:methods (:method ctx)])]
+        (when (allowed? pred ctx (set (:roles credentials)))
+          ctx)))))

@@ -6,7 +6,8 @@
    [schema.core :as s]
    [schema.test :refer [deftest]]
    [yada.schema :as ys]
-   [yada.security :refer [authenticate verify]]))
+   [yada.security :refer [authenticate verify]]
+   [yada.yada :as yada]))
 
 ;; We create some fictitious schemes, just for testing
 
@@ -70,7 +71,20 @@
 
       ;; But not in realm R2, so we tell the user-agent how to do so
       (is (= ["S1 realm=\"R2\", S2 realm=\"R2\""]
-             (get-in result [:response :headers "www-authenticate"]))))))
+             (get-in result [:response :headers "www-authenticate"])))))
+
+  (testing "Authentication scheme as a function"
+    (let [ctx {:resource
+               {:access-control
+                {:realms
+                 {"default"
+                  {:authentication-schemes
+                   [{:authenticate (fn [ctx] {:user "george"})}]}
+                  }}}}
+          result (authenticate ctx)]
+
+      (is result)
+      (is (= {:user "george"} (get-in result [:authentication "default"]))))))
 
 ;; TODO: Authorization test
 
