@@ -27,8 +27,8 @@
 
       (let [response @(h (-> (request :put "/" {:value "Chelsea"})))]
         (is (= 204 (:status response)))
-        (is (= (contains? (set (keys (:headers response))) "content-type")))
-        (is (= (contains? (set (keys (:headers response))) "content-length")))
+        (is (not (contains? (set (keys (:headers response))) "content-type")))
+        (is (contains? (set (keys (:headers response))) "content-length"))
         (is (nil? (:body response))))
 
       (is (= @resource "Chelsea"))

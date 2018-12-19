@@ -114,7 +114,7 @@
         (let [r (coercer {:methods {:get (fn [ctx] "Hello World!")}})]
           (is (not (error? r)))
           (is (nil? (s/check Methods r)))
-          (is (= "Hello World!") (invoke-with-ctx (get-in r [:methods :get :response])))))
+          (is (= "Hello World!" (invoke-with-ctx (get-in r [:methods :get :response]))))))
 
       (testing "nil"
         (let [r (coercer {:methods {:get nil}})]
