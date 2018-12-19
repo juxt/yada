@@ -1,8 +1,8 @@
 [yada]#yada#
 ============
 Malcolm Sparks <malcolm@juxt.pro>
-v1.2.0, January 2017
-:doctype: article
+v1.2.16, December 2018
+:doctype: book
 :description: A web library for Clojure
 
 Welcome to [yada]#yada# - a full HTTP library for Clojure

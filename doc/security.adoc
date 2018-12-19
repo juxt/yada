@@ -1,103 +1,408 @@
 [[security]]
 == Security
 
-Built-in to the library, [yada]#yada# offers a complete standards-based set of ((security)) features for today's secure applications and content delivery.
+Built into the library, [yada]#yada# offers a complete standards-based set of ((security)) features for today's secure applications and content delivery.
 
-[[security-is-part-of-the-resource-not-the-route]]
-=== Security is part of the resource, not the route
+In [yada]#yada#, resources are self-contained and are individually protected from unauthorized access:
 
-In [yada]#yada#, resources are self-contained and are individually protected from unauthorized access. We agree with the HTTP standards authors when we consider security to be integral to the definition of the resource itself, and not an extra to be bolted on afterwards. Nor should it be complected with routing. The process of identifying up a resource from its URI is independent of how that resource should behave, and shouldn't be coupled to it.
+[quote,RFC 7231 Section 2]
+____
+One design goal of HTTP is to separate resource identification from request semantics.
+____
 
-Building security into each resource yields other benefits, such as making it easier to test the resource as a unit in isolation of other resources and the router.
+Security is part of the semantics of a resource, so is part of resource itself, rather than coupled to the URI and routing. This approach improves the https://en.wikipedia.org/Cohesion_(computer_science)[cohesion] of the web resource, which can be tested independently.
 
-As in all other areas, [yada]#yada# aims for 100% compliance with core HTTP standards when it comes to security, notably https://tools.ietf.org/html/rfc7235[RFC 7235]. Also, since HTTP APIs are nowadays used to facilitate transactional integration between systems via the user's browser, it is critically important that [yada]#yada# fully supports systems that offer APIs to other applications, across origins, as standardised by http://www.w3.org/TR/cors/[CORS].
+As in all other areas, [yada]#yada# aims for 100% compliance with core HTTP standards when it comes to security, notably https://tools.ietf.org/html/rfc7235[RFC 7235]. Also, since HTTP APIs are nowadays used to facilitate transactional integration between systems via the user's browser, it is important that [yada]#yada# fully supports systems that offer APIs to other applications, across origins, as standardised by http://www.w3.org/TR/cors/[CORS].
 
-[[the-access-control-entry]]
-=== The `:access-control` entry
-
-All security aspects for a resource are specified in its model's
+Security aspects for a resource are specified in its model's
 `:access-control` entry.
 
-[[authentication]]
-=== Authentication
+NOTE: Depending on your use-case, you may decide to create this map
+independently and merge it into groups of yada resource maps. In
+[yada]#yada#, it is typical to see resource maps created
+programmatically--they are just maps of data after all.
 
-Let's look at authentication first. Authentication is the process of establishing and verifying the identity and credentials of the user, with reasonable confidence that the user is not an impostor.
+It is worth taking some time to understand what is involved in
+processing an HTTP request in [yada]#yada# that relate to
+authentication and authorization. <<figure-security-flow>> shows a
+simplified portion of the sequence of steps.
 
-NOTE: In [yada]#yada#, authentication happens after any request parameters have been processed, so if necessary they can be used to establish the identity of the user. However, it is important to remember that authentication happens before the resource's properties have been loaded, since credentials do not have to do with the actual resource. Thus, if the user is not genuine, we might well save a wasted trip to the resource's data-store.
+[[figure-security-flow]]
+.The relevant portion of the default request-processing interceptor chain in [yada]#yada#, showing the order of processing.
+[plantuml,security-flow,svg]
+....
+skinparam monochrome true
+(*) --> "parse-parameters"
+note right
+Query, path parameters,
+request header & body
+parsed. ❶
+end note
+"parse-parameters" --> "authenticate"
+note right
+Request credentials verified
+(e.g. roles). ❷
+end note
+"authenticate" --> "get-properties"
+note right
+Resource properties established,
+(e.g. resource owner). ❸
+end note
+"get-properties" --> "authorize"
+note right
+Request authorized by checking
+credentials against resource's
+properties. ❹
+end note
+"authorize" --> (*)
+note right
+Request processing
+continues ❺
+end note
+....
+<1> First, the values of declared _parameters_ (query, path, header, form
+& body) are taken from the request and checked for validity. These
+parameters may be used later, both in the identification of the user
+and the resource being addressed. Invalid parameters would cause a
+response with a `400 Bad Request` status.
+
+<2> Next, the request is authenticated according to an _authentication
+scheme_. This involves inspecting the request for claims about the
+identity of the user (and verifying that these claims are genuine and
+trustworthy). Unless there is something suspicious about the request's
+claims, such as the detection of a forgery attempt, *no decision is
+made at this stage about whether the request should be accepted or
+rejected*.
+
+<3> Next, the resource's _properties_ are determined, such as
+existence, last modification time and, in particular, attributes
+governing ownership and required access conditions. These may be
+ascertained solely from the request or might involve one or more
+requests to other sources, such as databases.
+
+<4> After this, an _authorization_ step is carried out to determine
+whether the credentials carried by the request, if any, are sufficient
+to allow access to the resource. If not, a response is returned with a
+401 or 403 status code--a `401 Unauthorized` if no credentials are
+present, and a `403 Forbidden` if they are. A 401 gives the user-agent
+the hint that it should attempt to capture authentication data from
+the user and retry the request.
+
+<5> The request processing proceeds. Any response generated may depend
+on information established by these steps. For example, certain
+information might be filtered out of a response to requests that don't
+have sufficient authorization.
+
+Note that this design supports all of the following cases:
+
+. A resource is publicly accessible.
+
+. A resource is publicly accessible but is rendered differently for a
+authenticated user.
+
+. A resource cannot be accessed without authentication.
+
+. A resource cannot be accessed without authentication and the user
+having sufficient access rights.
+
+.A tale of two bank accounts
+****
+To understand the reasons why requests are processed in this way,
+here's a practical example.
+
+Imagine tasked with the problem of securing a banking website.
+
+A bank has decided that the URL for accessing account balance
+information should be
+\https://bigbank.com/accounts/<account-number>/balances.html.
+
+All requests are checked to ensure that the request is from a properly
+logged-in user.
+
+Let's say Alice's bank account number is 12345678. By this design, as
+long as Alice is logged in, Alice can access her account balance via a
+GET request to \https://bigbank.com/accounts/12345678/balances.html.
+
+_Can you spot a security issue here?_
+
+The problem is that Alice can also access Bob's bank account balances.
+
+This may seem like an obvious mistake but this type of vulnerability
+has historically been extremely common and responsible for a great
+many hacks footnote:[It is surprising that the simple editing of a URL
+in the browser by the user should be considered 'hacking' at all]. It
+is still a common contributor to OWASP 2017's #5 most critical
+security issue:
+https://www.owasp.org/index.php/Top_10-2017_A5-Broken_Access_Control[Broken
+Access Control].
+
+One of the causes is that many web frameworks don't provide good
+support for this example use-case, and still rely on declaratively
+security on the URL itself. This is another reason why it's important
+to understand security in terms of a resource rather than a URI
+pattern. It's only once you have fully identified a web resource that
+you can determine whether access to it should be granted to a request.
+****
+
+[[realms]]
+=== Realms
 
 In HTTP, resources can exist inside a _protection space_ determined by
 one or more __realms__. Each resource declares the realm (or realms) it
 is protected by, as part of the *:access-control* entry of its
-**resource-model**.
+resource-model.
 
-[[authentication-schemes]]
-==== Authentication schemes
-
-Each realm declares one or more _authentication schemes_ governing how
-requests are authenticated.
-
-[yada]#yada# supports numerous authentication schemes, including custom ones you
-can provide yourself.
-
-Each scheme has a verifier. Depending on the scheme this is usually a
-function. The verifier is used to extract or otherwise establish the
-credentials in the request, ensuring they are authentic and true, in
-which case it returns these credentials as a value to be stored in the
-request context. These credentials may contain information such as the
-user's identity, roles and privileges. If no credentials are found, the
-verifier should return nil.
-
-If no credentials are found by any of the schemes, a 401 response is
-returned containing a WWW-Authenticate header.
-
-[[basic-authentication]]
-==== Basic authentication
-
-Here is an example of a resource which uses Basic authentication
-described in https://www.ietf.org/rfc/rfc2617.txt[RFC 2617]
+[yada]#yada# supports multiple realms. By default, there is a single
+realm in operation, named `default`. However, you can group multiple
+authentication schemes together with an authorization model into a
+separate realm. Note each realm can contain multiple authentication
+schemes (it might be that a realm offers a choice of how to
+authenticate).
 
 [source,clojure]
 ----
 {:access-control
-  {:realm "accounts"
-   :scheme "Basic"
-   :verify (fn [[user password]] …)}}
+  {:realms
+    {"Gondor" {:authentication-schemes […]
+               :authorization {…}}
+     "Mordor" {:authentication-schemes {…}
+               :authorization {…}}}}}
 ----
 
-There are 3 entries here. The first specifies the __realm__, which is
-defaults to `default` in Basic Authentication, but if specified is
-contained in the dialog the browser presents to the user.
+[[authentication-schemes]]
+=== Authentication
 
-The second declares we are using Basic authentication.
+[.lead]
+Authentication is the act of establishing the credentials of a user,
+by checking the claims in the request.
 
-The last entry is the verify function. In Basic Authentication, the
-verify function takes a single argument which is a vector of two
-entries: the username and password.
+As has already been explained, the act of authentication alone does not approve or deny the request--that requires the act of _authorization_ which is covered in <<authorization, the next section>>.
 
-If the user/password pair correctly identifies an authentic user, your
-function should return credentials.
+Each <<realms,realm>> declares one or more _authentication
+schemes_. An authentication scheme determines how the request's
+credentials are established. Credentials contain information such as
+the user's identity, roles and privileges, which can be used to deny
+the request, or if approved, may affect the nature of the response.
+
+[yada]#yada# supports a number of built-in authentication schemes
+(Basic, Digest, Cookie, JWT) and also allows for custom authentication
+schemes.
+
+Here is an example of a custom authentication scheme:
 
 [source,clojure]
 ----
-(fn [[user password]]
-  …
-  {:email "bob@acme.com"
-   :roles #{:admin}})
+{:scheme "my-authentication-scheme" <1>
+ :authenticate (fn [ctx] {:user "Alice"}) <2>
+}
+----
+<1> The scheme name.
+<2> An `authenticate` function, which is optional. For illustrative purposes, this one simply returns a map containing "Alice".
+
+The scheme name can be a keyword but if it's a string in will be used in a `WWW-Authenticate` header value in the event of a `401 Unauthorized` response (authorization is covered later in <<authorization>>).
+
+The `:authenticate` function, if present, will specify a function that will be invoked with the [yada]#yada# context and should return credentials (which can be anything, but usually a map). Returning `nil` from this function indicates that the request contains no credentials, which determines whether a 401 or 403 is returned later if the authorization check fails.
+
+If the `:authenticate` function is missing, the authentication method
+will be determined by the scheme, via the `yada.security/verify`
+multimethod. These might be built-in or methods provided by yada
+extensions (or user-code) via Clojure's `defmethod`.
+
+[[authorization]]
+=== Authorization
+
+[.lead]
+Authorization is the act of allowing a user access to a resource.
+
+This may require knowledge about the user only (for example, in
+https://en.wikipedia.org/wiki/Role-based_access_control[Role-based
+access control]) or may (additionally) depend on properties of the
+resource identified by the HTTP request's URI (as part of an
+https://en.wikipedia.org/wiki/Attribute-based_access_control[Attribute-based
+access control] authorization scheme). In either case, we assume that
+the user has already been authenticated, and we are confident that
+their credentials are genuine.
+
+In [yada]#yada#, the resource's properties are determined prior to the
+authorization step, since it may be necessary to use these properties
+in the authorization decision.
+
+==== Custom authorization with a validate function
+
+A custom authorization scheme can be provided by specifying a
+`validate` function, which takes the [yada]#yada# context and the credentials established in the realm during the authentication step:
+
+[source,clojure]
+----
+:authorization {:validate (fn [ctx creds] …)}
 ----
 
-If the password is wrong, you may choose to return either an empty map
-or nil. If you return an empty map (a truthy value) and the resource
-requires credentials that aren't in the map, a 403 Forbidden response
-will be returned. However, if you return nil, this will be treated as no
-credentials being sent and a 401 Unauthorized response will be returned.
+If the authorization succeeds, the `validate` function must return
+the [yada]#yada# context, possibly augmented to provide extra data
+that can might be needed when generating the response.
 
-From a UX perspective there is a difference. If the user-agent is a
-browser, returning nil will mean that the password dialog will reappear
-for every failed login attempt. If you return truthy, it will show the
-403 Forbidden response.
+If the request should be rejected, the `validate` function should
+return `nil` or `false`. Either a `401 Unauthorized` response will
+then be returned to the user-agent (in the case that no authentication
+claims were sent with the request) or a `403 Forbidden` (in the case
+that they were).
 
-You may choose to limit the number of times a failed 'login' attempt is
-tolerated by setting a cookie or other means.
+It is a common case for a resource to require a valid logged-in
+user. This is easy to implement:
+
+[source,clojure]
+----
+:authorization {:validate (fn [ctx creds] (when creds ctx))}
+----
+
+==== Custom authorization with a defmethod
+
+As an alternative to specifying a function, a global custom
+authorization scheme can be defined via a `defmethod`.
+
+CAUTION: This is no longer a recommended approach and exists solely
+for reasons of compatibility with previous [yada]#yada# releases, see
+<<sidebar-function-or-defmethod>>
+
+First, decide on a keyword that will be used to dispatch your
+authorization function. In this example, we've chosen
+`:my/custom-authorization`.
+
+Now declare the authorization function that will be called by
+[yada]#yada# during request processing. This is a `defmethod`, as
+follows:
+
+[source,clojure]
+----
+(defmethod yada.authorization/validate
+  :my/custom-authorization
+  [ctx credentials authorization]
+…
+)
+----
+
+The credentials argument contains all the verified credentials sent in
+the request.
+
+Now add an `:authorization` map to the `:access-control` part of your
+resource model. The map must contain a `:scheme` value specific to your
+resource model, along with any extra parameters you want to be passed as
+the `authorization` argument to your authorization function. In this
+example, we want to pass the `:my/ensure` parameter set to
+`[:same-account]`. You can specify anything you like to be passed as
+parameters (there are no schema restrictions here).
+
+[source,clojure]
+----
+{:access-control
+ {:authorization
+  {:scheme :my/custom-authorization
+   :my/ensure [:same-account]}}}
+----
+
+[[sidebar-function-or-defmethod]]
+.Which should I choose: function or defmethod?
+****
+Given these two alternatives to custom authorization, which one should you choose?
+
+Earlier versions of [yada]#yada# only provided the `defmethod` way of
+providing your own code, both for authorization and authentication.
+
+The problem with a `defmethod` is that it exists at the top-level of a
+namespace and cannot access surrounding lexical scope. That makes it
+hard to access resources such as databases that might be required by
+the authentication and authorization steps.
+
+One popular workaround was to inject database connections into the
+yada context via a custom interceptor at the beginning of the
+chain. However, this has provied a tricky, cumbersome and error-prone
+approach.
+
+Functions are therefore recommeded rather than the `defmethod`
+approach.
+****
+
+[[basic-authentication]]
+=== Basic Authentication
+
+Basic Authentication is supported by all web browsers and serves as a
+quick way of securing a resource. Basic Authentication is defined in
+https://www.ietf.org/rfc/rfc2617.txt[RFC 2617].
+
+<<example-basic-authentication>> shows a resource that is protected with Basic Authentication.
+
+[[example-basic-authentication]]
+.Basic Authentication
+====
+Assume we have a map of users:
+
+[source,clojure]
+----
+{"alice" {:yada.example-auth/name "Alice Roberts"
+          :yada.example-auth/password "Seeshai6"}
+ "bob2" {:yada.example-auth/name "Bob Mortimer"
+         :yada.example-auth/password "bohthoM6"}}
+----
+
+The function below creates a [yada]#yada# resource. The function takes
+the map of users an argument and returns a resource which will be
+accessible only via successful authentication.
+
+[source,clojure]
+----
+(ns yada.example-auth
+  (:require [yada.yada :as yada]))
+
+(defn basic-auth-example-resource [users]
+  (yada/resource
+   {:access-control
+    {:realms
+     {"default"
+      {:authentication-schemes
+       [{:scheme "Basic" ; <1>
+         :verify
+         (fn [[user-id given-password]]
+           (when-let [user (get users user-id)]
+             (when (= given-password (::password user))
+               {::user (dissoc user ::password)})))}] ; <2>
+       :authorization
+       {:validate
+        (fn [ctx creds]
+	  (when creds ctx))}}}} ; <3>
+
+    :methods
+    {:get
+     {:produces
+      {:media-type "text/plain" :charset "utf8"}
+      :response
+      (fn [ctx]
+        (format
+         "Welcome %s" ; <4>
+         (-> ctx :authentication (get "default") ::user ::name)))}}}))
+----
+<1> The :scheme is declared as `"Basic"`
+<2> If the user and password match, a map is returned containing the credentials (in this case, the map representing the user, minus the password)
+<3> If credentials exist, the authorization step succeeds.
+<4> The user's name is generated in the response body.
+
+====
+
+[[how-basic-auth-works]]
+.How Basic authentication works
+****
+Let's take a moment to dig a bit deeper into the implementation of this method:
+
+[source,clojure]
+----
+include::../src/yada/security.clj[tag=verify-basic]
+----
+<1> Note the multimethod is dispatched on the value of `:scheme`, and the `verify` function extracted.
+<2> The `Authorization` header is extracted from the request, via a regular expresssion.
+<3> The base64-encoded credentials are extracted.
+<4> The `verify` function is called with the decoded `user` and `password` values.
+
+Note that the implementation does much of the heavy-lifting so that the `verify` function can be easier to implement.
+****
 
 [[digest-authentication]]
 ==== Digest authentication
@@ -203,11 +508,6 @@ it's a good idea to provide these two methods in the same resource to
 encapsulate and dedupe the fields which are relevant to both the GET and
 the POST.
 
-[[protecting-resources]]
-==== Protecting resources
-
-(coming soon)
-
 [[logout]]
 ==== Logout
 
@@ -223,28 +523,13 @@ The recommended way of logging out is to remove the session.
 
 (coming soon)
 
-[[authorization]]
-=== Authorization
 
-Authorization is the process of allowing a user access to a resource.
-This may require knowledge about the user only (for example, in
-https://en.wikipedia.org/wiki/Role-based_access_control[Role-based
-access control]). Authorization may also depend on properties of the
-resource identified by the HTTP request's URI (as part of an
-https://en.wikipedia.org/wiki/Attribute-based_access_control[Attribute-based
-access control] authorization scheme).
 
-In either case, we assume that the user has already been authenticated,
-and we are confident that their credentials are genuine.
-
-In [yada]#yada#, authorization happens _after_ the resource's properties have
-been loaded, because it may be necessary to check some aspect of the
-resource itself as part of the authorization process.
-
-By default, [yada]#yada# will use a declarative role-based authorization scheme.
 
 [[default-authorization-scheme]]
-==== Default authorization scheme
+==== Built-in role-based authorization
+
+By default, [yada]#yada# will use a declarative role-based authorization scheme.
 
 Any method can be protected by declaring a role or set of roles in its
 model.
@@ -280,64 +565,17 @@ authorization logic as necessary. However, [yada]#yada# encourages developers to
 adopt a declarative approach to resources wherever possible, to maximise
 the integration opportunities with other libraries and tools.
 
-[[custom-authorization-scheme]]
-==== Custom authorization scheme
 
-A custom authorization scheme can be declared that will completely
-replace the default authorization scheme already discussed.
 
-First, decide on a keyword that will be used to dispatch your
-authorization function. In this example, we've chosen
-`:my/custom-authorization`.
 
-Now declare the authorization function that will be called by [yada]#yada#
-during request processing. This is a `defmethod`, as follows:
 
-[source,clojure]
-----
-(defmethod yada.authorization/validate
-  :my/custom-authorization
-  [ctx credentials authorization]
-…
-)
-----
 
-The credentials argument contains all the verified credentials sent in
-the request.
 
-Now add an `:authorization` map to the `:access-control` part of your
-resource model. The map must contain a `:scheme` value specific to your
-resource model, along with any extra parameters you want to be passed as
-the `authorization` argument to your authorization function. In this
-example, we want to pass the `:my/ensure` parameter set to
-`[:same-account]`. You can specify anything you like to be passed as
-parameters (there are no schema restrictions here).
 
-[source,clojure]
-----
-{:access-control
- {:authorization
-  {:scheme :my/custom-authorization
-   :my/ensure [:same-account]}}}
-----
 
-[[realms]]
-=== Realms
 
-[yada]#yada# supports multiple realms. By default, there is a single realm in
-operation called "default". However, you can group authentication
-schemes and authorization models in separate realms. Each realm can
-contain multiple authentication schemes (it might be that a realm offers
-a choice of how to authenticate).
 
-[source,clojure]
-----
-{:access-control
-  {:realms {"Gondor" {:authentication-schemes […]
-                      :authorization {…}}
-            "Mordor" {:authentication-schemes {…}
-                      :authorization {…}}}}}
-----
+
 
 [[cross-origin-resource-sharing-cors]]
 === Cross-Origin Resource Sharing (CORS)

@@ -15,6 +15,8 @@
            [org.asciidoctor.ast Document Block]
            [org.asciidoctor.extension JavaExtensionRegistry DocinfoProcessor BlockMacroProcessor]))
 
+(def IMAGE-DIR "target/asciidoctor/img")
+
 (defn ->author [author]
   {:first-name (.getFirstName author)
    :full-name (.getFullName author)
@@ -88,7 +90,8 @@
 
 (defn asciidoc->html [fl {:keys [toc]}]
   (fn [ctx]
-    (let [engine (Asciidoctor$Factory/create)
+    (let [engine (doto (Asciidoctor$Factory/create)
+                   (.requireLibrary (into-array String ["asciidoctor-diagram"])))
           _ (register-docinfo-processor! engine)
           _ (register-custom-processor! engine)
           ]
@@ -109,14 +112,18 @@
 
         ;; But safe allows us to specify the CSS dir
         (safe org.asciidoctor.SafeMode/UNSAFE)
+        ;;(option "imagesoutdir" (io/file "target"))
         (toFile false)             ; otherwise doesn't return a string
         (attributes
          (..
           (org.asciidoctor.AttributesBuilder/attributes)
           (tableOfContents (case toc true org.asciidoctor.Placement/LEFT false))
           (noFooter true)
+          (attribute "imagesoutdir" (str (io/file (System/getProperty "user.dir") IMAGE-DIR)))
+          (attribute "xrefstyle" "short")
           (imagesDir "img")
           (iconFontCdn (java.net.URI. "/adoc/font-awesome-4.5.0/css/font-awesome.min.css"))
+
           (styleSheetName "juxt.css")
           #_(stylesDir "resources/asciidoctor/stylesheets")
           (sectionNumbers true))))))))
@@ -145,37 +152,21 @@
     ["/manual/img/"
      (resource
       {:path-info? true
-       :methods {}
-       :sub-resource
-       ;; We don't know the file type until request time. So we
-       ;; create the resource just-in-time.
-       (fn [ctx]
-         ;; Interceptors haven't run yet.
-
-         ;; TODO: Sub-resources should be created by an
-         ;; interceptor. That way a user can elect for certain
-         ;; custom interceptors to be run prior to sub-resource
-         ;; creation.
-         (resource
-          {:properties (fn [ctx]
-                         ;; Now the interceptors have been run. If
-                         ;; we did the TODO above we wouldn't need
-                         ;; to resolve the app-state in the
-                         ;; properties callback.
-                         (let [imgdir (io/file "doc")
-                               fl (io/file imgdir (-> ctx :request :path-info))]
-                           {:exists? (.exists fl)
-                            :last-modified (.lastModified fl)
-                            ::file fl}))
-           :produces (fn [ctx] (ext-mime-type (.getName (-> ctx :properties ::file))))
-           :methods
-           {:get
-            {:response
-             (fn [ctx] (-> ctx :properties ::file))}}
-
-           ;; Inherit the interceptor chain from the parent
-           :interceptor-chain (:interceptor-chain ctx)
-           }))})]
+       :properties (fn [ctx]
+                     ;; Now the interceptors have been run. If
+                     ;; we did the TODO above we wouldn't need
+                     ;; to resolve the app-state in the
+                     ;; properties callback.
+                     (let [imgdir (io/file IMAGE-DIR)
+                           fl (io/file imgdir (-> ctx :request :path-info))]
+                       {:exists? (.exists fl)
+                        :last-modified (.lastModified fl)
+                        ::file fl}))
+       :produces (fn [ctx] (ext-mime-type (.getName (-> ctx :properties ::file))))
+       :methods
+       {:get
+        {:response
+         (fn [ctx] (-> ctx :properties ::file))}}})]
 
     [["/manual/index.html"]
      (resource

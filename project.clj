@@ -109,7 +109,12 @@
 
       ;; Publishing user manual
       [camel-snake-kebab "0.4.0"]
-      [org.asciidoctor/asciidoctorj "1.6.0-alpha.3"]
+      [org.asciidoctor/asciidoctorj "1.6.0-alpha.6"]
+      [org.asciidoctor/asciidoctorj-diagram "1.5.11"]
+      [org.jruby/jruby "1.7.26"]
+      [net.sourceforge.plantuml/plantuml "1.2018.13"]
+
+
       [markdown-clj "0.9.91"]]
 
      :source-paths ["dev/src"]
