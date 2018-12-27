@@ -114,6 +114,8 @@
       [org.jruby/jruby "1.7.26" :exclusions [org.clojure/clojure com.github.jnr/jnr-x86asm com.github.jnr/jffi]]
       [net.sourceforge.plantuml/plantuml "1.2018.13"]
 
+      ;; Performance testing
+      [criterium "0.4.4"]
 
       [markdown-clj "0.9.91"]]
 

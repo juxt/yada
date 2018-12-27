@@ -1,0 +1,131 @@
+= syntax.clj
+
+== Introduction
+
+The purpose of link:syntax.clj[] is to provide a set of
+standards-conforming functions to read/write HTTP values.
+
+The goals, in order of priority, are:
+
+. 100% conformance to standards
+. Performance
+
+These notes explain how the implementation choices were arrived at.
+
+== Relevant RFCs
+
+* https://tools.ietf.org/html/rfc5234[RFC 5234]: Augmented BNF for Syntax Specifications: ABNF
+* https://tools.ietf.org/html/rfc7230#section-3.2.6[RFC 7230 Section 3.2.6]: HTTP/1.1 Message Syntax and Routing
+
+== Performance
+
+https://github.com/hugoduncan/criterium/[Critirium] was used to ascertain the relative performance of different
+implementations to parse a simple string.
+
+=== Results
+
+|===
+|Implementation|Performance
+
+|clojure.spec|~700,000ns
+|java.util.regex with a simple (incorrect) group|124ns
+|java.util.regex with a correct un-named group|310ns
+|java.util.regex with a correct 'full-expanded' group|1032ns
+|java.util.regex with a correct named group, replacing groups with character classes|350ns
+|===
+
+=== Conclusion
+
+The results showed that it was worth using character classes instead of fully
+expanded ranges of hex values. Also, that using named groups was quite efficient.
+
+[appendix]
+== Code
+
+[source,clojure]
+----
+(def token-regex
+  (re-pattern
+   (format "(?<scheme>%s)+" (str/join "|" (map #(str "\\x" %) (map #(Integer/toHexString (int %)) tchar))))))
+
+
+(comment
+  (cri/with-progress-reporting
+    (cri/bench
+     (re-matches token-regex "basic")
+     :verbose))) ; => 1.131512 µs
+
+(comment
+  (cri/with-progress-reporting
+    (cri/bench
+     (re-matches #"[a-zA-Z]+" "basic")
+     :verbose))) ; => 142.384468 ns
+
+(def token-regex-non-capturing
+  (re-pattern
+   (format "(?:%s)+" (str/join "|" (map #(str "\\x" %) (map #(Integer/toHexString (int %)) tchar))))))
+
+(comment
+  (cri/with-progress-reporting
+    (cri/bench
+     (re-matches token-regex-non-capturing "basic")
+     :verbose))) ;-> 1.031749 µs
+
+;; So avoiding named capturing groups doesn't make a big improvement.
+
+;; Q. Do character classes help? Try token-regex with character classes
+
+#_(def tchar
+  (set/union
+   (set [\! \# \$ \% \& \' \* \+ \- \. \^ \_ \` \| \~])
+   DIGIT ALPHA))
+
+(def simplified-token-regex-with-range
+  (re-pattern
+   "(?:[a-zA-Z0-9])+"))
+
+(cri/with-progress-reporting
+  (cri/bench
+   (re-matches simplified-token-regex-with-range "basic"))) ; 124.551786 ns
+
+
+(def simplified-token-regex-with-character-classes
+  (re-pattern "(?:[\\p{Alpha}\\p{Digit}])+"))
+
+(cri/with-progress-reporting
+  (cri/bench
+   (re-matches simplified-token-regex-with-character-classes "basic"))) ; 117.846780 ns
+
+
+(def token-regex-with-character-classes
+  (re-pattern (format "(?:[\\p{Alpha}\\p{Digit}%s])+" (str/join "" (map #(str "\\x" %) (map #(Integer/toHexString (int %)) (set [\! \# \$ \% \& \' \* \+ \- \. \^ \_ \` \| \~])))))))
+
+(cri/with-progress-reporting
+  (cri/bench
+   (re-matches token-regex-with-character-classes "basic"))) ; 310.247206 ns
+
+
+(def token-regex-with-character-classes-named-group
+  (re-pattern (format "(?<scheme>[\\p{Alpha}\\p{Digit}%s])+" (str/join "" (map #(str "\\x" %) (map #(Integer/toHexString (int %)) (set [\! \# \$ \% \& \' \* \+ \- \. \^ \_ \` \| \~])))))))
+
+(cri/with-progress-reporting
+  (cri/bench
+   (re-matches token-regex-with-character-classes-named-group "basic"))) ; 420.151873 ns
+
+;; Q. Are using character classes worth it at all?
+
+(def token-regex-with-long-group
+  (re-pattern (format "(?:[%s])+" (str/join "" (map #(str "\\x" %) (map #(Integer/toHexString (int %)) tchar))))))
+
+#_(cri/with-progress-reporting
+  (cri/bench
+   (re-matches token-regex-with-character-classes "basic"))) ;; 350.380948 ns
+
+;; A. Character classes make a ~15% improvement (310ns versus 350ns), they are worth using.
+
+
+;; So, create a regex creator protocol that is 'intelligent' and uses character classes whenever possible.
+
+;; Test with tchar
+
+----
