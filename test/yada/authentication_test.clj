@@ -5,11 +5,9 @@
    [clojure.test :refer :all :exclude [deftest]]
    [schema.core :as s]
    [schema.test :refer [deftest]]
-   [manifold.deferred :as d]
    [yada.schema :as ys]
-   [yada.security :refer [authenticate verify scheme-default-parameters]]
-   [yada.yada :as yada]
-   [clojure.tools.logging :as log]))
+   [yada.security :refer [authenticate scheme-default-parameters verify]]
+   [yada.test :refer [response-for]]))
 
 ;; We create some fictitious schemes, just for testing
 
@@ -18,6 +16,10 @@
   authenticated)
 
 (defmethod verify "S2"
+  [ctx {:keys [authenticated]}]
+  authenticated)
+
+(defmethod verify "S3"
   [ctx {:keys [authenticated]}]
   authenticated)
 
@@ -33,7 +35,7 @@
 (defn validate-ctx [ctx]
   (s/validate {:resource ys/Resource} ctx))
 
-(deftest authenticate_test
+(deftest authenticate-test
   (testing "Across multiple realms and schemes"
     (is (=
          "S1 foo=\"bar\", realm=\"R1\", S2 alt-realm=\"Gondor\", zip=\"AAA\", S1 foo=\"bar\", realm=\"R2\", S2 alt-realm=\"Gondor\", zip=\"AAA\""
@@ -85,17 +87,47 @@
              (get-in result [:response :headers "www-authenticate"])))))
 
   (testing "Authentication scheme as a function"
-      (let [ctx {:resource
-                 {:access-control
-                  {:realms
-                   {"default"
-                    {:authentication-schemes
-                     [{:authenticate (fn [ctx] {:user "george"})}]}
-                    }}}}
-            result @(authenticate ctx)]
+    (let [ctx {:resource
+               {:access-control
+                {:realms
+                 {"default"
+                  {:authentication-schemes
+                   [{:authenticate (fn [ctx] {:user "george"})}]}
+                  }}}}
+          result @(authenticate ctx)]
 
-        (is result)
-        (is (= {:user "george"} (get-in result [:authentication "default"]))))))
+      (is result)
+      (is (= {:user "george"} (get-in result [:authentication "default"])))))
+
+  (testing "No www-authenticate header produced for non-string scheme"
+    (let [response
+          (response-for
+           {:access-control
+            {:scheme :custom
+             :verify (constantly nil)
+             :authorization {:methods {:get "secret/view"}}}
+            :methods
+            {:get {:produces "text/plain"
+                   :response (fn [ctx] "secret")}}}
+
+           :get "/" {})]
+      (is (= 401 (:status response)))
+      (is (nil? (get-in response [:headers "www-authenticate"])))))
+
+  (testing "authentication schemes as a function"
+    (let [response
+          (response-for
+           {:access-control
+            {:authentication-schemes (fn [ctx] [{:scheme "S3"}])
+             :authorization {:methods {:get (fn [ctx] "user")}}}
+
+            :methods
+            {:get {:produces "text/plain"
+                   :response (fn [ctx] "secret")}}}
+
+           :get "/" {})]
+      (is (= 401 (:status response)))
+      (is (= "S3 realm=\"default\"" (get-in response [:headers "www-authenticate"]))))))
 
 ;; TODO: Authorization test
 
@@ -106,39 +138,3 @@
 ;; (isa? ::a ::c)
 
 ;; Roles: Use [:and ...] for conjunctions, [:or ...] for disjunctions
-
-
-#_(authenticate
- {:resource
-  {:access-control
-   {:realms
-    {"R1" {:authentication-schemes
-           [{:scheme "S1"
-             :authenticated false}
-            {:scheme "S2"
-             :authenticated {:user "george"
-                             :roles #{:pig}}}
-            {:scheme "S3"
-             :authenticate (fn [ctx] false)}
-            ]}
-     "R2" {:authentication-schemes
-           [{:scheme "S1"
-             :authenticated false}
-            {:scheme "S2"
-             :authenticated false}]}}}}})
-
-#_(authenticate
- {:resource
-  {:access-control
-   {:realms
-    {"R1" {:authentication-schemes
-           [{:scheme "S1"
-             :authenticated false}
-            {:scheme "S2"
-             :authenticated {:user "george" :roles #{:pig}}}
-            ]}
-     "R2" {:authentication-schemes
-           [{:scheme "S1"
-             :authenticated false}
-            {:scheme "S2"
-             :authenticated false}]}}}}})
