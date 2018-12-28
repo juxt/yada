@@ -176,7 +176,10 @@ authenticate).
 Authentication is the act of establishing the credentials of a user,
 by checking the claims in the request.
 
-As has already been explained, the act of authentication alone does not approve or deny the request--that requires the act of _authorization_ which is covered in <<authorization, the next section>>.
+As has already been explained, the act of authentication alone does
+not approve or deny the request--that requires the act of
+_authorization_ which is covered in <<authorization, the next
+section>>.
 
 Each <<realms,realm>> declares one or more _authentication
 schemes_. An authentication scheme determines how the request's

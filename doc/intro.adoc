@@ -2,7 +2,7 @@
 == Introduction
 
 [.lead]
-[yada]#yada# is a web library for ((Clojure)) that lets you define websites and web APIs using data.
+[yada]#yada# is a web library for ((Clojure)) that lets you write websites and web APIs that conform to HTTP standards.
 
 Despite some differences, virtually all web libraries do a similar thing: call your code with some request data and ask you to return a response, leaving the bulk of the responsibililty for implementing the ((HTTP)) standards in your hands: responding with the correct status codes, response headers and ensuring semantics have been followed properly.
 
