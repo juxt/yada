@@ -26,7 +26,7 @@
 
            :get "/" {})]
       (is (= 401 (:status response)))
-      (is (= ["Basic realm=\"default\""] (get-in response [:headers "www-authenticate"])))))
+      (is (= "Basic realm=\"default\", charset=\"UTF-8\"" (get-in response [:headers "www-authenticate"])))))
 
   (testing "No www-authenticate header produced for non-string scheme"
     (with-level Level/OFF "yada.security"
@@ -57,7 +57,7 @@
 
            :get "/" {})]
       (is (= 401 (:status response)))
-      (is (= ["Basic realm=\"default\""] (get-in response [:headers "www-authenticate"]))))))
+      (is (= "Basic realm=\"default\", charset=\"UTF-8\"" (get-in response [:headers "www-authenticate"]))))))
 
 (deftest response-header-test
   ;; This test validates that the security module sends the correct headers

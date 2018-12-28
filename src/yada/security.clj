@@ -4,13 +4,13 @@
   (:require
    [clojure.data.codec.base64 :as base64]
    [clojure.string :as str]
-   [clojure.tools.logging :refer :all]
-   [yada.authorization :as authorization]))
+   [yada.authorization :as authorization]
+   [manifold.deferred :as d]
+   [clojure.tools.logging :as log]))
 
 (defmulti verify
   "Multimethod that allows new schemes to be added."
   (fn [ctx {:keys [scheme]}] scheme) :default ::default)
-
 
 ;; tag::verify-basic[]
 (defmethod verify "Basic" [ctx {:keys [verify]}] ; <1>
@@ -21,6 +21,27 @@
         (verify [user password]) ; <4>
         ))))
 ;; end::verify-basic[]
+
+(defmulti scheme-default-parameters
+  "Multimethod that allows auth-schemes to have default parameters"
+  (fn [ctx {:keys [scheme]}] scheme) :default ::default)
+
+(defmethod scheme-default-parameters "Basic" [ctx {:keys [realm]}]
+  ;; > The "realm" authentication parameter is reserved for use by
+  ;; > authentication schemes that wish to indicate a scope of
+  ;; > protection.
+  ;; -- RFC 7235 Section 2.2
+  ;;
+  ;; In the case of Basic, realm is REQUIRED, charset it OPTIONAL. We
+  ;; choose to send charset anyway (users can override this decision
+  ;; by overriding this defmethod).
+  {:realm realm
+   ;; > The only allowed value is "UTF-8";
+   ;; -- RFC 7617 Section 2.1
+   :charset "UTF-8"})
+
+(defmethod scheme-default-parameters ::default [ctx {:keys [realm]}]
+  {:realm realm})
 
 ;; A nil scheme is simply one that does not use any of the built-in
 ;; algorithms for IANA registered auth-schemes at
@@ -37,7 +58,7 @@
   ;; Scheme is not recognised by this server, we must return nil (to
   ;; move to the next scheme). This is technically a server issue but
   ;; we recover and add a warning in the logs.
-  (warnf "No installed support for the following scheme: %s" scheme)
+  (log/warnf "No installed support for the following scheme: %s" scheme)
   nil)
 
 (defn cors-preflight?
@@ -51,80 +72,95 @@
 (defmacro when-not-cors-preflight [ctx & body]
   `(if (cors-preflight? ~ctx)
      ~ctx
-     ~@body))
+     (do ~@body)))
 
 (defn call-fn-maybe [x ctx]
   (when x
     (if (fn? x) (x ctx) x)))
 
+(defn challenge [scheme params]
+  (format "%s %s" scheme (str/join ", " (for [[k v] params] (format "%s=\"%s\"" (name k) v)))))
+
+(defn www-authenticate
+  "Takes a collection of realm results. A relevant realm result has a
+  non-truty :authenticated? value. It also has a collection
+  of :auth-schemes that should be presented to the user-agent for it
+  to select which it deems the most secure."
+  [ctx realm-results]
+  (let [challenges
+             (for [{:keys [authenticated? scheme realm]} (mapcat :auth-schemes realm-results)
+                   :let [s (:scheme scheme)
+                         params (call-fn-maybe (get scheme :params {}) ctx)]
+                   :when (not authenticated?)
+                   :when (string? s)]
+               (challenge s (let [params (scheme-default-parameters ctx (assoc scheme :realm realm))]
+                              (if (and (find params :realm) (nil? (:realm params)))
+                                (dissoc params :realm)
+                                (assoc params :realm realm)))))]
+    (when (not-empty challenges)
+      (str/join", " challenges))))
+
 (defn authenticate [ctx]
   (when-not-cors-preflight ctx
-    ;; Note that a response can have multiple challenges, one for each realm.
-    (reduce
-     (fn [ctx [realm {:keys [authentication-schemes]}]]
-       ;; Currently we take the credentials of the first scheme that
-       ;; returns them.  We also encourage scheme provides to return
-       ;; truthy (e.g. {}) if the credentials have been specified (the
-       ;; correct request header or cookie has been used) but are
-       ;; invalid. This is to distinguish between (i) authentication
-       ;; credentials being supplied and valid, (ii) supplied and
-       ;; invalid, (iii) not supplied.
-       ;;
-       ;; The upshot of this is that invalid basic auth creds are
-       ;; accepted (on the first attempt), so if the user makes a
-       ;; mistake typing them in, no re-attempts are allowed. It is
-       ;; hard for yada to provide re-attempts to a human, because it
-       ;; is designed to support other types of user-agent, where
-       ;; re-attempt counting would not be desirable.
-       ;;
-       ;; The compromise is that basic auth has a single attempt and
-       ;; we must find some better way of allowing humans to 'log out'
-       ;; of basic auth via browser JS. If re-attempts are desirable,
-       ;; then it is recommended to use a more sophisticated auth
-       ;; scheme rather than Basic, which is really only for quick
-       ;; prototypes and examples. I think this is a valid overall
-       ;; compromise between the various trade-offs here.
 
-       ;; In the future we may have a better design that can support
-       ;; conjunctions and disjunctions across auth-schemes, in much
-       ;; the same way we do for the built-in role-based
-       ;; authorization.
-       (let [authentication-schemes (call-fn-maybe authentication-schemes ctx)
+    ;; Note that a response can have a challenges per realm. Each
+    ;; challenge can refer to multiple auth-schemes.
 
+    (d/chain
 
-             credentials
-             (some
-              (fn [scheme]
+     (apply
+      d/zip
+      (map
+       (fn [[realm {:keys [authentication-schemes]}]]
+
+         (let [authentication-schemes (call-fn-maybe authentication-schemes ctx)]
+
+           (if (empty? authentication-schemes)
+             {:authenticated? false :realm realm}
+             (d/chain
+              (d/loop [acc []
+                       [scheme & next-auth-schemes] authentication-schemes]
+
                 ;; For each authentication scheme, call the
                 ;; authenticate function can. If one doesn't exist,
                 ;; then we dispatch to the verify multimethod.
-                (cond
-                  (:authenticate scheme) ((:authenticate scheme) ctx)
-                  (:scheme scheme) (verify ctx scheme)
-                  :else
-                  (throw (ex-info "Authentication scheme does not support authentication" {:scheme scheme}))))
-              authentication-schemes)]
+                (if-let [creds
+                         (cond
+                           (:authenticate scheme) ((:authenticate scheme) ctx)
+                           (:scheme scheme) (verify ctx (assoc scheme :realm realm))
+                           :else
+                           (throw (ex-info "Authentication scheme does not support authentication" {:scheme scheme})))]
 
-         ;; TODO: Shouldn't it be possible to return credentials as a
-         ;; (manifold) deferred value?
+                  {:authenticated? true :realm realm :scheme scheme :credentials creds}
 
-         (if credentials
-           (assoc-in ctx [:authentication realm] credentials)
-           ;; This branch will lead to a 401, let's prompt the user
-           ;; agent for which authentication scheme(s) we'd like them
-           ;; to provide credentials for, via the WWW-Authenticate
-           ;; response header.
-           (let [vs (filter some?
-                            (for [{:keys [scheme]} authentication-schemes]
-                              (when (string? scheme)
-                                (format "%s realm=\"%s\"" scheme realm))))]
-             (if (not-empty vs)
-               (update-in ctx [:response :headers "www-authenticate"]
-                          (fnil conj [])
-                          (str/join ", " vs))
-               ctx)))))
+                  (let [acc (conj acc {:scheme scheme :realm realm})]
+                    (if next-auth-schemes
+                      ;; Try another scheme
+                      (d/recur acc next-auth-schemes)
+                      ;; No schemes have authenticated
+                      {:authenticated? false :realm realm :auth-schemes acc}))))))))
 
-     ctx (get-in ctx [:resource :access-control :realms]))))
+       (get-in ctx [:resource :access-control :realms])))
+
+     (fn [realm-results]
+
+       ;; TODO: Document in authentication section
+
+       ;; Apply the credentials to the context
+       (let [ctx
+             (reduce
+              (fn [ctx {:keys [authenticated? realm credentials] :as result}]
+
+                (cond-> ctx
+                  authenticated? (assoc-in [:authentication realm] credentials))
+
+                ) ctx realm-results)
+
+             www-auth (www-authenticate ctx realm-results)]
+
+         (cond-> ctx
+           www-auth (assoc-in [:response :headers "www-authenticate"] www-auth))
+         )))))
 
 (defn authorize
   "Given a verified user in the context, and the resource properties
