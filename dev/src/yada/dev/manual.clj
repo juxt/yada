@@ -67,7 +67,7 @@
 (defn- add-link [s]
   (let [[_ pream rfc postam] (re-matches #"(.*)RFC (\d+)(.*)" s)]
     (if rfc
-      (format "%s link:/specs/rfc%s[RFC %s]%s" pream rfc rfc postam)
+      (format "%s link:/specs/rfc%s[RFC %s]%s (link:%s[status])" pream rfc rfc postam (format "https://datatracker.ietf.org/doc/rfc%s/" rfc))
       s)))
 
 (defn register-custom-processor! [engine]
