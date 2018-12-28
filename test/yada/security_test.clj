@@ -5,6 +5,7 @@
    [clojure.test :refer :all :exclude [deftest]]
    [schema.test :refer [deftest]]
    [yada.test :refer [response-for]]
+   yada.auth-schemes.basic
    [yada.test-util :refer [with-level]])
   (:import (ch.qos.logback.classic Level)))
 

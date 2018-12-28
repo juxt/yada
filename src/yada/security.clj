@@ -2,43 +2,18 @@
 
 (ns yada.security
   (:require
-   [clojure.data.codec.base64 :as base64]
    [clojure.string :as str]
-   [yada.authorization :as authorization]
+   [clojure.tools.logging :as log]
    [manifold.deferred :as d]
-   [clojure.tools.logging :as log]))
+   [yada.authorization :as authorization]))
 
 (defmulti verify
   "Multimethod that allows new schemes to be added."
   (fn [ctx {:keys [scheme]}] scheme) :default ::default)
 
-;; tag::verify-basic[]
-(defmethod verify "Basic" [ctx {:keys [verify]}] ; <1>
-  (let [auth (get-in ctx [:request :headers "authorization"]) ; <2>
-        cred (and auth (apply str (map char (base64/decode (.getBytes ^String (last (re-find #"^Basic (.*)$" auth)))))))] ; <3>
-    (when cred
-      (let [[user password] (str/split (str cred) #":" 2)]
-        (verify [user password]) ; <4>
-        ))))
-;; end::verify-basic[]
-
 (defmulti scheme-default-parameters
   "Multimethod that allows auth-schemes to have default parameters"
   (fn [ctx {:keys [scheme]}] scheme) :default ::default)
-
-(defmethod scheme-default-parameters "Basic" [ctx {:keys [realm]}]
-  ;; > The "realm" authentication parameter is reserved for use by
-  ;; > authentication schemes that wish to indicate a scope of
-  ;; > protection.
-  ;; -- RFC 7235 Section 2.2
-  ;;
-  ;; In the case of Basic, realm is REQUIRED, charset it OPTIONAL. We
-  ;; choose to send charset anyway (users can override this decision
-  ;; by overriding this defmethod).
-  {:realm realm
-   ;; > The only allowed value is "UTF-8";
-   ;; -- RFC 7617 Section 2.1
-   :charset "UTF-8"})
 
 (defmethod scheme-default-parameters ::default [ctx {:keys [realm]}]
   {:realm realm})
