@@ -23,7 +23,7 @@ The user-manual is also available as an e-book or PDF, at
 Add the following dependency to your `project.clj` or `build.boot` file:
 
 ```
-[yada "1.2.17-SNAPSHOT"]
+[yada "1.2.15"]
 ```
 
 [![Build Status](https://travis-ci.org/juxt/yada.svg?branch=master)](https://travis-ci.org/juxt/yada.svg?branch=master)
