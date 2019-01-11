@@ -1,13 +1,6 @@
 [preface]
 = Preface
 
-////
-The world-wide-web ranks among the greatest inventions in human
-history. It is built on the bedrock of solid and compliant
-implementations of the HTTP protocol. It is remarkable that
-everyday web applications written by software developers rarely conform.
-////
-
 State is everywhere. The world is moving and we need to keep up. We
 need our computers to help us stay up-to-date with the latest
 information, chats, trends, stock-prices, news and weather updates,

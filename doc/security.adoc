@@ -397,7 +397,7 @@ Let's take a moment to dig a bit deeper into the implementation of this method:
 
 [source,clojure]
 ----
-include::../src/yada/auth_schemes/basic.clj[tag=verify]
+include::../src/yada/security.clj[tag=verify-basic]
 ----
 <1> Note the multimethod is dispatched on the value of `:scheme`, and the `verify` function extracted.
 <2> The `Authorization` header is extracted from the request, via a regular expresssion.

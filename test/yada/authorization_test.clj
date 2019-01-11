@@ -8,8 +8,7 @@
    [yada.authorization :refer [allowed?]]
    [yada.boolean :as b]
    [yada.security :refer [verify]]
-   [yada.test :refer [response-for]]
-   [yada.yada :as yada]))
+   [yada.test :refer [response-for]]))
 
 (deftest schema-test
   (is
@@ -46,7 +45,7 @@
 ;; different credentials via the WWW-Authenticate header. The 403 does
 ;; not cause the WWW-Authenticate to be returned in the response.
 
-(deftest default-authorization-test
+(deftest default-authorization-scheme-test
   (testing "200 with no creds, allowed access"
     (is
      (= 200 (:status
@@ -91,51 +90,4 @@
                             [{:scheme ::test
                               ::creds {:roles #{:superuser}}}]
                             :authorization {:methods {:get :superuser}}}}}
-               :methods {:get ""}}))))))
-
-
-(deftest function-authorization-test
-  (testing "200 with authentication and authorization"
-    (is
-     (= 200 (:status
-             (response-for
-              {:access-control
-               {:realms
-                {"default"
-                 {:authentication-schemes
-                  [{:authenticate (fn [ctx] {:user "george"})}]
-                  :authorization {:validate
-                                  (fn [ctx creds]
-                                    (when (= "george" (:user creds))
-                                      ctx))}}}}
-               :methods {:get ""}})))))
-
-  (testing "401 with no creds, access not authorized"
-    (is
-     (= 401 (:status
-             (response-for
-              {:access-control
-               {:realms
-                {"default"
-                 {:authentication-schemes
-                  [{:authenticate (fn [ctx] nil)}]
-                  :authorization {:validate
-                                  (fn [ctx creds]
-                                    (when (= "george" (:user creds))
-                                      ctx))}}}}
-               :methods {:get ""}})))))
-
-  (testing "403 with creds, access not authorized"
-    (is
-     (= 403 (:status
-             (response-for
-              {:access-control
-               {:realms
-                {"default"
-                 {:authentication-schemes
-                  [{:authenticate (fn [ctx] {:user "not-george"})}]
-                  :authorization {:validate
-                                  (fn [ctx creds]
-                                    (when (= "george" (:user creds))
-                                      ctx))}}}}
                :methods {:get ""}}))))))

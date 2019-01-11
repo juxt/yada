@@ -23,7 +23,6 @@
    yada.resources.url-resource
    yada.resources.sse
    [yada.security :as sec]
-   yada.auth-schemes.basic
    yada.swagger
    [yada.swagger-parameters :as swgparams]
    yada.test

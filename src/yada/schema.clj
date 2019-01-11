@@ -253,15 +253,19 @@ expressive short-hand descriptions."}
                                         (s/optional-key :body) (s/=> s/Any s/Any)
                                         (s/optional-key :form) (s/=> s/Any s/Any)}})
 
-(def Realm s/Str)
+;; Obsoleted by new top-level authorization
+(def ^:deprecated Realm s/Str)
 
+;; Obsoleted by new top-level authorization
 (s/defschema Restriction
-  {:realm Realm
+  {(s/optional-key :realm) Realm ; allowed for backward-compatibility
    (s/optional-key :role) s/Keyword})
 
+;; Obsoleted by top-level authorization
 (s/defschema Authorization
   {(s/optional-key :restrict) [Restriction]})
 
+;; Obsoleted by top-level authorization
 (def AuthorizationMappings
   {[Restriction] (fn [x] (cond (map? x) (vector x)
                                :otherwise x))})
@@ -321,27 +325,45 @@ expressive short-hand descriptions."}
 (s/defschema StringSet #{s/Str})
 (s/defschema Keywords [s/Keyword])
 
-(def AuthScheme
+;; Authentication
+(s/defschema AuthenticationScheme
+  (maybe-dynamic
+   (merge
+    {:id s/Keyword
+     :scheme (s/cond-pre s/Keyword s/Str)
+     (s/optional-key :realm) (s/cond-pre s/Keyword s/Str)
+     (s/optional-key :authenticate) (s/=> Context Context s/Any)}
+    NamespacedEntries)))
+
+(s/defschema AuthenticationSchemes
+  {(s/optional-key :authentication-schemes)
+   (-> [AuthenticationScheme]
+       (s/constrained
+        (fn [auth-schemes]
+          (apply distinct? (map :id auth-schemes)))
+        "Authentication schemes must have distinct :id values"))})
+
+;; Obsoleted by new top-level authorization
+(def ^:deprecated AuthScheme
   (merge
    {(s/optional-key :scheme) (s/cond-pre s/Keyword s/Str)
-    ;; used by Basic authentication, sort-of deprecated
-    (s/optional-key :verify) s/Any
-    ;; low-level override
-    (s/optional-key :authenticate) ContextFunction}
+    (s/optional-key :verify) s/Any}
    NamespacedEntries))
 
-(s/defschema AuthSchemes
+;; Obsoleted by new top-level authorization
+(s/defschema ^:deprecated AuthSchemes
   {(s/optional-key :authentication-schemes) (maybe-dynamic [AuthScheme])})
 
 ;; Authorization can contain any content because it is up to the
 ;; authorization interceptor, which is pluggable.
+;; This schema doubles as a scheme for the newer top-level authorization
 (s/defschema Authorization
   {(s/optional-key :authorization) s/Any})
 
-(s/defschema RealmValue
+(s/defschema ^:deprecated RealmValue
   (merge AuthSchemes Authorization NamespacedEntries))
 
-(s/defschema Realms
+(s/defschema ^:deprecated Realms
   {(s/optional-key :realms)
    {Realm RealmValue}})
 
@@ -359,6 +381,18 @@ expressive short-hand descriptions."}
 (s/defschema AccessControl
   {(s/optional-key :access-control) AccessControlValue})
 
+;; TODO: We are going to allow :realms or :authentication
+#_(resource-coercer
+ {:authentication-schemes
+  [{:id :default
+    :scheme "Basic"
+    :realm "Gondor"
+    :authenticate (fn [ctx creds        ; creds map provided by scheme
+                       ] ctx) ; add to ctx [:authentication <:id>] - if nil, then no authentication
+    ;; If not provided, the default is to add creds to [:authentication <:id>]
+    }]
+  :authorization (fn [ctx] ctx)})
+
 ;; Here is some tricky code, caused by the necessity to compose the
 ;; 'data macros'. The realm short-hand has to rewrite the data, which
 ;; may include the scheme in short or long form, which makes it
@@ -370,29 +404,31 @@ expressive short-hand descriptions."}
 ;; short-hands. For an explanation of data macros, see
 ;; https://blog.juxt.pro/posts/data-macros.html
 
-(def SingleRealmMapping
+(def ^:deprecated SingleRealmMapping
   {AccessControlValue
    (fn [x]
-     (if-not (:realms x)
+     (if (and
+          (nil? (:realms x))
+          (not (empty? (select-keys x [:authentication-schemes :verify :scheme :authenticate :authorization]))))
        (-> x
            ;; Merge everything we want to KEEP from the realm
            (merge {:realms {(or (:realm x) "default")
-                            (select-keys x [:authentication-schemes :verify :scheme :authenticate :authorization])}})
+                            (select-keys x [:authentication-schemes :verify :scheme :authorization])}})
            ;; Remove anything we want to REMOVE from the rest of the
            ;; access-control definition
-           (dissoc :realm :scheme :verify :authenticate :authentication-schemes :authorization))
+           (dissoc :realm :scheme :verify :authentication-schemes :authorization))
        x))})
 
-(def SingleSchemeMapping
+(def ^:deprecated SingleSchemeMapping
   {RealmValue
    (fn [x]
      (if (:scheme x)
        (-> x
            ;; Merge in a :authentication-schemes entry with a single
            ;; scheme containing the :scheme and :verify entries
-           (merge {:authentication-schemes [(select-keys x [:scheme :verify :authenticate])]})
+           (merge {:authentication-schemes [(select-keys x [:scheme :verify])]})
            ;; Remove the :scheme and :verify keys
-           (dissoc :scheme :verify :authenticate))
+           (dissoc :scheme :verify))
        x))})
 
 (def HeaderMappings
@@ -414,6 +450,16 @@ expressive short-hand descriptions."}
          SingleSchemeMapping
          HeaderMappings
          {ContextFunction as-fn}))
+
+(def AuthenticationSchemesMappings
+  {AuthenticationScheme
+   ;; Default id
+   (partial merge {:id :default})
+   ;;AuthenticationSchemes
+   ;; Cannot have two schemes with the same if
+   #_(fn [{:keys [authentication-schemes]}]
+     (if (distinct? (map :id authentication-schemes))
+       xs))})
 
 (s/defschema ResourceDocumentation CommonDocumentation)
 
@@ -440,28 +486,46 @@ expressive short-hand descriptions."}
   {(s/optional-key :show-stack-traces?) s/Bool})
 
 (s/defschema Resource
-  (merge {(s/optional-key :id) s/Any}
-         ResourceDocumentation
-         AccessControl
-         Properties
-         ResourceParameters
-         Produces
-         Consumes
-         Methods
-         Responses
-         SecurityHeaders
-         {(s/optional-key :path-info?) Boolean
-          (s/optional-key :sub-resource) (s/=> Resource Context)}
-         Logger
-         InterceptorChain
-         Policies
-         NamespacedEntries))
+  (->
+   (merge {(s/optional-key :id) s/Any}
+          ResourceDocumentation
+
+          AccessControl
+
+          AuthenticationSchemes
+          Authorization
+
+          Properties
+          ResourceParameters
+          Produces
+          Consumes
+          Methods
+          Responses
+          SecurityHeaders
+          {(s/optional-key :path-info?) Boolean
+           (s/optional-key :sub-resource) (s/=> Resource Context)}
+          Logger
+          InterceptorChain
+          Policies
+          NamespacedEntries)
+
+   (s/constrained
+    ;; Finally, ensure can't have both [:access-control :realms] AND (:authentication-schemes OR :authorization)
+    (fn [resource]
+      (not
+       (and
+        (get-in resource [:access-control :realms])
+        (or (:authentication-schemes resource) (:authorization resource))))
+      )
+    "Cannot have mix both old and new authentication/authorization")))
 
 (s/defschema ResourceMappings
   (merge PropertiesMappings
          RepresentationSeqMappings
          MethodsMappings
-         AccessControlMappings))
+         AccessControlMappings ; deprecated
+         AuthenticationSchemesMappings
+         ))
 
 (def resource-coercer
   (sc/coercer Resource
@@ -484,3 +548,11 @@ expressive short-hand descriptions."}
    :interceptor-chain [(s/=> Context Context)]
    :error-interceptor-chain [(s/=> Context Context)]
    (s/optional-key :path-info?) s/Bool})
+
+
+(comment
+  (resource-coercer
+   {:authentication-schemes [{:id :foo2 :scheme "foo" :realm "oo"}
+                             {:id :foo :scheme "foo" :realm "oo"}]
+    :access-control {
+                     :allow-origin "acme.com"}}))
