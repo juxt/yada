@@ -1,6 +1,6 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
-(ns yada.authentication-test
+(ns yada.deprecated.authentication-test
   (:require
    [clojure.test :refer :all :exclude [deftest]]
    [schema.core :as s]

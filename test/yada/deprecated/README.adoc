@@ -1,0 +1,6 @@
+= yada.deprecated
+
+Tests for functionality that is deprecated but preserved for backwards
+compatibility. There is value in keeping this functionality preserved,
+hence it is important that these tests are retained, run and not
+deleted.
