@@ -19,11 +19,10 @@
       (let [[user password] (str/split (str cred) #":" 2)]
         (verify [user password])))))
 
-#_(defmethod verify :cookie [ctx {:keys [verify cookie]}]
-
-  (get-in ctx [:cookies cookie])
-
-  )
+(defmethod yada.security/verify :cookie [{cookie-map                                                                     :cookies
+                                          {{{{{cookie-name :cookie} :authorization} "default"} :realms} :access-control} :resource}
+                                         {verify-fn :verify}]
+  (verify-fn (get cookie-map cookie-name)))
 
 ;; A nil scheme is simply one that does not use any of the built-in
 ;; algorithms for IANA registered auth-schemes at
