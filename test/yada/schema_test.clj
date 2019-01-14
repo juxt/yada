@@ -259,8 +259,7 @@
       (is (nil? (s/check Resource r))))))
 
 
-(defn default-authenticate [ctx creds]
-  nil)
+(defn default-fn [ctx creds] ctx)
 
 (deftest authentication-schemes-test
   (testing "Distinct authentication schemes is OK"
@@ -283,35 +282,53 @@
 
   (testing "authentication shorthand"
     (let [r (resource-coercer
-             {:authentication {:scheme "Basic" :authenticate default-authenticate}})]
-      (is (= {:authentication-schemes [{:scheme "Basic" :authenticate default-authenticate}]}
+             {:authentication {:scheme "Basic" :authenticate default-fn}})]
+      (is (= {:authentication-schemes [{:scheme "Basic" :authenticate default-fn}]}
              (dissoc r :show-stack-traces?) ))))
 
   (testing "authentication shorthand prepends others"
     ;; This is intended to allow the usual intention of merging of
     ;; resource policies to be the most straight-forward to code.
     (let [r (resource-coercer
-             {:authentication {:scheme "Basic" :authenticate default-authenticate}
-              :authentication-schemes [{:scheme "Digest" :authenticate default-authenticate}]})]
-      (is (= {:authentication-schemes [{:scheme "Basic" :authenticate default-authenticate}
-                                       {:scheme "Digest" :authenticate default-authenticate}]}
+             {:authentication {:scheme "Basic" :authenticate default-fn}
+              :authentication-schemes [{:scheme "Digest" :authenticate default-fn}]})]
+      (is (= {:authentication-schemes [{:scheme "Basic" :authenticate default-fn}
+                                       {:scheme "Digest" :authenticate default-fn}]}
              (dissoc r :show-stack-traces?)))))
 
   (testing "authentication ultra shorthand"
     ;; This is intended to allow the usual intention of merging of
     ;; resource policies to be the most straight-forward to code.
     (let [r (resource-coercer
-             {:authentication default-authenticate
-              :authentication-schemes [{:scheme "Digest" :authenticate default-authenticate}]})]
+             {:authenticate default-fn
+              :authentication-schemes [{:scheme "Digest" :authenticate default-fn}]})]
 
-      (is (= {:authentication-schemes [{:authenticate default-authenticate}
-                                       {:scheme "Digest" :authenticate default-authenticate}]}
-             (dissoc r :show-stack-traces?)))))
+      (is (= {:authentication-schemes
+              [{:authenticate
+                (get-in r [:authentication-schemes 0 :authenticate])}
+               {:scheme "Digest" :authenticate default-fn}]}
+             (dissoc r :show-stack-traces?))))))
 
-  ;; TODO: Continue with this test
-  )
+(deftest authorization-test
+  (testing "canonical authorization entry"
+    (let [r (resource-coercer
+             {:authorization {:authorize default-fn}})]
+      (is (not (schema.utils/error? r)))
+      (is (= {:authorization {:authorize default-fn}} (dissoc r :show-stack-traces?)))))
 
-;; TODO: Write a failing test of 'restrict'
+  (testing "canonical authorization entry as function"
+    (let [f (fn [ctx] {:authorize default-fn})
+          r (resource-coercer
+             {:authorization f})]
+      (is (not (schema.utils/error? r)))
+      (is (= {:authorization f} (dissoc r :show-stack-traces?)))))
+
+  (testing "shorthand"
+    (let [r (resource-coercer
+             {:authorize default-fn})]
+      (is (not (schema.utils/error? r)))
+      (is (= {:authorization {:authorize (get-in r [:authorization :authorize])}}
+             (dissoc r :show-stack-traces?))))))
 
 ;; TODO: Test charsets, encodings and languages
 ;; TODO: Test namespaced keywords at all levels

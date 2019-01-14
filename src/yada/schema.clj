@@ -329,7 +329,8 @@ expressive short-hand descriptions."}
 (s/defschema AuthenticationScheme
   (maybe-dynamic
    (merge
-    {:authenticate (s/=> Context Context s/Any)
+    {:authenticate
+     (s/=> Context Context s/Any AuthenticationScheme)
      (s/optional-key :scheme) (s/cond-pre s/Keyword s/Str)
      (s/optional-key :realm) (s/cond-pre s/Keyword s/Str)
      (s/optional-key :challenge) (s/=> s/Any Context)}
@@ -338,6 +339,13 @@ expressive short-hand descriptions."}
 (s/defschema AuthenticationSchemes
   {(s/optional-key :authentication-schemes)
    [AuthenticationScheme]})
+
+(s/defschema Authorization
+  {(s/optional-key :authorization)
+   (maybe-dynamic
+    (merge
+     {:authorize (s/=> Context Context)}
+     NamespacedEntries))})
 
 ;; Obsoleted by new top-level authorization
 (def ^:deprecated AuthScheme
@@ -350,14 +358,13 @@ expressive short-hand descriptions."}
 (s/defschema ^:deprecated AuthSchemes
   {(s/optional-key :authentication-schemes) (maybe-dynamic [AuthScheme])})
 
-;; Authorization can contain any content because it is up to the
+;; RealmAuthorization can contain any content because it is up to the
 ;; authorization interceptor, which is pluggable.
-;; This schema doubles as a scheme for the newer top-level authorization
-(s/defschema Authorization
+(s/defschema RealmAuthorization
   {(s/optional-key :authorization) s/Any})
 
 (s/defschema ^:deprecated RealmValue
-  (merge AuthSchemes Authorization NamespacedEntries))
+  (merge AuthSchemes RealmAuthorization NamespacedEntries))
 
 (s/defschema ^:deprecated Realms
   {(s/optional-key :realms)
@@ -522,24 +529,41 @@ expressive short-hand descriptions."}
          ;; Deprecated
          AccessControlMappings))
 
+(defn preprocess-resource [m]
+  (let [response (:response m)
+        policies (get policies (get m :profile :dev))]
+    (cond-> (merge policies m)
+
+      response
+      (-> (assoc-in [:methods :get :response] response)
+          (dissoc :response))
+
+      ;; This provides a useful shorthand of a simple 2-arity fn
+      ;; taking ctx and pre-processed creds.
+      (:authenticate m)
+      (-> (update :authentication-schemes
+                  #(into [{:authenticate
+                           (fn [ctx creds _]
+                             ((:authenticate m) ctx creds))}] %))
+          (dissoc :authenticate))
+
+      (:authentication m)
+      (-> (update :authentication-schemes
+                  #(into [(:authentication m)] %))
+          (dissoc :authentication))
+
+      (:authorize m)
+      (-> (assoc :authorization {:authorize (fn [ctx creds authorization]
+                                              ((:authorize m) ctx creds))})
+          (dissoc :authorize))
+
+      true (dissoc :profile))))
+
 (def resource-coercer
   (sc/coercer
    Resource
    (merge ResourceMappings
-          {Resource
-           (fn [m]
-             (let [response (:response m)
-                   authentication (:authentication m)
-                   policies (get policies (get m :profile :dev))]
-               (cond-> (merge policies m)
-                 response
-                 (assoc-in [:methods :get :response] response)
-
-                 authentication
-                 (-> (dissoc :authentication)
-                     (update :authentication-schemes
-                             #(into [(if (fn? authentication) {:authenticate authentication} authentication)] %)))
-                 true (dissoc :response :profile))))})))
+          {Resource preprocess-resource})))
 
 (comment
   (resource-coercer

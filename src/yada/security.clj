@@ -7,7 +7,8 @@
    [clojure.tools.logging :refer :all]
    [yada.authorization :as authorization]
    [yada.syntax :as syn]
-   [clojure.tools.logging :as log])
+   [clojure.tools.logging :as log]
+   [manifold.deferred :as d])
   (:import
    (yada.context Context)))
 
@@ -61,7 +62,7 @@
 (defmulti preprocess-credentials
   "Pre-process the parsed authorization value according to the
   auth-scheme's semantics. Return nil if anything wrong with the
-  credentials."
+  (claimed) credentials."
   (fn [ctx {:keys [scheme] :as auth-scheme} credentials] scheme) :default ::default)
 
 (defmethod preprocess-credentials ::default
@@ -145,7 +146,7 @@
 
 (defn authenticate [ctx]
   (when-not-cors-preflight ctx
-    (let [auth-schemes (get-in ctx [:resource :authentication-schemes])
+    (let [auth-schemes (call-fn-maybe (get-in ctx [:resource :authentication-schemes]) ctx)
           realms (get-in ctx [:resource :access-control :realms])]
 
       (cond
@@ -171,12 +172,12 @@
         (if-let [authorization (get-in ctx [:request :headers "authorization"])]
 
           ;; Find the authentication-scheme for which this authorization refers, if any
-          (let [credentials (syn/parse-credentials authorization)]
+          (let [claimed-credentials (syn/parse-credentials authorization)]
 
             (if-let [auth-scheme
                      (if
                          ;; This is unexpected but we should handle it anyway
-                         (not= (::syn/type credentials) ::syn/credentials)
+                         (not= (::syn/type claimed-credentials) ::syn/credentials)
                          (do
                            ;; Log this and return nil
                            (log/infof "Bad authorization header value received: %s" authorization)
@@ -184,24 +185,33 @@
 
                          (some
                           (fn [candidate]
-                            (when (= (::syn/auth-scheme credentials) (str/lower-case (:scheme candidate)))
+                            (when (= (::syn/auth-scheme claimed-credentials) (str/lower-case (:scheme candidate)))
                               candidate))
                           auth-schemes))]
 
               ;; Auth-scheme found. First, we allow the scheme to pre-process the credentials
-              (let [credentials (preprocess-credentials ctx auth-scheme credentials)
-                    res ((:authenticate auth-scheme) ctx credentials)]
+              (let [claimed-credentials (preprocess-credentials ctx auth-scheme claimed-credentials)
+                    ;; We call the authenticate function with 3 args:
+                    ;; ctx, credentials (pre-processed) and the
+                    ;; auth-scheme data (to provide access to any
+                    ;; extra parameters)
+                    res ((:authenticate auth-scheme) ctx claimed-credentials auth-scheme)]
 
-                (let [x (interpret-authenticate-result res ctx auth-scheme)]
-                  (log/infof "Context post auth: %s" (select-keys x [:credentials :authentication-scheme]))
-                  x))
+                ;; Allow authenticate functions to return deferred
+                ;; values
+                (d/chain
+                 res
+                 (fn [res]
+                   (let [ctx (interpret-authenticate-result res ctx auth-scheme)]
+                     (cond-> ctx
+                       ;; If there are no credentials as a result
+                       ;; then add the challenges
+                       (nil? (:credentials ctx)) add-challenges)))))
 
               ;; No auth-scheme found.
               (do
                 (log/infof "Authorization credentials do not match any of the authentication-scheme challenges")
-                (add-challenges ctx)))
-
-            ctx)
+                (add-challenges ctx))))
 
           (add-challenges ctx)
           ;; No authorization attempted. Nothing to do here except set www-authenticate headers (challenges)
@@ -258,37 +268,92 @@
          ctx realms)
         :else ctx))))
 
+(defprotocol AuthorizationResult
+  (interpret-authorize-result [result ctx]
+    "Process the result to a call to an authorize function. This
+    assists in allowing some authorize functions to return a
+    context, where necessary, while allowing others to return
+    nil (indicating authorization failure)"))
+
+(extend-protocol AuthorizationResult
+  nil
+  (interpret-authorize-result [_ ctx]
+    ;; Return the original context, with no authorization added
+    ctx)
+
+  Context
+  (interpret-authorize-result [new-ctx ctx]
+    ;; The dev knows that they're doing, respect that. Assume
+    ;; authorization has already been associated with the request
+    ;; context.
+    new-ctx)
+
+  Object
+  (interpret-authorize-result [authorization ctx]
+    (assoc ctx :authorization authorization)))
+
 (defn authorize
   "Given a verified user in the context, and the resource properties
-  in :properites, check that the user is authorized to do what they
+  in :properties, check that the user is authorized to do what they
   are about to do. At this point the user is already verified and
   roles determined, if it is possible to do so (RBAC), and the
   resource's properties (attributes) have been loaded to make ABAC
   schemes also possible."
   [ctx]
   (when-not-cors-preflight ctx
-    (reduce
-     (fn [ctx [realm realm-val]]
-       (if-let [authorization (:authorization realm-val)]
-         (let [credentials (get-in ctx [:authentication realm])]
-           (let [validation
-                 (authorization/validate ctx credentials authorization)]
-             (if (or (nil? validation) (false? validation))
-               (if credentials
+
+    (let [authorization (call-fn-maybe (get-in ctx [:resource :authorization]) ctx)
+          realms (get-in ctx [:resource :access-control :realms])]
+
+      (cond
+        authorization
+        (if-let [f (:authorize authorization)]
+          (d/chain
+           (f ctx (:credentials ctx) authorization)
+           (fn [res]
+             (interpret-authorize-result res ctx))
+           (fn [ctx]
+             (if (:authorization ctx)
+               ctx
+               (if (:credentials ctx)
                  (throw
                   (ex-info "Forbidden"
                            {:status 403 ; or 404 to keep the resource hidden
-                            ;; But allow WWW-Authenticate header in error
+                            ;; But allow www-authenticate header in error
                             :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])}))
                  (throw
                   (ex-info "No authorization provided"
                            {:status 401 ; or 404 to keep the resource hidden
-                            ;; But allow WWW-Authenticate header in error
-                            :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])})))
-               validation)))
-         ctx))
-     ctx (get-in ctx [:resource :access-control :realms]))))
+                            ;; But allow www-authenticate header in error
+                            :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])})))))))
 
+        ;; This is the 'old' code that is now deprecated and sticking
+        ;; around to provide backwards compatibility.
+        realms
+        (reduce
+         (fn [ctx [realm realm-val]]
+           (if-let [authorization (:authorization realm-val)]
+             (let [credentials (get-in ctx [:authentication realm])]
+               (let [validation
+                     (authorization/validate ctx credentials authorization)]
+                 (if (or (nil? validation) (false? validation))
+                   (if credentials
+                     (throw
+                      (ex-info "Forbidden"
+                               {:status 403 ; or 404 to keep the resource hidden
+                                ;; But allow WWW-Authenticate header in error
+                                :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])}))
+                     (throw
+                      (ex-info "No authorization provided"
+                               {:status 401 ; or 404 to keep the resource hidden
+                                ;; But allow WWW-Authenticate header in error
+                                :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])})))
+                   validation)))
+             ctx))
+         ctx (get-in ctx [:resource :access-control :realms]))
+
+        :else
+        ctx))))
 
 (defn to-header [v]
   (if (coll? v)
