@@ -6,6 +6,11 @@
 
 (defrecord Response [])
 
+(defrecord Context [response])
+
+(defn make-context []
+  (->Context (assoc (->Response) :headers {})))
+
 (defn exists?
   "We assume every resource exists unless it says otherwise, with an
   explicit exists? entry in its properties."

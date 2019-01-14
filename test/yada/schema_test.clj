@@ -39,9 +39,7 @@
     (testing "string-set"
       (is (= (coercer {:produces (sorted-set "text/html" "application/json")})
              {:produces [{:media-type JSON}
-                         {:media-type HTML}]})))
-
-    ))
+                         {:media-type HTML}]})))))
 
 (deftest consumes-test
   (let [coercer (sc/coercer Consumes RepresentationSeqMappings)]
@@ -260,18 +258,74 @@
       (is (not (error? r)))
       (is (nil? (s/check Resource r))))))
 
-;; TODO: Test authentication and security
-;; TODO: Write a failing test of 'restrict'
+
+(defn default-fn [ctx creds] ctx)
+
+(deftest authentication-schemes-test
+  (testing "Distinct authentication schemes is OK"
+    (let [r (resource-coercer
+             {:authentication-schemes
+              [{:scheme "Basic"}
+               {:scheme "Basic"}]})]
+      (is r)))
+
+  (testing "no authentication schemes is OK"
+    (let [r (resource-coercer
+             {:authentication-schemes []})]
+      (is (not (schema.utils/error? r)))))
+
+  (testing "cannot mix old and new authentication designs"
+    (let [r (resource-coercer
+             {:authentication-schemes [{:scheme "Basic"}]
+              :access-control {:realms {}}})]
+      (is (schema.utils/error? r))))
+
+  (testing "authentication shorthand"
+    (let [r (resource-coercer
+             {:authentication {:scheme "Basic" :authenticate default-fn}})]
+      (is (= {:authentication-schemes [{:scheme "Basic" :authenticate default-fn}]}
+             (dissoc r :show-stack-traces?) ))))
+
+  (testing "authentication shorthand prepends others"
+    ;; This is intended to allow the usual intention of merging of
+    ;; resource policies to be the most straight-forward to code.
+    (let [r (resource-coercer
+             {:authentication {:scheme "Basic" :authenticate default-fn}
+              :authentication-schemes [{:scheme "Digest" :authenticate default-fn}]})]
+      (is (= {:authentication-schemes [{:scheme "Basic" :authenticate default-fn}
+                                       {:scheme "Digest" :authenticate default-fn}]}
+             (dissoc r :show-stack-traces?))))))
+
+(deftest authorization-test
+  (testing "canonical authorization entry"
+    (let [r (resource-coercer
+             {:authorization {:authorize default-fn}})]
+      (is (not (schema.utils/error? r)))
+      (is (= {:authorization {:authorize default-fn}} (dissoc r :show-stack-traces?)))))
+
+  (testing "canonical authorization entry as function"
+    (let [f (fn [ctx] {:authorize default-fn})
+          r (resource-coercer
+             {:authorization f})]
+      (is (not (schema.utils/error? r)))
+      (is (= {:authorization f} (dissoc r :show-stack-traces?)))))
+
+  (testing "shorthand"
+    (let [r (resource-coercer
+             {:authorize default-fn})]
+      (is (not (schema.utils/error? r)))
+      (is (= {:authorization {:authorize (get-in r [:authorization :authorize])}}
+             (dissoc r :show-stack-traces?))))))
 
 ;; TODO: Test charsets, encodings and languages
 ;; TODO: Test namespaced keywords at all levels
 
 (def user-guide-example-store-resources
   [{:summary "A list of the products we sell"
-     :methods
-     {:get
-      {:response (io/file "index.html")
-       :produces "text/html"}}}
+    :methods
+    {:get
+     {:response (io/file "index.html")
+      :produces "text/html"}}}
    {:summary "Our visitor's shopping cart"
     :methods
     {:get

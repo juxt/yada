@@ -28,58 +28,56 @@
   (are [input expected] (= expected (syn/parse-credentials input))
 
     "Bearer"
-    [#:yada.syntax{:type :yada.syntax/credentials, :auth-scheme "bearer"}]
+    #:yada.syntax{:type :yada.syntax/credentials, :auth-scheme "bearer"}
 
     "Basic seflijasef=="
-    [#:yada.syntax{:type :yada.syntax/credentials,
-	           :auth-scheme "basic",
-	           :value "seflijasef==",
-	           :value-type :yada.syntax/token68}]
+    #:yada.syntax{:type :yada.syntax/credentials,
+	          :auth-scheme "basic",
+	          :value "seflijasef==",
+	          :value-type :yada.syntax/token68}
 
 
-    ;; Multiple schemes
     "Basic seflijasef==,bar zip=barf"
-    [#:yada.syntax{:type :yada.syntax/credentials,
-	                 :auth-scheme "basic",
-	                 :value "seflijasef==",
-	                 :value-type :yada.syntax/token68}
-	   #:yada.syntax{:type :yada.syntax/credentials,
-	                 :auth-scheme "bar",
-	                 :value
-	                 [#:yada.syntax{:type :yada.syntax/auth-param,
-	                                :name "zip",
-	                                :value "barf",
-	                                :value-type :yada.syntax/token}],
-	                 :value-type :yada.syntax/auth-param-list}]
+    #:yada.syntax{:type :yada.syntax/credentials,
+	          :auth-scheme "basic",
+	          :value "seflijasef==",
+	          :value-type :yada.syntax/token68}
 
     ;; Complex params
     "Digest foo=abc,bar =\"def\",a=b,cd=cd   ,z=y"
-    [#:yada.syntax{:type :yada.syntax/credentials,
-	                 :auth-scheme "digest",
-	                 :value
-	           [#:yada.syntax{:type :yada.syntax/auth-param,
-	                          :name "foo",
-	                          :value "abc",
-	                          :value-type :yada.syntax/token}
-	            #:yada.syntax{:type :yada.syntax/auth-param,
-	                          :name "bar",
-	                          :value "def",
-	                          :value-type :yada.syntax/quoted-string}
-	            #:yada.syntax{:type :yada.syntax/auth-param,
-	                          :name "a",
-	                          :value "b",
-	                          :value-type :yada.syntax/token}
-	            #:yada.syntax{:type :yada.syntax/auth-param,
-	                          :name "cd",
-	                          :value "cd",
-	                          :value-type :yada.syntax/token}
-	            #:yada.syntax{:type :yada.syntax/auth-param,
-	                          :name "z",
-	                          :value "y",
-	                          :value-type :yada.syntax/token}],
-	                 :value-type :yada.syntax/auth-param-list}]
+    #:yada.syntax{:type :yada.syntax/credentials,
+	          :auth-scheme "digest",
+	          :value
+	          [#:yada.syntax{:type :yada.syntax/auth-param,
+	                         :name "foo",
+	                         :value "abc",
+	                         :value-type :yada.syntax/token}
+	           #:yada.syntax{:type :yada.syntax/auth-param,
+	                         :name "bar",
+	                         :value "def",
+	                         :value-type :yada.syntax/quoted-string}
+	           #:yada.syntax{:type :yada.syntax/auth-param,
+	                         :name "a",
+	                         :value "b",
+	                         :value-type :yada.syntax/token}
+	           #:yada.syntax{:type :yada.syntax/auth-param,
+	                         :name "cd",
+	                         :value "cd",
+	                         :value-type :yada.syntax/token}
+	           #:yada.syntax{:type :yada.syntax/auth-param,
+	                         :name "z",
+	                         :value "y",
+	                         :value-type :yada.syntax/token}],
+	          :value-type :yada.syntax/auth-param-list}
 
 
     "foo,bar"
-    [#:yada.syntax{:type :yada.syntax/credentials, :auth-scheme "foo"}
-     #:yada.syntax{:type :yada.syntax/credentials, :auth-scheme "bar"}]))
+    #:yada.syntax{:type :yada.syntax/credentials, :auth-scheme "foo"}
+     ))
+
+(deftest format-challenge-test
+  (testing "foobar^ is rejected as invalid token68"
+    (is
+     (thrown? clojure.lang.ExceptionInfo
+              (syn/format-challenges [{:scheme "Basic" :params {:a :b}}
+                                      {:scheme "Digest" :token68 "foobar^"}])))))

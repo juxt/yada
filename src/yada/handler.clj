@@ -8,7 +8,7 @@
    [schema.utils :refer [error?]]
    [yada.body :as body]
    [yada.charset :as charset]
-   [yada.context :refer [->Response]]
+   [yada.context :refer [make-context]]
    [yada.methods :as methods]
    [yada.representation :as rep]
    [yada.resource :as resource :refer [as-resource resource ResourceCoercion]]
@@ -19,9 +19,6 @@
            yada.resource.Resource))
 
 (declare new-handler)
-
-(defn make-context []
-  {:response (assoc (->Response) :headers {})})
 
 (defn error-data
   [e]

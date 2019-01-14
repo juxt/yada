@@ -329,19 +329,22 @@ expressive short-hand descriptions."}
 (s/defschema AuthenticationScheme
   (maybe-dynamic
    (merge
-    {:id s/Keyword
-     :scheme (s/cond-pre s/Keyword s/Str)
+    {:scheme (s/cond-pre s/Keyword s/Str)
+     :authenticate (s/=> Context Context s/Any AuthenticationScheme)
      (s/optional-key :realm) (s/cond-pre s/Keyword s/Str)
-     (s/optional-key :authenticate) (s/=> Context Context s/Any)}
+     (s/optional-key :challenge) (s/=> s/Any Context)}
     NamespacedEntries)))
 
 (s/defschema AuthenticationSchemes
   {(s/optional-key :authentication-schemes)
-   (-> [AuthenticationScheme]
-       (s/constrained
-        (fn [auth-schemes]
-          (apply distinct? (map :id auth-schemes)))
-        "Authentication schemes must have distinct :id values"))})
+   [AuthenticationScheme]})
+
+(s/defschema Authorization
+  {(s/optional-key :authorization)
+   (maybe-dynamic
+    (merge
+     {(s/optional-key :authorize) (s/=> Context Context)}
+     NamespacedEntries))})
 
 ;; Obsoleted by new top-level authorization
 (def ^:deprecated AuthScheme
@@ -354,14 +357,13 @@ expressive short-hand descriptions."}
 (s/defschema ^:deprecated AuthSchemes
   {(s/optional-key :authentication-schemes) (maybe-dynamic [AuthScheme])})
 
-;; Authorization can contain any content because it is up to the
+;; RealmAuthorization can contain any content because it is up to the
 ;; authorization interceptor, which is pluggable.
-;; This schema doubles as a scheme for the newer top-level authorization
-(s/defschema Authorization
+(s/defschema RealmAuthorization
   {(s/optional-key :authorization) s/Any})
 
 (s/defschema ^:deprecated RealmValue
-  (merge AuthSchemes Authorization NamespacedEntries))
+  (merge AuthSchemes RealmAuthorization NamespacedEntries))
 
 (s/defschema ^:deprecated Realms
   {(s/optional-key :realms)
@@ -451,16 +453,6 @@ expressive short-hand descriptions."}
          HeaderMappings
          {ContextFunction as-fn}))
 
-(def AuthenticationSchemesMappings
-  {AuthenticationScheme
-   ;; Default id
-   (partial merge {:id :default})
-   ;;AuthenticationSchemes
-   ;; Cannot have two schemes with the same if
-   #_(fn [{:keys [authentication-schemes]}]
-     (if (distinct? (map :id authentication-schemes))
-       xs))})
-
 (s/defschema ResourceDocumentation CommonDocumentation)
 
 (s/defschema SecurityHeaders
@@ -523,19 +515,39 @@ expressive short-hand descriptions."}
   (merge PropertiesMappings
          RepresentationSeqMappings
          MethodsMappings
-         AccessControlMappings ; deprecated
-         AuthenticationSchemesMappings
-         ))
+         ;; Deprecated
+         AccessControlMappings))
+
+(defn preprocess-resource [m]
+  (let [response (:response m)
+        policies (get policies (get m :profile :dev))]
+    (cond-> (merge policies m)
+
+      response
+      (-> (assoc-in [:methods :get :response] response)
+          (dissoc :response))
+
+      ;; A single authentication-scheme, to be normalized as the first
+      ;; in a potential series of authentication schemes.
+      (:authentication m)
+      (-> (update :authentication-schemes
+                  #(into [(:authentication m)] %))
+          (dissoc :authentication))
+
+      ;; A top-level authorize function, to be normalized to a map,
+      ;; with a single :authorize entry.
+      (:authorize m)
+      (-> (assoc :authorization {:authorize (fn [ctx creds authorization]
+                                              ((:authorize m) ctx creds))})
+          (dissoc :authorize))
+
+      true (dissoc :profile))))
 
 (def resource-coercer
-  (sc/coercer Resource
-              (merge ResourceMappings
-                     {Resource (fn [m]
-                                 (let [r (:response m)
-                                       policies (get policies (get m :profile :dev))]
-                                   (cond-> (merge policies m)
-                                     r (assoc-in [:methods :get :response] r)
-                                     true (dissoc :response :profile))))})))
+  (sc/coercer
+   Resource
+   (merge ResourceMappings
+          {Resource preprocess-resource})))
 
 ;; Handler ---------------------------------------------------------
 
@@ -548,11 +560,3 @@ expressive short-hand descriptions."}
    :interceptor-chain [(s/=> Context Context)]
    :error-interceptor-chain [(s/=> Context Context)]
    (s/optional-key :path-info?) s/Bool})
-
-
-(comment
-  (resource-coercer
-   {:authentication-schemes [{:id :foo2 :scheme "foo" :realm "oo"}
-                             {:id :foo :scheme "foo" :realm "oo"}]
-    :access-control {
-                     :allow-origin "acme.com"}}))
