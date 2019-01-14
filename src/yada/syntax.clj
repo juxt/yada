@@ -30,6 +30,10 @@
 
 (def CR [(char 0x0D)])
 
+(def CTL (concat
+          (map char (range 0x00 (inc 0x1f)))
+          [0x7f]))
+
 (def DIGIT
   (map char (range 0x30 (inc 0x39))))
 
@@ -196,40 +200,31 @@
   (when input
     (let [matcher (re-matcher token input)]
 
-      ;; First parse the auth-scheme
-      (loop [matcher matcher
-             credentials-collection []]
+      (when (looking-at matcher)
+        (let [result {::type ::credentials
+                      ::auth-scheme (str/lower-case (.group matcher))}
+              parse-remainder
+              (fn [result]
+                (merge result
+                       (if (looking-at (->> (re-pattern (str token68-lookahead token68)) (advance matcher)))
+                         {::value (.group matcher)
+                          ::value-type ::token68}
+                         (when-let [params (as-> matcher %
+                                             (with-pattern % auth-param)
+                                             (element-list %))]
+                           {::value (map extract-matched-auth-param params)
+                            ::value-type ::auth-param-list}))))]
 
-        (when (looking-at matcher)
-          (let [result {::type ::credentials
-                        ::auth-scheme (str/lower-case (.group matcher))}
-                parse-remainder
-                (fn [result]
-                  (merge result
-                        (if (looking-at (->> (re-pattern (str token68-lookahead token68)) (advance matcher)))
-                          {::value (.group matcher)
-                           ::value-type ::token68}
-                          (when-let [params (as-> matcher %
-                                              (with-pattern % auth-param)
-                                              (element-list %))]
-                            {::value (map extract-matched-auth-param params)
-                             ::value-type ::auth-param-list}))))]
+          (let [credentials (cond-> result
+                              (looking-at (->> space (advance matcher)))
+                              parse-remainder)]
 
-            (let [credentials (cond-> result
-                                (looking-at (->> space (advance matcher)))
-                                parse-remainder)]
+            ;; If we managed to find [ 1*SP ( token68 / #auth-param ) ] then advance
+            (when (::value credentials)
+              (when (not (.hitEnd matcher))
+                (.region matcher (.end matcher) (.regionEnd matcher))))
 
-              ;; If we managed to find [ 1*SP ( token68 / #auth-param ) ] then advance
-              (when (::value credentials)
-                (when (not (.hitEnd matcher))
-                  (.region matcher (.end matcher) (.regionEnd matcher))))
-
-              (if (and
-                   (not (.hitEnd matcher))
-                   (looking-at (->> comma-with-optional-padding (with-pattern matcher))))
-                (recur (advance matcher token) (conj credentials-collection credentials))
-                (conj credentials-collection credentials)))))))))
-
+            credentials))))))
 
 (defn format-challenge [m]
   (assert (:scheme m))

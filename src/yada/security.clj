@@ -6,12 +6,17 @@
    [clojure.string :as str]
    [clojure.tools.logging :refer :all]
    [yada.authorization :as authorization]
-   [yada.syntax :as syn]))
+   [yada.syntax :as syn]
+   [clojure.tools.logging :as log])
+  (:import
+   (yada.context Context)))
 
+;; Deprecated
 (defmulti verify
   "Multimethod that allows new schemes to be added."
   (fn [ctx {:keys [scheme]}] scheme) :default ::default)
 
+;; Deprecated
 (defmethod verify "Basic" [ctx {:keys [verify]}]
 
   (let [auth (get-in ctx [:request :headers "authorization"])
@@ -20,12 +25,7 @@
       (let [[user password] (str/split (str cred) #":" 2)]
         (verify [user password])))))
 
-#_(defmethod verify :cookie [ctx {:keys [verify cookie]}]
-
-  (get-in ctx [:cookies cookie])
-
-  )
-
+;; Deprecated
 ;; A nil scheme is simply one that does not use any of the built-in
 ;; algorithms for IANA registered auth-schemes at
 ;; http://www.iana.org/assignments/http-authschemes. The verify
@@ -36,6 +36,7 @@
   (when verify
     (verify ctx)))
 
+;; Deprecated
 (defmethod verify ::default
   [ctx {:keys [scheme]}]
   ;; Scheme is not recognised by this server, we must return nil (to
@@ -43,7 +44,6 @@
   ;; we recover and add a warning in the logs.
   (warnf "No installed support for the following scheme: %s" scheme)
   nil)
-
 
 (defmulti issue-challenge
   "Multimethod that allows new schemes to be added."
@@ -53,18 +53,21 @@
   [ctx {:keys [scheme]}]
   nil)
 
-;; TODO: Move to its own namespace
-(defmethod issue-challenge "Basic"
-  [ctx {:keys [scheme realm]}]
-  {:scheme scheme
-   :params (merge
-            {:charset "UTF-8"}
-            (when realm {:realm realm}))})
-
 (defn issue-challenge-with-custom [ctx auth-scheme]
   (if-let [f (:challenge auth-scheme)]
     (f ctx)
     (issue-challenge ctx auth-scheme)))
+
+(defmulti preprocess-credentials
+  "Pre-process the parsed authorization value according to the
+  auth-scheme's semantics. Return nil if anything wrong with the
+  credentials."
+  (fn [ctx {:keys [scheme] :as auth-scheme} credentials] scheme) :default ::default)
+
+(defmethod preprocess-credentials ::default
+  [ctx {:keys [scheme] :as auth-scheme} credentials]
+  ;; Return the identity of credentials
+  credentials)
 
 (defn cors-preflight?
   "Is the method OPTIONS and does the resource accept requests from
@@ -83,6 +86,63 @@
   (when x
     (if (fn? x) (x ctx) x)))
 
+(defn add-challenges [ctx]
+  (let [auth-schemes (get-in ctx [:resource :authentication-schemes])
+        challenges (keep
+                    (fn [auth-scheme]
+                      (issue-challenge-with-custom ctx auth-scheme))
+                    auth-schemes)]
+    (cond-> ctx
+      (not-empty challenges)
+      (update-in [:response :headers "www-authenticate"]
+                 (fnil conj [])
+                 (syn/format-challenges challenges)))))
+
+(defprotocol AuthenticateResult
+  (interpret-authenticate-result [result ctx auth-scheme]
+    "Process the result to a call to an authenticate function. This
+    assists in allowing some authenticate functions to return a
+    context, where necessary, while allowing others to return
+    nil (indicating authentication failure) "))
+
+(defn assoc-credentials
+  "Associate the given credentials with the request context. Custom
+  authenticator functions that wish to return the ctx explicitly,
+  should call this function to associate credentials that they have
+  established."
+  [ctx creds]
+  (assoc ctx :credentials creds))
+
+(defn assoc-auth-scheme
+  "When an authentication has established credentials, it is useful that
+  the authentication scheme places itself into the request context,
+  along with any parameters, for other interceptors to see."
+  [ctx auth-scheme]
+  (assoc ctx :authentication-scheme auth-scheme))
+
+(extend-protocol AuthenticateResult
+  nil
+  (interpret-authenticate-result [_ ctx auth-scheme]
+    ;; Return the original context
+    ctx)
+
+  Context
+  (interpret-authenticate-result [new-ctx ctx auth-scheme]
+    ;; The dev knows that they're doing, respect that. Assume
+    ;; credentials have already been associated with the request
+    ;; context.
+    (-> new-ctx
+        (assoc-auth-scheme auth-scheme)))
+
+  ;; TODO: Allow for an authenticate function to provide partial
+  ;; credentials and a new challenge, as per RFC 7235 section 2.1.
+
+  Object
+  (interpret-authenticate-result [creds ctx auth-scheme]
+    (-> ctx
+        (assoc-auth-scheme auth-scheme)
+        (assoc-credentials creds))))
+
 (defn authenticate [ctx]
   (when-not-cors-preflight ctx
     (let [auth-schemes (get-in ctx [:resource :authentication-schemes])
@@ -93,9 +153,6 @@
 
         ;; If there's an authorization header, find the first scheme
         ;; that matches.
-
-        ;; Call the auth.
-
 
         ;; From RFC 7235 section 2.1:
         ;;
@@ -111,29 +168,47 @@
         ;; The above indicates that the authenticate function MAY
         ;; return a new challenge.
 
-        ;;
         (if-let [authorization (get-in ctx [:request :headers "authorization"])]
-          ;; TODO: Parse credentials
-          ;; Route to authentication scheme where :scheme is the parsed scheme in the credentials
-          ;; Call the authenticate function.
-          ;; Process the result: a) ctx b) creds c) new-challenge d) nil
-          ;; If (b) then place creds in ctx, under [:authentication :credentials]
-          ;; Always place 'raw' credentials in ctx to indicate the scheme attempted (if nothing else) under [:authentication :scheme] (the request header is always available if more information is required)
-          ctx
 
+          ;; Find the authentication-scheme for which this authorization refers, if any
+          (let [credentials (syn/parse-credentials authorization)]
+
+            (if-let [auth-scheme
+                     (if
+                         ;; This is unexpected but we should handle it anyway
+                         (not= (::syn/type credentials) ::syn/credentials)
+                         (do
+                           ;; Log this and return nil
+                           (log/infof "Bad authorization header value received: %s" authorization)
+                           nil)
+
+                         (some
+                          (fn [candidate]
+                            (when (= (::syn/auth-scheme credentials) (str/lower-case (:scheme candidate)))
+                              candidate))
+                          auth-schemes))]
+
+              ;; Auth-scheme found. First, we allow the scheme to pre-process the credentials
+              (let [credentials (preprocess-credentials ctx auth-scheme credentials)
+                    res ((:authenticate auth-scheme) ctx credentials)]
+
+                (let [x (interpret-authenticate-result res ctx auth-scheme)]
+                  (log/infof "Context post auth: %s" (select-keys x [:credentials :authentication-scheme]))
+                  x))
+
+              ;; No auth-scheme found.
+              (do
+                (log/infof "Authorization credentials do not match any of the authentication-scheme challenges")
+                (add-challenges ctx)))
+
+            ctx)
+
+          (add-challenges ctx)
           ;; No authorization attempted. Nothing to do here except set www-authenticate headers (challenges)
           ;; For all schemes, ask the scheme to create a 'challenge'
-          (let [challenges (keep
-                            (fn [auth-scheme]
-                              (issue-challenge-with-custom ctx auth-scheme))
-                            auth-schemes)]
-            (cond-> ctx
-              (not-empty challenges)
-              (update-in [:response :headers "www-authenticate"]
-                         (fnil conj [])
-                         (syn/format-challenges challenges)))))
+          )
 
-        ;; Old-style, deprecated but included for backwards compatibility
+        ;; Deprecated but included for backwards compatibility
         realms
         ;; Note that a response can have multiple challenges, one for each realm.
         (reduce

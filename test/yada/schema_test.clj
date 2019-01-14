@@ -259,6 +259,8 @@
       (is (nil? (s/check Resource r))))))
 
 
+(defn default-authenticate [ctx creds]
+  nil)
 
 (deftest authentication-schemes-test
   (testing "Distinct authentication schemes is OK"
@@ -281,18 +283,30 @@
 
   (testing "authentication shorthand"
     (let [r (resource-coercer
-             {:authentication {:scheme "Basic"}})]
-      (is (= {:authentication-schemes [{:scheme "Basic"}]}
+             {:authentication {:scheme "Basic" :authenticate default-authenticate}})]
+      (is (= {:authentication-schemes [{:scheme "Basic" :authenticate default-authenticate}]}
              (dissoc r :show-stack-traces?) ))))
 
   (testing "authentication shorthand prepends others"
     ;; This is intended to allow the usual intention of merging of
     ;; resource policies to be the most straight-forward to code.
     (let [r (resource-coercer
-             {:authentication {:scheme "Basic"}
-              :authentication-schemes [{:scheme "Digest"}]})]
-      (is (= {:authentication-schemes [{:scheme "Basic"} {:scheme "Digest"}]}
-             (dissoc r :show-stack-traces?) ))))
+             {:authentication {:scheme "Basic" :authenticate default-authenticate}
+              :authentication-schemes [{:scheme "Digest" :authenticate default-authenticate}]})]
+      (is (= {:authentication-schemes [{:scheme "Basic" :authenticate default-authenticate}
+                                       {:scheme "Digest" :authenticate default-authenticate}]}
+             (dissoc r :show-stack-traces?)))))
+
+  (testing "authentication ultra shorthand"
+    ;; This is intended to allow the usual intention of merging of
+    ;; resource policies to be the most straight-forward to code.
+    (let [r (resource-coercer
+             {:authentication default-authenticate
+              :authentication-schemes [{:scheme "Digest" :authenticate default-authenticate}]})]
+
+      (is (= {:authentication-schemes [{:authenticate default-authenticate}
+                                       {:scheme "Digest" :authenticate default-authenticate}]}
+             (dissoc r :show-stack-traces?)))))
 
   ;; TODO: Continue with this test
   )

@@ -329,9 +329,9 @@ expressive short-hand descriptions."}
 (s/defschema AuthenticationScheme
   (maybe-dynamic
    (merge
-    {(s/optional-key :scheme) (s/cond-pre s/Keyword s/Str)
+    {:authenticate (s/=> Context Context s/Any)
+     (s/optional-key :scheme) (s/cond-pre s/Keyword s/Str)
      (s/optional-key :realm) (s/cond-pre s/Keyword s/Str)
-     (s/optional-key :authenticate) (s/=> Context Context s/Any)
      (s/optional-key :challenge) (s/=> s/Any Context)}
     NamespacedEntries)))
 
@@ -519,8 +519,8 @@ expressive short-hand descriptions."}
   (merge PropertiesMappings
          RepresentationSeqMappings
          MethodsMappings
-         AccessControlMappings ; deprecated
-         ))
+         ;; Deprecated
+         AccessControlMappings))
 
 (def resource-coercer
   (sc/coercer
@@ -532,9 +532,13 @@ expressive short-hand descriptions."}
                    authentication (:authentication m)
                    policies (get policies (get m :profile :dev))]
                (cond-> (merge policies m)
-                 response (assoc-in [:methods :get :response] response)
-                 authentication (-> (dissoc :authentication)
-                                    (update :authentication-schemes #(into [authentication] %)))
+                 response
+                 (assoc-in [:methods :get :response] response)
+
+                 authentication
+                 (-> (dissoc :authentication)
+                     (update :authentication-schemes
+                             #(into [(if (fn? authentication) {:authenticate authentication} authentication)] %)))
                  true (dissoc :response :profile))))})))
 
 (comment
