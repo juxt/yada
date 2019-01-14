@@ -230,6 +230,24 @@
                 (recur (advance matcher token) (conj credentials-collection credentials))
                 (conj credentials-collection credentials)))))))))
 
+
+(defn format-challenge [m]
+  (assert (:scheme m))
+  (format
+   "%s %s"
+   (:scheme m)
+   (cond (:params m) (str/join ", " (for [[k v] (:params m)] (format "%s=\"%s\"" (name k) v)))
+         (:token68 m) (if (re-matches token68 (:token68 m))
+                        (:token68 m)
+                        (throw (ex-info "Attempt to format a string as an improper token68"
+                                        {:input (:token68 m)
+                                         :should-match token68})))
+         :else "")))
+
+(defn format-challenges [challenges]
+  (str/join ", " (map format-challenge challenges)))
+
+
 ;; TODO: Write rationale for using regexes in this way in syntax.clj.adoc
 
 

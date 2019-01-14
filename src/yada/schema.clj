@@ -329,19 +329,15 @@ expressive short-hand descriptions."}
 (s/defschema AuthenticationScheme
   (maybe-dynamic
    (merge
-    {:id s/Keyword
-     :scheme (s/cond-pre s/Keyword s/Str)
+    {(s/optional-key :scheme) (s/cond-pre s/Keyword s/Str)
      (s/optional-key :realm) (s/cond-pre s/Keyword s/Str)
-     (s/optional-key :authenticate) (s/=> Context Context s/Any)}
+     (s/optional-key :authenticate) (s/=> Context Context s/Any)
+     (s/optional-key :challenge) (s/=> s/Any Context)}
     NamespacedEntries)))
 
 (s/defschema AuthenticationSchemes
   {(s/optional-key :authentication-schemes)
-   (-> [AuthenticationScheme]
-       (s/constrained
-        (fn [auth-schemes]
-          (apply distinct? (map :id auth-schemes)))
-        "Authentication schemes must have distinct :id values"))})
+   [AuthenticationScheme]})
 
 ;; Obsoleted by new top-level authorization
 (def ^:deprecated AuthScheme
@@ -451,7 +447,7 @@ expressive short-hand descriptions."}
          HeaderMappings
          {ContextFunction as-fn}))
 
-(def AuthenticationSchemesMappings
+#_(def AuthenticationSchemesMappings
   {AuthenticationScheme
    ;; Default id
    (partial merge {:id :default})
@@ -524,18 +520,30 @@ expressive short-hand descriptions."}
          RepresentationSeqMappings
          MethodsMappings
          AccessControlMappings ; deprecated
-         AuthenticationSchemesMappings
          ))
 
 (def resource-coercer
-  (sc/coercer Resource
-              (merge ResourceMappings
-                     {Resource (fn [m]
-                                 (let [r (:response m)
-                                       policies (get policies (get m :profile :dev))]
-                                   (cond-> (merge policies m)
-                                     r (assoc-in [:methods :get :response] r)
-                                     true (dissoc :response :profile))))})))
+  (sc/coercer
+   Resource
+   (merge ResourceMappings
+          {Resource
+           (fn [m]
+             (let [response (:response m)
+                   authentication (:authentication m)
+                   policies (get policies (get m :profile :dev))]
+               (cond-> (merge policies m)
+                 response (assoc-in [:methods :get :response] response)
+                 authentication (-> (dissoc :authentication)
+                                    (update :authentication-schemes #(into [authentication] %)))
+                 true (dissoc :response :profile))))})))
+
+(comment
+  (resource-coercer
+   {
+    :authentication-schemes [{:scheme "Basic" :realm "Mordor"}
+                             {:scheme "Basic" :realm "Shire"}]
+
+    }))
 
 ;; Handler ---------------------------------------------------------
 
@@ -552,7 +560,8 @@ expressive short-hand descriptions."}
 
 (comment
   (resource-coercer
-   {:authentication-schemes [{:id :foo2 :scheme "foo" :realm "oo"}
-                             {:id :foo :scheme "foo" :realm "oo"}]
-    :access-control {
+   {:authentication-schemes [{:scheme "Basic" :realm "oo"}
+                             {:id :foo :scheme "Basic" :realm "oo"}]
+    #_#_:access-control {:authentication-schemes [
+                                              ]
                      :allow-origin "acme.com"}}))

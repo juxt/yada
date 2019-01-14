@@ -25,7 +25,7 @@
    [prismatic/schema "1.1.7"]
    [ring/ring-core "1.6.3"]]
 
-  :global-vars {*warn-on-reflection* true}
+  ;;:global-vars {*warn-on-reflection* true}
 
   :profiles
   {:test
@@ -97,7 +97,7 @@
      :repl-options {:init-ns user
                     :welcome (println "Type (dev) to start")}
 
-     :global-vars {*warn-on-reflection* true}
+     ;;:global-vars {*warn-on-reflection* true}
 
      :dependencies
      [

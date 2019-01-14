@@ -39,9 +39,7 @@
     (testing "string-set"
       (is (= (coercer {:produces (sorted-set "text/html" "application/json")})
              {:produces [{:media-type JSON}
-                         {:media-type HTML}]})))
-
-    ))
+                         {:media-type HTML}]})))))
 
 (deftest consumes-test
   (let [coercer (sc/coercer Consumes RepresentationSeqMappings)]
@@ -260,7 +258,45 @@
       (is (not (error? r)))
       (is (nil? (s/check Resource r))))))
 
-;; TODO: Test authentication and security
+
+
+(deftest authentication-schemes-test
+  (testing "Distinct authentication schemes is OK"
+    (let [r (resource-coercer
+             {:authentication-schemes
+              [{:scheme "Basic"}
+               {:scheme "Basic"}]})]
+      (is r)))
+
+  (testing "no authentication schemes is OK"
+    (let [r (resource-coercer
+             {:authentication-schemes []})]
+      (is (not (schema.utils/error? r)))))
+
+  (testing "cannot mix old and new authentication designs"
+    (let [r (resource-coercer
+             {:authentication-schemes [{:scheme "Basic"}]
+              :access-control {:realms {}}})]
+      (is (schema.utils/error? r))))
+
+  (testing "authentication shorthand"
+    (let [r (resource-coercer
+             {:authentication {:scheme "Basic"}})]
+      (is (= {:authentication-schemes [{:scheme "Basic"}]}
+             (dissoc r :show-stack-traces?) ))))
+
+  (testing "authentication shorthand prepends others"
+    ;; This is intended to allow the usual intention of merging of
+    ;; resource policies to be the most straight-forward to code.
+    (let [r (resource-coercer
+             {:authentication {:scheme "Basic"}
+              :authentication-schemes [{:scheme "Digest"}]})]
+      (is (= {:authentication-schemes [{:scheme "Basic"} {:scheme "Digest"}]}
+             (dissoc r :show-stack-traces?) ))))
+
+  ;; TODO: Continue with this test
+  )
+
 ;; TODO: Write a failing test of 'restrict'
 
 ;; TODO: Test charsets, encodings and languages
@@ -268,10 +304,10 @@
 
 (def user-guide-example-store-resources
   [{:summary "A list of the products we sell"
-     :methods
-     {:get
-      {:response (io/file "index.html")
-       :produces "text/html"}}}
+    :methods
+    {:get
+     {:response (io/file "index.html")
+      :produces "text/html"}}}
    {:summary "Our visitor's shopping cart"
     :methods
     {:get

@@ -83,3 +83,10 @@
     "foo,bar"
     [#:yada.syntax{:type :yada.syntax/credentials, :auth-scheme "foo"}
      #:yada.syntax{:type :yada.syntax/credentials, :auth-scheme "bar"}]))
+
+(deftest format-challenge-test
+  (testing "foobar^ is rejected as invalid token68"
+    (is
+     (thrown? clojure.lang.ExceptionInfo
+              (syn/format-challenges [{:scheme "Basic" :params {:a :b}}
+                                      {:scheme "Digest" :token68 "foobar^"}])))))
