@@ -292,6 +292,17 @@
   (interpret-authorize-result [authorization ctx]
     (assoc ctx :authorization authorization)))
 
+(defn default-authorize
+  "The default authorize succeeds if there are no authentication schemes
+  declared, or if there are any credentials established. This is
+  considered the path of least surprise. Protected resources are
+  protected in the absence of credentials rather than requiring an
+  explicit :authorize function."
+  [ctx creds _]
+  (if (get-in ctx [:resource :authentication-schemes])
+    creds
+    true))
+
 (defn authorize
   "Given a verified user in the context, and the resource properties
   in :properties, check that the user is authorized to do what they
@@ -306,8 +317,9 @@
           realms (get-in ctx [:resource :access-control :realms])]
 
       (cond
-        authorization
-        (if-let [f (:authorize authorization)]
+        (not realms)
+        ;; New branch
+        (let [f (or (:authorize authorization) default-authorize)]
           (d/chain
            (f ctx (:credentials ctx) authorization)
            (fn [res]
@@ -327,8 +339,8 @@
                             ;; But allow www-authenticate header in error
                             :headers (select-keys (-> ctx :response :headers) ["www-authenticate"])})))))))
 
-        ;; This is the 'old' code that is now deprecated and sticking
-        ;; around to provide backwards compatibility.
+        ;; This is the 'old' branch that is now deprecated and
+        ;; sticking around to provide backwards compatibility.
         realms
         (reduce
          (fn [ctx [realm realm-val]]

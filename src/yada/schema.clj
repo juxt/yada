@@ -343,7 +343,7 @@ expressive short-hand descriptions."}
   {(s/optional-key :authorization)
    (maybe-dynamic
     (merge
-     {:authorize (s/=> Context Context)}
+     {(s/optional-key :authorize) (s/=> Context Context)}
      NamespacedEntries))})
 
 ;; Obsoleted by new top-level authorization

@@ -9,25 +9,6 @@
 (defn encode-basic-authorization-token [user password]
   (new String (clojure.data.codec.base64/encode (.getBytes (format "%s:%s" user password)))))
 
-#_(yada/response-for
- {:methods {:get {:produces {:media-type "application/edn"}
-                  :response (fn [ctx] (select-keys ctx [:credentials]))}}
-  :authenticate (fn [ctx claims]
-                  (log/infof "authenticate")
-                  {:user "fred"}
-                  )})
-
-#_(deftest authenticate-test
-  (let [resource
-        {:methods {:get {:produces {:media-type "application/edn"}
-                         :response (fn [ctx] (select-keys ctx [:credentials]))}}
-         :authenticate (fn [ctx claims]
-                         (log/infof "authenticate")
-                         {:user "fred"}
-                         )}
-        ])
-   )
-
 (deftest basic-auth-test
   (let [resource
         {:methods {:get {:produces {:media-type "application/edn"}
@@ -36,6 +17,7 @@
     (let [resource
           (assoc
            resource
+           :authorize (fn [_ _] true)
            :authentication
            {:scheme "Basic"
             :realm "WallyWorld"
