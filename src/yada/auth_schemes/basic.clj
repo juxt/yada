@@ -3,7 +3,7 @@
    [clojure.data.codec.base64 :as base64]
    [clojure.tools.logging :as log]
    [yada.syntax :as syn]
-   [yada.security :refer [issue-challenge preprocess-credentials]]
+   [yada.security :refer [issue-challenge preprocess-authorization-header]]
    ))
 
 (def CTL-set (set (map byte (identity syn/CTL))))
@@ -15,7 +15,7 @@
             {:charset "UTF-8"}
             (when realm {:realm realm}))})
 
-(defmethod preprocess-credentials "Basic"
+(defmethod preprocess-authorization-header "Basic"
   [ctx auth-scheme credentials]
   (if (not= (::syn/value-type credentials) :yada.syntax/token68)
     (do

@@ -14,14 +14,6 @@ Security is part of the semantics of a resource, so is part of resource itself, 
 
 As in all other areas, [yada]#yada# aims for 100% compliance with core HTTP standards when it comes to security, notably https://tools.ietf.org/html/rfc7235[RFC 7235]. Also, since HTTP APIs are nowadays used to facilitate transactional integration between systems via the user's browser, it is important that [yada]#yada# fully supports systems that offer APIs to other applications, across origins, as standardised by http://www.w3.org/TR/cors/[CORS].
 
-Security aspects for a resource are specified in its model's
-`:access-control` entry.
-
-NOTE: Depending on your use-case, you may decide to create this map
-independently and merge it into groups of yada resource maps. In
-[yada]#yada#, it is typical to see resource maps created
-programmatically--they are just maps of data after all.
-
 It is worth taking some time to understand what is involved in
 processing an HTTP request in [yada]#yada# that relate to
 authentication and authorization. <<figure-security-flow>> shows a
@@ -137,37 +129,12 @@ https://www.owasp.org/index.php/Top_10-2017_A5-Broken_Access_Control[Broken
 Access Control].
 
 One of the causes is that many web frameworks don't provide good
-support for this example use-case, and still rely on declaratively
+support for this example use-case, and still rely on declarative
 security on the URL itself. This is another reason why it's important
 to understand security in terms of a resource rather than a URI
 pattern. It's only once you have fully identified a web resource that
 you can determine whether access to it should be granted to a request.
 ****
-
-[[realms]]
-=== Realms
-
-In HTTP, resources can exist inside a _protection space_ determined by
-one or more __realms__. Each resource declares the realm (or realms) it
-is protected by, as part of the *:access-control* entry of its
-resource-model.
-
-[yada]#yada# supports multiple realms. By default, there is a single
-realm in operation, named `default`. However, you can group multiple
-authentication schemes together with an authorization model into a
-separate realm. Note each realm can contain multiple authentication
-schemes (it might be that a realm offers a choice of how to
-authenticate).
-
-[source,clojure]
-----
-{:access-control
-  {:realms
-    {"Gondor" {:authentication-schemes […]
-               :authorization {…}}
-     "Mordor" {:authentication-schemes {…}
-               :authorization {…}}}}}
-----
 
 [[authentication-schemes]]
 === Authentication
@@ -176,16 +143,28 @@ authenticate).
 Authentication is the act of establishing the credentials of a user,
 by checking the claims in the request.
 
-As has already been explained, the act of authentication alone does
-not approve or deny the request--that requires the act of
-_authorization_ which is covered in <<authorization, the next
-section>>.
+NOTE: The act of authentication alone does not approve or deny the
+request--that requires the act of _authorization_ which is covered in
+<<authorization, the next section>>.
 
-Each <<realms,realm>> declares one or more _authentication
+A resource declares one (or more) _authentication
 schemes_. An authentication scheme determines how the request's
 credentials are established. Credentials contain information such as
 the user's identity, roles and privileges, which can be used to deny
 the request, or if approved, may affect the nature of the response.
+
+.A simple example
+====
+This
+[source,clojure]
+----
+include::../dev/src/yada/dev/examples.clj[tag=basic]
+----
+
+====
+
+---
+
 
 [yada]#yada# supports a number of built-in authentication schemes
 (Basic, Digest, Cookie, JWT) and also allows for custom authentication

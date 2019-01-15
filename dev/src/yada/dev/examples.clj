@@ -38,16 +38,36 @@
 
     ;; Authentication/Authorization
     ["/auth"
-     [["/basic"
+     [
+
+      ["/authenticate"
        (yada/resource
-        {:methods {:get {:produces "text/html"
-                         :response (fn [ctx] (str "Welcome " (get-in ctx [:credentials :user])))}}
-         :authentication {:scheme "Basic"
-                          :authenticate (fn [ctx [user password] _]
-                                          (when (not (str/blank? user))
-                                            (future {:user user})))
-                          :realm "WallyWorld"}
+        {:methods
+         {:get
+          {:produces "text/html"
+           :response (fn [ctx] (str "Welcome " (get-in ctx [:credentials :user])))}}
+         :authenticate
+         (fn [ctx creds]
+           (log/infof "Authenticating!")
+           )
+         })]
+
+      ;; tag::basic[]
+      ["/basic"
+       (yada/resource
+        {:methods
+         {:get
+          {:produces "text/html"
+           :response (fn [ctx] (str "Welcome " (get-in ctx [:credentials :user])))}}
+         :authentication
+         {:scheme "Basic"
+          :authenticate (fn [ctx [user password] _]
+                          (when (not (str/blank? user))
+                            (future {:user user})))
+          :realm "WallyWorld"}
          :authorize (fn [ctx creds]
                       (log/infof "authorize, creds is %s" creds)
                       (:user creds)
-                      )})]]]]])
+                      )})]
+      ;; end::basic[]
+      ]]]])

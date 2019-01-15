@@ -59,13 +59,13 @@
     (f ctx)
     (issue-challenge ctx auth-scheme)))
 
-(defmulti preprocess-credentials
+(defmulti preprocess-authorization-header
   "Pre-process the parsed authorization value according to the
   auth-scheme's semantics. Return nil if anything wrong with the
   (claimed) credentials."
   (fn [ctx {:keys [scheme] :as auth-scheme} credentials] scheme) :default ::default)
 
-(defmethod preprocess-credentials ::default
+(defmethod preprocess-authorization-header ::default
   [ctx {:keys [scheme] :as auth-scheme} credentials]
   ;; Return the identity of credentials
   credentials)
@@ -190,7 +190,7 @@
                           auth-schemes))]
 
               ;; Auth-scheme found. First, we allow the scheme to pre-process the credentials
-              (let [claimed-credentials (preprocess-credentials ctx auth-scheme claimed-credentials)
+              (let [claimed-credentials (preprocess-authorization-header ctx auth-scheme claimed-credentials)
                     ;; We call the authenticate function with 3 args:
                     ;; ctx, credentials (pre-processed) and the
                     ;; auth-scheme data (to provide access to any
