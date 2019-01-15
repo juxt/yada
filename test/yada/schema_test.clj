@@ -294,19 +294,6 @@
               :authentication-schemes [{:scheme "Digest" :authenticate default-fn}]})]
       (is (= {:authentication-schemes [{:scheme "Basic" :authenticate default-fn}
                                        {:scheme "Digest" :authenticate default-fn}]}
-             (dissoc r :show-stack-traces?)))))
-
-  (testing "authentication ultra shorthand"
-    ;; This is intended to allow the usual intention of merging of
-    ;; resource policies to be the most straight-forward to code.
-    (let [r (resource-coercer
-             {:authenticate default-fn
-              :authentication-schemes [{:scheme "Digest" :authenticate default-fn}]})]
-
-      (is (= {:authentication-schemes
-              [{:authenticate
-                (get-in r [:authentication-schemes 0 :authenticate])}
-               {:scheme "Digest" :authenticate default-fn}]}
              (dissoc r :show-stack-traces?))))))
 
 (deftest authorization-test

@@ -329,9 +329,8 @@ expressive short-hand descriptions."}
 (s/defschema AuthenticationScheme
   (maybe-dynamic
    (merge
-    {:authenticate
-     (s/=> Context Context s/Any AuthenticationScheme)
-     (s/optional-key :scheme) (s/cond-pre s/Keyword s/Str)
+    {:scheme (s/cond-pre s/Keyword s/Str)
+     :authenticate (s/=> Context Context s/Any AuthenticationScheme)
      (s/optional-key :realm) (s/cond-pre s/Keyword s/Str)
      (s/optional-key :challenge) (s/=> s/Any Context)}
     NamespacedEntries)))
@@ -454,16 +453,6 @@ expressive short-hand descriptions."}
          HeaderMappings
          {ContextFunction as-fn}))
 
-#_(def AuthenticationSchemesMappings
-  {AuthenticationScheme
-   ;; Default id
-   (partial merge {:id :default})
-   ;;AuthenticationSchemes
-   ;; Cannot have two schemes with the same if
-   #_(fn [{:keys [authentication-schemes]}]
-     (if (distinct? (map :id authentication-schemes))
-       xs))})
-
 (s/defschema ResourceDocumentation CommonDocumentation)
 
 (s/defschema SecurityHeaders
@@ -538,20 +527,15 @@ expressive short-hand descriptions."}
       (-> (assoc-in [:methods :get :response] response)
           (dissoc :response))
 
-      ;; This provides a useful shorthand of a simple 2-arity fn
-      ;; taking ctx and pre-processed creds.
-      (:authenticate m)
-      (-> (update :authentication-schemes
-                  #(into [{:authenticate
-                           (fn [ctx creds _]
-                             ((:authenticate m) ctx creds))}] %))
-          (dissoc :authenticate))
-
+      ;; A single authentication-scheme, to be normalized as the first
+      ;; in a potential series of authentication schemes.
       (:authentication m)
       (-> (update :authentication-schemes
                   #(into [(:authentication m)] %))
           (dissoc :authentication))
 
+      ;; A top-level authorize function, to be normalized to a map,
+      ;; with a single :authorize entry.
       (:authorize m)
       (-> (assoc :authorization {:authorize (fn [ctx creds authorization]
                                               ((:authorize m) ctx creds))})
@@ -565,14 +549,6 @@ expressive short-hand descriptions."}
    (merge ResourceMappings
           {Resource preprocess-resource})))
 
-(comment
-  (resource-coercer
-   {
-    :authentication-schemes [{:scheme "Basic" :realm "Mordor"}
-                             {:scheme "Basic" :realm "Shire"}]
-
-    }))
-
 ;; Handler ---------------------------------------------------------
 
 (s/defschema HandlerModel
@@ -584,12 +560,3 @@ expressive short-hand descriptions."}
    :interceptor-chain [(s/=> Context Context)]
    :error-interceptor-chain [(s/=> Context Context)]
    (s/optional-key :path-info?) s/Bool})
-
-
-(comment
-  (resource-coercer
-   {:authentication-schemes [{:scheme "Basic" :realm "oo"}
-                             {:id :foo :scheme "Basic" :realm "oo"}]
-    #_#_:access-control {:authentication-schemes [
-                                              ]
-                     :allow-origin "acme.com"}}))

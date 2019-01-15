@@ -40,7 +40,7 @@
     ["/auth"
      [
 
-      ["/authenticate"
+      #_["/authenticate"
        (yada/resource
         {:methods
          {:get
