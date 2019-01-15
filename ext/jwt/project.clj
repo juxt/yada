@@ -1,6 +1,6 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
-(def VERSION "1.2.17-SNAPSHOT")
+(def VERSION "1.3.0-SNAPSHOT")
 
 (defproject yada/jwt VERSION
   :description "JSON Web Token support"
