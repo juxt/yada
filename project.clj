@@ -1,6 +1,6 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
-(def VERSION "1.3.0-alpha1")
+(def VERSION "1.3.0-alpha2")
 
 (defproject yada/core VERSION
   :description "A powerful Clojure web library, full HTTP, full async"
@@ -23,7 +23,7 @@
    [org.clojure/tools.reader "1.0.0-beta4"]
    [potemkin "0.4.4"]
    [prismatic/schema "1.1.7"]
-   [ring/ring-core "1.6.3"]]
+   [ring/ring-core "1.7.1"]]
 
   ;;:global-vars {*warn-on-reflection* true}
 
@@ -55,7 +55,7 @@
      [cheshire "5.8.0" :exclusions [com.fasterxml.jackson.core/jackson-core]]
      [json-html "0.4.0" :exclusions [hiccups]]
      [buddy/buddy-sign "2.2.0"]
-     [commons-codec "1.10"]
+     [commons-codec "1.11"]
      [metosin/ring-swagger "0.26.0" :exclusions [org.clojure/clojure]]
      [org.webjars/swagger-ui "2.2.6"]
      [com.cognitect/transit-clj "0.8.297" :exclusions [com.fasterxml.jackson.core/jackson-core]]
