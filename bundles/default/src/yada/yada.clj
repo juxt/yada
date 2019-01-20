@@ -8,6 +8,7 @@
    yada.async
    yada.bidi
    yada.context
+   [yada.cookies :as cookies]
    yada.handler
    [yada.interceptors :as i]
    yada.json
@@ -35,6 +36,7 @@
 (import-vars
  [yada.aleph listener server]
  [yada.context content-type charset language uri-info url-for path-for href-for scheme-for]
+ [yada.cookies new-cookie]
  [yada.handler handler yada interceptor-chain error-interceptor-chain]
  [yada.swagger swaggered]
  [yada.redirect redirect]
@@ -51,8 +53,10 @@
    i/uri-too-long?
    i/TRACE
    i/method-allowed?
+
    swgparams/parse-parameters
    i/capture-proxy-headers
+   cookies/consume-cookies
    sec/authenticate
    i/get-properties
    sec/authorize

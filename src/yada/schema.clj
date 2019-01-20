@@ -12,6 +12,7 @@ expressive short-hand descriptions."}
      [yada.charset :refer [to-charset-map]]
      [yada.media-type :as mt]
      [yada.representation :as rep]
+     [yada.syntax :as syn]
      [yada.util :refer [disjoint*?]])
     (:import java.util.Date
              yada.charset.CharsetMap
@@ -461,6 +462,26 @@ expressive short-hand descriptions."}
    (s/optional-key :x-frame-options) s/Str
    (s/optional-key :xss-protection) s/Str})
 
+(s/defschema CookieConsumer
+  {(s/optional-key :consumer) (s/=> Context Context s/Str)})
+
+(s/defschema Cookie
+  (merge
+   {:name s/Str
+    (s/optional-key :expires) (s/=> s/Inst Context)
+    (s/optional-key :max-age) s/Num
+    (s/optional-key :domain) (s/pred #(re-matches syn/subdomain %))
+    (s/optional-key :path) (s/pred #(re-matches syn/path %))
+    (s/optional-key :secure) s/Bool
+    (s/optional-key :http-only) s/Bool}
+   CookieConsumer
+   NamespacedEntries))
+
+(s/defschema Cookies
+  {(s/optional-key :cookies)
+   {s/Keyword
+    (maybe-dynamic Cookie)}})
+
 (s/defschema Logger
   {(s/optional-key :logger) (s/=> s/Any Context)})
 
@@ -496,6 +517,8 @@ expressive short-hand descriptions."}
           SecurityHeaders
           {(s/optional-key :path-info?) Boolean
            (s/optional-key :sub-resource) (s/=> Resource Context)}
+          Cookies
+
           Logger
           InterceptorChain
           Policies

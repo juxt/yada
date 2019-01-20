@@ -7,7 +7,7 @@
    [manifold.deferred :as d]
    [yada.context :as ctx]
    [yada.util :as util])
-  (:import yada.context.Response))
+  (:import (yada.context Context Response)))
 
 (defn- zero-content-length
   "Unless status code is 1xx or 204, or method is CONNECT. We don't set
@@ -67,6 +67,9 @@
   (interpret-any-result [_ ctx]))
 
 (extend-protocol AnyResult
+  Context
+  (interpret-any-result [ctx _]
+    ctx)
   Response
   (interpret-any-result [response ctx]
     (assoc ctx :response response))
@@ -130,6 +133,8 @@
   (interpret-get-result [_ ctx]))
 
 (extend-protocol GetResult
+  Context
+  (interpret-get-result [ctx _] ctx)
   Response
   (interpret-get-result [response ctx]
     (assoc ctx :response response))
@@ -196,14 +201,14 @@
   (interpret-put-result [_ ctx]))
 
 (extend-protocol PutResult
+  Context
+  (interpret-put-result [ctx _] ctx)
   Response
   (interpret-put-result [response ctx]
     (assoc ctx :response response))
   Object
   (interpret-put-result [o ctx]
-    (if (instance? Response (:response o))
-      o ; modified ctx
-      (assoc-in ctx [:response :body] o)))
+    (assoc-in ctx [:response :body] o))
   clojure.lang.Fn
   (interpret-put-result [f ctx]
     (interpret-put-result (f ctx) ctx))
@@ -248,6 +253,8 @@
   (interpret-post-result [_ ctx]))
 
 (extend-protocol PostResult
+  Context
+  (interpret-post-result [ctx _] ctx)
   Response
   (interpret-post-result [response ctx]
     (assoc ctx :response response))
@@ -301,6 +308,9 @@
   (interpret-delete-result [_ ctx]))
 
 (extend-protocol DeleteResult
+  Context
+  (interpret-delete-result [ctx _] ctx)
+
   Response
   (interpret-delete-result [response ctx]
     (assoc ctx :response response))

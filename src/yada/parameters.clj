@@ -168,7 +168,7 @@
 ;; pluggable.
 
 (defn ^:yada/interceptor parse-parameters
-  "Parse request and coerce parameters. Capture cookies."
+  "Parse request and coerce parameters."
   [ctx]
   (let [path-parameters (path-parameters ctx)
         query-parameters (query-parameters ctx)

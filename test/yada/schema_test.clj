@@ -145,38 +145,6 @@
           (is (error? r))
           (is (= {:get 'disallowed-key} (:error r))))))))
 
-(deftest authentication-test
-  (let [coerce (sc/coercer AccessControl AccessControlMappings)]
-    (testing "coerce single realm shorthand to canonical form"
-      (is (= {:access-control
-              {:realms {"default" {:authentication-schemes [{:scheme "Basic"
-                                                             :verify identity}]
-                                   }}
-               :allow-origin #{"*"}}}
-             (coerce
-              {:access-control {:realm "default"
-                                :authentication-schemes [{:scheme "Basic"
-                                                          :verify identity}]
-
-                                :allow-origin "*"}}))))
-
-    (testing "coerce single scheme shorthand to canonical form"
-      (is (= {:access-control
-              {:realms {"default" {:authentication-schemes [{:scheme "Basic"
-                                                             :verify identity}]}}}}
-             (coerce
-              {:access-control {:realms {"default"
-                                         {:scheme "Basic"
-                                          :verify identity}}}}))))
-
-    (testing "both shorthand composed"
-      (is (= {:access-control
-              {:realms {"default" {:authentication-schemes [{:scheme "Basic"
-                                                             :verify identity}]}}}}
-             (coerce {:access-control {:realm "default"
-                                       :scheme "Basic"
-                                       :verify identity}}))))))
-
 (deftest resource-test
   (testing "produces works at both levels"
     (let [r (resource-coercer {:produces "text/html"
@@ -338,3 +306,13 @@
 (deftest user-manual-test
   (doseq [res user-guide-example-store-resources :let [r (resource-coercer res)]]
     (is (not (error? r)))))
+
+
+
+#_(deftest cookies-test
+  (resource-coercer
+             {:authorize default-fn})
+  )
+
+#_(resource-coercer
+ {:cookies {:test {:name "foo"}}})

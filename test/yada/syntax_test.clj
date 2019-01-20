@@ -1,3 +1,5 @@
+;; Copyright © 2014-2019, JUXT LTD.
+
 (ns yada.syntax-test
   (:require
    [yada.syntax :as syn]
@@ -14,15 +16,11 @@
     "\\p{Blank}" syn/WSP
     "\\p{Alnum}\\x60\\x21\\x23\\x24\\x25\\x26\\x27\\x2a\\x2b\\x2d\\x2e\\x7c\\x5e\\x7e\\x5f" syn/tchar))
 
-
 (deftest token-test
   (is (nil? (re-matches (re-pattern syn/token) "B€sic") ))
   (is (= "Basic" (re-matches (re-pattern syn/token) "Basic"))))
 
-
 ;; TODO: Test token68-lookahead
-
-(syn/parse-credentials "Basic seflijasef==,bar zip=barf")
 
 (deftest parse-credentials-test
   (are [input expected] (= expected (syn/parse-credentials input))
@@ -78,6 +76,11 @@
 (deftest format-challenge-test
   (testing "foobar^ is rejected as invalid token68"
     (is
-     (thrown? clojure.lang.ExceptionInfo
-              (syn/format-challenges [{:scheme "Basic" :params {:a :b}}
-                                      {:scheme "Digest" :token68 "foobar^"}])))))
+     (thrown?
+      clojure.lang.ExceptionInfo
+      (syn/format-challenges
+       [{:scheme "Basic" :params {:a :b}}
+        {:scheme "Digest" :token68 "foobar^"}])))))
+
+
+;; TODO: Cookies

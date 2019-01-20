@@ -6,6 +6,7 @@
    yada.aleph
    yada.bidi
    yada.context
+   [yada.cookies :as cookies]
    yada.handler
    [yada.interceptors :as i]
    [yada.parameters :refer [parse-parameters]]
@@ -27,6 +28,7 @@
 (import-vars
  [yada.aleph listener server]
  [yada.context content-type charset language uri-info url-for path-for href-for scheme-for]
+ [yada.cookies new-cookie]
  [yada.handler handler yada interceptor-chain error-interceptor-chain]
  [yada.redirect redirect]
  [yada.resource resource as-resource]
@@ -44,6 +46,7 @@
    i/method-allowed?
    parse-parameters
    i/capture-proxy-headers
+   cookies/consume-cookies
    sec/authenticate
    i/get-properties
    sec/authorize

@@ -126,11 +126,7 @@
   [ctx]
   (assert ctx "parse-parameters, ctx is nil!")
 
-  (let [capture-cookies (fn [ctx]
-                          (if-let [cookies (cookies/parse-cookies (:request ctx))]
-                            (assoc ctx :cookies cookies)
-                            ctx))
-        ctx (capture-cookies ctx)
+  (let [;; (Cookies are captured in the yada.cookies/consume-cookies inteceptor)
         method (:method ctx)
         request (:request ctx)
         matcher (fn [param-kw]

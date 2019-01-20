@@ -1,0 +1,82 @@
+[[cookies]]
+== Cookies
+
+HTTP is a stateless protocol but often there is a need to preserve state between requests.
+
+https://tools.ietf.org/html/rfc6265[RFC 6265: HTTP State Management Mechanism] defines the HTTP Cookie and Set-Cookie headers which can used to store state in user-agents which can be transferred via requests.
+
+This chapter describes [yada]#yada#'s support for cookies.
+
+Cookies can be declared in the resource map under the `:cookies` entry.
+
+.Declaring a cookie
+====
+The following code declares a cookie:
+
+[source,clojure]
+----
+{:cookies
+  {:session
+    {:name "session"
+     :max-age 3600
+     :domain "example.com"
+     :path "/"
+     :secure true
+     :http-only true}}}
+----
+====
+
+=== Setting cookies
+
+Once you have declared a cookie in your resource, you can set the cookie to a new value by using the `new-cookie` function.
+
+
+.Setting a cookie
+====
+The following code has a `:get` method that returns a response that contains a `Set-Cookie` header to set a cookie named `session`.
+
+[source,clojure]
+----
+{:cookies
+  {:session ; <1>
+    {:name "session"
+     :max-age 3600
+     :domain "example.com"
+     :path "/"
+     :secure true
+     :http-only true}}
+
+ :methods
+  {:get
+    {:response
+      (fn [ctx]
+         (yada/new-cookie ctx :session ; <2>
+         "123" ; <3>
+         ))}}}
+----
+<1> A cookie is declared called `:session`. Here, it has a name of `session` which is how it will be named in the user-agent.
+<2> The `new-cookie` function is called. It takes the [yada]#yada# `ctx` and returns a modified `ctx` with the `:session` cookie set on the response. It is legal to return a `ctx` as the return value of a response function.
+<3> The value of the cookie is set to "123".
+====
+
+=== Consuming a cookie
+
+Once a cookie is declared on a resource, it is possible to register a callback on the cookie that will be called with the cookie and its value if the cookie is present in the request.
+
+.Consuming a cookie
+====
+[source,clojure]
+----
+{:cookies
+  {:session
+    {:name "session"
+     :max-age 3600
+     :domain "example.com"
+     :path "/"
+     :secure true
+     :http-only true
+     :consumer (fn [ctx cookie v] ctx) ; <1>
+     }}}
+----
+<1> If the `session` cookie is sent in the request, this 3-arg callback function will be called. The first argument is the [yada]#yada# context, which should also be returned, possibly augmented. The second argument is the cookie declaration itself, for convenience. The final argument is the value of the cookie in the request.
+====

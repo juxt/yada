@@ -103,46 +103,43 @@
   String
   (as-regex-str [s] s)
   java.util.regex.Pattern
-  (as-regex-str [re] (str re)))
+  (as-regex-str [re] (str re))
+  clojure.lang.PersistentHashSet
+  (as-regex-str [s] (as-regex-str (seq s))))
 
 (def token (re-pattern (format "[%s]+" (as-regex-str tchar))))
 
-;; A string of text is parsed as a single value if it is quoted using double-quote marks.
-
-;; obs-text       = %x80-FF
 (def obs-text (map char (range 0x80 (inc 0xff))))
 
-;; qdtext         = HTAB / SP /%x21 / %x23-5B / %x5D-7E / obs-text
 (def qdtext (concat HTAB SP [0x21] (map char (range 0x23 (inc 0x5b))) (map char (range 0x5d (inc 0x7e))) obs-text))
 
-;; quoted-pair    = "\" ( HTAB / SP / VCHAR / obs-text )
 (def quoted-pair (re-pattern (format "\\[%s]" (as-regex-str (concat HTAB SP VCHAR obs-text)))))
 
-;; quoted-string = DQUOTE *( qdtext / quoted-pair ) DQUOTE
 (def quoted-string (re-pattern (apply format "%s((?:[%s]|%s)*)%s" (map as-regex-str [DQUOTE qdtext quoted-pair DQUOTE]))))
 
 (def auth-scheme token)
 
 (def token68 (re-pattern (format "[%s]+=*" (as-regex-str (concat ALPHA DIGIT [\- \. \_ \~ \+ \/])))))
 
-;; auth-param     = token BWS "=" BWS ( token / quoted-string )
-
-;; Match an auth-param
 (def equals-with-optional-padding (re-pattern (str BWS "=" BWS)))
+
+(def space (re-pattern (as-regex-str SP)))
+
+(def cookie-octet
+  (map char
+       (concat [0x21]
+               (range 0x23 (inc 0x2B))
+               (range 0x2D (inc 0x3A))
+               (range 0x3C (inc 0x5B))
+               (range 0x5D (inc 0x7E)))))
+
+;; This defines a lookahead to distinguish between a token68 and
+;; #auth-param
+(def token68-lookahead (re-pattern (str "(?=" token68 OWS "(,|$))")))
 
 (def auth-param
   (re-pattern (apply format "(?<lhs>%s)%s((?<token>%s)|%s)"
                      (map as-regex-str [token equals-with-optional-padding token quoted-string]))))
-
-(defn extract-matched-auth-param [^java.util.regex.MatchResult matched]
-  (when matched
-    ;; We first try the quoted-string sans-quotes (group 4), or if that's nil we try the token value (group 3)
-    {::type ::auth-param
-     ::name (.group matched 1)
-     ::value (or (.group matched 4) (.group matched 3))
-     ::value-type (cond (.group matched 4) ::quoted-string
-                        (.group matched 3) ::token
-                        :else ::unknown)}))
 
 (defn- ^java.util.regex.Matcher advance
   [^java.util.regex.Matcher matcher next-pattern]
@@ -163,7 +160,8 @@
   "Implement RFC 7230 #rule extension. Match a comma-separated list of
   the element matched by the given matcher. RFC 7230 Section 7 defines
   the #rule extension used when parsing HTTP headers. Returns a
-  collection of java.util.regex.MatchResult instances."
+  collection of java.util.regex.MatchResult instances. Note: This uses
+  a loop to grab the comma-separated instances."
   (let [ ;; Save the element's pattern while we look for commas
         element-pattern (.pattern matcher)]
     (loop [matcher matcher
@@ -176,25 +174,85 @@
             (when (not-empty matches) matches)))
         (when (not-empty matches) matches)))))
 
-;; Match an auth-param#
-;; Note: This uses a loop to grab the comma-separated instances.
+;; Cookies - see RFC 6265
 
-;; TODO: Test for cases of rogue commas and rogue white-space, (leading, trailing, and otherwise).
-#_(let [input "foo = \"bar zip\",zip=AAA  , baz=dig, a=,b=,c=d  "
-      matcher (re-matcher auth-param input)]
-  (map extract-matched-auth-param (element-list matcher)))
+(def cookie-name token)
 
+(def cookie-value (re-pattern (apply format "(?:%s([%s]*)%s|([%s]*))" (map as-regex-str [DQUOTE cookie-octet DQUOTE cookie-octet]))))
 
-;; Here's how to match against ALL the remaining input - useful below
-;; (.region matcher (.end matcher) (.regionEnd matcher))
+(def cookie-pair (re-pattern (apply format "(%s)=%s" (map as-regex-str [cookie-name cookie-value]))))
 
-(def space (re-pattern (as-regex-str SP)))
+(def semicolon-then-space (re-pattern (str ";" (as-regex-str SP))))
 
-;;  credentials = auth-scheme [ 1*SP ( token68 / #auth-param ) ]
+(defn parse-cookie-header [input]
+  (when input
+    (let [matcher (re-matcher cookie-pair input)]
+      (loop [matcher matcher
+             matches []]
+        (if (looking-at matcher)
+          (let [matches
+                (conj matches
+                      (let [mr (.toMatchResult matcher)]
+                        {::type ::cookie
+                         ::name (.group mr 1)
+                         ::value (or (.group mr 2) (.group mr 3))
+                         ::quotes? (if (.group mr 2) true false)}))]
+            (if (looking-at (advance matcher semicolon-then-space))
+              (recur (advance matcher cookie-pair) matches)
+              (when (not-empty matches) matches)))
+          (when (not-empty matches) matches))))))
 
-;; This defines a lookahead to distinguish between a token68 and
-;; #auth-param
-(def token68-lookahead (re-pattern (str "(?=" token68 OWS "(,|$))")))
+(def rfc822-date-time (re-pattern "(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun), \\d{2} (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \\d{4} \\d{2}:\\d{2}:\\d{2} (?:UT|GMT|EST|EDT|CST|CDT|MST|MDT|PST|PDT|Z)"))
+
+(def label
+  (re-pattern
+   (apply format "%s[%s]*%s"
+          (map as-regex-str
+               [(concat ALPHA DIGIT) ; RFC 1123
+                (concat ALPHA DIGIT [\-])
+                (concat ALPHA DIGIT)]))))
+
+(def subdomain
+  (re-pattern
+   (apply format "%s(?:%s%s)*" (map as-regex-str [label
+                                                  [0x2e]
+                                                  label]))))
+
+(def path (re-pattern (format "[%s]+" (as-regex-str (set/difference
+                                                     (set (map char (range 0x00 (inc 0xff))))
+                                                     (set CTL)
+                                                     #{\;}
+                                                     )))))
+
+(def set-cookie-attrs
+  {:expires "Expires"
+   :max-age "Max-Age"
+   :domain "Domain"
+   :path "Path"
+   :secure "Secure"
+   :http-only "HttpOnly"})
+
+(defn format-set-cookie [[name v]]
+  (letfn [(encode-attributes [cv]
+            (apply str
+                   (for [k [:expires :max-age :domain :path :secure :http-only]]
+                     (when-let [v (get cv k)]
+                       (if (#{:secure :http-only} k)
+                         (format "; %s" (set-cookie-attrs k))
+                         (format "; %s=%s" (set-cookie-attrs k) v))))))]
+    (format "%s=%s%s" name (:value v) (encode-attributes v))))
+
+;; Authentication
+
+(defn extract-matched-auth-param [^java.util.regex.MatchResult matched]
+  (when matched
+    ;; We first try the quoted-string sans-quotes (group 4), or if that's nil we try the token value (group 3)
+    {::type ::auth-param
+     ::name (.group matched 1)
+     ::value (or (.group matched 4) (.group matched 3))
+     ::value-type (cond (.group matched 4) ::quoted-string
+                        (.group matched 3) ::token
+                        :else ::unknown)}))
 
 (defn parse-credentials [input]
   (when input
@@ -215,9 +273,10 @@
                            {::value (map extract-matched-auth-param params)
                             ::value-type ::auth-param-list}))))]
 
-          (let [credentials (cond-> result
-                              (looking-at (->> space (advance matcher)))
-                              parse-remainder)]
+          (let [credentials
+                (cond-> result
+                  (looking-at (->> space (advance matcher)))
+                  parse-remainder)]
 
             ;; If we managed to find [ 1*SP ( token68 / #auth-param ) ] then advance
             (when (::value credentials)
@@ -241,9 +300,3 @@
 
 (defn format-challenges [challenges]
   (str/join ", " (map format-challenge challenges)))
-
-
-;; TODO: Write rationale for using regexes in this way in syntax.clj.adoc
-
-
-;;(new String (clojure.data.codec.base64/encode (.getBytes "foo:bar")))

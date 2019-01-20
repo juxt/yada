@@ -384,6 +384,9 @@
                      (when-let [cl (body/content-length body)]
                        {"content-length" (str cl)}))
 
+                   ;; Cookies
+                   ;; TODO: Don't forget cookie extensions
+
                    (when-let [cookies (get-in ctx [:response :cookies])]
                      (let [cookies (cookies/cookies-coercer cookies)]
                        (if (error? cookies)

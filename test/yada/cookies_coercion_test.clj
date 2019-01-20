@@ -4,7 +4,8 @@
   (:require
    [clojure.test :refer :all :exclude [deftest]]
    [schema.test :refer [deftest]]
-   [yada.cookies :refer [cookies-coercer]]))
+   [yada.cookies :refer [cookies-coercer]]
+   ))
 
 ;; Based on an original recipe ring.middleware.cookies, my own
 ;; includes chocolate-chip coercions.
@@ -15,13 +16,13 @@
            (cookies-coercer {"foo" "bar"}))))
   (testing "that dates are get formatted to RFC 822 date-strings"
     (is (= {"foo" {:value "bar"
-                   :expires "Sun, 09 Sep 2001 01:46:40 +0000"}}
+                   :expires #inst "2001-09-09T01:46:40.000-00:00"}}
            (cookies-coercer {"foo" {:value "bar"
                                     :expires (java.util.Date. 1000000000000)}}))))
   (testing "full cookie"
     (let [cookie {"foo" {:value "bar",
                          :max-age 0
-                         :expires "Sun, 09 Sep 2001 01:46:40 +0000",
+                         :expires "Sun, 09 Sep 2001 01:46:40 GMT",
                          :domain "juxt.pro",
                          :path "/",
                          :secure true,
@@ -31,8 +32,6 @@
              (cookies-coercer cookie)))
       (is (= cookie-max-age-str
              (cookies-coercer cookie-max-age-str))))))
-
-;;;; Scratch
 
 (comment
   (coercion-test))

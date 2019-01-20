@@ -32,6 +32,8 @@ include::representations.adoc[]
 
 include::responses.adoc[]
 
+include::cookies.adoc[]
+
 include::security.adoc[]
 
 include::routing.adoc[]

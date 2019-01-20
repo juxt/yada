@@ -3,30 +3,34 @@
 (ns
     ^{:doc "Based on an original recipe ring.middleware.cookies my own includes chocolate-chip coercions."}
     yada.cookies
-    (:require
-     [clj-time.coerce :as time]
-     [clj-time.format :as tf]
-     [clojure.string :as str]
-     [schema.coerce :as sc]
-     [schema.core :as s]))
+  (:require
+   [clj-time.coerce :as time]
+   [clj-time.format :as tf]
+   [clojure.string :as str]
+   [schema.coerce :as sc]
+   [schema.core :as s]
+   [yada.syntax :as syn])
+  (:import
+   (yada.context Context)))
 
-(s/defschema Rfc822String (s/pred string?))
+(s/defschema Rfc822String (s/pred #(re-matches syn/rfc822-date-time %)))
 
-(s/defschema CookieValue
-  {:value s/Str
-   (s/optional-key :expires) Rfc822String
-   (s/optional-key :max-age) (s/either s/Str s/Int) ; TODO: support Interval like ring's cookies?
-   (s/optional-key :domain) s/Str
-   (s/optional-key :path) s/Str
+;; The form a Set-Cookie should take prior to serialization
+(s/defschema SetCookie
+  {:value (s/pred #(re-matches syn/cookie-value %))
+   (s/optional-key :expires) (s/cond-pre s/Inst (s/pred #(instance? java.time.Duration %)) Rfc822String)
+   (s/optional-key :max-age) (s/cond-pre s/Str s/Int)
+   (s/optional-key :domain) (s/pred #(re-matches syn/subdomain %) "domain")
+   (s/optional-key :path) (s/pred #(re-matches syn/path %))
    (s/optional-key :secure) s/Bool
-   (s/optional-key :http-only) s/Bool})
+   (s/optional-key :http-only) s/Bool
+   (s/constrained s/Keyword namespace) s/Any})
 
 (s/defschema Cookies
-  {s/Str CookieValue})
+  {s/Str SetCookie})
 
 (def CookieMappings
-  {CookieValue (fn [x] (if (string? x) {:value x} x))
-   Rfc822String (fn [x] (tf/unparse (tf/formatters :rfc822) (time/from-date (time/to-date x))))})
+  {SetCookie (fn [x] (if (string? x) {:value x} x))})
 
 (def cookies-coercer
   (sc/coercer Cookies CookieMappings))
@@ -39,59 +43,108 @@
   (apply str
          (for [k [:expires :max-age :path :domain :secure :http-only]]
            (when-let [v (get cv k)]
-             (if (#{:secure :http-only} k)
+             (case k
+               (:secure :http-only)
                (format "; %s" (set-cookie-attrs k))
+
+               :expires
+               (format "; %s=%s" (set-cookie-attrs k)
+                       (cond (inst? v) (tf/unparse (tf/formatters :rfc822) v)
+                             (string? v) v
+                             (instance? java.time.Duration) (tf/unparse (tf/formatters :rfc822) (time/from-date (java.util.Date/from (.plus (java.time.Instant/now) v))))
+                             :else (str v)))
+
                (format "; %s=%s" (set-cookie-attrs k) v))))))
 
-(s/defn encode-cookie :- s/Str
+(defn encode-cookie
   [[k v]]
   (format "%s=%s%s" k (:value v) (encode-attributes v)))
 
-(s/defn encode-cookies :- [s/Str]
-  [cookies :- Cookies]
+(defn encode-cookies
+  [cookies]
   (map encode-cookie cookies))
 
-;; These taken from ring.util.parsing
+;; Interceptor
+(defprotocol CookieConsumerResult
+  (interpret-cookie-consumer-result [res ctx]))
 
-(def re-token #"[!#$%&'*\-+.0-9A-Z\^_`a-z\|~]+")
+(extend-protocol CookieConsumerResult
+  Context
+  (interpret-cookie-consumer-result [res _]
+    res)
 
-(def re-quoted #"\"(\\\"|[^\"])*\"")
+  nil
+  (interpret-cookie-consumer-result [res ctx]
+    ctx)
 
-(def re-value (str re-token "|" re-quoted))
+  Object
+  (interpret-cookie-consumer-result [_ _]
+    (throw (ex-info "Must return ctx" {}))))
 
-;; These taken from ring.middleware.cookies
+(defn new-cookie
+  "Take a cookie defined in the resource and instantiate it, ready for
+  formatting."
+  [ctx id val]
 
-(def re-cookie-octet
-  #"[!#$%&'()*+\-./0-9:<=>?@A-Z\[\]\^_`a-z\{\|\}~]")
+  (if-let [cookie-def (get-in ctx [:resource :cookies id])]
+    (let [nm (:name cookie-def)]
+      (update-in ctx [:response :cookies]
+              (fnil conj {})
+              [nm (s/validate
+                   SetCookie
+                   (merge
+                    {:value (str val)}
+                    (reduce-kv
+                     (fn [acc k v]
+                       (case k
+                         :expires (assoc acc :expires (v ctx))
+                         :max-age (assoc acc :max-age v)
+                         :domain (assoc acc :domain v)
+                         :path (assoc acc :path v)
+                         :secure (assoc acc :secure v)
+                         :http-only (assoc acc :http-only v)
+                         :name acc
+                         (if (namespace k) (assoc acc k v) acc)
+                         ))
+                     {}
+                     cookie-def)))]))
 
-(def re-cookie-value
-  (re-pattern (str "\"" re-cookie-octet "*\"|" re-cookie-octet "*")))
+    (throw (ex-info (format "Failed to find declared cookie with id of '%s'" id) {}))))
 
-(def re-cookie
-  (re-pattern (str "\\s*(" re-token ")=(" re-cookie-value ")\\s*[;,]?")))
+(defn parse-cookies [cookie-header-value]
+  (->>
+   cookie-header-value
+   syn/parse-cookie-header
+   (map (juxt ::syn/name ::syn/value))
+   (into {})))
 
-(defn- parse-cookie-header
-  "Turn a HTTP Cookie header into a list of name/value pairs."
-  [header]
-  (for [[_ name value] (re-seq re-cookie header)]
-    [name value]))
+(defn resource-cookies [ctx]
+  (reduce-kv
+   (fn [acc id cookie-def]
+     (assoc acc id (if (fn? cookie-def) (cookie-def ctx) cookie-def)))
+   {}
+   (-> ctx :resource :cookies)))
 
-(defn- strip-quotes
-  "Strip quotes from a cookie value."
-  [value]
-  (str/replace value #"^\"|\"$" ""))
+(defn ^:yada/interceptor consume-cookies [ctx]
+  (let [request-cookies
+        (parse-cookies (get-in ctx [:request :headers "cookie"]))
 
-(defn- decode-values [cookies]
-  (for [[name value] cookies]
-    (when-let [value (strip-quotes value)]
-      [name value])))
+        process-cookies
+        (fn [ctx resource-cookies]
+          (reduce-kv
+           (fn [ctx k resource-cookie]
+             (let [n (:name resource-cookie)
+                   v (get request-cookies n)
+                   consumer (:consumer resource-cookie)
+                   pxy (fn [ctx cookie v]
+                         (let [res (consumer ctx cookie v)]
+                           (interpret-cookie-consumer-result res ctx)))]
+               (cond-> ctx consumer (pxy resource-cookie v))))
+           ctx
+           resource-cookies))]
 
-(defn parse-cookies
-  "Parse the cookies from a request map."
-  [request]
-  (when-let [cookie (get-in request [:headers "cookie"])]
-    (->> cookie
-         parse-cookie-header
-         ((fn [c] (decode-values c)))
-         (remove nil?)
-         (into {}))))
+    (let [resource-cookies (resource-cookies ctx)]
+      (cond-> ctx
+        request-cookies (assoc :cookies request-cookies)
+        resource-cookies (process-cookies resource-cookies)
+        ))))
