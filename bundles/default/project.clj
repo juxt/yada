@@ -17,7 +17,7 @@
                  [yada/jwt ~VERSION]
                  [yada/multipart ~VERSION]
                  [yada/oauth2 ~VERSION]
-                 [yada/swagger ~VERSION]
+                 [yada/swagger ~VERSION :exclusions [clj-time]]
                  [yada/transit ~VERSION]
                  [yada/webjars ~VERSION]]
 
