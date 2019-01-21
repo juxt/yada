@@ -23,7 +23,7 @@ The user-manual is also available as an e-book or PDF, at
 Add the following dependency to your `project.clj` or `build.boot` file:
 
 ```
-[yada "1.3.0-alpha2"]
+[yada "1.2.15"]
 ```
 
 [![Build Status](https://travis-ci.org/juxt/yada.svg?branch=master)](https://travis-ci.org/juxt/yada.svg?branch=master)
@@ -78,7 +78,7 @@ To use the lean (or any other) variant of yada, specify the
 appropriate classifier in your `project.clj` or `build.boot` file:
 
 ```clojure
-[yada/lean "1.3.0-alpha2"]
+[yada/lean "1.2.15"]
 ```
 
 ## Running documentation and examples offline

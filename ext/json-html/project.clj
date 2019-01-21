@@ -1,6 +1,6 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
-(def VERSION "1.3.0-alpha2")
+(def VERSION "1.3.0-alpha3")
 
 (defproject yada/json-html VERSION
   :description "HTML rendering of JSON"
