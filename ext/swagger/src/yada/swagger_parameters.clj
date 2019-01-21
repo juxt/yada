@@ -102,7 +102,7 @@
       (or (:form schemas) (:body schemas))
       (let [fields (codec/form-decode
                     body-string
-                    (req/character-encoding (:request ctx)))
+                    (or (req/character-encoding (:request ctx)) "UTF-8"))
 
             coercer (sc/coercer
                      (or (:form schemas) (:body schemas))
