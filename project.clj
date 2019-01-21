@@ -42,7 +42,7 @@
      [org.slf4j/log4j-over-slf4j "1.7.22"]
 
      ;; Testing
-     [ring/ring-mock "0.3.0"]
+     [ring/ring-mock "0.3.2"]
      [juxt/iota "0.2.3"]
 
      ;; webjars testing needs this in the path
