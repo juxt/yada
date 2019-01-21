@@ -21,8 +21,8 @@
    [manifold "0.1.7-alpha5"]
    [org.clojure/data.codec "0.1.0"]
    [org.clojure/tools.reader "1.0.0-beta4"]
-   [potemkin "0.4.4"]
-   [prismatic/schema "1.1.7"]
+   [potemkin "0.4.5"]
+   [prismatic/schema "1.1.9"]
    [ring/ring-core "1.7.1"]]
 
   ;;:global-vars {*warn-on-reflection* true}
@@ -54,7 +54,7 @@
      [org.clojure/core.async "0.3.442"]
      [cheshire "5.8.0" :exclusions [com.fasterxml.jackson.core/jackson-core]]
      [json-html "0.4.0" :exclusions [hiccups]]
-     [buddy/buddy-sign "2.2.0"]
+     [buddy/buddy-sign "3.0.0"]
      [commons-codec "1.11"]
      [metosin/ring-swagger "0.26.0" :exclusions [org.clojure/clojure]]
      [org.webjars/swagger-ui "2.2.6"]

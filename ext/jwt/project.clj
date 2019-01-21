@@ -8,4 +8,4 @@
             :url "https://opensource.org/licenses/MIT"}
   :pedantic? :abort
   :dependencies [[yada/core ~VERSION]
-                 [buddy/buddy-sign "2.2.0"]])
+                 [buddy/buddy-sign "3.0.0"]])

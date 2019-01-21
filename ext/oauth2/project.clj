@@ -11,4 +11,4 @@
   :dependencies [[yada/core ~VERSION]
                  [yada/jwt ~VERSION]
                  [yada/json ~VERSION]
-                 [commons-codec "1.10"]])
+                 [commons-codec "1.11"]])
