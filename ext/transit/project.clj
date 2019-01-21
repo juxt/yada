@@ -8,4 +8,5 @@
             :url "https://opensource.org/licenses/MIT"}
   :pedantic? :abort
   :dependencies [[yada/core ~VERSION]
-                 [com.cognitect/transit-clj "0.8.297"]])
+                 [com.cognitect/transit-clj "0.8.313"]
+                 [com.cognitect/transit-java "0.8.337" :exclusions [commons-codec]]])
