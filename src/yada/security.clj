@@ -106,13 +106,13 @@
     context, where necessary, while allowing others to return
     nil (indicating authentication failure) "))
 
-(defn assoc-credentials
+(defn assoc-authentication
   "Associate the given credentials with the request context. Custom
   authenticator functions that wish to return the ctx explicitly,
   should call this function to associate credentials that they have
   established."
   [ctx creds]
-  (assoc ctx :credentials creds))
+  (assoc ctx :authentication creds))
 
 (defn assoc-auth-scheme
   "When an authentication has established credentials, it is useful that
@@ -142,7 +142,7 @@
   (interpret-authenticate-result [creds ctx auth-scheme]
     (-> ctx
         (assoc-auth-scheme auth-scheme)
-        (assoc-credentials creds))))
+        (assoc-authentication creds))))
 
 (defn authenticate [ctx]
   (when-not-cors-preflight ctx
@@ -206,7 +206,7 @@
                      (cond-> ctx
                        ;; If there are no credentials as a result
                        ;; then add the challenges
-                       (nil? (:credentials ctx)) add-challenges)))))
+                       (nil? (:authentication ctx)) add-challenges)))))
 
               ;; No auth-scheme found.
               (do
@@ -321,13 +321,13 @@
         ;; New branch
         (let [f (or (:authorize authorization) default-authorize)]
           (d/chain
-           (f ctx (:credentials ctx) authorization)
+           (f ctx (:authentication ctx) authorization)
            (fn [res]
              (interpret-authorize-result res ctx))
            (fn [ctx]
              (if (:authorization ctx)
                ctx
-               (if (:credentials ctx)
+               (if (:authentication ctx)
                  (throw
                   (ex-info "Forbidden"
                            {:status 403 ; or 404 to keep the resource hidden

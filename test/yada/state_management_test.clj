@@ -21,14 +21,14 @@
              :http-only true
              :consumer (fn [ctx cookie value]
                          (when (= value "31d4d96e407aad42")
-                           (assoc ctx :credentials {:user "Alice"})))
+                           (assoc ctx :authentication {:user "Alice"})))
              :privacy/privacy #:privacy{:category "functional"}}}
 
            :methods
            {:get
             {:produces "application/edn"
              :response (fn [ctx]
-                         (-> ctx :credentials))}}})
+                         (-> ctx :authentication))}}})
 
          :get "/" {:headers {"cookie" "SID=31d4d96e407aad42"}})
 
@@ -47,14 +47,14 @@
              :http-only true
              :consumer (fn [ctx cookie value]
                          (when (= value "31d4d96e407aad42")
-                           (assoc ctx :credentials {:user "Alice"})))
+                           (assoc ctx :authentication {:user "Alice"})))
              :privacy/privacy #:privacy{:category "functional"}}}
 
            :methods
            {:get
             {:produces "application/edn"
              :response (fn [ctx]
-                         (-> ctx :credentials))}}})
+                         (-> ctx :authentication))}}})
 
          :get "/" {:headers {"cookie" "SID=31d4d96e407aad42"}})]
     (is (pr-str {:user "Alice"}) (= (:body response)))))

@@ -12,7 +12,7 @@
 (deftest basic-auth-test
   (let [resource
         {:methods {:get {:produces {:media-type "application/edn"}
-                         :response (fn [ctx] (select-keys ctx [:credentials]))}}}]
+                         :response (fn [ctx] (select-keys ctx [:authentication]))}}}]
 
     (let [resource
           (assoc

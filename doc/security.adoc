@@ -171,7 +171,7 @@ include::../dev/src/yada/dev/examples.clj[tag=basic]
 <1> The resource contains an`:authentication` entry
 <2> The scheme is set to `Basic`
 <3> Any non-blank user is considered a success. Real-world cases would most likely check the password too.
-<4> A value is returned that will be bound as the context's `:credentials` entry.
+<4> A value is returned that will be bound as the context's `:authentication` entry.
 <5> Optionally, a realm value can be specified. The support for, and semantics of a realm value depends on the authentication scheme.
 <6> The response to a GET request prints a string containing the user field.
 ====
@@ -188,9 +188,9 @@ The `:authenticate` function takes 3 arguments:
 
 The `:authenticate` function MUST return one of the following:
 
-* A truthy value, indicating successful authentication, which will be bound to the [yada]#yada# context as the `:credentials` entry.
-* Nil, indicating authentication has not be satisfied, for example, due to a bad password or illegal submission. No `:credentials` entry is bound to the [yada]#yada# context.
-* The [yada]#yada# context, augmented as appropriate with a `:credentials` entry.
+* A truthy value, indicating successful authentication, which will be bound to the [yada]#yada# context as the `:authentication` entry.
+* Nil, indicating authentication has not be satisfied, for example, due to a bad password or illegal submission. No `:authentication` entry is bound to the [yada]#yada# context.
+* The [yada]#yada# context, augmented as appropriate with a `:authentication` entry.
 * Partial credentials, with a new authentication scheme to try (TBD)
 
 Return values from the `:authenticate` function MAY be
@@ -241,7 +241,7 @@ Authorization can be declared on a resource using an `:authorization` entry:
 ----
 {
   :authorization
-  {:authorize (fn [ctx creds _]
+  {:authorize (fn [ctx authentication _]
                 …)
    :custom/data 123}
 }
@@ -252,7 +252,7 @@ Authorization can be declared on a resource using an `:authorization` entry:
 The `:authorize` function takes 3 arguments:
 
 * the [yada]#yada# context.
-* the `:credentials` entry of the [yada]#yada# context -- this can be established by an `:authenticate` function or other means.
+* the `:authentication` entry of the [yada]#yada# context -- this can be established by an `:authenticate` function or other means.
 * the authorization entry, which might contain extra declared data on a per-resource basis which may be used in determining the authorization.
 
 The `:authorize` function MUST return one of the following:
