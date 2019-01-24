@@ -8,7 +8,7 @@ Other dependencies can be added
 ## Install
 
 ```clojure
-[yada/lean "1.2.0"]
+[yada/lean "1.2.15"]
 ```
 
 ## Testing

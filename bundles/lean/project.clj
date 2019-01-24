@@ -1,6 +1,6 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
-(def VERSION "1.3.0-alpha6")
+(def VERSION "1.3.0-alpha7-SNAPSHOT")
 
 (defproject yada/lean VERSION
   :description "A stripped-down batteries-not-included bundle of yada"
