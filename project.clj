@@ -50,7 +50,7 @@
 
      ;; ext dependencies
      [bidi "2.1.3"]
-     [aleph "0.4.4" :exclusions [io.aleph/dirigiste]]
+     [aleph "0.4.6" :exclusions [io.aleph/dirigiste]]
      [org.clojure/core.async "0.3.442"]
      [cheshire "5.8.0" :exclusions [com.fasterxml.jackson.core/jackson-core]]
      [json-html "0.4.0" :exclusions [hiccups]]
