@@ -18,7 +18,6 @@
              {:produces "text/plain"
               :response
               (fn [ctx]
-                ;; TODO: Do redirect like this too!
                 (-> ctx
                     (yada/new-cookie :session 123)
                     (yada/new-cookie :tracker "xyz")))}}})]
