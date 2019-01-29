@@ -15,10 +15,10 @@
   ;;:pedantic? :abort
 
   :dependencies
-  [[byte-streams "0.2.4-alpha4"]
+  [[byte-streams "0.2.4"]
    ;;[clj-time "0.14.2"]
    [hiccup "1.0.5"]
-   [manifold "0.1.7-alpha5"]
+   [manifold "0.1.8"]
    [org.clojure/data.codec "0.1.0"]
    [org.clojure/tools.reader "1.0.0-beta4"]
    [potemkin "0.4.5"]
@@ -34,7 +34,7 @@
     [[org.clojure/clojure "1.9.0"]
 
      ;; Logging
-     [org.clojure/tools.logging "0.3.1"]
+     [org.clojure/tools.logging "0.4.1"]
      [ch.qos.logback/logback-classic "1.1.8"
       :exclusions [org.slf4j/slf4j-api]]
      [org.slf4j/jul-to-slf4j "1.7.22"]
@@ -50,7 +50,8 @@
 
      ;; ext dependencies
      [bidi "2.1.3"]
-     [aleph "0.4.6" :exclusions [io.aleph/dirigiste]]
+     [aleph "0.4.6"]
+
      [org.clojure/core.async "0.3.442"]
      [cheshire "5.8.0" :exclusions [com.fasterxml.jackson.core/jackson-core]]
      [json-html "0.4.0" :exclusions [hiccups]]
@@ -111,7 +112,6 @@
       [camel-snake-kebab "0.4.0"]
       [org.asciidoctor/asciidoctorj "1.6.0-alpha.6"]
       [org.asciidoctor/asciidoctorj-diagram "1.5.11"]
-      [org.jruby/jruby "1.7.26" :exclusions [org.clojure/clojure com.github.jnr/jnr-x86asm com.github.jnr/jffi]]
       [net.sourceforge.plantuml/plantuml "1.2018.13"]
 
       ;; Performance testing
