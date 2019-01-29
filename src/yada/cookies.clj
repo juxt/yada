@@ -134,12 +134,15 @@
           (reduce-kv
            (fn [ctx k resource-cookie]
              (let [n (:name resource-cookie)
-                   v (get request-cookies n)
-                   consumer (:consumer resource-cookie)
-                   pxy (fn [ctx cookie v]
-                         (let [res (consumer ctx cookie v)]
-                           (interpret-cookie-consumer-result res ctx)))]
-               (cond-> ctx consumer (pxy resource-cookie v))))
+                   cookie-val (get request-cookies n)]
+               (if cookie-val
+                 (let [consumer (:consumer resource-cookie)
+                       pxy (fn [ctx cookie cookie-val]
+                             (let [res (consumer ctx cookie cookie-val)]
+                               (interpret-cookie-consumer-result res ctx)))]
+                   (cond-> ctx consumer (pxy resource-cookie cookie-val)))
+                 ;; No cookie-val, return ctx unchanged
+                 ctx)))
            ctx
            resource-cookies))]
 
