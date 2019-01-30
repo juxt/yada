@@ -20,11 +20,18 @@ The user-manual is also available as an e-book or PDF, at
 
 ## Installation
 
-Add the following dependency to your `project.clj` or `build.boot` file:
+For the latest stable release, add the following dependency to your `project.clj` or `build.boot` file:
 
 ```
 [yada "1.2.15"]
 ```
+
+For the latest alpha release, add the following dependency to your `project.clj` or `build.boot` file:
+
+```
+[yada "1.3.0-alpha7"]
+```
+
 
 [![Build Status](https://travis-ci.org/juxt/yada.svg?branch=master)](https://travis-ci.org/juxt/yada.svg?branch=master)
 
