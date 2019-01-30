@@ -28,7 +28,7 @@ The following code declares a cookie:
 
 === Setting cookies
 
-Once you have declared a cookie in your resource, you can set the cookie to a new value by using the `new-cookie` function.
+Once you have declared a cookie in your resource, you can set the cookie to a new value by using the `set-cookie` function.
 
 
 .Setting a cookie
@@ -50,12 +50,12 @@ The following code has a `:get` method that returns a response that contains a `
   {:get
     {:response
       (fn [ctx]
-         (yada/new-cookie ctx :session ; <2>
+         (yada/set-cookie ctx :session ; <2>
          "123" ; <3>
          ))}}}
 ----
 <1> A cookie is declared called `:session`. Here, it has a name of `session` which is how it will be named in the user-agent.
-<2> The `new-cookie` function is called. It takes the [yada]#yada# `ctx` and returns a modified `ctx` with the `:session` cookie set on the response. It is legal to return a `ctx` as the return value of a response function.
+<2> The `set-cookie` function is called. It takes the [yada]#yada# `ctx` and returns a modified `ctx` with the `:session` cookie set on the response. It is legal to return a `ctx` as the return value of a response function.
 <3> The value of the cookie is set to "123".
 ====
 

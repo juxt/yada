@@ -81,35 +81,61 @@
   (interpret-cookie-consumer-result [_ _]
     (throw (ex-info "Must return ctx" {}))))
 
-(defn new-cookie
-  "Take a cookie defined in the resource and instantiate it, ready for
-  formatting."
+;; Used to override a cookie
+(defrecord Cookie [])
+
+(defn set-cookie
+  "Take a cookie defined in the resource and set it on the response."
   [ctx id val]
 
   (if-let [cookie-def (get-in ctx [:resource :cookies id])]
     (let [nm (:name cookie-def)]
-      (update-in ctx [:response :cookies]
-              (fnil conj {})
-              [nm (s/validate
-                   SetCookie
-                   (merge
-                    {:value (str val)}
-                    (reduce-kv
-                     (fn [acc k v]
-                       (case k
-                         :expires (assoc acc :expires (v ctx))
-                         :max-age (assoc acc :max-age v)
-                         :domain (assoc acc :domain v)
-                         :path (assoc acc :path v)
-                         :secure (assoc acc :secure v)
-                         :http-only (assoc acc :http-only v)
-                         :name acc
-                         (if (namespace k) (assoc acc k v) acc)
-                         ))
-                     {}
-                     cookie-def)))]))
+      (update-in
+       ctx [:response :cookies]
+       (fnil conj {})
+       [nm (s/validate
+            SetCookie
+            (merge
+             (reduce-kv
+              (fn [acc k v]
+                (case k
+                  :expires (assoc acc :expires (v ctx))
+                  :max-age (assoc acc :max-age v)
+                  :domain (assoc acc :domain v)
+                  :path (assoc acc :path v)
+                  :secure (assoc acc :secure v)
+                  :http-only (assoc acc :http-only v)
+                  :name acc
+                  (if (namespace k) (assoc acc k v) acc)
+                  ))
+              {}
+              cookie-def)
+             (if (instance? Cookie val)
+               val
+               {:value (str val)})))]))
 
     (throw (ex-info (format "Failed to find declared cookie with id of '%s'" id) {}))))
+
+(defn unset-cookie
+  "Take a cookie defined in the resource and expire it"
+  [ctx id]
+
+  (if (string? id)
+    (update-in ctx [:response :cookies]
+               (fnil conj {})
+               [id (s/validate
+                    SetCookie
+                    {:value "" :expires 0})])
+
+    (if-let [cookie-def (get-in ctx [:resource :cookies id])]
+      (let [nm (:name cookie-def)]
+        (update-in ctx [:response :cookies]
+                   (fnil conj {})
+                   [nm (s/validate
+                        SetCookie
+                        {:value "" :expires 0})]))
+
+      (throw (ex-info (format "Failed to find declared cookie with id of '%s'" id) {})))))
 
 (defn parse-cookies [cookie-header-value]
   (->>

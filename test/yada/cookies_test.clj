@@ -19,8 +19,8 @@
               :response
               (fn [ctx]
                 (-> ctx
-                    (yada/new-cookie :session 123)
-                    (yada/new-cookie :tracker "xyz")))}}})]
+                    (yada/set-cookie :session 123)
+                    (yada/set-cookie :tracker "xyz")))}}})]
 
       (is
        (= {:status 200,

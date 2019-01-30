@@ -16,7 +16,6 @@
 
   :dependencies
   [[byte-streams "0.2.4"]
-   ;;[clj-time "0.14.2"]
    [hiccup "1.0.5"]
    [manifold "0.1.8"]
    [org.clojure/data.codec "0.1.0"]

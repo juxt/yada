@@ -1,0 +1,65 @@
+[[authorization]]
+== Authorization
+
+[.lead]
+Authorization is the act of allowing a user access to a resource.
+
+This may require knowledge about the user only (for example, in
+https://en.wikipedia.org/wiki/Role-based_access_control[Role-based
+access control]) or may (additionally) depend on properties of the
+resource identified by the HTTP request's URI (as part of an
+https://en.wikipedia.org/wiki/Attribute-based_access_control[Attribute-based
+access control] authorization scheme). In either case, we assume that
+the user has already been authenticated, and we are confident that
+their credentials are genuine.
+
+In [yada]#yada#, the resource's properties are determined prior to the
+authorization step, since it may be necessary to use these properties
+in the authorization decision.
+
+Authorization can be declared on a resource using an `:authorization` entry:
+
+[source,clojure]
+----
+{
+  :authorization
+  {:authorize (fn [ctx authentication _]
+                …)
+   :custom/data 123}
+}
+----
+
+=== The `:authorize` function
+
+The `:authorize` function takes 3 arguments:
+
+* the [yada]#yada# context.
+* the `:authentication` entry of the [yada]#yada# context -- this can be established by an `:authenticate` function or other means.
+* the authorization entry, which might contain extra declared data on a per-resource basis which may be used in determining the authorization.
+
+The `:authorize` function MUST return one of the following:
+
+* A truthy value, indicating successful authorization, which will be bound to the [yada]#yada# context as the `:authorization` entry.
+* Nil, indicating access will not be granted to the resource. No `:authorization` entry is bound to the [yada]#yada# context.
+* The [yada]#yada# context, augmented as appropriate with a `:authorization` entry.
+
+=== Default authorization
+
+If no `:authorize` function is specified then, by default, the following rules are applied:
+
+* If there are no authentication schemes declared on the resource, access is granted.
+* If there is at least one authentication scheme, and no credentials have been supplied, then access is denied.
+
+=== Shorthand
+
+If no extra data beyond the `:authorize` function needs to be declared, then as a shorthand, the `:authorize` function can be specifed at the top-level:
+
+[source,clojure]
+----
+{
+  :authorize (fn [ctx creds] …)
+}
+----
+
+Since there is no extra authorization data in this case, the function
+only takes two arguments, since the third argument is not needed.

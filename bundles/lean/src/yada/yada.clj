@@ -28,7 +28,7 @@
 (import-vars
  [yada.aleph listener server]
  [yada.context content-type charset language uri-info url-for path-for href-for scheme-for]
- [yada.cookies new-cookie]
+ [yada.cookies set-cookie unset-cookie]
  [yada.handler handler yada interceptor-chain error-interceptor-chain]
  [yada.redirect redirect]
  [yada.resource resource as-resource]

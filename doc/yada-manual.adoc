@@ -34,6 +34,10 @@ include::responses.adoc[]
 
 include::cookies.adoc[]
 
+include::authentication.adoc[]
+
+include::authorization.adoc[]
+
 include::security.adoc[]
 
 include::routing.adoc[]
