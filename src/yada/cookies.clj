@@ -9,7 +9,8 @@
    [clojure.string :as str]
    [schema.coerce :as sc]
    [schema.core :as s]
-   [yada.syntax :as syn])
+   [yada.syntax :as syn]
+   yada.context)
   (:import
    (yada.context Context)))
 
