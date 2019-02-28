@@ -52,7 +52,7 @@
                (format "; %s=%s" (set-cookie-attrs k)
                        (cond (inst? v) (tf/unparse (tf/formatters :rfc822) (time/to-date-time v))
                              (string? v) v
-                             (instance? java.time.Duration) (tf/unparse (tf/formatters :rfc822) (time/from-date (java.util.Date/from (.plus (java.time.Instant/now) v))))
+                             (instance? java.time.Duration v) (tf/unparse (tf/formatters :rfc822) (time/from-date (java.util.Date/from (.plus (java.time.Instant/now) v))))
                              :else (str v)))
 
                (format "; %s=%s" (set-cookie-attrs k) v))))))
