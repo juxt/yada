@@ -1,6 +1,6 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
-(def VERSION "1.3.0-alpha7")
+(def VERSION "1.3.0-alpha8-SNAPSHOT")
 
 (defproject yada/multipart VERSION
   :description "Multipart support"
