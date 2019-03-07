@@ -29,4 +29,15 @@
           response (:response (create-response ctx))]
       (is (=
            ["foo=bar; Path=/abc; SameSite=lax"]
-           (get-in response [:headers "set-cookie"]))))))
+           (get-in response [:headers "set-cookie"])))))
+  (testing "that cookies with nil cause an exception"
+    (let [ctx {:response
+               {:cookies {"bar" "baz"
+                          "lol" nil}}}
+          ex  (try
+                (:response (create-response ctx))
+                (catch Exception ex
+                  ex))]
+      (is (=
+           (:type (ex-data ex))
+           :coercion)))))
