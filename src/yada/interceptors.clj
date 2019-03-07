@@ -390,7 +390,9 @@
                    (when-let [cookies (get-in ctx [:response :cookies])]
                      (let [cookies (cookies/cookies-coercer cookies)]
                        (if (error? cookies)
-                         (warnf "Error coercing cookies: %s" (:error cookies))
+                         (throw (ex-info "Error coercing cookies"
+                                         {:type :coercion
+                                          :error cookies}))
                          (let [set-cookies (cookies/encode-cookies cookies)]
                            {"set-cookie" set-cookies}))))
 
