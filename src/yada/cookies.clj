@@ -18,13 +18,16 @@
 
 ;; The form a Set-Cookie should take prior to serialization
 (s/defschema SetCookie
-  {:value (s/pred #(re-matches syn/cookie-value %))
-   (s/optional-key :expires) (s/cond-pre s/Inst (s/pred #(instance? java.time.Duration %)) Rfc822String)
-   (s/optional-key :max-age) (s/cond-pre s/Str s/Int)
-   (s/optional-key :domain) (s/pred #(re-matches syn/subdomain %) "domain")
-   (s/optional-key :path) (s/pred #(re-matches syn/path %))
-   (s/optional-key :secure) s/Bool
-   (s/optional-key :http-only) s/Bool
+  {:value                              (s/pred #(re-matches syn/cookie-value %))
+   (s/optional-key :expires)           (s/cond-pre s/Inst (s/pred #(instance? java.time.Duration %)) Rfc822String)
+   (s/optional-key :max-age)           (s/cond-pre s/Str s/Int)
+   (s/optional-key :domain)            (s/pred #(re-matches syn/subdomain %) "domain")
+   (s/optional-key :path)              (s/pred #(re-matches syn/path %))
+   (s/optional-key :secure)            s/Bool
+   (s/optional-key :http-only)         s/Bool
+   ;; technically this could also support a boolean which would default
+   ;; to :strict, but let's be explicit about it
+   (s/optional-key :same-site)         (s/enum :strict :lax)
    (s/constrained s/Keyword namespace) s/Any})
 
 (s/defschema Cookies
@@ -37,12 +40,13 @@
   (sc/coercer Cookies CookieMappings))
 
 (def set-cookie-attrs
-  {:domain "Domain", :max-age "Max-Age", :path "Path"
-   :secure "Secure", :expires "Expires", :http-only "HttpOnly"})
+  {:domain    "Domain", :max-age "Max-Age", :path      "Path"
+   :secure    "Secure", :expires "Expires", :http-only "HttpOnly"
+   :same-site "SameSite"})
 
 (defn encode-attributes [cv]
   (apply str
-         (for [k [:expires :max-age :path :domain :secure :http-only]]
+         (for [k [:domain :expires :http-only :max-age :path :same-site :secure]]
            (when-let [v (get cv k)]
              (case k
                (:secure :http-only)
@@ -55,7 +59,7 @@
                              (instance? java.time.Duration v) (tf/unparse (tf/formatters :rfc822) (time/from-date (java.util.Date/from (.plus (java.time.Instant/now) v))))
                              :else (str v)))
 
-               (format "; %s=%s" (set-cookie-attrs k) v))))))
+               (format "; %s=%s" (set-cookie-attrs k) (name v)))))))
 
 (defn encode-cookie
   [[k v]]

@@ -39,12 +39,13 @@ The following code has a `:get` method that returns a response that contains a `
 ----
 {:cookies
   {:session ; <1>
-    {:name "session"
-     :max-age 3600
-     :domain "example.com"
-     :path "/"
-     :secure true
-     :http-only true}}
+    {:name      "session"
+     :max-age   3600
+     :domain    "example.com"
+     :path      "/"
+     :secure    true
+     :http-only true
+     :same-site :lax}}
 
  :methods
   {:get

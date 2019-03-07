@@ -19,5 +19,14 @@
                                  :http-only true}}}}
           response (:response (create-response ctx))]
       (is (=
-           ["foo=bar; Path=/abc; HttpOnly"]
+           ["foo=bar; HttpOnly; Path=/abc"]
+           (get-in response [:headers "set-cookie"])))))
+  (testing "that same-site cookie attribute works"
+    (let [ctx {:response
+               {:cookies {"foo" {:value "bar"
+                                 :path "/abc"
+                                 :same-site :lax}}}}
+          response (:response (create-response ctx))]
+      (is (=
+           ["foo=bar; Path=/abc; SameSite=lax"]
            (get-in response [:headers "set-cookie"]))))))
