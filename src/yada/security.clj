@@ -7,6 +7,7 @@
    [clojure.tools.logging :refer :all]
    [yada.authorization :as authorization]
    [yada.syntax :as syn]
+   yada.context
    [clojure.tools.logging :as log]
    [manifold.deferred :as d])
   (:import
