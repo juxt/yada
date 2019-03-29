@@ -8,7 +8,9 @@
    [yada.charset :as charset]
    [yada.context :refer [content-type]]
    [yada.schema :as ys]
-   [yada.util :refer [arity]])
+   [yada.util :refer [arity]]
+   [yada.media-type]
+   [manifold.stream.core])
   (:import java.util.Date
            yada.charset.CharsetMap
            yada.media_type.MediaTypeMap
