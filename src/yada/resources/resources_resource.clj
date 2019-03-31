@@ -11,13 +11,16 @@
   [root-path]
   (letfn [(last-modified [^java.net.URL res]
             (with-open [conn (.openConnection res)]
-              (.getLastModified conn)))]
+              (let [lm (.getLastModified conn)]
+                (when-not (zero? lm) lm))))]
     (resource
      {:path-info? true
       :properties
       (fn [ctx]
-        (if-let [res (io/resource (str root-path (-> ctx :request :path-info)))]
-          {:last-modified (last-modified res)}
+        (if-let [lm (some-> (io/resource (str root-path
+                                              (-> ctx :request :path-info)))
+                            (last-modified))]
+          {:last-modified lm}
           {}))
       :methods
       {:get
