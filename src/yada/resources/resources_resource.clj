@@ -9,18 +9,15 @@
 
 (defn new-resources-resource
   [root-path]
-  (letfn [(file-of-resource [^java.net.URL res]
-            (case (.getProtocol res)
-              "jar" (let [^java.net.JarURLConnection conn (.openConnection res)
-                          jar-file-url ^java.net.URL (.getJarFileURL conn)]
-                      (.getFile jar-file-url))
-              "file" (.getFile res)))]
+  (letfn [(last-modified [^java.net.URL res]
+            (with-open [conn (.openConnection res)]
+              (.getLastModified conn)))]
     (resource
      {:path-info? true
       :properties
       (fn [ctx]
         (if-let [res (io/resource (str root-path (-> ctx :request :path-info)))]
-          {:last-modified (some-> res file-of-resource io/file (.lastModified))}
+          {:last-modified (last-modified res)}
           {}))
       :methods
       {:get
