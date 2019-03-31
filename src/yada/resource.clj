@@ -5,6 +5,7 @@
    [hiccup.core :refer [html]]
    [schema.core :as s]
    [schema.utils :as su]
+   [manifold.stream]
    [yada.charset :as charset]
    [yada.context :refer [content-type]]
    [yada.schema :as ys]
