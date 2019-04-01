@@ -10,9 +10,8 @@
 (defn new-resources-resource
   [root-path]
   (letfn [(last-modified [^java.net.URL res]
-            (with-open [conn (.openConnection res)]
-              (let [lm (.getLastModified conn)]
-                (when-not (zero? lm) lm))))]
+            (let [lm (.getLastModified (.openConnection res))]
+              (when-not (zero? lm) lm)))]
     (resource
      {:path-info? true
       :properties
