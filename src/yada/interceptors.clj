@@ -104,7 +104,7 @@
       (try
         (Long/parseLong len)
         (catch Exception e
-          (throw (ex-info "Malformed Content-Length" {:value len})))))))
+          (throw (ex-info "Malformed Content-Length" {:value len} e)))))))
 
 (defn get-properties
   [ctx]

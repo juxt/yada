@@ -191,9 +191,11 @@
          (fn [e]
            (if (:status (ex-data e))
              (throw e)
-             (throw (ex-info "Error on GET" {:response (:response ctx)
-                                             :resource (type (:resource ctx))
-                                             :error e}))))))))
+             (throw (ex-info "Error on GET"
+                             {:response (:response ctx)
+                              :resource (type (:resource ctx))
+                              :error e}
+                             e))))))))
 
 ;; --------------------------------------------------------------------------------
 
