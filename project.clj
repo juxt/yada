@@ -15,9 +15,9 @@
   ;;:pedantic? :abort
 
   :dependencies
-  [[byte-streams "0.2.4"]
+  [[byte-streams "0.2.5-alpha2"]
    [hiccup "1.0.5"]
-   [manifold "0.1.8"]
+   [manifold "0.1.9-alpha3"]
    [org.clojure/data.codec "0.1.0"]
    [org.clojure/tools.reader "1.0.0-beta4"]
    [potemkin "0.4.5"]
@@ -49,7 +49,7 @@
 
      ;; ext dependencies
      [bidi "2.1.3"]
-     [aleph "0.4.6"]
+     [aleph "0.4.7-alpha5"]
 
      [org.clojure/core.async "0.3.442"]
      [cheshire "5.8.0" :exclusions [com.fasterxml.jackson.core/jackson-core]]
