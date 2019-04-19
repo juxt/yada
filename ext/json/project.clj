@@ -1,6 +1,6 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
-(def VERSION "1.3.0-alpha8-SNAPSHOT")
+(def VERSION "1.3.0-alpha9")
 
 (defproject yada/json VERSION
   :description "Support for application/json media types"
