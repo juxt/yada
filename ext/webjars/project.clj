@@ -1,6 +1,6 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
-(def VERSION "1.3.0-alpha9")
+(def VERSION "1.3.0-alpha10-SNAPSHOT")
 
 (defproject yada/webjars VERSION
   :description "Support for webjars"
