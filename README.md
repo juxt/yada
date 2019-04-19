@@ -29,7 +29,7 @@ For the latest stable release, add the following dependency to your `project.clj
 For the latest alpha release, add the following dependency to your `project.clj` or `build.boot` file:
 
 ```
-[yada "1.3.0-alpha7"]
+[yada "1.3.0-alpha9"]
 ```
 
 
