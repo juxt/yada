@@ -18,16 +18,16 @@
 
 ;; The form a Set-Cookie should take prior to serialization
 (s/defschema SetCookie
-  {:value                              (s/pred #(re-matches syn/cookie-value %))
-   (s/optional-key :expires)           (s/cond-pre s/Inst (s/pred #(instance? java.time.Duration %)) Rfc822String)
-   (s/optional-key :max-age)           (s/cond-pre s/Str s/Int)
-   (s/optional-key :domain)            (s/pred #(re-matches syn/subdomain %) "domain")
-   (s/optional-key :path)              (s/pred #(re-matches syn/path %))
-   (s/optional-key :secure)            s/Bool
-   (s/optional-key :http-only)         s/Bool
+  {:value (s/pred #(re-matches syn/cookie-value %))
+   (s/optional-key :expires) (s/cond-pre s/Inst (s/pred #(instance? java.time.Duration %)) Rfc822String)
+   (s/optional-key :max-age) (s/cond-pre s/Str s/Int)
+   (s/optional-key :domain) (s/pred #(re-matches syn/subdomain %) "domain")
+   (s/optional-key :path) (s/pred #(re-matches syn/path %))
+   (s/optional-key :secure) s/Bool
+   (s/optional-key :http-only) s/Bool
    ;; technically this could also support a boolean which would default
    ;; to :strict, but let's be explicit about it
-   (s/optional-key :same-site)         (s/enum :strict :lax)
+   (s/optional-key :same-site) (s/enum :strict :lax)
    (s/constrained s/Keyword namespace) s/Any})
 
 (s/defschema Cookies
@@ -40,8 +40,12 @@
   (sc/coercer Cookies CookieMappings))
 
 (def set-cookie-attrs
-  {:domain    "Domain", :max-age "Max-Age", :path      "Path"
-   :secure    "Secure", :expires "Expires", :http-only "HttpOnly"
+  {:domain "Domain"
+   :max-age "Max-Age"
+   :path "Path"
+   :secure "Secure"
+   :expires "Expires"
+   :http-only "HttpOnly"
    :same-site "SameSite"})
 
 (defn encode-attributes [cv]
@@ -111,8 +115,7 @@
                   :secure (assoc acc :secure v)
                   :http-only (assoc acc :http-only v)
                   :name acc
-                  (if (namespace k) (assoc acc k v) acc)
-                  ))
+                  (if (namespace k) (assoc acc k v) acc)))
               {}
               cookie-def)
              (if (instance? Cookie val)
@@ -180,5 +183,4 @@
     (let [resource-cookies (resource-cookies ctx)]
       (cond-> ctx
         request-cookies (assoc :cookies request-cookies)
-        resource-cookies (process-cookies resource-cookies)
-        ))))
+        resource-cookies (process-cookies resource-cookies)))))
