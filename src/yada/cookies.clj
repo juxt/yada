@@ -130,7 +130,7 @@
                (fnil conj {})
                [id (s/validate
                     SetCookie
-                    {:value "" :expires 0})])
+                    {:value "" :expires (java.util.Date. 0)})])
 
     (if-let [cookie-def (get-in ctx [:resource :cookies id])]
       (let [nm (:name cookie-def)]
@@ -138,7 +138,7 @@
                    (fnil conj {})
                    [nm (s/validate
                         SetCookie
-                        {:value "" :expires 0})]))
+                        {:value "" :expires (java.util.Date. 0)})]))
 
       (throw (ex-info (format "Failed to find declared cookie with id of '%s'" id) {})))))
 
