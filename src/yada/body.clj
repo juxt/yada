@@ -11,6 +11,7 @@
    [manifold.stream :refer [->source transform]]
    [yada.charset :as charset]
    [yada.status :refer [status]]
+   [yada.suffixes :refer [fragment-media-type]]
    [yada.util :refer [CRLF]])
   (:import
    [java.io File]
@@ -183,22 +184,31 @@
 
 (defmethod render-map :default
   [m representation]
-  (throw
-   (ex-info
-    (format "No implementation for render-map for media-type: %s, representation is %s."
-            (:name (:media-type representation))
-            {:representation representation})
-    {:representation representation})))
+  (if-let [mt (some-> representation
+                      :media-type
+                      :name
+                      fragment-media-type)]
+    (render-map m (assoc-in representation [:media-type :name] mt))
+    (throw
+     (ex-info
+      (format "No implementation for render-map for media-type: %s, representation is %s."
+              (:name (:media-type representation))
+              {:representation representation})
+      {:representation representation}))))
 
 (defmethod render-seq :default
   [m representation]
-
-  (throw
-   (ex-info
-    (format "No implementation for render-seq for media-type: %s, representation is %s."
-            (:name (:media-type representation))
-            {:representation representation})
-    {:representation representation})))
+  (if-let [mt (some-> representation
+                      :media-type
+                      :name
+                      fragment-media-type)]
+    (render-seq m (assoc-in representation [:media-type :name] mt))
+    (throw
+     (ex-info
+      (format "No implementation for render-seq for media-type: %s, representation is %s."
+              (:name (:media-type representation))
+              {:representation representation})
+      {:representation representation}))))
 
 ;; Errors
 
