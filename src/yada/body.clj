@@ -181,20 +181,24 @@
 
 ;; defaults
 
-;; The error of 'No implementation for render-map for media-type: null, representation is {:representation nil}' is not acceptable in production, so as a workaround we return empty strings for the default renderer. In the future, we have different profiles for dev and prod which logic can use to balance trade-offs (fail-fast versus recover).
 (defmethod render-map :default
   [m representation]
-  (warnf "No implementation for render-map for media-type: %s, representation is %s. Rendering to an empty string."
-         (:name (:media-type representation))
-         {:representation representation})
-  "")
+  (throw
+   (ex-info
+    (format "No implementation for render-map for media-type: %s, representation is %s."
+            (:name (:media-type representation))
+            {:representation representation})
+    {:representation representation})))
 
 (defmethod render-seq :default
   [m representation]
-  (warnf "No implementation for render-seq for media-type: %s, representation is %s. Rendering to an empty string."
-         (:name (:media-type representation))
-         {:representation representation})
-  "")
+
+  (throw
+   (ex-info
+    (format "No implementation for render-seq for media-type: %s, representation is %s."
+            (:name (:media-type representation))
+            {:representation representation})
+    {:representation representation})))
 
 ;; Errors
 
