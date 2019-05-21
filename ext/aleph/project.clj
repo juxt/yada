@@ -1,6 +1,6 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
-(def VERSION "1.3.0-alpha10")
+(def VERSION "1.3.0-alpha11")
 
 (defproject yada/aleph VERSION
   :description "yada integration with Aleph (and Netty)"
