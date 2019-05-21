@@ -8,6 +8,7 @@
    [clojure.tools.logging :refer :all]
    [hiccup.core :refer [html]]
    [hiccup.page :refer [xhtml]]
+   [hiccup.util :refer [escape-html]]
    [manifold.stream :refer [->source transform]]
    [yada.charset :as charset]
    [yada.status :refer [status]]
@@ -249,7 +250,7 @@
            (.printStackTrace error pw)
            (.flush pw)
            (let [s (String. (.toByteArray baos))]
-             [:pre s])))])
+             [:pre (escape-html s)])))])
 
     [:div
      [:p.footer
