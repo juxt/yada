@@ -68,6 +68,7 @@
                                   :domain "example.com"
                                   :path "/"
                                   :secure true
+                                  :same-site :strict
                                   :http-only true}}
               :methods
               {:get
@@ -78,6 +79,6 @@
                       (yada/set-cookie :session "xyz")))}}})]
         (is
          (= {:status 200
-             :headers {"set-cookie" ["session=xyz; Domain=example.com; Expires=Thu, 01 Jan 1970 00:00:00 +0000; HttpOnly; Max-Age=3600; Path=/; Secure"]}
+             :headers {"set-cookie" ["session=xyz; Domain=example.com; Expires=Thu, 01 Jan 1970 00:00:00 +0000; HttpOnly; Max-Age=3600; Path=/; SameSite=Strict; Secure"]}
              :body nil}
             (update response :headers select-keys ["set-cookie"])))))))

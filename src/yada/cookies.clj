@@ -27,7 +27,7 @@
    (s/optional-key :http-only) s/Bool
    ;; technically this could also support a boolean which would default
    ;; to :strict, but let's be explicit about it
-   (s/optional-key :same-site) (s/enum :strict :lax)
+   (s/optional-key :same-site) (s/enum :strict :lax :none)
    (s/constrained s/Keyword namespace) s/Any})
 
 (s/defschema Cookies
@@ -62,6 +62,9 @@
                              (string? v) v
                              (instance? java.time.Duration v) (tf/unparse (tf/formatters :rfc822) (time/from-date (java.util.Date/from (.plus (java.time.Instant/now) v))))
                              :else (str v)))
+
+               :same-site
+               (format "; %s=%s" (set-cookie-attrs k) (str/capitalize (name v)))
 
                (format "; %s=%s" (set-cookie-attrs k) (if (keyword? v)
                                                         (name v)
@@ -116,6 +119,7 @@
                   :path (assoc acc :path v)
                   :secure (assoc acc :secure v)
                   :http-only (assoc acc :http-only v)
+                  :same-site (assoc acc :same-site v)
                   :name acc
                   (if (namespace k) (assoc acc k v) acc)))
               {}
