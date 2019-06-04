@@ -63,7 +63,9 @@
                              (instance? java.time.Duration v) (tf/unparse (tf/formatters :rfc822) (time/from-date (java.util.Date/from (.plus (java.time.Instant/now) v))))
                              :else (str v)))
 
-               (format "; %s=%s" (set-cookie-attrs k) (name v)))))))
+               (format "; %s=%s" (set-cookie-attrs k) (if (keyword? v)
+                                                        (name v)
+                                                        v)))))))
 
 (defn encode-cookie
   [[k v]]
