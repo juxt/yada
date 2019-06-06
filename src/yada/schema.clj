@@ -474,7 +474,7 @@ expressive short-hand descriptions."}
     (s/optional-key :path) (s/pred #(re-matches syn/path %))
     (s/optional-key :secure) s/Bool
     (s/optional-key :http-only) s/Bool
-    (s/optional-key :same-site) (s/enum :strict :lax)}
+    (s/optional-key :same-site) (s/enum :strict :lax :none)}
    CookieConsumer
    NamespacedEntries))
 
