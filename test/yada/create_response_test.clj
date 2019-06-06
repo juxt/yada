@@ -28,7 +28,7 @@
                                  :same-site :lax}}}}
           response (:response (create-response ctx))]
       (is (=
-           ["foo=bar; Path=/abc; SameSite=lax"]
+           ["foo=bar; Path=/abc; SameSite=Lax"]
            (get-in response [:headers "set-cookie"])))))
   (testing "that cookies with nil cause an exception"
     (let [ctx {:response
