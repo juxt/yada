@@ -1,6 +1,7 @@
 (ns yada.cookies-test
   (:require
    [yada.cookies :as cookies]
+   [yada.test-util :as utils]
    [clojure.test :refer :all]
    [yada.yada :as yada])
   (:import (java.util Date)))
@@ -82,3 +83,49 @@
              :headers {"set-cookie" ["session=xyz; Domain=example.com; Expires=Thu, 01 Jan 1970 00:00:00 +0000; HttpOnly; Max-Age=3600; Path=/; SameSite=Strict; Secure"]}
              :body nil}
             (update response :headers select-keys ["set-cookie"])))))))
+
+(deftest unset-cookie-test
+  (testing "Unsetting a cookie in a consumer when authorization has failed"
+    (let [cookies {:session {:name "session"
+                             :consumer (fn [ctx cookie v]
+                                         (yada/unset-cookie ctx "session"))}}]
+      (let [response
+            (yada/response-for
+             {:cookies cookies
+              :authorization {:authorize (fn [ctx creds self]
+                                           false)}
+              :methods
+              {:get
+               {:produces "text/plain"
+                :response
+                (fn [ctx]
+                  (throw (ex-info "We should never get here" {})))}}}
+             :get
+             "/"
+             {:headers {"cookie" "session=abc"}})]
+        (is (utils/submap?
+             {:status 401
+              :headers {"set-cookie" ["session=; Expires=Thu, 01 Jan 1970 00:00:00 +0000"]}}
+             response)))))
+  (testing "Unsetting a cookie in a thrown response"
+    (let [response
+          (yada/response-for
+           {:cookies
+            {:session {:name "session"
+                       :consumer (fn [ctx cookie v]
+                                   (yada/unset-cookie ctx "session"))}}
+            :methods
+            {:get
+             {:produces "text/plain"
+              :response
+              (fn[ctx]
+                (throw
+                 (ex-info "Setting a cookie in response"
+                          ;; Note that the cookies aren't preserved if the thrown
+                          ;; ex-data doesn't include a :status.
+                          {:status 500
+                           :cookies (:cookies (:response (yada/unset-cookie ctx "session")))})))}}})]
+      (is (utils/submap?
+           {:status 500
+            :headers {"set-cookie" ["session=; Expires=Thu, 01 Jan 1970 00:00:00 +0000"]}}
+           response)))))

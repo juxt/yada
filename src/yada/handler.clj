@@ -140,6 +140,9 @@
                               (contains? data :body)
                               (assoc-in [:response :body] (:body data))
 
+                              (contains? data :cookies)
+                              (assoc-in [:response :cookies] (:cookies data))
+
                               ;; This could override [:response :body]
                               (and (not (contains? data :body)) (not (:response custom-response)))
                               (standard-error status e rep)
