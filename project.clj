@@ -1,6 +1,6 @@
 ;; Copyright © 2014-2017, JUXT LTD.
 
-(def VERSION "1.3.0-alpha12")
+(def VERSION "1.3.0-alpha13")
 
 (defproject yada/core VERSION
   :description "A powerful Clojure web library, full HTTP, full async"
