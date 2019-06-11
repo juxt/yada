@@ -14,6 +14,15 @@
 (defn to-string [s]
   (bs/convert s String))
 
+(defn submap?
+  "Is m1 a subset of m2?"
+  [m1 m2]
+  (if (and (map? m1) (map? m2))
+    (every? (fn [[k v]] (and (contains? m2 k)
+                             (submap? v (get m2 k))))
+            m1)
+    (= m1 m2)))
+
 (defmacro with-level
   "Sets the logging level for ns to level, while executing body."
   ;; See http://stackoverflow.com/questions/3837801/how-to-change-root-logging-level-programmatically
