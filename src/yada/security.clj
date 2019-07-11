@@ -7,6 +7,7 @@
    [clojure.tools.logging :refer :all]
    [yada.authorization :as authorization]
    [yada.syntax :as syn]
+   [yada.authentication :as ya]
    yada.context
    [clojure.tools.logging :as log]
    [manifold.deferred :as d])
@@ -20,7 +21,6 @@
 
 ;; Deprecated
 (defmethod verify "Basic" [ctx {:keys [verify]}]
-
   (let [auth (get-in ctx [:request :headers "authorization"])
         cred (and auth (apply str (map char (base64/decode (.getBytes ^String (last (re-find #"^Basic (.*)$" auth)))))))]
     (when cred
@@ -60,17 +60,6 @@
     (f ctx)
     (issue-challenge ctx auth-scheme)))
 
-(defmulti preprocess-authorization-header
-  "Pre-process the parsed authorization value according to the
-  auth-scheme's semantics. Return nil if anything wrong with the
-  (claimed) credentials."
-  (fn [ctx {:keys [scheme] :as auth-scheme} credentials] scheme) :default ::default)
-
-(defmethod preprocess-authorization-header ::default
-  [ctx {:keys [scheme] :as auth-scheme} credentials]
-  ;; Return the identity of credentials
-  credentials)
-
 (defn cors-preflight?
   "Is the method OPTIONS and does the resource accept requests from
   other origins? This is important because we can't block pre-flight
@@ -88,70 +77,32 @@
   (when x
     (if (fn? x) (x ctx) x)))
 
-(defn add-challenges [ctx]
-  (let [auth-schemes (get-in ctx [:resource :authentication-schemes])
-        challenges (keep
-                    (fn [auth-scheme]
-                      (issue-challenge-with-custom ctx auth-scheme))
-                    auth-schemes)]
-    (cond-> ctx
-      (not-empty challenges)
-      (update-in [:response :headers "www-authenticate"]
-                 (fnil conj [])
-                 (syn/format-challenges challenges)))))
-
-(defprotocol AuthenticateResult
-  (interpret-authenticate-result [result ctx auth-scheme]
-    "Process the result to a call to an authenticate function. This
-    assists in allowing some authenticate functions to return a
-    context, where necessary, while allowing others to return
-    nil (indicating authentication failure) "))
-
-(defn assoc-authentication
-  "Associate the given credentials with the request context. Custom
-  authenticator functions that wish to return the ctx explicitly,
-  should call this function to associate credentials that they have
-  established."
-  [ctx creds]
-  (assoc ctx :authentication creds))
-
-(defn assoc-auth-scheme
-  "When an authentication has established credentials, it is useful that
-  the authentication scheme places itself into the request context,
-  along with any parameters, for other interceptors to see."
-  [ctx auth-scheme]
-  (assoc ctx :authentication-scheme auth-scheme))
-
-(extend-protocol AuthenticateResult
-  nil
-  (interpret-authenticate-result [_ ctx auth-scheme]
-    ;; Return the original context
-    ctx)
-
-  Context
-  (interpret-authenticate-result [new-ctx ctx auth-scheme]
-    ;; The dev knows that they're doing, respect that. Assume
-    ;; credentials have already been associated with the request
-    ;; context.
-    (-> new-ctx
-        (assoc-auth-scheme auth-scheme)))
-
-  ;; TODO: Allow for an authenticate function to provide partial
-  ;; credentials and a new challenge, as per RFC 7235 section 2.1.
-
-  Object
-  (interpret-authenticate-result [creds ctx auth-scheme]
-    (-> ctx
-        (assoc-auth-scheme auth-scheme)
-        (assoc-authentication creds))))
-
 (defn authenticate [ctx]
   (when-not-cors-preflight ctx
-    (let [auth-schemes (call-fn-maybe (get-in ctx [:resource :authentication-schemes]) ctx)
+    (let [authenticators (call-fn-maybe (get-in ctx [:resource :yada.authentication/authenticators]) ctx)
+          ;; Deprecated <= 1.2
           realms (get-in ctx [:resource :access-control :realms])]
 
       (cond
-        auth-schemes
+        authenticators
+        (d/chain
+         (ya/authenticate ctx authenticators)
+         (fn [authentications]
+           (-> ctx
+               (assoc ::ya/authentications authentications)
+               ;; RFC 7235 4.1 says we "MAY generate WWW-Authenticate
+               ;; header field in other response messages to indicate
+               ;; that supplying credentials (or different
+               ;; credentials) might affect the response.
+               (assoc-in [:response :headers "www-authenticate"] (ya/challenge-str ctx authenticators)))
+           #_(cond-> ctx
+             (not-empty authenticators)
+             ;; TODO: This should be put here by authorization, not here!
+             (assoc-in [:response :headers "www-authenticate"]
+                       (ya/challenge-str ctx authenticators)))))
+
+        ;; Deprecated <= 1.3.0-alpha13
+        #_auth-schemes
 
         ;; If there's an authorization header, find the first scheme
         ;; that matches.
@@ -170,54 +121,54 @@
         ;; The above indicates that the authenticate function MAY
         ;; return a new challenge.
 
-        (if-let [authorization (get-in ctx [:request :headers "authorization"])]
+        #_(if-let [authorization (get-in ctx [:request :headers "authorization"])]
 
-          ;; Find the authentication-scheme for which this authorization refers, if any
-          (let [claimed-credentials (syn/parse-credentials authorization)]
+            ;; Find the authentication-scheme for which this authorization refers, if any
+            (let [claimed-credentials (syn/parse-credentials authorization)]
 
-            (if-let [auth-scheme
-                     (if
-                         ;; This is unexpected but we should handle it anyway
-                         (not= (::syn/type claimed-credentials) ::syn/credentials)
-                         (do
-                           ;; Log this and return nil
-                           (log/infof "Bad authorization header value received: %s" authorization)
-                           nil)
+              (if-let [auth-scheme
+                       (if
+                           ;; This is unexpected but we should handle it anyway
+                           (not= (::syn/type claimed-credentials) ::syn/credentials)
+                           (do
+                             ;; Log this and return nil
+                             (log/infof "Bad authorization header value received: %s" authorization)
+                             nil)
 
-                         (some
-                          (fn [candidate]
-                            (when (= (::syn/auth-scheme claimed-credentials) (str/lower-case (:scheme candidate)))
-                              candidate))
-                          auth-schemes))]
+                           (some
+                            (fn [candidate]
+                              (when (= (::syn/auth-scheme claimed-credentials) (str/lower-case (:scheme candidate)))
+                                candidate))
+                            auth-schemes))]
 
-              ;; Auth-scheme found. First, we allow the scheme to pre-process the credentials
-              (let [claimed-credentials (preprocess-authorization-header ctx auth-scheme claimed-credentials)
-                    ;; We call the authenticate function with 3 args:
-                    ;; ctx, credentials (pre-processed) and the
-                    ;; auth-scheme data (to provide access to any
-                    ;; extra parameters)
-                    res ((:authenticate auth-scheme) ctx claimed-credentials auth-scheme)]
+                ;; Auth-scheme found. First, we allow the scheme to pre-process the credentials
+                (let [claimed-credentials (preprocess-authorization-header ctx auth-scheme claimed-credentials)
+                      ;; We call the authenticate function with 3 args:
+                      ;; ctx, credentials (pre-processed) and the
+                      ;; auth-scheme data (to provide access to any
+                      ;; extra parameters)
+                      res ((:authenticate auth-scheme) ctx claimed-credentials auth-scheme)]
 
-                ;; Allow authenticate functions to return deferred
-                ;; values
-                (d/chain
-                 res
-                 (fn [res]
-                   (let [ctx (interpret-authenticate-result res ctx auth-scheme)]
-                     (cond-> ctx
-                       ;; If there are no credentials as a result
-                       ;; then add the challenges
-                       (nil? (:authentication ctx)) add-challenges)))))
+                  ;; Allow authenticate functions to return deferred
+                  ;; values
+                  (d/chain
+                   res
+                   (fn [res]
+                     (let [ctx (interpret-authenticate-result res ctx auth-scheme)]
+                       (cond-> ctx
+                         ;; If there are no credentials as a result
+                         ;; then add the challenges
+                         (nil? (:authentication ctx)) add-challenges)))))
 
-              ;; No auth-scheme found.
-              (do
-                (log/infof "Authorization credentials do not match any of the authentication-scheme challenges")
-                (add-challenges ctx))))
+                ;; No auth-scheme found.
+                (do
+                  (log/infof "Authorization credentials do not match any of the authentication-scheme challenges")
+                  (add-challenges ctx))))
 
-          (add-challenges ctx)
-          ;; No authorization attempted. Nothing to do here except set www-authenticate headers (challenges)
-          ;; For all schemes, ask the scheme to create a 'challenge'
-          )
+            (add-challenges ctx)
+            ;; No authorization attempted. Nothing to do here except set www-authenticate headers (challenges)
+            ;; For all schemes, ask the scheme to create a 'challenge'
+            )
 
         ;; Deprecated but included for backwards compatibility
         realms
@@ -300,8 +251,8 @@
   protected in the absence of credentials rather than requiring an
   explicit :authorize function."
   [ctx creds _]
-  (if (get-in ctx [:resource :authentication-schemes])
-    creds
+  (if (get-in ctx [:resource :yada.authentication/authenticators])
+    (not-empty creds)
     true))
 
 (defn authorize
@@ -321,13 +272,13 @@
         ;; New branch
         (let [f (or (:authorize authorization) default-authorize)]
           (d/chain
-           (f ctx (:authentication ctx) authorization)
+           (f ctx (:yada.authentication/authentications ctx) authorization)
            (fn [res]
              (interpret-authorize-result res ctx))
            (fn [ctx]
              (if (:authorization ctx)
                ctx
-               (if (:authentication ctx)
+               (if (not-empty (:yada.authentication/authentications ctx))
                  (throw
                   (ex-info "Forbidden" {:ctx ctx :status 403}))
                  (throw

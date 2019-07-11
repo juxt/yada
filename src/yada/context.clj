@@ -2,14 +2,16 @@
 
 (ns yada.context
   (:require
-   [clojure.tools.logging :refer :all]))
+   [clojure.tools.logging :refer :all]
+   [yada.syntax :as syn]))
 
 (defrecord Response [])
 
 (defrecord Context [response])
 
 (defn make-context []
-  (->Context (assoc (->Response) :headers {})))
+  (map->Context {:response (assoc (->Response) :headers {})
+                 ::cache (atom {})}))
 
 (defn exists?
   "We assume every resource exists unless it says otherwise, with an
@@ -49,3 +51,28 @@
 (def scheme-for (comp :scheme uri-info))
 (def href-for (comp :href uri-info))
 (def url-for (comp :uri uri-info))
+
+
+;; Cache functions
+
+;; The intention behind these cache functions is to make potentially
+;; expensive computations more efficient, specifically parsing request
+;; header values.. The yada context is a per-request data structure,
+;; so caching on the context does not affect other requests.
+
+(defn unless-cached-compute [ctx k f]
+  (let [cache (::cache ctx)]
+    (if-let [[_ hit] (find @cache k)]
+      hit
+      (get (swap! cache assoc k (f)) k))))
+
+(defn authorization
+  "Return a parsed authorization"
+  [ctx]
+  (unless-cached-compute
+   ctx ::authorization
+   #(syn/parse-credentials (get-in ctx [:request :headers "authorization"]))))
+
+;; It is intended that many other headers will eventually undergo more
+;; serious parsing and error checks, and therefore want to make use of
+;; this cache capability.

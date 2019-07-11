@@ -19,7 +19,6 @@
    yada.resources.string-resource
    yada.resources.url-resource
    [yada.security :as sec]
-   yada.auth-schemes.basic
    yada.test
    yada.util
    yada.wrappers
