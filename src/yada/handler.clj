@@ -29,10 +29,11 @@
 
 (defn default-error-handler [e]
   (let [data (error-data e)]
-    (when-not (and (-> data :status number?) (< (:status data) 500))
-      (when (instance? java.lang.Throwable e)
-        (errorf e "Internal Error %s" (or (some-> data :status str) "")))
-      (when data (errorf "ex-data: %s" data)))))
+    (when-not (::disable-error-logging? data)
+      (when-not (and (-> data :status number?) (< (:status data) 500))
+        (when (instance? java.lang.Throwable e)
+          (errorf e "Internal Error %s" (or (some-> data :status str) "")))
+        (when data (errorf "ex-data: %s" (dissoc data :ctx)))))))
 
 ;; Response
 

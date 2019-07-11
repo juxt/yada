@@ -124,7 +124,8 @@
                           ;; Note that the cookies aren't preserved if the thrown
                           ;; ex-data doesn't include a :status.
                           {:status 500
-                           :cookies (:cookies (:response (yada/unset-cookie ctx "session")))})))}}})]
+                           :cookies (:cookies (:response (yada/unset-cookie ctx "session")))
+                           :yada.handler/disable-error-logging? true})))}}})]
       (is (utils/submap?
            {:status 500
             :headers {"set-cookie" ["session=; Expires=Thu, 01 Jan 1970 00:00:00 +0000"]}}
