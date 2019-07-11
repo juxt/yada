@@ -18,22 +18,6 @@
 
 ;; Testing <<parameters>> examples in user-manual
 
-(let [res (resource
-       {:parameters {:path {:account Long}}
-        :methods
-        {:get {:produces "application/edn"
-               :parameters {:query {:since String}}
-               :response (fn [ctx] {:message "Parameters"
-                                    :account (ctx/path-parameter ctx :account)
-                                    :since (ctx/query-parameter ctx :since)})}
-         :post {:parameters {:body Transaction}
-                :consumes "application/edn"
-                :produces "application/edn"
-                :response (fn [ctx] {:body (:body ctx)})}}})
-      h (handler res)]
-  (edn/read-string (bs/to-string (:body @(h (assoc (mock/request :get "/accounts/1234/transactions")
-                                                   :route-params {:account "1234"}))))))
-
 (deftest parameters-test
   (let [res (resource
              {:parameters {:path {:account Long}}

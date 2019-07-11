@@ -129,7 +129,7 @@
                               )]
 
                      (apply d/chain
-                            (cond-> ctx
+                            (cond-> (or (:ctx data) ctx)
                               e (assoc :error e)
                               ;; true (merge (select-keys ctx [:id :request :method]))
                               status (assoc-in [:response :status] status)

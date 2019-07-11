@@ -39,7 +39,9 @@
 (defn known-method?
   [ctx]
   (if-not (:method-wrapper ctx)
-    (d/error-deferred (ex-info "" {:status 501 ::method (:method ctx)}))
+    (d/error-deferred (ex-info "" {:ctx ctx
+                                   :status 501
+                                   ::method (:method ctx)}))
     ctx))
 
 (defn uri-too-long?
@@ -66,7 +68,8 @@
     ctx
     (d/error-deferred
      (ex-info "Method Not Allowed"
-              {:status 405
+              {:ctx ctx
+               :status 405
                :headers {"allow"
                          (str/join ", "
                                    (map (comp (memfn ^String toUpperCase) name)
@@ -119,7 +122,8 @@
              props (assoc :properties props)
              (:produces props) (assoc-in [:response :vary] (rep/vary (:produces props))))
            (d/error-deferred
-            (ex-info "Properties malformed" {:status 500
+            (ex-info "Properties malformed" {:ctx ctx
+                                             :status 500
                                              :error (:error props)}))))))))
 
 (defn process-content-encoding
@@ -138,7 +142,8 @@
 
       (d/error-deferred
        (ex-info "Unsupported Media Type"
-                {:status 415
+                {:ctx ctx
+                 :status 415
                  :message "The used Content-Encoding is not supported"
                  :content-encoding encoding})))))
 
@@ -167,7 +172,8 @@
         (if-not (contains? consumes-mt (:name content-type))
           (d/error-deferred
            (ex-info "Unsupported Media Type"
-                    {:status 415
+                    {:ctx ctx
+                     :status 415
                      :message "Method does not declare that it consumes this content-type"
                      :consumes consumes-mt
                      :content-type content-type}))
@@ -185,7 +191,8 @@
         (if (s/check body-schema nil)
           (d/error-deferred
              (ex-info "No body present but body is expected for request."
-                      {:status 400}))
+                      {:ctx ctx
+                       :status 400}))
           ctx)
         ctx))))
 
@@ -262,7 +269,8 @@
         (if (empty? (set/intersection matches (set (vals etags))))
           (d/error-deferred
            (ex-info "Precondition failed"
-                    {:status 412}))
+                    {:ctx ctx
+                     :status 412}))
 
           ;; Otherwise, let's use the etag we've just computed. Note,
           ;; this might yet be overridden by the (unsafe) method
@@ -391,7 +399,8 @@
                      (let [cookies (cookies/cookies-coercer cookies)]
                        (if (error? cookies)
                          (throw (ex-info "Error coercing cookies"
-                                         {:type :coercion
+                                         {:ctx ctx
+                                          :type :coercion
                                           :error cookies}))
                          (let [set-cookies (cookies/encode-cookies cookies)]
                            {"set-cookie" set-cookies}))))

@@ -293,14 +293,6 @@
   (interpret-authorize-result [authorization ctx]
     (assoc ctx :authorization authorization)))
 
-(defn authorization-error-response [ctx]
-  ;; We will return a 401 or 403 normally in this response.
-  ;; We could return a 404 to keep the resource hidden.
-  ;; But we would still allow www-authenticate header in the error response        
-  (cond->
-      {:headers (select-keys (-> ctx :response :headers) ["www-authenticate"])}
-    (contains? (:response ctx) :cookies) (assoc :cookies (-> ctx :response :cookies))))
-
 (defn default-authorize
   "The default authorize succeeds if there are no authentication schemes
   declared, or if there are any credentials established. This is
@@ -337,11 +329,9 @@
                ctx
                (if (:authentication ctx)
                  (throw
-                  (ex-info "Forbidden"
-                           (assoc (authorization-error-response ctx) :status 403)))
+                  (ex-info "Forbidden" {:ctx ctx :status 403}))
                  (throw
-                  (ex-info "No authorization provided"
-                           (assoc (authorization-error-response ctx) :status 401))))))))
+                  (ex-info "No authorization provided" {:ctx ctx :status 401})))))))
 
         ;; This is the 'old' branch that is now deprecated and
         ;; sticking around to provide backwards compatibility.
@@ -355,11 +345,9 @@
                  (if (or (nil? validation) (false? validation))
                    (if credentials
                      (throw
-                      (ex-info "Forbidden"
-                               (assoc (authorization-error-response ctx) :status 403)))
+                      (ex-info "Forbidden" {:ctx ctx :status 403}))
                      (throw
-                      (ex-info "No authorization provided"
-                               (assoc (authorization-error-response ctx) :status 401))))
+                      (ex-info "No authorization provided" {:ctx ctx :status 401})))
                    validation)))
              ctx))
          ctx (get-in ctx [:resource :access-control :realms]))

@@ -117,7 +117,7 @@
         (if-not (error? params)
           (assoc-in ctx [:parameters (if (:form schemas) :form :body)] params)
           (d/error-deferred (ex-info "Bad form fields"
-                                     {:status 400 :error (error-val params)}))))
+                                     {:ctx ctx :status 400 :error (error-val params)}))))
 
       :otherwise (assoc ctx :body body-string))))
 
@@ -166,6 +166,7 @@
 
     (let [errors (filter (comp error? second) parameters)]
       (if (not-empty errors)
-        (d/error-deferred (ex-info "" {:status 400
+        (d/error-deferred (ex-info "" {:ctx ctx
+                                       :status 400
                                        :errors errors}))
         (assoc ctx :parameters (util/remove-empty-vals parameters))))))
