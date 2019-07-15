@@ -184,7 +184,7 @@
       ;; Ship any other parts we know about
       (doseq [[s e] (partition 2 1 (:positions m))]
         (s/put! (:stream m) [{:type :part
-                              :bytes (copy-bytes (:window m) s e)
+                              :bytes (copy-bytes-after-delimiter m s e)
                               :debug [:process-boundaries :in-partial :others]}]))
 
       ;; Advance to last position
