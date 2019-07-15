@@ -302,10 +302,12 @@
             [authenticator])))))))
 
 ;; Resource test
+;; TODO: Combine authentcate with authorize
+
 
 ;; Integration test
 
-#_(deftest basic-auth-test
+(deftest basic-auth-test
   (let [resource
         {:methods {:get {:produces {:media-type "application/edn"}
                          :response (fn [ctx] "OK")}}}]
@@ -313,7 +315,7 @@
     (let [resource
           (assoc
            resource
-           :yada.auth/authenticators
+           :yada.authentication/authenticators
            [(basic/http-basic-authenticator
              (fn [ctx user password attributes]
                (future
@@ -328,43 +330,35 @@
                         {:headers {"authorization"
                                    (format "Basic %s" (encode-basic-authorization-token "alice" "wonderland"))}})]
           (is (= 200 (:status response)))
-          (is (= ["Basic charset=\"UTF-8\", realm=\"WallyWorld\""]
+          (is (= "Basic charset=\"UTF-8\", realm=\"WallyWorld\""
                  (get-in response [:headers "www-authenticate"])))))
 
-      #_(testing "basic authentication challenge in response when no credentials"
+      (testing "basic authentication challenge in response when no credentials"
+        (let [response (yada/response-for resource)]
+          (is (= 401 (:status response)))
+          (is (= "Basic charset=\"UTF-8\", realm=\"WallyWorld\""
+                 (get-in response [:headers "www-authenticate"])))))
+
+      (testing "basic authentication challenge when wrong credentials"
+        (let [response (yada/response-for
+                        resource :get "/"
+                        {:headers {"authorization"
+                                   (format "BASIC %s" (encode-basic-authorization-token "alice" "pa$$w0rd"))}})]
+          (is (= 401 (:status response)))
+          (is (= "Basic charset=\"UTF-8\", realm=\"WallyWorld\""
+                 (get-in response [:headers "www-authenticate"])))))
+
+      (testing "401 challenge due to no authorization header on a protected resource"
+        (let [resource (assoc
+                        resource
+                        :authorize (fn [ctx creds] nil)
+                        )]
           (let [response (yada/response-for resource)]
-            (is (= 200 (:status response)))
-            (is (= ["Basic charset=\"UTF-8\", realm=\"WallyWorld\""]
-                   (get-in response [:headers "www-authenticate"])))))
+            (is (= 401 (:status response)))
+            (is (= "Basic charset=\"UTF-8\", realm=\"WallyWorld\""
+                   (get-in response [:headers "www-authenticate"]))))))
 
-      #_(testing "no basic authentication challenge when satisfactory credentials"
-          (let [response (yada/response-for
-                          resource :get "/"
-                          {:headers {"authorization"
-                                     (format "BASIC %s" (encode-basic-authorization-token "alice" "wonderland"))}})]
-            (is (= 200 (:status response)))
-            (is (nil? (get-in response [:headers "www-authenticate"])))))
-
-      #_(testing "basic authentication challenge when wrong credentials"
-          (let [response (yada/response-for
-                          resource :get "/"
-                          {:headers {"authorization"
-                                     (format "BASIC %s" (encode-basic-authorization-token "alice" "pa$$w0rd"))}})]
-            (is (= 200 (:status response)))
-            (is (= ["Basic charset=\"UTF-8\", realm=\"WallyWorld\""]
-                   (get-in response [:headers "www-authenticate"])))))
-
-      #_(testing "401 challenge due to no authorization header on a protected resource"
-          (let [resource (assoc
-                          resource
-                          :authorize (fn [ctx creds] nil)
-                          )]
-            (let [response (yada/response-for resource)]
-              (is (= 401 (:status response)))
-              (is (= ["Basic charset=\"UTF-8\", realm=\"WallyWorld\""]
-                     (get-in response [:headers "www-authenticate"]))))))
-
-      #_(testing "401 challenge due to bad credentials"
+      (testing "401 challenge due to bad credentials"
           (let [resource (assoc
                           resource
                           :authorize (fn [ctx creds] nil)
@@ -374,10 +368,10 @@
                             {:headers {"authorization"
                                        (format "BASIC %s" (encode-basic-authorization-token "alice" "pa$$w0rd"))}})]
               (is (= 401 (:status response)))
-              (is (= ["Basic charset=\"UTF-8\", realm=\"WallyWorld\""]
+              (is (= "Basic charset=\"UTF-8\", realm=\"WallyWorld\""
                      (get-in response [:headers "www-authenticate"]))))))
 
-      #_(testing "forbidden when good credentials"
+      (testing "forbidden when good credentials"
           (let [resource (assoc
                           resource
                           :authorize (fn [ctx creds] nil)
@@ -386,37 +380,4 @@
                             resource :get "/"
                             {:headers {"authorization"
                                        (format "BASIC %s" (encode-basic-authorization-token "alice" "wonderland"))}})]
-              (is (= 403 (:status response)))
-              (is (nil? (get-in response [:headers "www-authenticate"])))))))))
-
-#_(let [resource
-      {:methods {:get {:produces {:media-type "application/edn"}
-                       :response (fn [ctx] (select-keys ctx [:authentication]))}}
-       :authorize (fn [_ _] true)
-       :yada.auth/authenticators
-       [{:type :yada.http-auth-schemes.basic
-         :authenticate (fn [ctx user password]
-                         (future
-                           (when (= [user password] ["alice" "wonderland"])
-                             {:user "alice"})))}]}
-      #_{:scheme "Basic"
-         :realm "WallyWorld"
-         :authenticate
-         (fn [ctx [user password] _]
-           ;; Can return ctx
-           ;; nil means no creds established
-           ;; non-ctx value means add to :authentication
-           ;; TODO: test for each of these 3 possibilities.
-           (future
-             (when (= [user password] ["alice" "wonderland"])
-               {:user "alice"})))}
-
-      #_(let [response (yada/response-for resource)]
-          (is (= 200 (:status response)))
-          (is (= ["Basic charset=\"UTF-8\", realm=\"WallyWorld\""]
-                 (get-in response [:headers "www-authenticate"]))))
-
-      ]
-  (yada/response-for resource)
-
-  )
+              (is (= 403 (:status response)))))))))
