@@ -483,7 +483,7 @@
                         (InputStreamReader. % StandardCharsets/US_ASCII)
                         (BufferedReader. %)
                         (line-seq %)
-                        (map #(str/split % #":") %)
+                        (map #(str/split % #":" 1) %)
                         (map (juxt (comp str/lower-case first)
                                    (comp str/trim second)) %)
                         (into {} %))]
