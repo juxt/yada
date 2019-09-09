@@ -646,9 +646,16 @@
          ;; Content-Disposition headers.
          (let [schemas (get-in ctx [:resource :methods (:method ctx) :parameters])
                parts-by-name (reduce
-                              (fn [acc part] (cond-> acc
-                                               (= (:type part) :part)
-                                               (assoc (get-in part [:content-disposition :params "name"]) part)))
+                              (fn [acc part]
+                                (let [name (get-in part [:content-disposition :params "name"])
+                                      [_ already-occupied?] (find acc name)
+                                      result (case [(= (:type part) :part) (not (nil? already-occupied?)) (vector? already-occupied?)]
+                                               [true true true]  (update acc name conj part)
+                                               [true true false] (assoc acc name [already-occupied? part])
+                                               [true false false]  (assoc acc name part)
+                                               [false false false] acc
+                                               )]
+                                  result))
                               {} parts)]
 
            (cond->
