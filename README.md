@@ -1,6 +1,6 @@
 # yada
 
-image:https://circleci.com/gh/juxt/yada/tree/master.svg?style=svg["CircleCI", link="https://circleci.com/gh/juxt/yada/tree/master"]
+[![CircleCI](https://circleci.com/gh/juxt/yada.svg?style=svg)](https://circleci.com/gh/juxt/yada)
 
 yada is a web library for Clojure, designed to support the creation of production services via HTTP.
 
