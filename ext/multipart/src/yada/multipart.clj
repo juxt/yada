@@ -49,22 +49,36 @@
         (System/arraycopy source from b 0 len)
         b))))
 
+(def dash (byte \-))          ;; 45
+(def tab (byte \tab))         ;; 9
+(def space (byte \space))     ;; 32
+(def return (byte \return))   ;; 13
+(def newline (byte \newline)) ;; 10
+
 (defn- count-transport-padding [from to b]
-  (loop [n from]
-    (when (< n to)
-      (let [x (get b n)]
-        ;; RFC 822 Section 3.3: LWSP-char = SPACE (32) / HTAB (9)
-        (if-not (#{(byte \tab) (byte \space)} x)
-          (if (and (= (get b n) (byte \return))
-                   (= (get b (inc n)) (byte \newline)))
-            (+ (count [\return \newline]) n)
-            ;; try to trigger this via a test
-            (throw (ex-info "Malformed boundary" {:from from
-                                                  :to to
-                                                  :n n
-                                                  :c1 (char (get b n))
-                                                  :c2 (char (get b (inc n)))})))
-          (recur (inc n)))))))
+  ;; If we encounter an empty form submit, return the start of the empty boundary, which is `from`
+  ;; Empty form submit fingerprint (45 45 13 10 0)
+  (if (and
+       (= dash    (get b      from))
+       (= dash    (get b (+ 1 from)))
+       (= return  (get b (+ 2 from)))
+       (= newline (get b (+ 3 from))))
+    from
+    (loop [n from]
+      (when (< n to)
+        (let [x (get b n)]
+          ;; RFC 822 Section 3.3: LWSP-char = SPACE (32) / HTAB (9)
+          (if-not (#{tab space} x)
+            (if (and (= (get b n) return)
+                     (= (get b (inc n)) newline))
+              (+ (count [\return \newline]) n)
+              ;; try to trigger this via a test
+              (throw (ex-info "Malformed boundary" {:from from
+                                                    :to to
+                                                    :n n
+                                                    :c1 (char (get b n))
+                                                    :c2 (char (get b (inc n)))})))
+            (recur (inc n))))))))
 
 (defn- copy-bytes-after-dash-boundary [{:keys [window dash-boundary-size]} from to]
   (copy-bytes window (count-transport-padding (+ from dash-boundary-size) to window) to))
@@ -588,8 +602,7 @@
               (String. (get-bytes part) offset (- (alength (get-bytes part)) offset))))})
 
 (defn assoc-body-parameters [ctx parts-by-name schemas]
-  (let [coercion-matchers (get-in ctx [:resource :methods (:method ctx)
-                                       :coercion-matchers])
+  (let [coercion-matchers (get-in ctx [:resource :methods (:method ctx) :coercion-matchers])
         matcher (or (:form coercion-matchers) (:body coercion-matchers))
         coercer (sc/coercer
                  (or (:form schemas) (:body schemas))
@@ -600,10 +613,13 @@
                     ((or coercion-matchers default-part-coercion-matcher) schema)
                     ((rsc/coercer :json) schema))))
         params (coercer parts-by-name)]
-    (if-not (schema.utils/error? params)
-      (assoc-in ctx [:parameters (if (:form schemas) :form :body)] params)
-      (d/error-deferred (ex-info "Bad form fields"
-                                 {:status 400 :error (schema.utils/error-val params)})))))
+    (if (and (= 1 (count parts-by-name))
+               (nil? (ffirst parts-by-name)))
+        ctx
+        (if-not (schema.utils/error? params)
+          (assoc-in ctx [:parameters (if (:form schemas) :form :body)] params)
+          (d/error-deferred (ex-info "Bad form fields"
+                                     {:status 400 :error (schema.utils/error-val params)}))))))
 
 (defmethod process-request-body "multipart/form-data"
   [ctx body-stream media-type & args]
