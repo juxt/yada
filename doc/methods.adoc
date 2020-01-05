@@ -109,7 +109,7 @@ RFC.
 
 [source,clojure]
 ----
-(require '[yada.methods Method])
+(require '[yada.methods :refer [Method]])
 
 (deftype BrewMethod [])
 
