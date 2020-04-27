@@ -60,7 +60,7 @@ yada requires the following :-
 - a Java JDK/JRE installation, version 8 or above
 - Clojure 1.8.0
 
-Support for other web-severs, such as undertow, are on the road-map.
+Support for other web-servers, such as undertow, are on the road-map.
 
 ## Future compatibility
 
