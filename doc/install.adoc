@@ -22,10 +22,8 @@ want to set up a quick development environment.
 [[the-easy-way-clone-edge]]
 === The Easy Way: Clone edge
 
-The quickest and perhaps easiest way to get started is to clone the [yada]#yada#
-branch of JUXT's *edge* repository. This is a continuously improving
-development environment representing our firm's best advice for building
-Clojure projects.
+The quickest and perhaps easiest way to get started is to clone JUXT's *edge* repository.
+This is a continuously improving development environment representing our firm's best advice for building Clojure projects.
 
 ....
 $ git clone git@github.com/juxt/edge

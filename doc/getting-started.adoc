@@ -15,7 +15,14 @@ First let's clone the project and change into its working directory.
 
 ....
 git clone https://github.com/juxt/edge
-cd edge/app
+cd edge/
+....
+
+=== Create our own app
+
+....
+./bin/app yada.manual/app
+cd yada.manual.app
 ....
 
 === Build & Run
@@ -23,38 +30,35 @@ cd edge/app
 Next we build and run it, in _development_ mode.
 
 ....
-clojure -A:dev:build:dev/rebel
+../bin/rebel -A:dev 
 ....
 
 This can take up to a couple of minutes to build and run from scratch so don't worry if you have to wait a bit before you see anything.
 
 ....
-[Edge] Starting nREPL server
-[Edge] nREPL client can be connected to port 5600
+[Edge] Starting development environment, please wait…
+WARNING: boolean? already refers to: #'clojure.core/boolean? in namespace: fipp.visit, being replaced by: #'fipp.visit/boolean?
 [Rebel readline] Type :repl/help for online help info
-[Edge] Loading Clojure code, please wait...
-Figwheel: Starting server at http://0.0.0.0:3449
-Figwheel: Watching build - main
-Compiling "target/public/edge.js" from ("/home/username/Projects/clj/edge/app/dev" "/home/username/Projects/clj/edge/app/test" "/home/username/Projects/clj/edge/app/aliases/rebel" "/home/username/Projects/clj/edge/app/src" "/home/username/Projects/clj/edge/app/sass" "/home/username/Projects/clj/edge/app/resources" "/home/username/Projects/clj/edge/app/assets" "/home/username/.gitlibs/libs/io.dominic/krei.alpha/02d0675365d76e81cd2392e7f397e6f278e2a118/src")...
-Successfully compiled "target/public/edge.js" in 3.472 seconds.
-Figwheel: Starting CSS Watcher for paths  ["target"]
-[Edge] Now enter (go) to start the dev system
-dev=> 
+user=> 
 ....
 
 === Start the Server
-At the 'dev=>' prompt enter '(go)' to start a server listening by default on port 3000.
+At the 'user=>' prompt enter '(dev)', then '(go)' to start a server listening by default on port 3000.
 
 ....
+user=> (dev)
+[Edge] Loading Clojure code, please wait...
+[Edge] Enter (go) to start the dev system
+#object[clojure.lang.Namespace 0x7b598d05 "dev"]
 dev=> (go)
-[Edge] Website can be browsed at http://localhost:3000/
+[Edge] Website listening on: http://localhost:3000
 [Edge] Now make code changes, then enter (reset) here
-:started
+:initiated
 ....
 
 === Browse
 
-Fire up a browser and browse to http://localhost:3000/hello. You should see a simple `Hello World` message.
+Fire up a browser and browse to http://localhost:3000/. You should see a simple `Hello, app!` message.
 
 === Working with the REPL
 
@@ -62,39 +66,43 @@ We're going to start changing some of Edge's source code soon, and when we do th
 
 ....
 dev=> (reset)
-:reloading (io.dominic.krei.alpha.impl.util io.dominic.krei.alpha.core edge.phonebook.db edge.lacinia edge.phonebook-app edge.selmer edge.test.system edge.phonebook edge.sources edge.hello edge.examples edge.web-server edge.system edge.examples-test edge.system-test edge.main dev user io.dominic.krei.alpha.main edge.rebel.main edge.api-test)
+:reloading (edge.bidi.ig yada.manual.app.foo edge.system edge.system.meta edge.yada.ig dev-extras dev user)
 :resumed
-dev=>
+dev=> 
 ....
 
 === Test the service
 
-Let's send an HTTP request to the system to check it is working. We can use a browser to visit http://localhost:3000/hello or use `curl` if you have it installed on your system:
+Let's send an HTTP request to the system to check it is working. We can use a browser to visit http://localhost:3000/ or use `curl` if you have it installed on your system:
 
 ....
-curl http://localhost:3000/hello
+curl http://localhost:3000/
 ....
 
 The result should be the same:
 
 ....
-Hello World!
+Hello, app!
 ....
 
 === Locate the source code
 
-Fire up an editor and load up the file `src/edge/hello.clj`.
+Fire up an editor and load up the file `src/yada/manual/app/foo.clj`.
 
-Locate the function called `hello-routes`. This returns a simple route structure that matches on the URI paths of incoming HTTP requests.
+Locate the function called `string-resource`.
+This returns a simple yada resource which serves a string. 
 
 [source,clojure]
 ----
-(defn hello-routes [_]
-  ["/hello" (yada/handler "Hello World!\n")])
+(defn string-resource
+  [x]
+  (yada/as-resource x))
 ----
 
-Make a change to string `"Hello World!"`, for example, change it to `"Hello Wonderful World!"`.
-
+It receives the string to serve from config.
+Open the file `src/config.edn`, and find the key `:yada.manual.app.foo/string`.
+Change `"Hello, app!"` to a message of your choice.
+For example, change it to `"Hello Wonderful World!"`.
 
 === Reset the system
 
@@ -102,15 +110,15 @@ Now we've made a change to Edge's source code, we must tell the system to reset.
 
 ....
 dev=> (reset)
-:reloading (io.dominic.krei.alpha.impl.util io.dominic.krei.alpha.core edge.phonebook.db edge.lacinia edge.phonebook-app edge.selmer edge.test.system edge.phonebook edge.sources edge.hello edge.examples edge.web-server edge.system edge.examples-test edge.system-test edge.main dev user io.dominic.krei.alpha.main edge.rebel.main edge.api-test)
+:reloading ()
 :resumed
-dev=>
+dev=> 
 ....
 
 Let's test the service again:
 
 ....
-$ curl http://localhost:3000/hello
+$ curl http://localhost:3000/
 ....
 
 You should now see that the change has been made:
@@ -120,5 +128,3 @@ Hello Wonderful World!
 ....
 
 Congratulations. You're all up and running with a project built with [yada]#yada#. This will make a great lab to try out your own [yada]#yada# experiments and see what is possible.
-
-Browse to http://localhost:3000 and have fun!
