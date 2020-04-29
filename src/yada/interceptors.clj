@@ -187,8 +187,9 @@
              (:name content-type)))))
 
       ;; else
-      (if-let [body-schema (get-in ctx [:resource :methods (:method ctx) :parameters :body])]
-        (if (s/check body-schema nil)
+      (if-let [params-schema (or (get-in ctx [:resource :methods (:method ctx) :parameters :body])
+                                 (get-in ctx [:resource :methods (:method ctx) :parameters :form]))]
+        (if (s/check params-schema nil)
           (d/error-deferred
              (ex-info "No body present but body is expected for request."
                       {:ctx ctx
