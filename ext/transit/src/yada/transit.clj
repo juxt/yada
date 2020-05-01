@@ -11,7 +11,7 @@
 
 (defn ^:private transit-encode [v type]
   (let [baos (java.io.ByteArrayOutputStream. 100)]
-    (transit/write (transit/writer baos type) v)
+    (transit/write (transit/writer baos type {:transform transit/write-meta}) v)
     (.toByteArray baos)))
 
 (defn ^:private transit-json-encode [v pretty?]
