@@ -254,6 +254,7 @@
                deref
                :parts)]
 
+      (is (= ["c:\\000001"] (mapv #(get-in % [:content-disposition :params "filename"]) parts)))
       (is (= [:part] (mapv :type parts))))))
 
 
