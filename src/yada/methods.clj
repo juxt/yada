@@ -106,11 +106,10 @@
   (request [this ctx]
 
     (when-not (ctx/exists? ctx)
-      (d/error-deferred (ex-info "" {:status 404})))
+      (throw (ex-info "" {:status 404})))
 
     (when-not (get-in ctx [:response :produces])
-      (d/error-deferred
-       (ex-info "" {:status 406})))
+      (throw (ex-info "" {:status 406})))
 
     ;; HEAD is implemented without delegating to the resource.
 

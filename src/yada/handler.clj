@@ -152,7 +152,7 @@
                               (and (not (contains? data :body)) (:response custom-response))
                               (custom-error (:response custom-response) rep)
 
-                              true set-content-length)
+                              (not (= :head (:method ctx))) set-content-length)
 
                             (:error-interceptor-chain ctx)
 
