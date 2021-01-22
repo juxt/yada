@@ -2,7 +2,7 @@
 
 (ns yada.handler
   (:require
-   [clojure.tools.logging :refer [errorf]]
+   [clojure.tools.logging :refer [errorf infof]]
    [manifold.deferred :as d]
    [schema.core :as s]
    [schema.utils :refer [error?]]
@@ -31,9 +31,14 @@
   (let [data (error-data e)]
     (when-not (::disable-error-logging? data)
       (when-not (and (-> data :status number?) (< (:status data) 500))
-        (when (instance? java.lang.Throwable e)
-          (errorf e "Internal Error %s" (or (some-> data :status str) "")))
-        (when data (errorf "ex-data: %s" (dissoc data :ctx)))))))
+        (if (= 501 (:status data))
+          (infof "Unknown method %s %s"
+                 (get-in data [:ctx :method])
+                 (get-in data [:ctx :request :uri]))
+          (do
+            (when (instance? java.lang.Throwable e)
+              (errorf e "Internal Error %s" (or (some-> data :status str) "")))
+            (when data (errorf "ex-data: %s" (dissoc data :ctx)))))))))
 
 ;; Response
 
