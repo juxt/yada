@@ -111,52 +111,63 @@
         ;; Normal resources
         (->
          (apply d/chain ctx (:interceptor-chain ctx))
-
          (d/catch
              java.lang.Exception
              (fn [e]
                (error-handler e)
-               (let [data (error-data e)]
-                 (let [status (or (:status data) 500)]
+               (let [data            (error-data e)
+                     status          (or (:status data) 500)
+                     custom-response (get* (:responses resource) status)
+                     ;; create CTX that is based on interceptors before error
+                     partial-ctx     (d/loop [ctx ctx
+                                              [interceptor & interceptors-rest] (:interceptor-chain ctx)]
+                                       (let [next-ctx (interceptor ctx)]
+                                         (if (instance? manifold.deferred.ErrorDeferred next-ctx)
+                                           ctx
+                                           (d/recur next-ctx interceptors-rest))))
+                     ;; update ctx based on error cause, error, or non-erroring interceptors
+                     ctx             (or
+                                       (some->> e ex-cause ex-data :ctx) ;; ctx field via user made (throw (ex-info "..." {:ctx ctx}))
+                                       (:ctx data) ;; not sure if this is ever valid
+                                       @partial-ctx ;; get the last ctx that didn't fail an interceptor
+                                       ;; initial ctx that request was made with, discard any :interceptor-chain changes
+                                       ctx)
+                     rep             (rep/select-best-representation
+                                       (:request ctx)
+                                       (if custom-response
+                                         (or (:produces custom-response) [{:media-type "text/plain"
+                                                                           :charset    "UTF-8"}])
+                                         error-representations))
+                     ]
+                 (apply d/chain
+                        ;; this is all to do with handling an error, we can put this in the error-interceptor-chain
+                        (cond-> (or (:ctx data) ctx)
+                          e               (assoc :error e)
+                          ;; true (merge (select-keys ctx [:id :request :method]))
+                          status          (assoc-in [:response :status] status)
+                          (:headers data) (assoc-in [:response :headers] (:headers data))
 
-                   (let [custom-response (get* (:responses resource) status)
-                         rep (rep/select-best-representation
-                              (:request ctx)
-                              (if custom-response
-                                (or (:produces custom-response) [{:media-type "text/plain"
-                                                                  :charset "UTF-8"}])
-                                error-representations)
-                              )]
+                          rep (assoc-in [:response :produces] rep)
 
-                     (apply d/chain
-                            (cond-> (or (:ctx data) ctx)
-                              e (assoc :error e)
-                              ;; true (merge (select-keys ctx [:id :request :method]))
-                              status (assoc-in [:response :status] status)
-                              (:headers data) (assoc-in [:response :headers] (:headers data))
+                          ;; This primes the body data in case the representation is nil
+                          (contains? data :body)
+                          (assoc-in [:response :body] (:body data))
 
-                              rep (assoc-in [:response :produces] rep)
+                          (contains? data :cookies)
+                          (assoc-in [:response :cookies] (:cookies data))
 
-                              ;; This primes the body data in case the representation is nil
-                              (contains? data :body)
-                              (assoc-in [:response :body] (:body data))
+                          ;;FIXME: This could override [:response :body]
+                          (and (not (contains? data :body)) (not (:response custom-response)))
+                          (standard-error ,, status e rep)
 
-                              (contains? data :cookies)
-                              (assoc-in [:response :cookies] (:cookies data))
+                          ;;FIXME: This could override [:response :body]
+                          ;; this should be done in the error-interceptor-chain, because we lose access to the body
+                          (and (not (contains? data :body)) (:response custom-response))
+                          (custom-error ,, (:response custom-response) rep)
 
-                              ;; This could override [:response :body]
-                              (and (not (contains? data :body)) (not (:response custom-response)))
-                              (standard-error status e rep)
+                          true (set-content-length ,,))
 
-                              ;; This could override [:response :body]
-                              (and (not (contains? data :body)) (:response custom-response))
-                              (custom-error (:response custom-response) rep)
-
-                              true set-content-length)
-
-                            (:error-interceptor-chain ctx)
-
-                            ))))))))))
+                        (:error-interceptor-chain ctx)))))))))
 
 (defn handle-request
   "Handle Ring request"
