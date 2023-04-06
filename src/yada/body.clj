@@ -37,8 +37,8 @@
   actual body. Otherwise maps can be treated as a nested value, as
   part of the resource itself. This is the case when using the
   shorthand {:get map} form, rather than {:get {:"
-  [map]
-  (->MapBody map))
+  [map-arg]
+  (->MapBody map-arg))
 
 
 (extend-protocol MessageBody
